@@ -1,0 +1,180 @@
+<!--
+  =====================================================
+  檔案名稱：customer-login.component.html
+  用途說明：客戶登入頁面的 HTML 結構
+  包含區塊：頂部導覽列、左側品牌視覺、右側登入表單
+  Angular 知識點：
+    - [routerLink] 是 Angular 的頁面導覽指令，點擊後切換到指定路由
+    - nav-customer 沒有 [routerLink] 表示這是當前頁面，點了不跳轉
+  =====================================================
+-->
+
+
+<!-- ===================================================
+   頂部導覽列：讓 Demo 時可以切換到管理系統登入頁面
+   [routerLink] 指定要前往的路由路徑（在 app.routes.ts 設定）
+   nav-customer 沒有 [routerLink] 表示這是當前頁面，點了不跳轉
+   =================================================== -->
+<nav class="mode-nav">
+  <a class="nav-staff" [routerLink]="['/staff-login']">⚙ 管理系統</a>
+  <a class="nav-customer">🍜 客戶入口</a>
+</nav>
+
+
+<!-- ===================================================
+   主框架：包住整個登入卡片的外殼容器
+   =================================================== -->
+<div class="shell">
+
+  <!-- 面板：使用 CSS Grid 分成左右兩欄 -->
+  <div class="panel" id="customer-panel">
+
+
+    <!-- ===================================================
+       左側品牌視覺欄：暖色漸層背景，顯示 Logo 與浮動食物裝飾
+       =================================================== -->
+    <aside class="c-left">
+
+      <!-- 裝飾用的兩個發光色塊（c-blob1 右上角、c-blob2 左下角） -->
+      <div class="c-blob1"></div>
+      <div class="c-blob2"></div>
+
+      <!-- 浮動食物 emoji 裝飾（共 6 個，CSS 動畫控制漂浮效果） -->
+      <div class="c-floats">
+        <span class="c-float">🍜</span>
+        <span class="c-float">🥟</span>
+        <span class="c-float">🍱</span>
+        <span class="c-float">🧆</span>
+        <span class="c-float">🍛</span>
+        <span class="c-float">🥢</span>
+      </div>
+
+      <!-- Logo 圖片區域（含旋轉外圈裝飾） -->
+      <div class="c-logo-area">
+
+        <!-- Logo 外框：包含兩層旋轉圓圈裝飾 -->
+        <div class="c-logo-ring">
+          <div class="c-ring-outer"></div>   <!-- 外圈：虛線，順時針旋轉 -->
+          <div class="c-ring-inner"></div>   <!-- 內圈：實線，逆時針旋轉 -->
+          <!-- Logo 圖片，圓形顯示 -->
+          <img class="c-logo-img" src="assets/Logo.png" alt="懶飽飽 Logo" />
+        </div>
+
+        <!-- 品牌名稱文字 -->
+        <div class="c-brand-name">
+          <div class="c-brand-zh">懶飽飽</div>
+          <div class="c-brand-en">LazyBaoBao</div>
+        </div>
+
+        <!-- 品牌標語 -->
+        <div class="c-tagline">
+          <span class="c-tagline-pill">✦ 懶懶吃，飽飽樂 ✦</span>
+        </div>
+
+      </div>
+
+    </aside>
+    <!-- 左側品牌視覺欄結束 -->
+
+
+    <!-- ===================================================
+       右側表單欄：奶油白背景，放置登入、註冊、訪客三個入口
+       =================================================== -->
+    <section class="c-right">
+
+      <!-- 表單頂部標題 -->
+      <div class="c-form-header">
+        <div class="c-welcome">👋 歡迎回來</div>
+        <h3>會員登入，開始美味旅程</h3>
+        <p>登入享有個人化推薦、集點與專屬優惠</p>
+      </div>
+
+      <!-- 手機號碼 / 電子郵件輸入欄位 -->
+      <div class="c-field">
+        <label>手機號碼 / 電子郵件</label>
+        <input type="text" placeholder="請輸入手機或電子郵件" autocomplete="username" />
+      </div>
+
+      <!-- 密碼輸入欄位（含顯示 / 隱藏眼睛切換按鈕） -->
+      <div class="c-field">
+        <label>密碼</label>
+
+        <!-- c-password-wrap：相對定位容器，讓眼睛按鈕可以貼在右側
+             [type]  依 showPassword 狀態動態切換 text / password -->
+        <div class="c-password-wrap">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            placeholder="請輸入密碼"
+            autocomplete="current-password"
+          />
+
+          <!-- 眼睛切換按鈕
+               [class.is-visible]  密碼顯示中時圖示改為橘紅色
+               type="button"       防止觸發表單送出 -->
+          <button
+            type="button"
+            class="c-eye-btn"
+            [class.is-visible]="showPassword"
+            (click)="togglePassword()"
+            [attr.aria-label]="showPassword ? '隱藏密碼' : '顯示密碼'"
+          >
+
+            <!-- 眼睛「睜開」圖示 -->
+            @if (!showPassword) {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            }
+
+            <!-- 眼睛「閉上」圖示（有斜線穿過） -->
+            @if (showPassword) {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            }
+
+          </button>
+        </div>
+
+      </div>
+
+      <!-- 登入按鈕與註冊按鈕群組 -->
+      <div class="c-btn-group">
+
+        <!-- 主要操作：會員登入 -->
+        <button class="c-login-btn">
+          <span>🔑</span> 會員登入
+        </button>
+
+        <!-- 次要操作：前往註冊 -->
+        <button class="c-register-btn">
+          ✦ 前往註冊，享受美食
+        </button>
+
+      </div>
+
+      <!-- 「或者」分隔線 -->
+      <div class="c-divider">或者</div>
+
+      <!-- 訪客快速點餐（不需要登入） -->
+      <button class="c-guest-btn">
+        <span>👤</span> 訪客快速點餐，免登入
+      </button>
+
+    </section>
+    <!-- 右側表單欄結束 -->
+
+
+  </div>
+  <!-- 面板結束 -->
+
+</div>
+<!-- 主框架結束 -->

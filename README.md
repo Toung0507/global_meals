@@ -1,59 +1,89 @@
-# GlobalMeals
+# 懶飽飽 LazyBaoBao
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.0.5.
+> 台灣在地美食訂餐平台，提供客戶點餐與管理後台一體化解決方案。
 
-## Development server
+---
 
-To start a local development server, run:
+## 專案簡介
+
+**懶飽飽（LazyBaoBao）** 是一個以 Angular 19 開發的餐飲 POS 管理系統，包含：
+
+- **客戶入口**：會員登入、訪客快速點餐、前往註冊
+- **管理系統**：系統經理與現場收銀員雙角色登入
+
+---
+
+## 技術棧
+
+| 技術 | 版本 |
+|---|---|
+| Angular | 19.x |
+| TypeScript | 5.6.x |
+| SCSS | — |
+| Node.js | 建議 18+ |
+
+---
+
+## 開發環境啟動
 
 ```bash
+# 安裝依賴套件
+npm install
+
+# 啟動開發伺服器（預設 http://localhost:4200）
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+---
 
-## Code scaffolding
+## 專案結構
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```
+src/
+├── app/
+│   ├── global_meals_login/
+│   │   ├── staff-login/        # 管理系統登入頁面
+│   │   └── customer-login/     # 客戶入口登入頁面
+│   ├── app.component.*         # 根元件
+│   └── app.routes.ts           # 路由設定
+├── index.html                  # 入口 HTML（含 Google Fonts 引入）
+└── styles.scss                 # 全域樣式
+public/
+└── assets/
+    └── Logo.png                # 品牌 Logo
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+---
+
+## 路由一覽
+
+| 路徑 | 頁面 |
+|---|---|
+| `/` | 自動導向 `/staff-login` |
+| `/staff-login` | 管理系統登入 |
+| `/customer-login` | 客戶入口登入 |
+
+---
+
+## 團隊分支規範
 
 ```bash
-ng generate --help
+# 開工前：同步最新 main
+git checkout main && git pull origin main
+git checkout dev-xxx && git merge main
+
+# 收工後：推送並發 PR
+git add .
+git commit -m "描述"
+git push origin dev-xxx
+# → GitHub 發 Pull Request，等待隊長審核
 ```
 
-## Building
+---
 
-To build the project run:
+## 預計功能（開發中）
 
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- [ ] 註冊頁面
+- [ ] 頁面跳轉動畫
+- [ ] 點餐流程頁面
+- [ ] 訂單管理後台

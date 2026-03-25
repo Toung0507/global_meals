@@ -1,0 +1,602 @@
+/*
+ * =====================================================
+ * 檔案名稱：staff-login.component.scss
+ * 用途說明：管理系統登入頁面的所有樣式
+ * 包含區塊：頁面容器、頂部導覽列、主框架、左側品牌欄、右側表單欄、響應式設計
+ * 色彩說明（方案二：台灣活力市集）：
+ *   深海軍藍（主色）      #1E3A5F
+ *   中藍（輔助色）        #2C5282
+ *   亮金黃（點綴色）      #F0A500
+ *   主要文字色            #1A2840
+ *   次要文字色            #4A5A70
+ *   頁面背景色            #F4F6FA
+ *   卡片白色背景          #FFFFFF
+ *   邊框線條色            #D4DCE8
+ * =====================================================
+ */
+
+
+/* =====================================================
+   頁面整體容器（取代原本 body 的角色）
+   :host 代表這個 Angular Component 元件本身的標籤
+
+   無捲動設計說明：
+   - height: 100dvh    讓容器精確等於裝置視窗高度（dvh = dynamic viewport height）
+   - overflow: hidden  徹底禁止捲動條出現
+   - padding-top       用 clamp() 為頂部固定導覽列保留足夠空間
+   - box-sizing        讓 padding 不會超出 100dvh 的範圍
+   ===================================================== */
+:host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100dvh;
+  box-sizing: border-box;
+  padding-top: clamp(52px, 7.5vh, 72px);
+  padding-right: clamp(12px, 2vw, 24px);
+  padding-bottom: clamp(12px, 2vh, 20px);
+  padding-left: clamp(12px, 2vw, 24px);
+  background-color: #F4F6FA;
+  overflow: hidden;
+  font-family: 'Noto Sans TC', sans-serif;
+}
+
+
+/* =====================================================
+   頂部導覽列：固定在頁面頂端，用來切換管理系統 / 客戶入口
+   position: fixed  讓它永遠固定在畫面頂端，不隨捲動移動
+   transform        讓它水平置中
+   ===================================================== */
+.mode-nav {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(30, 58, 95, 0.18);
+}
+
+/* 導覽列裡的每一個連結按鈕 */
+.mode-nav a {
+  padding: 10px 28px;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-decoration: none;
+  display: block;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* 目前所在頁面的按鈕（管理系統）— 深海軍藍背景表示「已選中」 */
+.mode-nav .nav-staff {
+  background-color: #1E3A5F;
+  color: #ffffff;
+  border-radius: 14px 0 0 14px;
+}
+
+/* 另一個頁面的連結按鈕（客戶入口）— 淺色表示「未選中」 */
+.mode-nav .nav-customer {
+  background-color: #D4DCE8;
+  color: #6A7A90;
+  border-radius: 0 14px 14px 0;
+}
+
+/* 滑鼠移到客戶入口按鈕時，顏色略深表示可以點擊 */
+.mode-nav .nav-customer:hover {
+  background-color: #BEC8D8;
+  color: #3A4A60;
+}
+
+
+/* =====================================================
+   主框架：包住整個左右兩欄的外殼
+
+   無捲動設計說明：
+   - flex: 1         讓 shell 撐滿 :host 扣除 padding 後的剩餘高度
+   - min-height: 0   Flexbox 必要設定，允許子元素縮小到比內容更小，防止溢出
+   - 不設固定高度    改由父層 :host 的 height: 100dvh 控制整體高度
+
+   深度感說明：
+   - box-shadow 使用兩層：外層大範圍擴散陰影製造浮起感，內層短距陰影強化邊緣立體感
+   ===================================================== */
+.shell {
+  flex: 1;
+  min-height: 0;
+  width: min(1080px, 100%);
+  border-radius: 32px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    0 24px 60px rgba(30, 58, 95, 0.20),
+    0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* 面板：在 shell 裡佔滿全部空間，分成左右兩欄
+   grid-template-columns: 42% 58% 表示左欄佔 42%、右欄佔 58% */
+.panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: 42% 58%;
+}
+
+/* 整個管理員面板的背景底色（白色） */
+#staff-panel {
+  background-color: #ffffff;
+}
+
+
+/* =====================================================
+   左側品牌欄
+   深海軍藍背景，放置 Logo、品牌名稱與系統資訊
+   ===================================================== */
+.s-left {
+  background-color: #1E3A5F;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0;
+  padding-right: 0;
+  padding-bottom: clamp(16px, 3vh, 32px);
+  padding-left: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 左側欄的裝飾性格線背景（用 CSS 偽元素 ::before 製作） */
+.s-left::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* 左側欄右下角的裝飾性發光圓形（用 CSS 偽元素 ::after 製作）
+   使用金黃色光暈，呼應點綴色 #F0A500 */
+.s-left::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  right: -80px;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 165, 0, 0.12) 0%, transparent 70%);
+}
+
+/* Logo 圖片的外層容器：佔滿剩餘高度
+   flex: 1 + min-height: 0 讓它可以依視窗高度縮放 */
+.s-logo-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(10px, 1.8vh, 16px);
+  z-index: 2;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Logo 圖片的直接容器：讓圖片可以完整填滿
+   flex: 1 + min-height: 0 讓它隨父容器縮放 */
+.s-logo-box {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Logo 圖片本體：蓋滿整個容器，上方偏移讓主體露出 */
+.s-logo-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  display: block;
+}
+
+/* 品牌名稱區塊 */
+.s-brand {
+  text-align: center;
+  color: #ffffff;
+}
+
+/* 英文品牌名稱：改用 Fraunces 展示字體，金黃色點綴
+   Fraunces 的有機曲線比 DM Mono 更有品牌溫度，保留大寫讓它有辨識度 */
+.s-brand-en {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(15px, 2vh, 20px);
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: #F0A500;
+  text-transform: uppercase;
+  font-style: italic;
+}
+
+/* 中文品牌名稱：改用 LXGW WenKai TC 楷書字體
+   楷書筆觸讓「懶飽飽」更有手工溫度，與食物品牌氣質相符 */
+.s-brand-zh {
+  font-family: 'LXGW WenKai TC', 'Noto Serif TC', serif;
+  font-size: clamp(22px, 3.5vh, 30px);
+  font-weight: 900;
+  letter-spacing: 5px;
+  margin-top: 6px;
+}
+
+/* 品牌標語小字：保留 DM Mono，強化後台技術感 */
+.s-brand-tag {
+  font-size: clamp(9px, 1.2vh, 11px);
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: 8px;
+  font-family: 'DM Mono', monospace;
+}
+
+
+/* =====================================================
+   系統資訊列（版本、安全連線、分店節點）
+   顯示在左側欄的最下方
+   ===================================================== */
+.s-stats {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(5px, 1vh, 10px);
+  width: 100%;
+  z-index: 2;
+  padding-top: 0;
+  padding-right: clamp(12px, 2vw, 20px);
+  padding-bottom: 0;
+  padding-left: clamp(12px, 2vw, 20px);
+  box-sizing: border-box;
+}
+
+/* 每一條系統資訊的橫列
+   提高 background 與 border 透明度，讓框線在深色背景下清晰可見 */
+.s-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: clamp(7px, 1.2vh, 11px);
+  padding-right: 16px;
+  padding-bottom: clamp(7px, 1.2vh, 11px);
+  padding-left: 16px;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+/* 資訊列的圖示 */
+.s-stat-icon {
+  font-size: clamp(13px, 1.8vh, 16px);
+}
+
+/* 資訊列的文字說明
+   提高透明度至 0.82，在深海軍藍背景下清晰易讀 */
+.s-stat-text {
+  font-size: clamp(10px, 1.3vh, 12px);
+  color: rgba(255, 255, 255, 0.82);
+  letter-spacing: 0.5px;
+}
+
+/* 資訊列的數值（靠右對齊，金黃色等寬字） */
+.s-stat-val {
+  margin-left: auto;
+  font-family: 'DM Mono', monospace;
+  font-size: clamp(10px, 1.3vh, 12px);
+  font-weight: 700;
+  color: #F0A500;
+}
+
+
+/* =====================================================
+   右側表單欄
+   白色背景，放置登入表單
+   overflow: hidden 確保表單內容不溢出 shell 邊界
+
+   深度感說明：
+   - inset box-shadow 從左側向右投射淡藍色陰影，模擬左側深色欄對右側的間接光影
+   - 讓左右兩欄之間有層次分隔感，而不只是靠顏色區分
+   ===================================================== */
+.s-right {
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: clamp(20px, 4vh, 52px);
+  padding-right: clamp(24px, 5vw, 64px);
+  padding-bottom: clamp(20px, 4vh, 52px);
+  padding-left: clamp(24px, 5vw, 64px);
+  overflow: hidden;
+  box-shadow: inset 8px 0 40px rgba(30, 58, 95, 0.055);
+}
+
+/* 表單頂部的標題區塊 */
+.s-form-header {
+  margin-bottom: clamp(12px, 2.5vh, 28px);
+}
+
+/* 主標題文字：改用 LXGW WenKai TC 楷書，讓標題更有質感 */
+.s-form-header h3 {
+  font-family: 'LXGW WenKai TC', 'Noto Serif TC', serif;
+  font-size: clamp(17px, 2.8vh, 26px);
+  font-weight: 900;
+  color: #1A2840;
+  letter-spacing: 1px;
+}
+
+/* 副標題說明文字 */
+.s-form-header p {
+  font-size: clamp(11px, 1.5vh, 14px);
+  color: #4A5A70;
+  margin-top: 6px;
+}
+
+
+/* =====================================================
+   角色切換分頁（系統經理 / 現場收銀員）
+   ===================================================== */
+.s-role-tabs {
+  display: flex;
+  margin-bottom: clamp(12px, 2.5vh, 26px);
+  border: 2px solid #D4DCE8;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* 每個角色分頁按鈕 */
+.s-role-tabs button {
+  flex: 1;
+  padding-top: clamp(8px, 1.3vh, 11px);
+  padding-right: 0;
+  padding-bottom: clamp(8px, 1.3vh, 11px);
+  padding-left: 0;
+  border: none;
+  background-color: transparent;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: clamp(12px, 1.5vh, 13.5px);
+  font-weight: 700;
+  color: #4A5A70;
+  cursor: pointer;
+  transition: all 0.25s;
+  letter-spacing: 0.5px;
+}
+
+/* 第一個按鈕（系統經理）的右側分隔線 */
+.s-role-tabs button:first-child {
+  border-right: 2px solid #D4DCE8;
+}
+
+/* 被選中的角色按鈕：深海軍藍背景白字 */
+.s-role-tabs button.active {
+  background-color: #1E3A5F;
+  color: #ffffff;
+}
+
+
+/* =====================================================
+   表單輸入欄位
+   ===================================================== */
+.s-field {
+  margin-bottom: clamp(10px, 1.8vh, 20px);
+}
+
+/* 欄位的標籤文字（含左側金黃色小圓點） */
+.s-field label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: clamp(10px, 1.3vh, 12.5px);
+  font-weight: 800;
+  color: #1A2840;
+  margin-bottom: clamp(4px, 0.8vh, 8px);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* 標籤旁邊的金黃色小圓點裝飾 */
+.s-field label .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: #F0A500;
+  flex-shrink: 0;
+}
+
+/* 文字輸入框 */
+.s-field input {
+  width: 100%;
+  height: clamp(40px, 6vh, 52px);
+  border: 2px solid #D4DCE8;
+  border-radius: 12px;
+  padding-top: 0;
+  padding-right: 16px;
+  padding-bottom: 0;
+  padding-left: 16px;
+  font-size: clamp(13px, 1.7vh, 15px);
+  font-family: 'Noto Sans TC', sans-serif;
+  background-color: #F4F6FA;
+  color: #1A2840;
+  outline: none;
+  transition: all 0.25s;
+  box-sizing: border-box;
+}
+
+/* 輸入框被點選（獲得焦點）時的狀態：邊框變深海軍藍，背景變白 */
+.s-field input:focus {
+  border-color: #1E3A5F;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.08);
+}
+
+/* 輸入框的提示文字顏色（淺灰藍色） */
+.s-field input::placeholder {
+  color: #A0AABB;
+}
+
+
+/* =====================================================
+   密碼欄位容器（含眼睛切換按鈕）
+   ===================================================== */
+
+/* 相對定位容器，讓眼睛按鈕可以用絕對定位貼在右側 */
+.s-password-wrap {
+  position: relative;
+  display: block;
+}
+
+/* 容器內的 input 需要右側留出空間，避免文字被按鈕遮住 */
+.s-password-wrap input {
+  padding-right: 48px;
+}
+
+/* 眼睛切換按鈕：絕對定位在輸入框右側垂直置中 */
+.s-eye-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+  color: #A0AABB;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+/* 滑鼠移到眼睛按鈕時：顏色加深，背景略灰 */
+.s-eye-btn:hover {
+  color: #1A2840;
+  background-color: rgba(30, 58, 95, 0.06);
+}
+
+/* is-visible class：密碼顯示中時，圖示改為金黃色（代表「目前可見」狀態） */
+.s-eye-btn.is-visible {
+  color: #F0A500;
+}
+
+/* 眼睛 SVG 圖示的大小 */
+.s-eye-btn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+
+/* =====================================================
+   登入按鈕
+
+   深度感設計說明：
+   - background 改用漸層（由中藍到深藍），模擬按鈕的光線打在上方
+   - box-shadow 分三層：
+       第一層：深色擴散陰影，製造按鈕浮起感
+       第二層：近距離底部陰影，強化厚度感
+       第三層：inset 頂部白色細線，模擬高光（像是有燈光從上方打下來）
+   ===================================================== */
+.s-submit {
+  width: 100%;
+  height: clamp(42px, 6.5vh, 56px);
+  background: linear-gradient(160deg, #2C5282 0%, #1A3558 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 13px;
+  margin-top: clamp(4px, 0.8vh, 8px);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: clamp(13px, 1.8vh, 16px);
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    0 6px 20px rgba(30, 58, 95, 0.30),
+    0 2px 6px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+/* 滑鼠移到登入按鈕時：漸層亮化、上移、陰影加深 */
+.s-submit:hover {
+  background: linear-gradient(160deg, #3A6298 0%, #2C5282 100%);
+  transform: translateY(-3px);
+  box-shadow:
+    0 14px 32px rgba(30, 58, 95, 0.38),
+    0 4px 10px rgba(0, 0, 0, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+/* 按下按鈕時：下沉回去，陰影縮小，模擬真實按壓回饋 */
+.s-submit:active {
+  transform: translateY(1px);
+  transition: all 0.08s;
+  box-shadow:
+    0 2px 8px rgba(30, 58, 95, 0.22),
+    0 1px 3px rgba(0, 0, 0, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* 按鈕內的箭頭符號 */
+.s-submit .arrow {
+  font-size: 18px;
+  transition: transform 0.2s;
+}
+
+/* 滑鼠移到按鈕時，箭頭往右移動一點 */
+.s-submit:hover .arrow {
+  transform: translateX(4px);
+}
+
+
+/* =====================================================
+   表單底部說明文字
+   ===================================================== */
+.s-footer-note {
+  text-align: center;
+  margin-top: clamp(8px, 1.8vh, 18px);
+  font-size: clamp(10px, 1.3vh, 11.5px);
+  color: #4A5A70;
+  letter-spacing: 0.5px;
+}
+
+
+/* =====================================================
+   響應式設計：畫面寬度小於 860px 時（手機或小平板）
+   隱藏左側品牌欄，讓右側表單佔滿全寬
+   ===================================================== */
+@media (max-width: 860px) {
+  .panel {
+    grid-template-columns: 1fr;
+  }
+
+  .s-left {
+    display: none;
+  }
+
+  .s-right {
+    grid-column: 1 / -1;
+  }
+}
