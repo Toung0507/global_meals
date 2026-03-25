@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \":*)",
+      "Bash(mkdir -p c:/Users/齊/Desktop/團專/global_meals/src/assets)",
+      "Bash(cp c:/Users/齊/Desktop/團專/global_meals/Logo.png c:/Users/齊/Desktop/團專/global_meals/src/assets/Logo.png)",
+      "Bash(node -e \"const p = require\\(''c:/Users/齊/Desktop/團專/global_meals/package.json''\\); console.log\\(''@angular/core:'', p.dependencies[''@angular/core'']\\); console.log\\(''@angular/cli:'', p.devDependencies[''@angular/cli'']\\);\")",
+      "Bash(where gh:*)",
+      "Bash(winget list:*)",
+      "Bash(powershell -Command \"Get-Command gh -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\")",
+      "Bash(winget install:*)"
+    ]
+  }
+}
