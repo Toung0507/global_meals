@@ -8,7 +8,8 @@
       "Bash(where gh:*)",
       "Bash(winget list:*)",
       "Bash(powershell -Command \"Get-Command gh -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\")",
-      "Bash(winget install:*)"
+      "Bash(winget install:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
