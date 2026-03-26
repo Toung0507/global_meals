@@ -20,7 +20,7 @@
 | Angular | 19.x |
 | TypeScript | 5.6.x |
 | SCSS | — |
-| Node.js | 建議 18+ |
+| Node.js | 建議 v22 LTS |
 
 ---
 
@@ -42,15 +42,17 @@ ng serve
 src/
 ├── app/
 │   ├── global_meals_login/
-│   │   ├── staff-login/        # 管理系統登入頁面
-│   │   └── customer-login/     # 客戶入口登入頁面
-│   ├── app.component.*         # 根元件
-│   └── app.routes.ts           # 路由設定
-├── index.html                  # 入口 HTML（含 Google Fonts 引入）
-└── styles.scss                 # 全域樣式
+│   │   ├── staff-login/          # 管理系統登入頁面
+│   │   ├── customer-login/       # 客戶入口登入頁面
+│   │   ├── customer-register/    # 客戶註冊頁面
+│   │   └── customer-guest/       # 訪客快速點餐入口
+│   ├── app.component.*           # 根元件
+│   └── app.routes.ts             # 路由設定
+├── index.html                    # 入口 HTML（含 Google Fonts 引入）
+└── styles.scss                   # 全域樣式
 public/
 └── assets/
-    └── Logo.png                # 品牌 Logo
+    └── Logo.png                  # 品牌 Logo
 ```
 
 ---
@@ -62,6 +64,8 @@ public/
 | `/` | 自動導向 `/staff-login` |
 | `/staff-login` | 管理系統登入 |
 | `/customer-login` | 客戶入口登入 |
+| `/customer-register` | 客戶註冊 |
+| `/customer-guest` | 訪客快速點餐（無需帳號） |
 
 ---
 
@@ -83,7 +87,15 @@ git push origin dev-xxx
 
 ## 預計功能（開發中）
 
-- [ ] 註冊頁面
+- [x] 員工登入頁面
+- [x] 客戶登入頁面
+- [x] 客戶註冊頁面
+- [x] 訪客快速點餐入口
 - [ ] 頁面跳轉動畫
+- [ ] 客戶主頁面（商品列表含購物車）
 - [ ] 點餐流程頁面
 - [ ] 訂單管理後台
+
+---
+
+> 文件最後更新：2026-03-26

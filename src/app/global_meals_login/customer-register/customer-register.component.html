@@ -1,0 +1,218 @@
+<!--
+  =====================================================
+  檔案名稱：customer-register.component.html
+  用途說明：客戶註冊頁面的 HTML 結構
+  包含區塊：頂部導覽列、左側品牌視覺、右側註冊表單
+  必填欄位：會員名稱、手機號碼、密碼（對應 members 資料表）
+  =====================================================
+-->
+
+
+<!-- ===================================================
+   頂部導覽列：與登入頁面共用相同導覽列結構
+   客戶入口顯示為橘紅色（已選中），管理系統顯示為灰色（未選中）
+   =================================================== -->
+<nav class="mode-nav">
+  <a class="nav-staff" [routerLink]="['/staff-login']">⚙ 管理系統</a>
+  <a class="nav-customer" [routerLink]="['/customer-login']">🍜 客戶入口</a>
+</nav>
+
+
+<!-- ===================================================
+   主框架：包住整個左右兩欄的外殼容器
+   =================================================== -->
+<div class="shell">
+
+  <!-- 面板：使用 CSS Grid 分成左右兩欄 -->
+  <div class="panel" id="register-panel">
+
+
+    <!-- ===================================================
+       左側品牌視覺欄：與客戶登入頁相同的暖色漸層視覺
+       =================================================== -->
+    <aside class="c-left">
+
+      <!-- 裝飾用的兩個發光色塊 -->
+      <div class="c-blob1"></div>
+      <div class="c-blob2"></div>
+
+      <!-- 浮動食物 emoji 裝飾（共 6 個） -->
+      <div class="c-floats">
+        <span class="c-float">🍜</span>
+        <span class="c-float">🥟</span>
+        <span class="c-float">🍱</span>
+        <span class="c-float">🧆</span>
+        <span class="c-float">🍛</span>
+        <span class="c-float">🥢</span>
+      </div>
+
+      <!-- Logo 圖片區域（含旋轉外圈裝飾） -->
+      <div class="c-logo-area">
+
+        <!-- Logo 外框：包含兩層旋轉圓圈裝飾 -->
+        <div class="c-logo-ring">
+          <div class="c-ring-outer"></div>   <!-- 外圈：虛線，順時針旋轉 -->
+          <div class="c-ring-inner"></div>   <!-- 內圈：實線，逆時針旋轉 -->
+          <!-- Logo 圖片，圓形顯示 -->
+          <img class="c-logo-img" src="assets/Logo.png" alt="懶飽飽 Logo" />
+        </div>
+
+        <!-- 品牌名稱文字 -->
+        <div class="c-brand-name">
+          <div class="c-brand-zh">懶飽飽</div>
+          <div class="c-brand-en">LazyBaoBao</div>
+        </div>
+
+        <!-- 品牌標語 -->
+        <div class="c-tagline">
+          <span class="c-tagline-pill">✦ 懶懶吃，飽飽樂 ✦</span>
+        </div>
+
+      </div>
+
+    </aside>
+    <!-- 左側品牌視覺欄結束 -->
+
+
+    <!-- ===================================================
+       右側表單欄：客戶註冊表單（會員名稱、手機號碼、密碼）
+       =================================================== -->
+    <section class="c-right">
+
+      <!-- 表單頂部標題 -->
+      <div class="c-form-header">
+        <div class="c-welcome">✦ 加入我們</div>
+        <h3>建立帳號，享受美食旅程</h3>
+        <p>註冊後可享有個人化推薦、集點與專屬優惠</p>
+      </div>
+
+      <!-- 必填欄位說明 -->
+      <p class="c-required-hint">* 以下欄位均為必填</p>
+
+      <!-- 會員名稱輸入欄位（對應 members.name） -->
+      <div class="c-field">
+        <label>會員名稱 <span class="c-required-mark">*</span></label>
+        <input
+          type="text"
+          placeholder="請輸入您的名稱"
+          autocomplete="name"
+          maxlength="50"
+        />
+      </div>
+
+      <!-- 手機號碼輸入欄位（對應 members.phone，作為唯一登入 ID） -->
+      <div class="c-field">
+        <label>手機號碼 <span class="c-required-mark">*</span></label>
+        <input
+          type="tel"
+          placeholder="請輸入手機號碼（作為登入帳號）"
+          autocomplete="tel"
+          maxlength="15"
+        />
+      </div>
+
+      <!-- 密碼輸入欄位（對應 members.password，儲存時會以 bcrypt 加密） -->
+      <div class="c-field">
+        <label>密碼 <span class="c-required-mark">*</span></label>
+
+        <!-- c-password-wrap：相對定位容器，讓眼睛按鈕可以貼在右側 -->
+        <div class="c-password-wrap">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            placeholder="請設定密碼"
+            autocomplete="new-password"
+          />
+
+          <!-- 眼睛切換按鈕 -->
+          <button
+            type="button"
+            class="c-eye-btn"
+            [class.is-visible]="showPassword"
+            (click)="togglePassword()"
+            [attr.aria-label]="showPassword ? '隱藏密碼' : '顯示密碼'"
+          >
+            <!-- 眼睛「睜開」圖示 -->
+            @if (!showPassword) {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            }
+            <!-- 眼睛「閉上」圖示 -->
+            @if (showPassword) {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- 確認密碼欄位（前端驗證用，不送入資料庫） -->
+      <div class="c-field">
+        <label>確認密碼 <span class="c-required-mark">*</span></label>
+
+        <div class="c-password-wrap">
+          <input
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            placeholder="請再次輸入密碼"
+            autocomplete="new-password"
+          />
+
+          <!-- 眼睛切換按鈕（確認密碼） -->
+          <button
+            type="button"
+            class="c-eye-btn"
+            [class.is-visible]="showConfirmPassword"
+            (click)="toggleConfirmPassword()"
+            [attr.aria-label]="showConfirmPassword ? '隱藏密碼' : '顯示密碼'"
+          >
+            @if (!showConfirmPassword) {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            }
+            @if (showConfirmPassword) {
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- 立即註冊按鈕 -->
+      <button class="c-register-submit-btn">
+        <span>🎉</span> 立即註冊，開始點餐
+      </button>
+
+      <!-- 返回登入連結 -->
+      <div class="c-back-login">
+        已有帳號？
+        <a class="c-back-link" [routerLink]="['/customer-login']">返回登入</a>
+      </div>
+
+    </section>
+    <!-- 右側表單欄結束 -->
+
+
+  </div>
+  <!-- 面板結束 -->
+
+</div>
+<!-- 主框架結束 -->

@@ -154,8 +154,8 @@
           <span>🔑</span> 會員登入
         </button>
 
-        <!-- 次要操作：前往註冊 -->
-        <button class="c-register-btn">
+        <!-- 次要操作：前往註冊（點擊後跳轉到 /customer-register） -->
+        <button class="c-register-btn" [routerLink]="['/customer-register']">
           ✦ 前往註冊，享受美食
         </button>
 
@@ -164,8 +164,8 @@
       <!-- 「或者」分隔線 -->
       <div class="c-divider">或者</div>
 
-      <!-- 訪客快速點餐（不需要登入） -->
-      <button class="c-guest-btn">
+      <!-- 訪客快速點餐（不需要登入，點擊後跳轉到 /customer-guest） -->
+      <button class="c-guest-btn" [routerLink]="['/customer-guest']">
         <span>👤</span> 訪客快速點餐，免登入
       </button>
 

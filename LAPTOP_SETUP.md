@@ -213,8 +213,11 @@ ng serve
 
 | 路徑 | 頁面 |
 |------|------|
+| `/` | 自動導向 `/staff-login` |
 | `/staff-login` | 後台員工登入 |
 | `/customer-login` | 前台顧客登入 |
+| `/customer-register` | 客戶註冊 |
+| `/customer-guest` | 訪客快速點餐（無需帳號） |
 
 ---
 
@@ -225,4 +228,4 @@ ng serve
 
 ---
 
-> 文件最後更新：2026-03-25
+> 文件最後更新：2026-03-26
