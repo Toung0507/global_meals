@@ -20,7 +20,8 @@
    =================================================== -->
 <nav class="mode-nav">
   <a class="nav-staff">⚙ 管理系統</a>
-  <a class="nav-customer" [routerLink]="['/customer-login']">🍜 客戶入口</a>
+  <!-- (click)="goToCustomer()" 觸發 TypeScript 的方法，先顯示 Loading 再切換頁面 -->
+  <a class="nav-customer" (click)="goToCustomer()">🍜 客戶入口</a>
 </nav>
 
 

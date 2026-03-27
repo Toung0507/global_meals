@@ -1,0 +1,364 @@
+/*
+ * =====================================================
+ * 檔案名稱：customer-loading.component.scss
+ * 位置說明：src/app/shared/customer-loading/customer-loading.component.scss
+ * 用途說明：客戶端 Loading 過場動畫樣式（v4 分割卡片版本）
+ * 配色說明：依照 setting.md「方案二：暖橘奶油（客戶端）」
+ *   主色（橘紅）：#D95C1A
+ *   輔助色（深橘）：#A84210
+ *   點綴色（亮金黃）：#F0A500
+ *   頁面背景（奶油白）：#FFFAF3
+ *   主要文字（深棕）：#3D2010
+ *   次要文字（中棕）：#6A4830
+ *   邊框線條（暖米）：#F0D8B8
+ * 字體說明（依照 setting.md 共用元素規範）：
+ *   品牌中文大標：'LXGW WenKai TC', cursive
+ *   品牌英文標題：'Fraunces', serif
+ *   內文說明文字：'Noto Sans TC', sans-serif
+ * 版面說明：
+ *   桌機（>= 641px）：左右並排兩欄，卡片最大寬度 840px
+ *   手機（<= 640px） ：上下堆疊，卡片最大寬度 340px
+ * =====================================================
+ */
+
+
+/* ════════════════════════════════════════════════════
+   全螢幕遮罩
+   奶油白底色，z-index 最高，遮住所有頁面內容
+   ════════════════════════════════════════════════════ */
+.cl-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* 奶油白背景（客戶端頁面底色），0.97 幾乎完全遮蔽下方內容 */
+  background-color: rgba(255, 250, 243, 0.97);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+
+/* ════════════════════════════════════════════════════
+   分割卡片主體
+   左右兩個面板並排，圓角陰影，呈現卡片感
+   ════════════════════════════════════════════════════ */
+.cl-card {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  max-width: 840px;
+  min-height: 420px;
+  border-radius: 24px;
+  overflow: hidden;
+  /* 暖橘色調陰影，柔和不刺眼 */
+  box-shadow: 0 20px 60px rgba(217, 92, 26, 0.18),
+              0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+
+/* ════════════════════════════════════════════════════
+   左側面板：橘色漸層背景
+   從主色 #D95C1A 斜角漸層至深橘 #A84210
+   包含：Logo、中文品牌名稱、英文副標、標語徽章
+   ════════════════════════════════════════════════════ */
+.cl-panel-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  box-sizing: border-box;
+  /* 橘紅漸層：左上角偏亮（主色），右下角偏深（輔助色），呈現立體感 */
+  background-image: linear-gradient(135deg, #D95C1A 0%, #A84210 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 左側面板裝飾光暈：右上角半透明圓形，增加層次感 */
+.cl-panel-left::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.07);
+  pointer-events: none;
+}
+
+/* 左側面板裝飾光暈：左下角 */
+.cl-panel-left::after {
+  content: '';
+  position: absolute;
+  bottom: -40px;
+  left: -40px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
+
+
+/* ── 圓形 Logo 圖片 ────────────────────────────────
+   白色邊框讓 Logo 從橘色背景中清晰浮現
+───────────────────────────────────────────────────── */
+.cl-logo {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  /* 白色光暈陰影，加強 Logo 存在感 */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.20);
+  object-fit: cover;
+  position: relative;
+  z-index: 1;
+}
+
+
+/* ── 品牌中文名稱：懶 飽 飽 ──────────────────────
+   字體：楷書（LXGW WenKai TC），呼應品牌溫暖質感
+   顏色：純白 #FFFFFF，在橘色背景上最大對比度
+   寬字距讓三個字輕鬆舒展，有品牌感
+───────────────────────────────────────────────────── */
+.cl-brand-name {
+  margin-top: 20px;
+  font-family: 'LXGW WenKai TC', cursive;
+  font-size: 36px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 8px;
+  text-align: center;
+  /* 輕微文字陰影讓白字在深橘底更立體 */
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.20);
+  position: relative;
+  z-index: 1;
+}
+
+
+/* ── 品牌英文名稱：Global Meals ─────────────────
+   字體：Fraunces（裝飾襯線體），呈現國際食品品牌感
+   顏色：亮金黃 #F0A500，與橘色背景形成溫暖對比
+   為 setting.md 點綴色的標準應用場景
+───────────────────────────────────────────────────── */
+.cl-brand-en {
+  margin-top: 10px;
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #F0A500;
+  letter-spacing: 4px;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  position: relative;
+  z-index: 1;
+}
+
+
+/* ── 標語徽章：✦ 懶懶吃，飽飽樂 ✦ ───────────────
+   圓角膠囊形狀，半透明白色背景、白色邊框
+   文字用暖奶油色 #FFF5E6，比純白更溫暖，三色形成層次
+───────────────────────────────────────────────────── */
+.cl-tagline-badge {
+  margin-top: 18px;
+  padding: 8px 20px;
+  border-radius: 50px;
+  /* 半透明白色底，疊加在橘色漸層上形成磨砂玻璃效果 */
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  font-family: 'LXGW WenKai TC', cursive;
+  font-size: 13px;
+  font-weight: 400;
+  /* 暖奶油色：比純白更柔和，比米黃更清晰 */
+  color: #FFF5E6;
+  letter-spacing: 2px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+
+/* ════════════════════════════════════════════════════
+   右側面板：純白背景
+   包含：Lottie 動畫、進度條、跳動點點、狀態文字
+   ════════════════════════════════════════════════════ */
+.cl-panel-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  box-sizing: border-box;
+  background-color: #FFFFFF;
+}
+
+
+/* ── Lottie 動畫容器 ──────────────────────────────
+   lottie-web 會在此 div 內部渲染 SVG 動畫
+   固定寬高讓動畫尺寸可預期
+───────────────────────────────────────────────────── */
+.cl-lottie-box {
+  width: 180px;
+  height: 180px;
+}
+
+
+/* ── 進度條外框 ───────────────────────────────────
+   暖米邊框色 #F0D8B8 作為未完成部分的底色
+   圓角讓兩端呈半圓形，視覺更柔和
+───────────────────────────────────────────────────── */
+.cl-progress-wrap {
+  width: 80%;
+  height: 6px;
+  background-color: #F0D8B8;
+  border-radius: 3px;
+  margin-top: 24px;
+  overflow: hidden;
+}
+
+
+/* ── 進度條填充條 ─────────────────────────────────
+   橘紅到金黃漸層，CSS @keyframes 讓寬度從 0% 填到 95%
+   1.4 秒，比 Loading 顯示時長（1.5 秒）稍短，讓條條抵達 95% 時 Loading 剛好關閉
+   forwards：動畫結束後保持在最終狀態（不回彈）
+───────────────────────────────────────────────────── */
+.cl-progress-bar {
+  height: 100%;
+  width: 0%;
+  /* 橘紅 → 金黃漸層，呼應左側面板配色 */
+  background-image: linear-gradient(90deg, #D95C1A 0%, #F0A500 100%);
+  border-radius: 3px;
+  animation: progressFill 1.4s ease-out forwards;
+}
+
+/*
+ * progressFill：進度條從空填滿到 95%
+ * 不填到 100% 是因為 Loading 由外部控制關閉，
+ * 視覺上保留一小段讓使用者感覺「還在處理」
+ */
+@keyframes progressFill {
+  from { width: 0%; }
+  to   { width: 95%; }
+}
+
+
+/* ── 三個跳動點點 ─────────────────────────────────
+   水平排列，用來呼應「載入中」的視覺回饋
+───────────────────────────────────────────────────── */
+.cl-dots {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* 每個點點的基本形狀：橘紅色圓形 */
+.cl-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #D95C1A;
+  animation: dotBounce 1.2s ease-in-out infinite;
+}
+
+/*
+ * nth-child 設定不同的 animation-delay，形成波浪跳動效果
+ * 三個點依序延遲 0s、0.2s、0.4s
+ */
+.cl-dot:nth-child(1) { animation-delay: 0s; }
+.cl-dot:nth-child(2) { animation-delay: 0.2s; }
+.cl-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/*
+ * dotBounce：點點上下彈跳 + 透明度變化
+ * 0%   → 原始位置，完全不透明
+ * 40%  → 向上移動 10px，透明度微降（視覺輕盈感）
+ * 100% → 回到原始位置
+ */
+@keyframes dotBounce {
+  0%   { transform: translateY(0px);   opacity: 1; }
+  40%  { transform: translateY(-10px); opacity: 0.7; }
+  100% { transform: translateY(0px);   opacity: 1; }
+}
+
+
+/* ── 狀態說明文字 ─────────────────────────────────
+   中棕色 #6A4830（setting.md 次要文字色），Noto Sans TC
+───────────────────────────────────────────────────── */
+.cl-status-text {
+  margin-top: 14px;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 13px;
+  color: #6A4830;
+  letter-spacing: 1.5px;
+  text-align: center;
+}
+
+
+/* ════════════════════════════════════════════════════
+   RWD：手機版（螢幕寬度 <= 640px）
+   左右並排改為上下堆疊，字體與 Logo 適度縮小
+   ════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+
+  /* 卡片改為垂直堆疊 */
+  .cl-card {
+    flex-direction: column;
+    max-width: 340px;
+    min-height: auto;
+  }
+
+  /* 左側面板（手機版在上方）：縮減內距 */
+  .cl-panel-left {
+    padding: 32px 24px;
+  }
+
+  /* Logo 縮小 */
+  .cl-logo {
+    width: 72px;
+    height: 72px;
+  }
+
+  /* 品牌中文名稱縮小 */
+  .cl-brand-name {
+    font-size: 28px;
+    letter-spacing: 6px;
+    margin-top: 16px;
+  }
+
+  /* 品牌英文名稱縮小 */
+  .cl-brand-en {
+    font-size: 15px;
+    letter-spacing: 2px;
+  }
+
+  /* 標語徽章縮小字體 */
+  .cl-tagline-badge {
+    font-size: 12px;
+    padding: 6px 16px;
+  }
+
+  /* 右側面板（手機版在下方）：縮減內距 */
+  .cl-panel-right {
+    padding: 28px 24px;
+  }
+
+  /* Lottie 動畫容器縮小 */
+  .cl-lottie-box {
+    width: 140px;
+    height: 140px;
+  }
+
+}

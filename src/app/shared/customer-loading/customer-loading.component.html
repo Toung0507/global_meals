@@ -1,0 +1,103 @@
+<!--
+  =====================================================
+  檔案名稱：customer-loading.component.html
+  位置說明：src/app/shared/customer-loading/customer-loading.component.html
+  用途說明：客戶端 Loading 過場動畫 — v4 分割卡片版本
+  版面說明：
+    全螢幕奶油白遮罩（#FFFAF3）
+    中央橫向分割卡片：
+      左側面板（橘色漸層）：圓形 Logo + 品牌中文名稱 + 英文名稱 + 標語徽章
+      右側面板（純白）    ：Lottie 食物動畫 + 進度條 + 跳動點點 + 狀態文字
+  RWD 說明：
+    桌機（>= 641px）：左右並排兩欄
+    手機（<= 640px） ：上下堆疊，左欄在上、右欄在下
+  Angular 知識點：
+    #overlay   → @ViewChild('overlay') 的模板參考變數，TS 用來取得此 DOM 元素
+    #card      → @ViewChild('card')    的模板參考變數，GSAP 入場動畫目標
+    #lottieBox → @ViewChild('lottieBox') 的參考變數，lottie-web 渲染目標容器
+  =====================================================
+-->
+
+
+<!-- 全螢幕奶油白遮罩，GSAP 從透明淡入 -->
+<div class="cl-overlay" #overlay>
+
+  <!-- 分割卡片主體，GSAP 從下方彈出 -->
+  <div class="cl-card" #card>
+
+
+    <!-- ════════════════════════════════════════════════
+       左側面板：橘色漸層背景，品牌視覺展示區
+       包含：圓形 Logo、中文品牌名稱、英文副標、標語徽章
+       ════════════════════════════════════════════════ -->
+    <div class="cl-panel-left">
+
+      <!-- 圓形品牌 Logo 圖片 -->
+      <img
+        class="cl-logo"
+        src="/assets/logo圓形.png"
+        alt="懶飽飽 Logo"
+      />
+
+      <!-- 品牌中文名稱：白色大字，寬字距，楷書字體 -->
+      <div class="cl-brand-name">懶 飽 飽</div>
+
+      <!-- 品牌英文名稱：金黃色，Fraunces 裝飾字體 -->
+      <div class="cl-brand-en">Global Meals</div>
+
+      <!-- 標語徽章：半透明白色圓角框，奶油白文字 -->
+      <div class="cl-tagline-badge">✦ 懶懶吃，飽飽樂 ✦</div>
+
+    </div>
+    <!-- 左側面板結束 -->
+
+
+    <!-- ════════════════════════════════════════════════
+       右側面板：純白背景，動畫與載入狀態顯示區
+       包含：Lottie 動畫、進度條、跳動點點、狀態文字
+       ════════════════════════════════════════════════ -->
+    <div class="cl-panel-right">
+
+      <!-- dotlottie-wc 官方 Web Component 播放器
+           src     → .lottie 動畫檔的 URL（由使用者提供）
+           autoplay → 自動開始播放
+           loop    → 循環播放
+           style   → 覆蓋預設尺寸，對應 SCSS 的 .cl-lottie-box 尺寸 -->
+      <dotlottie-wc
+        class="cl-lottie-box"
+        src="https://lottie.host/a5148c1d-e6a7-4f06-9866-9d20624e3d3c/0itu4P5QY9.lottie"
+        autoplay
+        loop
+      ></dotlottie-wc>
+
+      <!-- 進度條外框 -->
+      <div class="cl-progress-wrap">
+
+        <!-- 進度條填充條
+             CSS @keyframes progressFill 讓寬度從 0% 動畫到 95%（3.5 秒）
+             橘紅到金黃的漸層，呼應品牌色彩 -->
+        <div class="cl-progress-bar"></div>
+
+      </div>
+      <!-- 進度條結束 -->
+
+      <!-- 三個跳動點點 Loading 指示器
+           每個 .cl-dot 以 CSS nth-child 設定不同延遲，形成波浪跳動效果 -->
+      <div class="cl-dots">
+        <span class="cl-dot"></span>
+        <span class="cl-dot"></span>
+        <span class="cl-dot"></span>
+      </div>
+
+      <!-- 狀態說明文字 -->
+      <div class="cl-status-text">美食準備中，請稍候…</div>
+
+    </div>
+    <!-- 右側面板結束 -->
+
+
+  </div>
+  <!-- 分割卡片結束 -->
+
+</div>
+<!-- 全螢幕遮罩結束 -->

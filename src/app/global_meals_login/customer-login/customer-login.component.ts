@@ -3,24 +3,35 @@
  * 檔案名稱：customer-login.component.ts
  * 用途說明：客戶登入頁面的 Angular 元件
  * 功能說明：
- *   - 此頁面目前為純展示頁面，不含複雜邏輯
- *   - 頁面包含：會員登入、前往註冊、訪客快速點餐 三個入口
+ *   - 控制密碼欄位的顯示 / 隱藏狀態
+ *   - 執行客戶帳號登入驗證（暫時使用假資料）
+ *   - 登入成功後導向至會員中心（/customer-member）
+ *   - 顯示登入失敗的錯誤訊息
+ *   - 點擊「管理系統」時顯示 Loading 動畫再切換頁面
  * Angular 知識點：
- *   - standalone: true 表示這是獨立元件，不需要 NgModule
- *   - imports 陣列用來引入此元件需要用到的其他 Angular 功能
- *   - RouterLink 讓 HTML 裡的 [routerLink] 指令可以運作（頁面導覽用）
- *   - templateUrl 指向 HTML 檔案的相對路徑
- *   - styleUrls 陣列指向 SCSS 樣式檔的相對路徑（可以有多個）
+ *   - FormsModule  提供 [(ngModel)] 雙向資料綁定
+ *   - RouterLink   仍保留給「前往註冊」與「訪客點餐」按鈕用
+ *   - Router       用於含 Loading 的頁面切換
+ *   - AuthService  帳號驗證服務
+ *   - LoadingService  Loading 動畫狀態服務
  * =====================================================
  */
 
 import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
+
+import { AuthService } from '../../shared/auth.service';
+import { LoadingService } from '../../shared/loading.service';
 
 @Component({
-  selector: 'app-customer-login',   /* HTML 標籤名稱：<app-customer-login> */
-  standalone: true,                  /* 宣告這是獨立元件（Angular 14+ 特性） */
-  imports: [RouterLink],             /* 使用 RouterLink 指令來做頁面導覽 */
+  selector: 'app-customer-login',
+  standalone: true,
+  imports: [
+    FormsModule,    /* 讓 [(ngModel)] 可以運作 */
+    RouterLink      /* 保留給「前往註冊」與「訪客點餐」按鈕 */
+  ],
   templateUrl: './customer-login.component.html',
   styleUrls: ['./customer-login.component.scss']
 })
@@ -32,13 +43,82 @@ export class CustomerLoginComponent {
    */
   showPassword: boolean = false;
 
+  /* 帳號輸入框的值，對應 HTML 的 [(ngModel)]="account" */
+  account: string = '';
+
+  /* 密碼輸入框的值，對應 HTML 的 [(ngModel)]="password" */
+  password: string = '';
+
+  /* 是否顯示登入失敗的錯誤訊息 */
+  loginError: boolean = false;
+
+  /*
+   * constructor 建構函式
+   * 注入需要的服務：
+   *   router         → 頁面導覽
+   *   authService    → 帳號驗證
+   *   loadingService → Loading 動畫
+   */
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+    private loadingService: LoadingService
+  ) {}
+
   /*
    * 切換密碼顯示 / 隱藏狀態
-   * true  → input type="text"（明文顯示）
-   * false → input type="password"（遮罩顯示）
    */
   togglePassword(): void {
     this.showPassword = !this.showPassword;
+  }
+
+  /*
+   * 執行登入驗證
+   * 呼叫 AuthService.login() 驗證帳號密碼
+   * 成功 → 播放 Loading 動畫 → 導向 /customer-member
+   * 失敗 → 顯示錯誤訊息
+   */
+  onLogin(): void {
+
+    /* 清除舊的錯誤訊息 */
+    this.loginError = false;
+
+    /* 呼叫 AuthService 驗證，回傳 true = 成功 */
+    const success = this.authService.login(
+      this.account.trim(),
+      this.password
+    );
+
+    if (success) {
+
+      /* 登入成功：顯示客戶端 Loading，再導向會員中心 */
+      this.loadingService.showCustomerLoading();
+
+      setTimeout(() => {
+        this.router.navigate(['/customer-member']).then(() => {
+          this.loadingService.hide();
+        });
+      }, 1500);
+
+    } else {
+
+      /* 登入失敗：顯示錯誤訊息 */
+      this.loginError = true;
+
+    }
+
+  }
+
+  /*
+   * 切換到管理系統（含 Loading 動畫）
+   */
+  goToStaff(): void {
+    this.loadingService.showStaffLoading();
+    setTimeout(() => {
+      this.router.navigate(['/staff-login']).then(() => {
+        this.loadingService.hide();
+      });
+    }, 1500);
   }
 
 }

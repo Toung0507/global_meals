@@ -16,7 +16,8 @@
    nav-customer 沒有 [routerLink] 表示這是當前頁面，點了不跳轉
    =================================================== -->
 <nav class="mode-nav">
-  <a class="nav-staff" [routerLink]="['/staff-login']">⚙ 管理系統</a>
+  <!-- (click)="goToStaff()" 觸發 TypeScript 的方法，先顯示 Loading 再切換頁面 -->
+  <a class="nav-staff" (click)="goToStaff()">⚙ 管理系統</a>
   <a class="nav-customer">🍜 客戶入口</a>
 </nav>
 
@@ -89,10 +90,18 @@
         <p>登入享有個人化推薦、集點與專屬優惠</p>
       </div>
 
-      <!-- 手機號碼 / 電子郵件輸入欄位 -->
+      <!-- 手機號碼 / 電子郵件輸入欄位
+           [(ngModel)]="account"  雙向綁定：輸入框的值同步到 TypeScript 的 account 屬性
+           name="account"         使用 ngModel 必須加 name 屬性 -->
       <div class="c-field">
         <label>手機號碼 / 電子郵件</label>
-        <input type="text" placeholder="請輸入手機或電子郵件" autocomplete="username" />
+        <input
+          type="text"
+          name="account"
+          [(ngModel)]="account"
+          placeholder="請輸入手機或電子郵件"
+          autocomplete="username"
+        />
       </div>
 
       <!-- 密碼輸入欄位（含顯示 / 隱藏眼睛切換按鈕） -->
@@ -104,6 +113,8 @@
         <div class="c-password-wrap">
           <input
             [type]="showPassword ? 'text' : 'password'"
+            name="password"
+            [(ngModel)]="password"
             placeholder="請輸入密碼"
             autocomplete="current-password"
           />
@@ -146,11 +157,26 @@
 
       </div>
 
+      <!-- 登入失敗錯誤訊息（loginError = true 時才顯示） -->
+      @if (loginError) {
+        <div class="c-error-msg">
+          ✗ 帳號或密碼錯誤，請再試一次
+        </div>
+      }
+
+      <!-- 測試帳號提示區塊（⚠ 未來串接後端後移除） -->
+      <div class="c-test-hint">
+        <span class="c-test-label">⚠ 測試帳號</span>
+        <span>信箱：test&#64;lazybao.com</span>
+        <span>密碼：test1234</span>
+      </div>
+
       <!-- 登入按鈕與註冊按鈕群組 -->
       <div class="c-btn-group">
 
-        <!-- 主要操作：會員登入 -->
-        <button class="c-login-btn">
+        <!-- 主要操作：會員登入
+             (click)="onLogin()" 點擊後執行 TypeScript 的登入驗證方法 -->
+        <button class="c-login-btn" (click)="onLogin()">
           <span>🔑</span> 會員登入
         </button>
 

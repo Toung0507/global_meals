@@ -46,13 +46,20 @@ src/
 │   │   ├── customer-login/       # 客戶入口登入頁面
 │   │   ├── customer-register/    # 客戶註冊頁面
 │   │   └── customer-guest/       # 訪客快速點餐入口
-│   ├── app.component.*           # 根元件
+│   ├── customer-member/          # 客戶會員中心（個人資料 + 訂單紀錄）
+│   ├── shared/
+│   │   ├── auth.service.ts       # 帳號驗證服務（暫時 Mock）
+│   │   ├── loading.service.ts    # 全域 Loading 狀態服務
+│   │   ├── staff-loading/        # 管理端 Loading 動畫元件（深藍金）
+│   │   └── customer-loading/     # 客戶端 Loading 動畫元件（暖橘奶油 v4）
+│   ├── app.component.*           # 根元件（含兩組 Loading 遮罩）
 │   └── app.routes.ts             # 路由設定
-├── index.html                    # 入口 HTML（含 Google Fonts 引入）
+├── index.html                    # 入口 HTML（含字體 + dotlottie-wc CDN）
 └── styles.scss                   # 全域樣式
 public/
 └── assets/
-    └── Logo.png                  # 品牌 Logo
+    ├── Logo.png                  # 品牌 Logo（方形）
+    └── logo圓形.png              # 品牌 Logo（圓形，Loading 頁使用）
 ```
 
 ---
@@ -66,6 +73,7 @@ public/
 | `/customer-login` | 客戶入口登入 |
 | `/customer-register` | 客戶註冊 |
 | `/customer-guest` | 訪客快速點餐（無需帳號） |
+| `/customer-member` | 客戶會員中心（需登入） |
 
 ---
 
@@ -91,11 +99,12 @@ git push origin dev-xxx
 - [x] 客戶登入頁面
 - [x] 客戶註冊頁面
 - [x] 訪客快速點餐入口
-- [ ] 頁面跳轉動畫
+- [x] 客戶會員中心（個人資料 + 訂單紀錄）
+- [x] 頁面切換 Loading 過場動畫（管理端深藍金 / 客戶端暖橘奶油）
 - [ ] 客戶主頁面（商品列表含購物車）
 - [ ] 點餐流程頁面
 - [ ] 訂單管理後台
 
 ---
 
-> 文件最後更新：2026-03-26
+> 文件最後更新：2026-03-27

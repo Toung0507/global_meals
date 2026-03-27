@@ -738,3 +738,38 @@
     grid-column: 1 / -1;
   }
 }
+
+
+/* ── 登入失敗錯誤訊息 ─────────────────────────────── */
+.c-error-msg {
+  font-size: 13px;
+  color: #C0392B;
+  background-color: rgba(192, 57, 43, 0.08);
+  border: 1px solid rgba(192, 57, 43, 0.25);
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-family: 'Noto Sans TC', sans-serif;
+}
+
+
+/* ── 測試帳號提示區塊（⚠ 未來串接後端後移除）─────── */
+.c-test-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: #A84210;
+  background-color: rgba(240, 165, 0, 0.08);
+  border: 1px dashed rgba(240, 165, 0, 0.5);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-family: 'DM Mono', monospace;
+}
+
+.c-test-label {
+  font-weight: 700;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 11px;
+  color: #6A4830;
+  margin-bottom: 2px;
+}
