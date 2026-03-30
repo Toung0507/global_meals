@@ -12,7 +12,19 @@
       "Bash(npx tsc:*)",
       "Bash(npm run:*)",
       "Bash(npm install:*)",
-      "Bash(npx ng:*)"
+      "Bash(npx ng:*)",
+      "Bash(find c:UsersjokerOneDrive桌面團專global_meals -iname *loading* -o -iname *logo*)",
+      "Bash(cp \"/c/Users/joker/OneDrive/桌面/團專/Scan to Order.lottie\" \"/c/Users/joker/OneDrive/桌面/團專/global_meals/public/assets/scan-to-order.lottie\")",
+      "Bash(cp \"/c/Users/joker/OneDrive/桌面/團專/Scan to Order.json\" \"/c/Users/joker/OneDrive/桌面/團專/global_meals/public/assets/scan-to-order.json\")",
+      "Bash(powershell -Command \"ls ''C:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\團專\\\\'' | Where-Object { $_.Name -like ''*Scan*'' -or $_.Name -like ''*.lottie'' -or $_.Name -like ''*.json'' }\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\團專\\\\'' -Recurse -Include ''*.lottie'',''*.json'' | Select-Object FullName | Format-List\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\團專\\\\'' | Format-List Name\")",
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\團專\\\\global_meals\\\\'' -Filter ''*Scan*'' | Format-List FullName\")",
+      "Bash(powershell -Command \"Copy-Item ''C:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\團專\\\\global_meals\\\\Scan to Order.lottie'' ''C:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\團專\\\\global_meals\\\\public\\\\assets\\\\scan-to-order.lottie''; Copy-Item ''C:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\團專\\\\global_meals\\\\Scan to Order.json'' ''C:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\團專\\\\global_meals\\\\public\\\\assets\\\\scan-to-order.json''; Write-Host ''done''\")",
+      "Bash(powershell -Command \"Test-Path ''C:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\團專\\\\global_meals\\\\public\\\\assets\\\\scan-to-order.json''; Test-Path ''C:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\團專\\\\global_meals\\\\public\\\\assets\\\\scan-to-order.lottie''\")",
+      "Bash(gh pr:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)"
     ]
   }
 }
