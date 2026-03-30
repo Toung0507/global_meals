@@ -21,6 +21,8 @@
 | TypeScript | 5.6.x |
 | SCSS | — |
 | Node.js | 建議 v22 LTS |
+| lottie-web | 5.13.x |
+| gsap | 3.x |
 
 ---
 
@@ -51,15 +53,17 @@ src/
 │   │   ├── auth.service.ts       # 帳號驗證服務（暫時 Mock）
 │   │   ├── loading.service.ts    # 全域 Loading 狀態服務
 │   │   ├── staff-loading/        # 管理端 Loading 動畫元件（深藍金）
-│   │   └── customer-loading/     # 客戶端 Loading 動畫元件（暖橘奶油 v4）
+│   │   └── customer-loading/     # 客戶端 Loading 動畫元件（v4 分割卡片）
 │   ├── app.component.*           # 根元件（含兩組 Loading 遮罩）
 │   └── app.routes.ts             # 路由設定
-├── index.html                    # 入口 HTML（含字體 + dotlottie-wc CDN）
+├── index.html                    # 入口 HTML（含 Google Fonts）
 └── styles.scss                   # 全域樣式
 public/
 └── assets/
     ├── Logo.png                  # 品牌 Logo（方形）
-    └── logo圓形.png              # 品牌 Logo（圓形，Loading 頁使用）
+    ├── logo圓形.png              # 品牌 Logo（圓形，Loading 左側面板使用）
+    ├── scan-to-order.json        # Lottie 動畫 JSON（lottie-web 使用）
+    └── scan-to-order.lottie      # Lottie 動畫壓縮檔（備用）
 ```
 
 ---
@@ -100,11 +104,11 @@ git push origin dev-xxx
 - [x] 客戶註冊頁面
 - [x] 訪客快速點餐入口
 - [x] 客戶會員中心（個人資料 + 訂單紀錄）
-- [x] 頁面切換 Loading 過場動畫（管理端深藍金 / 客戶端暖橘奶油）
+- [x] 頁面切換 Loading 過場動畫（管理端深藍金 / 客戶端暖橘奶油 v4）
 - [ ] 客戶主頁面（商品列表含購物車）
 - [ ] 點餐流程頁面
 - [ ] 訂單管理後台
 
 ---
 
-> 文件最後更新：2026-03-27
+> 文件最後更新：2026-03-30

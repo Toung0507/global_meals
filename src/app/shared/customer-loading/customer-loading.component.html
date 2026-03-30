@@ -2,95 +2,124 @@
   =====================================================
   檔案名稱：customer-loading.component.html
   位置說明：src/app/shared/customer-loading/customer-loading.component.html
-  用途說明：客戶端 Loading 過場動畫 — v4 分割卡片版本
+  用途說明：客戶端 Loading 過場動畫 — 完全對應 loading_v4.html 版面
   版面說明：
-    全螢幕奶油白遮罩（#FFFAF3）
-    中央橫向分割卡片：
-      左側面板（橘色漸層）：圓形 Logo + 品牌中文名稱 + 英文名稱 + 標語徽章
-      右側面板（純白）    ：Lottie 食物動畫 + 進度條 + 跳動點點 + 狀態文字
-  RWD 說明：
-    桌機（>= 641px）：左右並排兩欄
-    手機（<= 640px） ：上下堆疊，左欄在上、右欄在下
+    全螢幕奶油白遮罩（含雙橢圓輻射漸層）
+    食物粒子：固定定位，從畫面底部浮起（floatUp 動畫）
+    中央分割卡片（700px）：
+      左側面板（290px）：旋轉虛線軌道環 + 大圓形 Logo + 品牌文字區塊
+      右側面板（flex:1）：Lottie 動畫框 + 標籤 + 分隔線 + 百分比進度條 + 狀態列
   Angular 知識點：
-    #overlay   → @ViewChild('overlay') 的模板參考變數，TS 用來取得此 DOM 元素
-    #card      → @ViewChild('card')    的模板參考變數，GSAP 入場動畫目標
-    #lottieBox → @ViewChild('lottieBox') 的參考變數，lottie-web 渲染目標容器
+    #overlay   → GSAP 遮罩淡入
+    #card      → GSAP 卡片彈出
+    #lottieBox → lottie-web 渲染目標容器
+    #pctNum    → TypeScript 直接更新百分比文字
   =====================================================
 -->
 
 
-<!-- 全螢幕奶油白遮罩，GSAP 從透明淡入 -->
+<!-- 全螢幕遮罩（雙橢圓輻射漸層底色） -->
 <div class="cl-overlay" #overlay>
 
-  <!-- 分割卡片主體，GSAP 從下方彈出 -->
-  <div class="cl-card" #card>
+  <!-- ── 食物粒子（loading_v4.html JS 產生，此處靜態展開 12 個）──
+       position:fixed，z-index:0，在卡片（z-index:10）後方浮動
+       每個粒子設定不同 left / animation-delay / animation-duration / font-size
+  ── -->
+  <span class="food" style="left:5vw;  animation-delay:0s;   animation-duration:9s;  font-size:18px;">🍜</span>
+  <span class="food" style="left:13vw; animation-delay:0.6s; animation-duration:11s; font-size:22px;">🍛</span>
+  <span class="food" style="left:22vw; animation-delay:1.1s; animation-duration:8s;  font-size:16px;">🌮</span>
+  <span class="food" style="left:34vw; animation-delay:1.7s; animation-duration:10s; font-size:20px;">🍣</span>
+  <span class="food" style="left:46vw; animation-delay:2.2s; animation-duration:9s;  font-size:17px;">🥘</span>
+  <span class="food" style="left:55vw; animation-delay:2.8s; animation-duration:12s; font-size:21px;">🍱</span>
+  <span class="food" style="left:65vw; animation-delay:3.3s; animation-duration:8s;  font-size:15px;">🥟</span>
+  <span class="food" style="left:72vw; animation-delay:3.8s; animation-duration:11s; font-size:23px;">🍤</span>
+  <span class="food" style="left:80vw; animation-delay:4.3s; animation-duration:9s;  font-size:19px;">🧆</span>
+  <span class="food" style="left:87vw; animation-delay:4.9s; animation-duration:10s; font-size:16px;">🥗</span>
+  <span class="food" style="left:93vw; animation-delay:5.2s; animation-duration:8s;  font-size:22px;">🍝</span>
+  <span class="food" style="left:18vw; animation-delay:5.5s; animation-duration:11s; font-size:17px;">🍲</span>
 
 
-    <!-- ════════════════════════════════════════════════
-       左側面板：橘色漸層背景，品牌視覺展示區
-       包含：圓形 Logo、中文品牌名稱、英文副標、標語徽章
-       ════════════════════════════════════════════════ -->
-    <div class="cl-panel-left">
+  <!-- 分割卡片主體 -->
+  <div class="card" #card>
 
-      <!-- 圓形品牌 Logo 圖片 -->
+
+    <!-- ════════════════════════════════════════════
+       左側面板：橘色四段漸層，品牌視覺展示
+       ════════════════════════════════════════════ -->
+    <div class="panel-left">
+
+      <!-- 旋轉虛線軌道環（orbit-1 順轉 24s，orbit-2 逆轉 18s） -->
+      <div class="orbit orbit-1"></div>
+      <div class="orbit orbit-2"></div>
+
+      <!-- 圓形 Logo（drop-shadow 濾鏡，無白色圓框，logoFloat 上下飄浮） -->
       <img
-        class="cl-logo"
-        src="/assets/logo圓形.png"
+        class="logo-img"
+        src="assets/logo圓形.png"
         alt="懶飽飽 Logo"
       />
 
-      <!-- 品牌中文名稱：白色大字，寬字距，楷書字體 -->
-      <div class="cl-brand-name">懶 飽 飽</div>
-
-      <!-- 品牌英文名稱：金黃色，Fraunces 裝飾字體 -->
-      <div class="cl-brand-en">Global Meals</div>
-
-      <!-- 標語徽章：半透明白色圓角框，奶油白文字 -->
-      <div class="cl-tagline-badge">✦ 懶懶吃，飽飽樂 ✦</div>
+      <!-- 品牌文字區塊 -->
+      <div class="left-text">
+        <!-- 金黃色楷書中文名稱 -->
+        <div class="left-brand">懶 飽 飽</div>
+        <!-- 白色半透明斜體英文副標 -->
+        <div class="left-en">Global Meals</div>
+        <!-- 金色邊框標語徽章（badgeGlow 脈動） -->
+        <div class="left-badge">✦ 懶懶吃，飽飽樂 ✦</div>
+      </div>
 
     </div>
     <!-- 左側面板結束 -->
 
 
-    <!-- ════════════════════════════════════════════════
-       右側面板：純白背景，動畫與載入狀態顯示區
-       包含：Lottie 動畫、進度條、跳動點點、狀態文字
-       ════════════════════════════════════════════════ -->
-    <div class="cl-panel-right">
+    <!-- ════════════════════════════════════════════
+       右側面板：純白背景，動畫與載入狀態
+       ════════════════════════════════════════════ -->
+    <div class="panel-right">
 
-      <!-- dotlottie-wc 官方 Web Component 播放器
-           src     → .lottie 動畫檔的 URL（由使用者提供）
-           autoplay → 自動開始播放
-           loop    → 循環播放
-           style   → 覆蓋預設尺寸，對應 SCSS 的 .cl-lottie-box 尺寸 -->
-      <dotlottie-wc
-        class="cl-lottie-box"
-        src="/assets/lottie/scan-to-order.lottie"
-        autoplay
-        loop
-      ></dotlottie-wc>
-
-      <!-- 進度條外框 -->
-      <div class="cl-progress-wrap">
-
-        <!-- 進度條填充條
-             CSS @keyframes progressFill 讓寬度從 0% 動畫到 95%（3.5 秒）
-             橘紅到金黃的漸層，呼應品牌色彩 -->
-        <div class="cl-progress-bar"></div>
-
-      </div>
-      <!-- 進度條結束 -->
-
-      <!-- 三個跳動點點 Loading 指示器
-           每個 .cl-dot 以 CSS nth-child 設定不同延遲，形成波浪跳動效果 -->
-      <div class="cl-dots">
-        <span class="cl-dot"></span>
-        <span class="cl-dot"></span>
-        <span class="cl-dot"></span>
+      <!-- Lottie 動畫區塊
+           #lottieBox → TypeScript 用 lottie-web 渲染 scan-to-order.json
+           lottie-label → "Scan to Order" 標籤文字，兩側各有漸層橫線 -->
+      <div class="lottie-wrap">
+        <div class="lottie-box" #lottieBox></div>
+        <div class="lottie-label">Scan to Order</div>
       </div>
 
-      <!-- 狀態說明文字 -->
-      <div class="cl-status-text">美食準備中，請稍候…</div>
+      <!-- 水平分隔線（左右兩端透明漸出） -->
+      <div class="h-div"></div>
+
+      <!-- 進度條區塊 -->
+      <div class="progress-section">
+
+        <!-- 百分比列：左側「LOADING」文字 + 右側跳動數字 -->
+        <div class="pct-row">
+          <span class="pct-label">LOADING</span>
+          <!-- #pctNum → TypeScript requestAnimationFrame 更新文字 -->
+          <span class="pct-num" #pctNum>0%</span>
+        </div>
+
+        <!-- 進度條軌道
+             .fill → CSS fillAnim 動畫填充
+             .shimmer → 白色光帶從左到右掃過 -->
+        <div class="track">
+          <div class="fill"></div>
+          <div class="shimmer"></div>
+        </div>
+
+      </div>
+      <!-- 進度條區塊結束 -->
+
+
+      <!-- 狀態列：三個顏色點（dotPop 放大脈動）+ 雙語等待文字 -->
+      <div class="status-row">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <!-- blink 動畫讓文字透明度交替 -->
+        <span class="wait-text">請稍候 · PLEASE WAIT</span>
+      </div>
+
 
     </div>
     <!-- 右側面板結束 -->
