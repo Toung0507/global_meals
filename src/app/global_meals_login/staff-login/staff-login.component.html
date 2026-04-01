@@ -105,8 +105,11 @@
           <span class="dot"></span>
           帳號 (Email)
         </label>
+        <!-- [(ngModel)] 雙向綁定到 TypeScript 的 email 屬性 -->
         <input
           type="email"
+          [(ngModel)]="email"
+          name="email"
           placeholder="請輸入登入電子郵件"
           autocomplete="email"
         />
@@ -119,12 +122,13 @@
           安全密碼
         </label>
 
-        <!-- s-password-wrap：相對定位容器，讓眼睛按鈕可以絕對定位在輸入框右側
-             [type]       依 showPassword 動態切換 text（明文）/ password（遮罩）
-             (click)      呼叫 TypeScript 裡的 togglePassword() 切換狀態 -->
+        <!-- s-password-wrap：相對定位容器，讓眼睛按鈕可以絕對定位在輸入框右側 -->
         <div class="s-password-wrap">
+          <!-- [(ngModel)] 雙向綁定到 TypeScript 的 password 屬性 -->
           <input
             [type]="showPassword ? 'text' : 'password'"
+            [(ngModel)]="password"
+            name="password"
             placeholder="請輸入登入密碼"
             autocomplete="current-password"
           />
@@ -169,8 +173,13 @@
 
       </div>
 
-      <!-- 登入按鈕 -->
-      <button class="s-submit">
+      <!-- 錯誤訊息（loginError 不為 null 時顯示） -->
+      @if (errorMsg) {
+        <p class="s-error-msg">{{ errorMsg }}</p>
+      }
+
+      <!-- 登入按鈕 — (click) 呼叫 submitLogin() 驗證並導向後台 -->
+      <button class="s-submit" (click)="submitLogin()">
         進入管理後台 <span class="arrow">→</span>
       </button>
 

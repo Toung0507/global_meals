@@ -404,6 +404,22 @@
   color: #C8A888;
 }
 
+/* 錯誤狀態：邊框變紅 */
+.c-field--error input {
+  border-color: #D95C1A;
+  box-shadow: 0 0 0 3px rgba(217, 92, 26, 0.15);
+}
+
+/* 錯誤訊息文字 */
+.c-field-error-msg {
+  display: block;
+  margin-top: 6px;
+  font-size: clamp(11px, 1.4vh, 13px);
+  color: #D95C1A;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
 
 /* =====================================================
    進入點餐按鈕

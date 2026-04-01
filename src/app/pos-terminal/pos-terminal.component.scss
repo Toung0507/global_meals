@@ -1,0 +1,422 @@
+/*
+ * =====================================================
+ * 檔案名稱：pos-terminal.component.scss
+ * 用途說明：分店長 / 員工 POS 終端機的所有樣式
+ * 佈局說明：全螢幕（100dvh），禁止頁面捲動
+ * 色彩說明：
+ *   深底色      #0d1117
+ *   頂欄/側欄   #111927
+ *   卡片背景    #1c2130
+ *   表格底色    #161b22
+ *   金色主題    #c49756 / #f0c68c
+ *   分店長靛藍  #818cf8
+ *   員工藍色    #4f8ef7
+ * =====================================================
+ */
+
+
+/* ── :host 宿主元素：全螢幕，禁止頁面捲動 ────────── */
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+    background-color: #0d1117;
+    color: #e2e8f8;
+    font-family: 'Noto Sans TC', 'LXGW WenKai TC', sans-serif;
+    font-size: 0.875rem;
+}
+
+
+/* ── POS 系統頂部欄 ───────────────────────────────── */
+.pos-topbar {
+    height: 54px;
+    background-color: #111927;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 12px;
+    flex-shrink: 0;
+    z-index: 200;
+}
+
+.pos-brand  { font-size: 1rem; font-weight: 700; color: #f0c68c; letter-spacing: 0.5px; }
+.pos-branch { font-size: 0.8rem; color: #8892b0; }
+
+/* 角色徽章：分店長（靛藍）/ 員工（藍色）*/
+.role-badge-bm { font-size: 0.7rem; font-family: 'IBM Plex Mono', monospace; color: #818cf8; background: rgba(129,140,248,0.12); border: 1px solid rgba(129,140,248,0.3); padding: 2px 10px; border-radius: 20px; }
+.role-badge-st { font-size: 0.7rem; font-family: 'IBM Plex Mono', monospace; color: #4f8ef7; background: rgba(79,142,247,0.12); border: 1px solid rgba(79,142,247,0.3); padding: 2px 10px; border-radius: 20px; }
+
+.pos-time { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; color: #c9d1d9; }
+
+
+/* ── 頁籤列 ──────────────────────────────────────── */
+.pos-tabs {
+    background-color: #111927;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    padding: 0 16px;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.pos-tab-btn {
+    padding: 9px 16px;
+    font-size: 0.8rem;
+    color: #8892b0;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.pos-tab-btn:hover { color: #c9d1d9; }
+
+/* 選中頁籤：分店長靛藍底線 */
+.pos-tab-btn.active { color: #818cf8; border-bottom-color: #818cf8; font-weight: 500; }
+
+/* 員工模式下的藍色底線 */
+.pos-tab-btn.staff-active { color: #4f8ef7; border-bottom-color: #4f8ef7; font-weight: 500; }
+
+
+/* ── 主 POS 區域（左：商品 / 右：購物車）────────── */
+.pos-main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* 左側：商品瀏覽區域 (65% 寬) */
+.pos-left {
+    flex: 0 0 65%;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(255,255,255,0.07);
+    overflow: hidden;
+}
+
+/* 分類篩選列 */
+.category-bar {
+    background-color: #111927;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    padding: 10px 16px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    flex-shrink: 0;
+    scrollbar-width: none;
+}
+.category-bar::-webkit-scrollbar { display: none; }
+
+.cat-btn {
+    padding: 6px 16px;
+    font-size: 0.8rem;
+    background-color: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 9999px;
+    color: #8892b0;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+.cat-btn:hover  { background-color: rgba(240,198,140,0.08); color: #c9d1d9; }
+.cat-btn.active { background-color: #c49756; border-color: #c49756; color: #0d1117; font-weight: 600; }
+
+/* 搜尋欄 */
+.product-search {
+    padding: 10px 16px;
+    background-color: #111927;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+}
+
+.product-search input {
+    width: 100%;
+    background-color: #1c2130;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: #e2e8f8;
+    padding: 7px 14px;
+    font-size: 0.85rem;
+    font-family: 'Noto Sans TC', sans-serif;
+    outline: none;
+}
+.product-search input::placeholder { color: #8892b0; }
+.product-search input:focus { border-color: #c49756; box-shadow: 0 0 0 3px rgba(196,151,86,0.12); }
+
+/* 商品網格（可捲動） */
+.product-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    align-content: start;
+}
+.product-grid::-webkit-scrollbar { width: 5px; }
+.product-grid::-webkit-scrollbar-track { background: transparent; }
+.product-grid::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* 商品卡片 */
+.prod-card {
+    background-color: #1c2130;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.12s, box-shadow 0.15s;
+}
+.prod-card:hover  { border-color: #c49756; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
+.prod-card:active { transform: scale(0.97); }
+
+.prod-img {
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.prod-body   { padding: 10px 12px; }
+.prod-name   { font-size: 0.85rem; font-weight: 600; color: #e2e8f8; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prod-price  { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; color: #f0c68c; font-weight: 700; }
+.prod-stock  { font-size: 0.7rem; color: #8892b0; }
+.prod-badge  { font-size: 0.65rem; padding: 2px 7px; border-radius: 20px; font-weight: 600; display: inline-block; margin-bottom: 4px; }
+.pb-hot  { background-color: rgba(217,92,26,0.2); color: #f97316; }
+.pb-new  { background-color: rgba(240,165,0,0.2); color: #f0c68c; }
+.pb-low  { background-color: rgba(251,191,36,0.2); color: #fbbf24; }
+
+
+/* ── 右側：購物車 / 訂單確認面板 (35% 寬) ──────── */
+.pos-right {
+    flex: 0 0 35%;
+    display: flex;
+    flex-direction: column;
+    background-color: #111927;
+}
+
+/* 訂單頭部 */
+.cart-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.cart-title    { font-size: 0.85rem; font-weight: 600; color: #e2e8f8; }
+.cart-order-id { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: #c49756; }
+
+/* 購物車品項列表（可捲動）*/
+.cart-items {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 18px;
+}
+.cart-items::-webkit-scrollbar { width: 4px; }
+.cart-items::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.1); border-radius: 2px; }
+
+/* 購物車品項列 */
+.cart-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.cart-row:last-child { border-bottom: none; }
+
+.cart-item-name { flex: 1; font-size: 0.85rem; color: #e2e8f8; min-width: 0; }
+.cart-item-eng  { display: block; font-size: 0.7rem; color: #8892b0; }
+
+/* 數量控制 */
+.qty-ctrl { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.qty-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background-color: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #c9d1d9;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.12s;
+}
+.qty-btn:hover { background-color: rgba(196,151,86,0.2); color: #f0c68c; border-color: rgba(196,151,86,0.3); }
+.qty-num { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; color: #e2e8f8; min-width: 18px; text-align: center; }
+
+.cart-item-price { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; color: #f0c68c; font-weight: 700; min-width: 50px; text-align: right; flex-shrink: 0; }
+
+/* 空購物車提示 */
+.cart-empty { text-align: center; padding: 48px 0; color: #8892b0; }
+.cart-empty-icon { font-size: 2.5rem; display: block; margin-bottom: 8px; opacity: 0.4; }
+
+
+/* ── 小計 / 稅 / 折扣 / 合計區域 ─────────────────── */
+.cart-summary {
+    padding: 14px 18px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 7px;
+}
+
+.summary-label { font-size: 0.8rem; color: #8892b0; }
+.summary-val   { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #c9d1d9; }
+
+/* 合計列 */
+.summary-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.09);
+    margin-top: 8px;
+}
+
+.summary-total-label { font-size: 0.9rem; font-weight: 600; color: #e2e8f8; }
+.summary-total-val   { font-family: 'IBM Plex Mono', monospace; font-size: 1.3rem; font-weight: 700; color: #f0c68c; }
+
+/* 滿額促銷提示 */
+.promo-hint {
+    background-color: rgba(196,151,86,0.08);
+    border: 1px solid rgba(196,151,86,0.2);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 0.76rem;
+    color: #f0c68c;
+    margin-top: 10px;
+    text-align: center;
+}
+
+
+/* ── 付款區域 ─────────────────────────────────────── */
+.cart-payment {
+    padding: 12px 18px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+}
+
+.payment-label { font-size: 0.76rem; color: #8892b0; margin-bottom: 8px; }
+.payment-methods { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+
+.pay-btn {
+    flex: 1;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    text-align: center;
+    background-color: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #8892b0;
+    transition: background-color 0.12s, color 0.12s, border-color 0.12s;
+    user-select: none;
+}
+.pay-btn:hover { background-color: rgba(255,255,255,0.09); color: #c9d1d9; }
+
+/* 選中付款方式：金色邊框 */
+.pay-btn.active {
+    background-color: rgba(196,151,86,0.15);
+    color: #f0c68c;
+    border-color: rgba(196,151,86,0.4);
+    font-weight: 600;
+}
+
+/* 結帳大按鈕 */
+.checkout-btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #c49756 0%, #f0c68c 100%);
+    color: #0d1117;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+}
+.checkout-btn:hover  { opacity: 0.92; }
+.checkout-btn:active { transform: scale(0.98); }
+
+
+/* ── 分頁板塊（除 POS 外的其他頁籤）───────────────── */
+.page-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+.panel-title { font-size: 1.1rem; font-weight: 700; color: #f0c68c; margin-bottom: 4px; }
+.panel-sub   { font-size: 0.78rem; color: #8892b0; margin-bottom: 20px; }
+
+
+/* ── 通用卡片 + 表格（同 manager-dashboard）────────── */
+.content-card {
+    background-color: #1c2130;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.table-wrapper { background-color: #161b22; border-radius: 8px; overflow: hidden; }
+
+.tbl { color: #c9d1d9; font-size: 0.855rem; width: 100%; border-collapse: collapse; }
+.tbl thead th { background-color: #0f1318; color: #8892b0; font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.4px; padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: left; }
+.tbl td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+.tbl tbody tr:hover td { background-color: rgba(255,255,255,0.02); }
+
+/* 訂單看板卡片 */
+.order-board-card {
+    background-color: #161b22;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 14px;
+}
+
+.ob-num  { font-family: 'IBM Plex Mono', monospace; font-size: 1.2rem; font-weight: 700; color: #f0c68c; }
+.ob-item { font-size: 0.8rem; color: #c9d1d9; padding: 2px 0; }
+
+/* 狀態徽章 */
+.badge-ok   { background-color: rgba(62,207,142,0.15); color: #3ecf8e; border: 1px solid rgba(62,207,142,0.3); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+.badge-warn { background-color: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+.badge-err  { background-color: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+.badge-blue { background-color: rgba(129,140,248,0.15); color: #818cf8; border: 1px solid rgba(129,140,248,0.3); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+
+/* 按鈕 */
+.btn-ghost-gold  { background-color: rgba(196,151,86,0.12); color: #c49756; border: 1px solid rgba(196,151,86,0.28); font-size: 0.75rem; }
+.btn-ghost-gold:hover { background-color: rgba(196,151,86,0.22); color: #f0c68c; }
+.btn-ghost-red   { background-color: rgba(248,113,113,0.10); color: #f87171; border: 1px solid rgba(248,113,113,0.25); font-size: 0.75rem; }
+.btn-ghost-green { background-color: rgba(62,207,142,0.10); color: #3ecf8e; border: 1px solid rgba(62,207,142,0.25); font-size: 0.75rem; }
+
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+/* 報表數字卡 */
+.stat-card { background-color: #1c2130; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 18px 20px; }
+.stat-label { font-size: 0.75rem; color: #8892b0; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 7px; }
+.stat-val   { font-family: 'IBM Plex Mono', monospace; font-size: 1.65rem; font-weight: 700; color: #f0c68c; }
+.stat-sub   { font-size: 0.72rem; color: #8892b0; margin-top: 4px; }
+
+/* 活動列 */
+.promo-row {
+    background-color: #161b22;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-left: 4px solid #c49756;
+    border-radius: 0 10px 10px 0;
+    padding: 13px;
+    margin-bottom: 10px;
+}

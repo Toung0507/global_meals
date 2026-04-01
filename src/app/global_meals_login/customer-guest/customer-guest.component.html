@@ -80,18 +80,24 @@
       </div>
 
       <!-- 手機號碼輸入欄位（必填） -->
-      <div class="c-field">
+      <div class="c-field" [class.c-field--error]="phoneError">
         <label>手機號碼 <span class="c-required-mark">*</span></label>
         <input
           type="tel"
-          placeholder="請輸入手機號碼"
+          placeholder="請輸入手機號碼（至少 8 碼）"
           autocomplete="tel"
           maxlength="15"
+          [(ngModel)]="phone"
+          (ngModelChange)="clearError()"
+          (keyup.enter)="enterMenu()"
         />
+        @if (phoneError) {
+          <span class="c-field-error-msg">⚠ 請輸入正確的手機號碼（至少 8 碼）</span>
+        }
       </div>
 
       <!-- 進入點餐按鈕 -->
-      <button class="c-guest-submit-btn">
+      <button class="c-guest-submit-btn" (click)="enterMenu()">
         <span>🛒</span> 進入點餐
       </button>
 

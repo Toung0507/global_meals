@@ -5,101 +5,103 @@
  * 功能說明：
  *   - 控制「系統經理」與「現場收銀員」兩個角色分頁的切換
  *   - 控制密碼欄位的顯示 / 隱藏狀態
+ *   - 表單欄位雙向綁定（email / password）
+ *   - 呼叫 AuthService.staffLogin() 驗證帳號密碼
+ *   - 登入成功後依角色導向對應後台頁面：
+ *       boss           → /manager-dashboard
+ *       branch_manager → /pos-terminal
+ *       staff          → /pos-terminal
  *   - 點擊「客戶入口」時顯示 Loading 動畫再切換頁面
- * Angular 知識點：
- *   - standalone: true 表示這是獨立元件，不需要 NgModule
- *   - templateUrl 指向 HTML 檔案的相對路徑
- *   - styleUrls 陣列指向 SCSS 樣式檔的相對路徑
- *   - Router  Angular 內建的導覽服務，用 navigate() 切換頁面
- *             比 [routerLink] 更適合在切換前先執行 Loading 動畫
- *   - LoadingService  我們自己建立的服務，控制全域 Loading 遮罩
  * =====================================================
  */
 
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
-/* 我們自己建立的 Loading 服務，路徑從此檔案相對計算 */
 import { LoadingService } from '../../shared/loading.service';
+import { AuthService } from '../../shared/auth.service';
 
 @Component({
   selector: 'app-staff-login',
   standalone: true,
-  imports: [],                /* 頁面導覽改用 Router，不再需要 RouterLink */
+  imports: [FormsModule],
   templateUrl: './staff-login.component.html',
   styleUrls: ['./staff-login.component.scss']
 })
 export class StaffLoginComponent {
 
-  /* 目前選中的角色：預設為 'M'（系統經理） */
+  /* 目前選中的角色分頁：預設為 'M'（系統經理） */
   activeRole: string = 'M';
 
-  /*
-   * 密碼是否可見：預設為 false（隱藏）
-   * 對應 HTML：[type]="showPassword ? 'text' : 'password'"
-   */
+  /* 密碼是否明文顯示 */
   showPassword: boolean = false;
 
-  /*
-   * constructor 建構函式
-   * Angular 依賴注入（DI）自動傳入以下兩個物件：
-   *   router        → Angular 路由器，用來切換頁面（navigate）
-   *   loadingService → 我們的 Loading 狀態服務
-   * private 表示只在此元件內使用
-   */
+  /* 表單欄位 */
+  email: string = '';
+  password: string = '';
+
+  /* 錯誤訊息（null = 無錯誤，不顯示） */
+  errorMsg: string | null = null;
+
   constructor(
     private router: Router,
-    private loadingService: LoadingService
+    private loadingService: LoadingService,
+    public authService: AuthService
   ) {}
 
-  /*
-   * 切換角色分頁
-   * 參數 role：傳入 'M'（系統經理）或 'S'（現場收銀員）
-   */
+  /* 切換角色分頁 */
   setRole(role: string): void {
     this.activeRole = role;
+    this.errorMsg = null;
   }
 
-  /*
-   * 切換密碼顯示 / 隱藏狀態
-   * true  → input type="text"（明文顯示）
-   * false → input type="password"（遮罩顯示）
-   */
+  /* 切換密碼顯示 / 隱藏 */
   togglePassword(): void {
     this.showPassword = !this.showPassword;
   }
 
   /*
+   * 管理人員登入
+   * 1. 呼叫 AuthService.staffLogin() 驗證帳號
+   * 2. 登入成功 → 依 role 導向不同後台頁面
+   * 3. 登入失敗 → 顯示錯誤訊息
+   */
+  submitLogin(): void {
+    this.errorMsg = null;
+
+    if (!this.email.trim() || !this.password.trim()) {
+      this.errorMsg = '請輸入帳號與密碼';
+      return;
+    }
+
+    const user = this.authService.staffLogin(this.email.trim(), this.password.trim());
+
+    if (!user) {
+      this.errorMsg = '帳號或密碼錯誤，請確認後重試';
+      return;
+    }
+
+    /* 依角色導向對應頁面 */
+    if (user.role === 'boss') {
+      this.router.navigate(['/manager-dashboard']);
+    } else {
+      /* branch_manager / staff 都進 POS 終端機 */
+      this.router.navigate(['/pos-terminal']);
+    }
+  }
+
+  /*
    * 切換到客戶入口（含 Loading 動畫）
-   * 執行流程：
-   *   步驟 1：呼叫 loadingService 顯示橘紅色客戶端 Loading 遮罩
-   *   步驟 2：等待 1500ms，讓使用者看到完整的 Loading 動畫
-   *   步驟 3：呼叫 router.navigate() 切換到 /customer-login 頁面
-   *   步驟 4：navigate() 完成後（.then()）隱藏 Loading 遮罩
-   *
-   * 為什麼用 setTimeout？
-   *   Angular 的路由切換非常快（幾乎瞬間）
-   *   如果不等待，Loading 動畫還沒播完就消失了
-   *   1500ms 讓 GSAP 動畫有足夠時間展示
+   * 顯示橘紅色 Loading 遮罩 → 等 1500ms → 導覽至 /customer-login
    */
   goToCustomer(): void {
-
-    /* 步驟 1：顯示客戶端橘紅色 Loading */
     this.loadingService.showCustomerLoading();
-
-    /* 步驟 2 + 3：等待 1500ms 後才導覽 */
     setTimeout(() => {
-
-      /* 步驟 3：切換到客戶登入頁 */
       this.router.navigate(['/customer-login']).then(() => {
-
-        /* 步驟 4：頁面切換完成，隱藏 Loading */
         this.loadingService.hide();
-
       });
-
     }, 1500);
-
   }
 
 }

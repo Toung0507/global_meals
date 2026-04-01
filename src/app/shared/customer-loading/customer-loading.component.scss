@@ -497,7 +497,7 @@
   height: 100%;
   border-radius: 999px;
   background: linear-gradient(90deg, #F0A500, #D95C1A, #A84210);
-  /* 延長至 4.7s（原 3.2s + 1.5s），讓使用者有足夠時間看到完整動畫 */
+  /* 延長至 4.7s（與 TS 計時器同步），讓使用者有足夠時間看到完整動畫 */
   animation: fillAnim 4.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   box-shadow: 0 0 12px rgba(217, 92, 26, 0.4);
 }

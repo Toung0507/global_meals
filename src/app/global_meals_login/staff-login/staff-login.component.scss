@@ -602,3 +602,18 @@
         grid-column: 1 / -1;
     }
 }
+
+/* =====================================================
+   登入錯誤訊息
+   顯示帳號密碼錯誤的紅色提示文字，出現在輸入欄位下方
+   ===================================================== */
+.s-error-msg {
+    margin: -4px 0 12px;
+    padding: 10px 14px;
+    background: #FFF0F0;
+    border: 1px solid #FECACA;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #DC2626;
+    text-align: center;
+}

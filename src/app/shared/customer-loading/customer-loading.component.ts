@@ -8,10 +8,10 @@
  *   ② lottie-web：載入 assets/scan-to-order.json 並在 #lottieBox 渲染 SVG
  *   ③ requestAnimationFrame：百分比計數器，時間節點對應 loading_v4.html
  *        t=0ms    → 0%
- *        t=700ms  → 35%
- *        t=1600ms → 65%
- *        t=2500ms → 88%
- *        t=3200ms → 100%
+ *        t=1030ms → 35%
+ *        t=2350ms → 65%
+ *        t=3670ms → 88%
+ *        t=4700ms → 100%
  * Angular 知識點：
  *   AfterViewInit → DOM 渲染完成後才能操作真實 DOM
  *   @ViewChild    → 取得模板中 #overlay / #card / #lottieBox / #pctNum 元素
@@ -94,14 +94,14 @@ export class CustomerLoadingComponent implements AfterViewInit {
     /* ────────────────────────────────────────────────
      * ③ 百分比計數器（requestAnimationFrame 插值）
      *    對應 loading_v4.html 的 % counter 邏輯
+<<<<<<< HEAD
      *    時間節點：{t:0,v:0}→{t:700,v:35}→{t:1600,v:65}→{t:2500,v:88}→{t:3200,v:100}
      * ──────────────────────────────────────────────── */
 
     /*
-     * 時間-數值節點陣列（對應 loading_v4.html 的 kf，整體延長 1.5 秒）
-     * 原始節點（3.2s 版）按比例 ×(4700/3200) ≈ 1.47 縮放至 4.7s 版
-     *   0ms → 0%  |  700→1030ms → 35%  |  1600→2350ms → 65%
-     *   2500→3670ms → 88%  |  3200→4700ms → 100%
+     * 時間-數值節點陣列（對應 loading_v4.html 的 kf，整體 4.7s 版）
+     * 0ms → 0%  |  1030ms → 35%  |  2350ms → 65%
+     * 3670ms → 88%  |  4700ms → 100%
      */
     const kf: Array<{ t: number; v: number }> = [
       { t: 0,    v: 0   },
@@ -138,8 +138,7 @@ export class CustomerLoadingComponent implements AfterViewInit {
       /* 更新顯示文字（取整數，最大 100） */
       pctEl.textContent = Math.round(Math.min(v, 100)) + '%';
 
-      /* 尚未到達 3200ms 則繼續請求下一幀 */
-      /* 4700ms = 原 3200ms + 延長 1500ms */
+      /* 尚未到達 4700ms 則繼續請求下一幀 */
       if (elapsed < 4700) {
         requestAnimationFrame(tick);
       }

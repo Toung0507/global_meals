@@ -29,11 +29,12 @@ import { Injectable } from '@angular/core';
 ──────────────────────────────────────────────────── */
 export interface MockUser {
   id: number;
-  role: string;      /* 身分類型：'customer' | 'staff' | 'branch_manager' | 'boss' */
-  name: string;      /* 顯示名稱 */
-  phone: string;     /* 手機號碼 */
-  email: string;     /* 電子郵件 */
-  password: string;  /* ⚠ 暫時明文，未來串接後端需改為 hash 驗證 */
+  role: string;       /* 身分類型：'customer' | 'staff' | 'branch_manager' | 'boss' | 'guest' */
+  name: string;       /* 顯示名稱 */
+  phone: string;      /* 手機號碼 */
+  email: string;      /* 電子郵件 */
+  password: string;   /* ⚠ 暫時明文，未來串接後端需改為 hash 驗證 */
+  isGuest?: boolean;  /* 是否為訪客（無需帳號，只需手機號碼） */
 }
 
 
@@ -62,13 +63,37 @@ const MOCK_USERS: MockUser[] = [
     phone: '0912-345-678',
     email: 'test@lazybao.com',
     password: 'test1234'
-  }
+  },
   /*
-   * 未來在這裡新增更多測試帳號，例如：
-   * { id: 2, role: 'staff', name: '台北店員工', phone: '...', email: '...', password: '...' }
-   * { id: 3, role: 'branch_manager', name: '台北分店長', ... }
-   * { id: 4, role: 'boss', name: '總經理', ... }
+   * ── 管理系統測試帳號（未來串接後端後全部移除）──
+   *   老闆：admin@lazybao.com   / admin1234
+   *   分店長：manager@lazybao.com / mgr1234
+   *   員工：staff@lazybao.com  / staff1234
    */
+  {
+    id: 2,
+    role: 'boss',
+    name: '林老闆',
+    phone: '0900-000-001',
+    email: 'admin@lazybao.com',
+    password: 'admin1234'
+  },
+  {
+    id: 3,
+    role: 'branch_manager',
+    name: '陳分店長',
+    phone: '0900-000-002',
+    email: 'manager@lazybao.com',
+    password: 'mgr1234'
+  },
+  {
+    id: 4,
+    role: 'staff',
+    name: '王小明',
+    phone: '0900-000-003',
+    email: 'staff@lazybao.com',
+    password: 'staff1234'
+  }
 ];
 
 
@@ -179,6 +204,48 @@ export class AuthService {
    * ─────────────────────────────────────────────────*/
   logout(): void {
     this.currentUser = null;
+  }
+
+
+  /*
+   * ── 管理人員登入（暫時版本）──────────────────────────
+   * 只允許 role 為 boss / branch_manager / staff 的帳號
+   * 回傳 MockUser | null：成功時回傳使用者物件，失敗時回傳 null
+   * 未來替換：HttpClient POST /api/auth/staff-login
+   * ─────────────────────────────────────────────────*/
+  staffLogin(email: string, password: string): MockUser | null {
+
+    /* Array.find() 尋找 email 與 password 都符合的管理帳號 */
+    const found = MOCK_USERS.find(function(user) {
+      return user.email === email
+          && user.password === password
+          && (user.role === 'boss' || user.role === 'branch_manager' || user.role === 'staff');
+    });
+
+    if (found) {
+      this.currentUser = found;
+      return found;
+    }
+
+    return null;
+  }
+
+
+  /*
+   * ── 訪客登入（暫時版本）────────────────────────────
+   * 不需要帳號密碼，只需手機號碼，以訪客身份進入點餐
+   * 未來替換：可在後端建立暫時 session 紀錄訪客行為
+   * ─────────────────────────────────────────────────*/
+  loginAsGuest(phone: string): void {
+    this.currentUser = {
+      id: 0,
+      role: 'guest',
+      name: '訪客',
+      phone: phone,
+      email: '',
+      password: '',
+      isGuest: true
+    };
   }
 
 

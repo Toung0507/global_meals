@@ -1,0 +1,3895 @@
+/*
+ * =====================================================
+ * 檔案名稱：customer-home.component.scss
+ * 位置說明：src/app/customer-home/customer-home.component.scss
+ * 設計方案：暖橘奶油 — 客戶端
+ * 字體：LXGW WenKai TC / Noto Sans TC / DM Mono / Fraunces
+ * =====================================================
+ */
+
+/* ── Google Fonts 引入 ──────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Noto+Sans+TC:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,400&display=swap');
+
+/* ── CSS 變數（暖橘奶油方案） ──────────────────────── */
+:host {
+    /* 主色系 */
+    --orange: #D95C1A;
+    --orange-deep: #A84210;
+    --orange-light: #F47A3A;
+    --gold: #F0A500;
+
+    /* 文字色 */
+    --text-dark: #3D2010;
+    --text-mid: #6A4830;
+    --text-muted: #A89080;
+
+    /* 背景色 */
+    --bg-cream: #FFFAF3;
+    --bg-card: #FFFFFF;
+    --border-warm: #F0D8B8;
+    --border-focus: #D95C1A;
+
+    /* 語意色 */
+    --green: #2E7D32;
+    --green-bg: rgba(46, 125, 50, 0.08);
+    --orange-hover: rgba(217, 92, 26, 0.08);
+    --orange-badge: rgba(217, 92, 26, 0.12);
+
+    /* 字體 */
+    --font-brand: 'LXGW WenKai TC', cursive;
+    --font-body: 'Noto Sans TC', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --font-serif: 'Fraunces', serif;
+
+    /* 陰影 */
+    --shadow-sm: 0 2px 8px rgba(61, 32, 16, 0.06);
+    --shadow-md: 0 4px 20px rgba(61, 32, 16, 0.10);
+    --shadow-lg: 0 8px 32px rgba(61, 32, 16, 0.14);
+
+    /* 導覽列 */
+    --topbar-h: 48px;
+    --bottomnav-h: 68px;
+}
+
+/* ── Reset ─────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* ══════════════════════════════════════════════════════
+   SHELL 主框架 (Responsive)
+══════════════════════════════════════════════════════ */
+.ch-shell {
+    font-family: var(--font-body);
+    background: var(--bg-cream);
+    color: var(--text-dark);
+    min-height: 100dvh;
+    display: flex;
+    position: relative;
+    overflow-x: hidden;
+
+    /* 移動端垂直排列 */
+    flex-direction: column;
+
+    @media (min-width: 1024px) {
+        /* 桌機端水平排列：側欄 + 內容區 */
+        flex-direction: row;
+    }
+}
+
+/* 內容包裝層 (桌機版專用) */
+.ch-content-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    position: relative;
+
+    @media (min-width: 1024px) {
+        margin-left: 280px;
+        /* 推開抽屜的固定寬度 */
+        max-width: calc(100vw - 280px);
+        /* 限制最大寬度，避免橫向滾動 */
+    }
+}
+
+/* ══════════════════════════════════════════════════════
+   左側固定選單 (Sidebar)
+══════════════════════════════════════════════════════ */
+.ch-sidebar {
+    display: none;
+    /* 預設手機隱藏 */
+
+    @media (min-width: 1024px) {
+        display: flex;
+        flex-direction: column;
+        /* Professional Full-Height Drawer Design */
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        height: 100vh;
+        background: #FFFFFF;
+        /* 純淨透亮的高質感白底，營造真實抽屜感 */
+        border-right: 1px solid rgba(240, 216, 184, 0.8);
+        z-index: 200;
+        padding: 32px 24px 24px; /* 增加左側內距從 20px -> 24px，避免裁切 */
+        margin-left: 0; /* 確保沒有負邊距 */
+        box-shadow: 4px 0 32px rgba(61, 32, 16, 0.04);
+        /* 微光右側陰影，提升抽屜高低差厚度 */
+
+        /* 專業排版：自動應對各種螢幕高度 (防截斷) */
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-color: rgba(217, 92, 26, 0.15) transparent;
+        /* Firefox */
+        scrollbar-width: thin;
+
+        &::-webkit-scrollbar {
+            width: 4px;
+            background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: rgba(217, 92, 26, 0.15);
+            border-radius: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb:hover {
+            background: rgba(217, 92, 26, 0.35);
+        }
+
+        /* 響應式高度：視窗變矮時自動減少頂底內距 */
+        @media (max-height: 768px) {
+            padding: 24px 20px 20px; /* 增加左側內距從 16px -> 20px，避免裁切 */
+        }
+    }
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 0 8px;
+    flex-shrink: 0;
+    /* 修正：防止 flex 壓縮，讓側邊欄可正常捲動 */
+
+    @media (max-height: 768px) {
+        margin-bottom: 16px;
+    }
+}
+
+.sidebar-logo-wrap {
+    position: relative;
+    width: 44px;
+    height: 44px;
+}
+
+.sidebar-logo {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(217, 92, 26, 0.2);
+    position: relative;
+    z-index: 2;
+}
+
+.sidebar-logo-ring {
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, var(--orange), var(--gold), var(--orange));
+    z-index: 1;
+    animation: spin 8s linear infinite;
+    opacity: 0.8;
+}
+
+@keyframes spin {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.brand-name {
+    display: block;
+    font-family: var(--font-brand);
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: var(--text-dark);
+}
+
+.brand-en {
+    display: block;
+    font-family: var(--font-serif);
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    margin-top: -2px;
+}
+
+/* 側邊欄用戶卡片群組 (含抽屜) */
+.sidebar-user-accordion-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 24px;
+    flex-shrink: 0;
+    /* 修正：抽屜展開時不壓縮，讓側邊欄捲動而非剪裁內容 */
+
+    @media (max-height: 768px) {
+        margin-bottom: 16px;
+    }
+}
+
+/* 側邊欄用戶基本卡片 (現在是按鈕) */
+.sidebar-user-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #FFF;
+    border: 1px solid var(--border-warm);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(61, 32, 16, 0.02);
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    outline: none;
+
+    /* 當展開狀態下，卡片樣式改變 */
+    &.expanded {
+        border-bottom-color: transparent;
+        border-radius: 16px 16px 0 0;
+        box-shadow: 0 4px 12px rgba(61, 32, 16, 0.04);
+    }
+
+    @media (max-height: 768px) {
+        padding: 10px 12px;
+    }
+
+    &:hover {
+        background: var(--bg-cream);
+        border-color: var(--orange-badge);
+    }
+}
+
+/* 展開箭頭 */
+.suc-chevron {
+    width: 20px;
+    height: 20px;
+    margin-left: auto;
+    color: var(--text-muted);
+    transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.sidebar-user-card.expanded .suc-chevron {
+    transform: rotate(180deg);
+    color: var(--orange);
+}
+
+/* ══════════════════════════════════════════════════════
+   個人資料抽屜 (Profile Drawer - Accordion CSS Grid 過渡)
+══════════════════════════════════════════════════════ */
+.profile-drawer-wrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 400ms cubic-bezier(0.165, 0.84, 0.44, 1);
+    background: var(--bg-cream);
+    border: 1px solid transparent;
+    /* 預設為透明，避免縮起時出現細殘留線 */
+    border-top: none;
+    border-radius: 0 0 16px 16px;
+    overflow: hidden;
+    /* 防止內容溢出 */
+
+    &.expanded {
+        grid-template-rows: 1fr;
+        border-bottom: 2px solid var(--orange);
+        box-shadow: 0 8px 24px rgba(61, 32, 16, 0.06);
+    }
+}
+
+.profile-drawer-inner {
+    min-height: 0;
+    /* 重點: Grid Row Transition 需要 min-height: 0 啟動 */
+    padding: 0; /* 完全移除左右內距使容器與外側同寬 */
+    /* 初始不要有上下 padding，這樣 0fr 才會完美貼合為 0 高度 */
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 300ms ease, transform 300ms ease, padding 300ms ease;
+    pointer-events: none;
+}
+
+.profile-drawer-wrapper.expanded .profile-drawer-inner {
+    padding: 16px 0;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* 抽屜內標題 */
+.pr-section-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-brand);
+    font-size: 14px;
+    color: var(--text-dark);
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding: 0 16px; /* 內建縮排以對齊上方文字 */
+
+    svg {
+        width: 16px;
+        height: 16px;
+        color: var(--orange);
+    }
+}
+
+/* 抽屜內部資料列 (模擬圖2) */
+.pr-grid {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: none;
+    border-top: 1px solid var(--border-warm);
+    border-bottom: 1px solid var(--border-warm);
+    border-radius: 0; /* 滿版不需要圓角 */
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.pr-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(240, 216, 184, 0.4);
+    font-size: 13px;
+    gap: 10px;
+
+    &:last-child {
+        border-bottom: none;
+    }
+}
+
+.pr-label {
+    color: var(--text-muted);
+    width: 100%;
+    text-align: center;
+    flex-shrink: 0;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+/* 輸入框組及其容器 */
+.pr-input-group {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.pr-value {
+    width: 100%;
+    color: var(--text-dark);
+    font-weight: 500;
+    font-family: var(--font-mono);
+    text-align: center;
+    padding: 8px 16px;
+    /* User desired black bordered pill shape box representation */
+    background: #FFF;
+    border: 1.5px solid var(--border-warm);
+    border-radius: 20px;
+    box-shadow: inset 0 2px 4px rgba(61, 32, 16, 0.02);
+}
+
+/* 編輯模式下的輸入框 */
+.pr-input {
+    width: 100%;
+    min-width: 0;
+    padding: 8px 16px;
+    background: #FFF;
+    border: 1.5px solid var(--border-warm);
+    border-radius: 20px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text-dark);
+    outline: none;
+    text-align: center;
+    transition: all 0.2s;
+
+    &:focus {
+        border-color: var(--orange);
+        box-shadow: 0 0 0 2px rgba(217, 92, 26, 0.1);
+    }
+}
+
+/* 顯示/隱藏密碼按鈕 */
+.pr-eye-btn {
+    background: transparent;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+
+    svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    &:hover {
+        color: var(--orange);
+        background: var(--bg-cream);
+    }
+}
+
+/* 密碼假點陣 */
+.pr-password {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    color: var(--orange-deep);
+    font-size: 16px;
+    padding-top: 4px;
+}
+
+/* 優惠券進度狀態 (模擬圖3區的提示邏輯) */
+.pr-database-status {
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px dashed var(--orange-light);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    margin-left: 14px;
+    margin-right: 14px;
+}
+
+.pr-status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.pr-status-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-mid);
+}
+
+.pr-status-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 100px;
+    background: #FEF3C7;
+    color: #B45309;
+    font-weight: 700;
+
+    &.ready {
+        background: #DCFCE7;
+        color: #166534;
+    }
+}
+
+.pr-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--bg-cream);
+    border-radius: 100px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    box-shadow: inset 0 1px 3px rgba(61, 32, 16, 0.06);
+}
+
+.pr-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--orange-light), var(--orange));
+    border-radius: 100px;
+    transition: width 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.pr-status-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+
+    .highlight {
+        color: var(--orange);
+        font-weight: bold;
+        font-size: 13px;
+        padding: 0 2px;
+    }
+}
+
+/* 修改資料主按鈕 */
+.pr-edit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: calc(100% - 28px);
+    margin: 0 auto;
+    padding: 10px;
+    background: var(--orange);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    &:hover {
+        background: var(--orange-deep);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(217, 92, 26, 0.25);
+    }
+
+    &:active {
+        transform: scale(0.97);
+    }
+}
+
+.suc-avatar {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--orange-light), var(--orange));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(217, 92, 26, 0.3);
+}
+
+.suc-avatar-letter {
+    color: #fff;
+    font-family: var(--font-brand);
+    font-weight: 700;
+    font-size: 18px;
+}
+
+.suc-status-dot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    background: #22C55E;
+    border: 2px solid var(--bg-cream);
+    border-radius: 50%;
+}
+
+.suc-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.suc-role-badge {
+    font-size: 10px;
+    font-weight: 700;
+    background: #FEF3C7;
+    color: #92400E;
+    padding: 2px 6px;
+    border-radius: 12px;
+    width: fit-content;
+
+    &.guest-badge {
+        background: #FFEDD5;
+        color: #9A3412;
+    }
+}
+
+.suc-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.sidebar-divider {
+    display: flex;
+    align-items: center;
+    margin: 8px 0 16px;
+    flex-shrink: 0;
+    /* 修正：防止 flex 壓縮 */
+
+    span {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted);
+        letter-spacing: 1px;
+        padding-left: 8px;
+    }
+
+    &::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--border-warm);
+        margin-left: 12px;
+    }
+}
+
+.sidebar-nav {
+    flex-grow: 1;
+    /* 保留撐開效果（讓 footer 保持在底部） */
+    flex-shrink: 0;
+    /* 修正：防止 flex 壓縮，讓側邊欄可捲動 */
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sidebar-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    border: none;
+    background: transparent;
+    border-radius: 14px;
+    cursor: pointer;
+    color: var(--text-mid);
+    transition: all 300ms cubic-bezier(0.2, 0, 0, 1);
+    text-align: left;
+    overflow: hidden;
+
+    /* 背景動畫層 */
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--bg-cream);
+        opacity: 0;
+        transform: scaleX(0.95);
+        transform-origin: left;
+        transition: all 300ms cubic-bezier(0.2, 0, 0, 1);
+        border-radius: 14px;
+        z-index: -1;
+    }
+
+    &:hover {
+        color: var(--orange);
+        transform: translateX(4px);
+
+        &::before {
+            opacity: 1;
+            transform: scaleX(1);
+        }
+
+        .sidebar-icon-wrap {
+            color: var(--orange);
+        }
+    }
+
+    &.active {
+        color: var(--orange-deep);
+        font-weight: 600;
+
+        &::before {
+            opacity: 1;
+            transform: scaleX(1);
+            background: var(--orange-badge);
+        }
+
+        .sidebar-icon-wrap {
+            color: var(--orange);
+            background: rgba(255, 255, 255, 0.5);
+        }
+    }
+}
+
+.sidebar-icon-wrap {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border-radius: 10px;
+    color: var(--text-muted);
+    transition: all 0.3s;
+
+    svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+.sidebar-badge {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    background: var(--orange);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #fff;
+}
+
+.sidebar-label {
+    font-size: 14px;
+    z-index: 1;
+}
+
+.sidebar-active-pip {
+    position: absolute;
+    right: 14px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--orange);
+    animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+    }
+
+    to {
+        transform: scale(1);
+    }
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-warm);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    /* 修正：防止 flex 壓縮 */
+}
+
+/* 填補空白的精美 Promo Card */
+.sidebar-promo-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, var(--bg-cream), rgba(255, 250, 243, 0.3));
+    border: 1px solid var(--border-warm);
+    border-radius: 16px;
+    box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.8);
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    cursor: pointer;
+
+    &:hover {
+        transform: translateY(-2px);
+        border-color: rgba(217, 92, 26, 0.3);
+        box-shadow: 0 6px 16px rgba(217, 92, 26, 0.06), inset 0 2px 6px rgba(255, 255, 255, 0.8);
+
+        .spc-icon {
+            background: var(--orange);
+            color: #fff;
+        }
+    }
+
+    &:active {
+        transform: scale(0.96);
+    }
+}
+
+.spc-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: var(--orange-badge);
+    color: var(--orange);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.3s;
+
+    svg {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2.2;
+    }
+}
+
+.spc-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.spc-title {
+    font-family: var(--font-brand);
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--text-dark);
+}
+
+.spc-subtitle {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.sidebar-footer-info {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.footer-tip {
+    font-family: var(--font-brand);
+    font-size: 12px;
+    color: var(--text-muted);
+    opacity: 0.8;
+}
+
+.sidebar-logout {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--border-warm);
+    background: #fff;
+    border-radius: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+
+    svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    &:hover {
+        border-color: rgba(217, 92, 26, 0.3);
+        color: var(--orange);
+        background: var(--orange-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(217, 92, 26, 0.06);
+    }
+
+    &:active {
+        transform: scale(0.96);
+    }
+}
+
+/* ══════════════════════════════════════════════════════
+   頂部品牌導覽列
+══════════════════════════════════════════════════════ */
+.ch-topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    height: var(--topbar-h);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(240, 216, 184, 0.5);
+    /* var(--border-warm) 透明版 */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    box-shadow: 0 2px 12px rgba(61, 32, 16, 0.04);
+
+    @media (min-width: 1024px) {
+        /* 桌機版：寬度避開側欄，增加高度與內距 */
+        position: sticky;
+        top: 0;
+        padding: 12px 40px;
+        height: 72px;
+        /* 變高以容納更精緻的按鈕 */
+        border-bottom: 1px solid rgba(240, 216, 184, 0.3);
+
+        .ch-topbar-brand {
+            display: none;
+        }
+
+        /* 桌機版 Logo 已在側欄 */
+    }
+}
+
+/* 頂部左側品牌 Logo（手機版使用） */
+.ch-topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ch-topbar-logo-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid var(--orange);
+    overflow: hidden;
+}
+
+.ch-topbar-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ch-topbar-brand-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.ch-topbar-name {
+    font-family: var(--font-brand);
+    font-size: 16px;
+    color: var(--text-dark);
+    line-height: 1.1;
+    letter-spacing: 2px;
+}
+
+.ch-topbar-en {
+    font-family: var(--font-serif);
+    font-size: 9px;
+    color: var(--gold);
+    line-height: 1;
+}
+
+
+/* ────────────────────────────────────────────────────────
+   中間的 Tabs 導覽列（只在桌機版顯示）
+   使用柔和的藥丸狀(Pill)形狀設計
+──────────────────────────────────────────────────────── */
+.ch-topbar-tabs {
+    display: none;
+
+    @media (min-width: 1024px) {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 250, 243, 0.8);
+        border: 1px solid var(--border-warm);
+        padding: 4px;
+        border-radius: 100px;
+        box-shadow: inset 0 2px 4px rgba(61, 32, 16, 0.02);
+    }
+}
+
+.ch-topbar-tab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 100px;
+    border: none;
+    background: transparent;
+    color: var(--text-mid);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    outline: none;
+
+    svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .tab-text {
+        font-family: var(--font-body);
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    &:hover {
+        color: var(--orange);
+        background: rgba(217, 92, 26, 0.04);
+    }
+
+    &.active {
+        background: #fff;
+        color: var(--text-dark);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+
+        svg {
+            color: var(--orange);
+            stroke-width: 2.2;
+        }
+
+        .tab-text {
+            font-weight: 600;
+        }
+    }
+}
+
+.tab-cart-dot {
+    background: var(--orange);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    padding: 2px 6px;
+    border-radius: 10px;
+    line-height: 1;
+}
+
+/* ────────────────────────────────────────────────────────
+   右方：身份、購物車、會員中心入口
+──────────────────────────────────────────────────────── */
+.ch-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* 身份標籤 */
+.ch-identity-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 6px 6px;
+    background: #fff;
+    border: 1px solid var(--border-warm);
+    border-radius: 30px;
+    transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+
+    &.clickable {
+        cursor: pointer;
+
+        &:hover {
+            border-color: rgba(217, 92, 26, 0.4);
+            background: var(--bg-cream);
+            box-shadow: 0 2px 6px rgba(217, 92, 26, 0.08);
+            transform: translateY(-1px);
+
+            .ch-identity-arrow {
+                transform: translateX(2px);
+                color: var(--orange);
+            }
+        }
+
+        &:active {
+            transform: scale(0.98);
+        }
+    }
+
+    /* 非點擊的訪客狀態，較低調 */
+    &:not(.clickable) {
+        background: var(--bg-cream);
+        border-color: transparent;
+    }
+
+    @media (max-width: 768px) {
+
+        /* 手機隱藏文字，只留 Badge 或頭像 */
+        .ch-identity-name {
+            display: none;
+        }
+
+        padding: 6px;
+    }
+}
+
+.ch-identity-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: #FEF3C7;
+    /* 會員預設金黃底 */
+    color: #92400E;
+
+    &.guest {
+        background: #FFEDD5;
+        /* 訪客淡橘底 */
+        color: #9A3412;
+    }
+}
+
+.ch-identity-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.ch-identity-arrow {
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    stroke-width: 2.5;
+}
+
+/* 購物車按鈕 (按鍵式) */
+.ch-cart-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, rgba(217, 92, 26, 0.08), rgba(217, 92, 26, 0.15));
+    border: 1px solid rgba(217, 92, 26, 0.2);
+    border-radius: 100px;
+    padding: 6px 12px 6px 10px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+
+    svg {
+        width: 20px;
+        height: 20px;
+        color: var(--orange-deep);
+    }
+
+    &:hover {
+        background: linear-gradient(135deg, rgba(217, 92, 26, 0.15), rgba(217, 92, 26, 0.25));
+        border-color: rgba(217, 92, 26, 0.4);
+        box-shadow: 0 4px 12px rgba(217, 92, 26, 0.15);
+        transform: translateY(-1px);
+
+        .ch-cart-arrow {
+            transform: translateX(2px);
+        }
+    }
+
+    &:active {
+        transform: scale(0.96);
+    }
+
+    @media (max-width: 480px) {
+        .ch-cart-info {
+            display: none;
+        }
+
+        padding: 8px;
+        gap: 0;
+
+        .ch-cart-arrow {
+            display: none;
+        }
+    }
+}
+
+.ch-cart-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.ch-cart-qty {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-mid);
+    line-height: 1.1;
+}
+
+.ch-cart-price {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--orange-deep);
+    line-height: 1.1;
+}
+
+.ch-cart-arrow {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--orange);
+    margin-left: -4px;
+    transition: transform 0.2s;
+}
+
+
+/* 頂部頭像 (僅用作入口視覺) */
+.ch-topbar-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #FF9A76, var(--orange));
+    color: #fff;
+    font-family: var(--font-brand);
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(217, 92, 26, 0.3);
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    outline: none;
+
+    /* Focus outline for accessibility */
+    &:focus-visible {
+        outline: 2px solid var(--orange);
+        outline-offset: 2px;
+    }
+
+    &:hover {
+        transform: scale(1.08) rotate(-5deg);
+        box-shadow: 0 4px 14px rgba(217, 92, 26, 0.4);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+
+    /* 訪客狀態下的頭像：不可點擊，低調色彩 */
+    &.guest-avatar {
+        background: #E5E7EB;
+        /* 灰色底 */
+        color: #6B7280;
+        cursor: default;
+        box-shadow: none;
+        pointer-events: none;
+        /* 防止點擊交互 */
+    }
+}
+
+
+/* ══════════════════════════════════════════════════════
+   主內容區
+══════════════════════════════════════════════════════ */
+.ch-main {
+    flex: 1;
+    margin-top: var(--topbar-h);
+    margin-bottom: var(--bottomnav-h);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+
+    @media (min-width: 1024px) {
+        margin-top: 0;
+        margin-bottom: 0;
+        padding: 0 40px 40px;
+    }
+}
+
+
+/* ══════════════════════════════════════════════════════
+   頁籤 1 ✨  品牌形象首頁
+══════════════════════════════════════════════════════ */
+.tab-home {
+    animation: fadeInUp 0.35s ease;
+}
+
+/* 英雄區塊 */
+.home-hero {
+    position: relative;
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    padding: 40px 20px 36px;
+}
+
+.home-hero-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #D95C1A 0%, #A84210 50%, #3D2010 100%);
+    z-index: 0;
+}
+
+.hero-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(50px);
+    opacity: 0.35;
+}
+
+.hero-orb-1 {
+    width: 200px;
+    height: 200px;
+    background: var(--gold);
+    top: -60px;
+    right: -40px;
+}
+
+.hero-orb-2 {
+    width: 160px;
+    height: 160px;
+    background: #F47A3A;
+    bottom: -50px;
+    left: 20%;
+}
+
+.hero-orb-3 {
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.2);
+    top: 30%;
+    right: 30%;
+}
+
+.home-hero-content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+}
+
+.hero-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #FFF5E6;
+    font-family: var(--font-brand);
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+}
+
+.hero-title {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 10px;
+}
+
+.hero-title-zh {
+    font-family: var(--font-brand);
+    font-size: clamp(28px, 8vw, 44px);
+    color: #FFFFFF;
+    letter-spacing: 8px;
+    line-height: 1.1;
+}
+
+.hero-title-en {
+    font-family: var(--font-serif);
+    font-size: clamp(14px, 4vw, 20px);
+    color: var(--gold);
+    letter-spacing: 3px;
+    font-style: italic;
+}
+
+.hero-subtitle {
+    font-size: 13px;
+    color: rgba(255, 245, 230, 0.8);
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #FFFFFF;
+    color: var(--orange);
+    border: none;
+    border-radius: 28px;
+    padding: 12px 24px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    &:active {
+        transform: scale(0.97);
+    }
+}
+
+/* 首頁 Section */
+.home-section {
+    padding: 24px 16px 0;
+}
+
+.home-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.section-tag {
+    background: var(--orange);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 2px 10px;
+    border-radius: 4px;
+}
+
+.section-title {
+    font-family: var(--font-brand);
+    font-size: 20px;
+    color: var(--text-dark);
+}
+
+/* 精選卡片格線 */
+.home-featured-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 1fr;
+
+    @media (min-width: 640px) {
+        grid-template-columns: 1fr 1fr;
+
+        .featured-card-lg {
+            grid-column: 1 / -1;
+        }
+    }
+}
+
+.featured-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.25s, box-shadow 0.25s;
+    border: 1px solid var(--border-warm);
+
+    &:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+}
+
+.featured-card-lg {
+    flex-direction: row;
+
+    .featured-img {
+        min-width: 130px;
+        height: 130px;
+    }
+
+    .featured-info {
+        padding: 16px;
+    }
+}
+
+.featured-img {
+    height: 160px;
+    background: linear-gradient(135deg, #E8C4A0, #D4A574);
+    position: relative;
+    overflow: hidden;
+
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='30' cy='30' r='20' fill='rgba(255,255,255,0.1)'/%3E%3C/svg%3E") center/cover;
+    }
+}
+
+.featured-img-beef {
+    background: linear-gradient(135deg, #C4884A, #8B5A2B);
+}
+
+.featured-img-curry {
+    background: linear-gradient(135deg, #D4A017, #A0720F);
+}
+
+.featured-img-pho {
+    background: linear-gradient(135deg, #7BAE7F, #3D7A42);
+}
+
+.featured-info {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.featured-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    width: fit-content;
+}
+
+.hot-tag {
+    background: rgba(217, 92, 26, 0.12);
+    color: var(--orange);
+}
+
+.new-tag {
+    background: rgba(240, 165, 0, 0.12);
+    color: #B87800;
+}
+
+.featured-name {
+    font-family: var(--font-brand);
+    font-size: 16px;
+    color: var(--text-dark);
+}
+
+.featured-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.featured-price {
+    font-size: 13px;
+    color: var(--text-mid);
+
+    strong {
+        font-family: var(--font-mono);
+        font-size: 18px;
+        color: var(--orange);
+    }
+}
+
+/* 促銷橫幅 */
+.home-promo-banner {
+    margin: 16px;
+    background: linear-gradient(135deg, var(--orange), var(--gold));
+    border-radius: 16px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(217, 92, 26, 0.3);
+    transition: transform 0.2s;
+
+    &:hover {
+        transform: scale(1.01);
+    }
+}
+
+.promo-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.promo-icon {
+    font-size: 28px;
+}
+
+.promo-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: #fff;
+
+    strong {
+        font-size: 15px;
+    }
+
+    span {
+        font-size: 12px;
+        opacity: 0.9;
+    }
+}
+
+.promo-arrow {
+    color: #fff;
+    font-size: 20px;
+    opacity: 0.8;
+}
+
+/* 快速分類格線 */
+.home-category-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+
+    @media (min-width: 400px) {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.cat-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-warm);
+    border-radius: 14px;
+    padding: 14px 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--text-mid);
+
+    &:hover {
+        border-color: var(--orange);
+        color: var(--orange);
+        background: var(--orange-hover);
+        transform: translateY(-2px);
+    }
+}
+
+.cat-emoji {
+    font-size: 24px;
+}
+
+
+/* ══════════════════════════════════════════════════════
+   頁籤 2 📱  菜單
+══════════════════════════════════════════════════════ */
+.tab-menu {
+    animation: fadeInUp 0.35s ease;
+}
+
+.menu-header {
+    position: sticky;
+    top: var(--topbar-h);
+    z-index: 50;
+    background: rgba(255, 250, 243, 0.95);
+    backdrop-filter: blur(12px);
+    padding: 12px 16px 0;
+    border-bottom: 1px solid var(--border-warm);
+}
+
+.menu-search-wrap {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.menu-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+}
+
+.menu-search-input {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-warm);
+    border-radius: 12px;
+    padding: 10px 16px 10px 38px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--text-dark);
+    outline: none;
+    transition: border-color 0.2s;
+
+    &::placeholder {
+        color: var(--text-muted);
+    }
+
+    &:focus {
+        border-color: var(--border-focus);
+    }
+}
+
+.menu-cat-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 0 0 12px;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+.menu-cat-btn {
+    flex-shrink: 0;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-warm);
+    border-radius: 9999px;
+    /* Capsule shape */
+    padding: 8px 18px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--text-mid);
+    cursor: pointer;
+    transition: background 200ms ease, border-color 200ms ease, color 200ms ease, transform 150ms ease;
+    white-space: nowrap;
+    will-change: transform;
+
+    &.active,
+    &:hover {
+        background: var(--orange);
+        border-color: var(--orange);
+        color: #fff;
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+}
+
+/*
+ * ══════════════════════════════════════════════════════════════════
+ * 滿額促銷橫幅（Promo Progress Banner v5 — 全新設計）
+ * 觸發時機：cartTotal() > 0 && cartTotal() < 300
+ *
+ * 版面結構：
+ *   .promo-wrap            → 動畫外層容器（translateY + opacity，無 overflow:hidden）
+ *   .promo-card            → 主卡片（左側色塊 + 右側三列內容，overflow:hidden 裁圓角）
+ *   .promo-card-left       → 橘紅漸層色塊（禮品圖示 + 限定標籤）
+ *   .promo-card-right      → 三列式資訊區（第一列/進度條/第三列）
+ *   .promo-card-track      → 進度條軌道（含填充條 + 終點金色圓圈）
+ *   .promo-card-fill       → 進度填充（shimmer 掃光子元素）
+ *
+ * 動畫原則：
+ *   外層 .promo-wrap 使用 translateY(-12px) + opacity 0→1 滑入
+ *   外層不加 overflow:hidden（避免裁切 box-shadow 與 border）
+ *   .promo-card 的 overflow:hidden 只用來裁切左色塊圓角，不影響卡片陰影
+ *
+ * 配色（字面值，禁用 CSS 變數）：
+ *   橘紅主色  ：#D95C1A     亮金黃    ：#F0A500
+ *   深橘      ：#A84210     奶油白    ：#FFFAF3
+ *   暖米邊框  ：#F0D8B8     中棕文字  ：#6A4830
+ *   淡棕輔助  ：#9E7A5A     白色      ：#FFFFFF
+ * ══════════════════════════════════════════════════════════════════
+ */
+
+/* ── 動畫外層容器 ──────────────────────────────────────────────
+   translateY(-12px) + opacity 0→1 滑入動畫
+   cubic-bezier(0.22, 1, 0.36, 1)：ease-out-quart，快入慢停
+   will-change: transform, opacity → 告知瀏覽器走 GPU 合成路徑
+   不加 overflow:hidden（避免裁切子卡片 box-shadow）
+   ────────────────────────────────────────────────────────────── */
+.promo-wrap {
+    /* 水平邊距設為 0：.menu-header 已有 padding: 0 16px，不需重複加邊距 */
+    margin: 10px 0 12px;
+    animation: promoReveal 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+    will-change: transform, opacity;
+}
+
+@keyframes promoReveal {
+    from {
+        opacity: 0;
+        transform: translateY(-12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── 主卡片：左色塊 + 右內容（水平分割佈局）────────────────────
+   overflow:hidden 裁切左側色塊超出圓角（不影響外層陰影）
+   border：暖米邊框統一視覺
+   box-shadow：暖橘陰影讓卡片輕微浮起
+   ────────────────────────────────────────────────────────────── */
+.promo-card {
+    display: flex;
+    align-items: stretch;
+    background: #FFFFFF;
+    border: 1.5px solid #F0D8B8;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow:
+        0 4px 20px rgba(217, 92, 26, 0.12),
+        0 1px 4px rgba(61, 32, 16, 0.06);
+}
+
+/* ── 左側橘紅漸層色塊 ──────────────────────────────────────────
+   寬 68px，橘黃 → 橘紅 → 深橘 垂直漸層（品牌主色調）
+   禮品 emoji 置中，下方附「限定」半透明小標籤
+   ────────────────────────────────────────────────────────────── */
+.promo-card-left {
+    width: 68px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #F5B830 0%, #D95C1A 55%, #A84210 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 16px 0;
+}
+
+/* 禮品 emoji（帶輕微投影增加立體感） */
+.promo-card-emoji {
+    font-size: 28px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.18));
+}
+
+/* 「限定」小標籤（白色半透明底，字母間距拉開增加精緻感） */
+.promo-card-tag {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.92);
+    letter-spacing: 1.5px;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 4px;
+    padding: 2px 5px;
+}
+
+/* ── 右側三列式資訊區 ──────────────────────────────────────────
+   flex column，三列：①標題膠囊+剩餘金額  ②進度條  ③計數器+獎勵
+   ────────────────────────────────────────────────────────────── */
+.promo-card-right {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 13px 14px;
+}
+
+/* ── 第一列：標題標籤 + 剩餘金額（左右分佈）──────────────────── */
+.promo-card-row-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+/* 標題膠囊（橘色系，呼應品牌主色） */
+.promo-card-title {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: #D95C1A;
+    background: rgba(217, 92, 26, 0.08);
+    border: 1px solid rgba(217, 92, 26, 0.15);
+    border-radius: 6px;
+    padding: 2px 8px;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+}
+
+/* 剩餘金額說明文字（淡棕色，不搶焦點） */
+.promo-card-remain {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 12px;
+    color: #9E7A5A;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* 剩餘金額強調數字（橘紅 DM Mono 等寬字體，附光暈） */
+.promo-card-amt {
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: 16px;
+    font-weight: 800;
+    color: #D95C1A;
+    text-shadow: 0 0 12px rgba(217, 92, 26, 0.22);
+}
+
+/* ── 第二列：進度條組合 ─────────────────────────────────────────
+   軌道高 12px（比舊版 8px 更清晰易讀）
+   overflow: visible（讓終點圓圈可超出軌道邊界，不被裁切）
+   ────────────────────────────────────────────────────────────── */
+.promo-card-track {
+    height: 12px;
+    background: #F5EAD8;
+    border-radius: 999px;
+    position: relative;
+    overflow: visible;
+}
+
+/* 進度填充：橘紅 → 金黃 → 亮黃 三段漸層，光暈強化視覺回饋 */
+.promo-card-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #D95C1A 0%, #F0A500 80%, #FFD060 100%);
+    border-radius: 999px;
+    position: relative;
+    overflow: hidden;
+    min-width: 12px;
+    transition: width 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+    box-shadow: 0 0 12px rgba(240, 165, 0, 0.45);
+}
+
+/* shimmer 掃光：白色光帶由左至右循環，增加動態質感 */
+.promo-fill-shimmer {
+    position: absolute;
+    top: 0;
+    left: -80%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.60) 50%,
+        transparent 100%
+    );
+    animation: promoShimmer 2s ease-in-out infinite;
+}
+
+@keyframes promoShimmer {
+    to { left: 130%; }
+}
+
+/* 終點金色圓圈（定位於軌道右端，超出軌道略微浮起） */
+.promo-track-goal {
+    position: absolute;
+    right: -7px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.promo-track-goal svg {
+    width: 14px;
+    height: 14px;
+    filter: drop-shadow(0 1px 3px rgba(240, 165, 0, 0.55));
+}
+
+/* ── 第三列：進度計數 + 獎勵標籤（左右分佈）────────────────────
+   計數器：等寬字體顯示「當前 / 300」
+   獎勵標籤：暖米底色圓角膠囊，標示贈品名稱
+   ────────────────────────────────────────────────────────────── */
+.promo-card-row-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+/* 進度計數（DM Mono 等寬字體，淡棕色不搶主視覺） */
+.promo-card-counter {
+    font-family: 'DM Mono', 'Courier New', monospace;
+    font-size: 11px;
+    color: #9E7A5A;
+}
+
+/* 計數分隔符「/」（更淡，視覺降噪） */
+.promo-card-sep {
+    color: #C4A882;
+    margin: 0 2px;
+}
+
+/* 獎勵說明膠囊（暖米漸層底色，圓角，標示贈品名稱） */
+.promo-card-reward {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 11px;
+    color: #6A4830;
+    background: linear-gradient(135deg, #FFF3E0 0%, #FDECD0 100%);
+    border: 1px solid #F0D8B8;
+    border-radius: 20px;
+    padding: 3px 10px;
+    white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ * 滿額達成狀態（cartTotal >= 300）
+ * 同 .promo-card 結構，使用綠色系配色傳達「成功達成」正向情緒
+ * 配色：亮綠 #4ADE80、草綠 #22C55E、深綠 #166534、淺綠底 #F0FDF4
+ * ══════════════════════════════════════════════════════════════════ */
+
+/* 達成卡片（左側綠色色塊 + 右側文字 + 打勾圖示） */
+.promo-unlocked-card {
+    display: flex;
+    align-items: stretch;
+    background: #F0FDF4;
+    border: 1.5px solid rgba(34, 197, 94, 0.30);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow:
+        0 4px 20px rgba(34, 197, 94, 0.12),
+        0 1px 4px rgba(21, 128, 61, 0.06);
+}
+
+/* 左側綠色色塊（亮綠 → 草綠 → 深綠漸層） */
+.promo-unlocked-left {
+    width: 68px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, #4ADE80 0%, #22C55E 50%, #16A34A 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 0;
+}
+
+/* 慶祝 emoji（帶投影增加立體感） */
+.promo-unlocked-emoji {
+    font-size: 28px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+}
+
+/* 右側文字資訊（標題 + 說明副標，垂直居中） */
+.promo-unlocked-right {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    padding: 13px 12px;
+}
+
+/* 成功標題（深綠色，字重 700） */
+.promo-unlocked-title {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #166534;
+}
+
+/* 說明副標（略淺的深綠色小字） */
+.promo-unlocked-sub {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 11px;
+    color: #15803D;
+}
+
+/* 右側打勾圓形圖示（pop 動畫進場） */
+.promo-unlocked-check-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    margin-right: 14px;
+    align-self: center;
+    animation: checkPop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 打勾圖示 pop 進場（scale 0.5→1 + opacity 0→1） */
+@keyframes checkPop {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* 菜單分類段落 */
+.menu-category-section {
+    padding: 20px 16px 0;
+}
+
+.menu-cat-title {
+    font-family: var(--font-brand);
+    font-size: 18px;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.menu-cat-line {
+    display: block;
+    width: 4px;
+    height: 18px;
+    background: var(--orange);
+    border-radius: 2px;
+}
+
+
+/* 圖片左上角的 Badge 浮層 */
+.menu-item-badge-overlay {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 2;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.menu-item-badge-overlay.badge-hot {
+    background: var(--orange);
+    color: #fff;
+}
+
+.menu-item-badge-overlay.badge-new {
+    background: var(--gold);
+    color: #3D2010;
+}
+
+/* 品項列表 - Bento Grid 網格化 */
+.menu-items-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    /* 手機預設雙欄 */
+    gap: 16px;
+
+    @media (min-width: 768px) {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.menu-item-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-warm);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    /* 垂直排版：上方大圖，下方內容 */
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: transform 250ms ease, box-shadow 250ms ease;
+    will-change: transform;
+
+    /* 瀑布式出場動畫 */
+    opacity: 0;
+    animation: slideUpFade 500ms cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+
+    @for $i from 1 through 10 {
+        &:nth-child(#{$i}) {
+            animation-delay: #{$i * 60}ms;
+        }
+    }
+
+    /* Hover Elevation 懸停浮動 */
+    @media (hover: hover) and (pointer: fine) {
+        &:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+    }
+}
+
+@keyframes slideUpFade {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.menu-item-img {
+    width: 100%;
+    height: 150px;
+    /* 大圖焦點 */
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #E8C4A0, #D4A574);
+    position: relative;
+    overflow: hidden;
+
+    /* 紋理疊加 */
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='30' cy='30' r='20' fill='rgba(0,0,0,0.03)'/%3E%3C/svg%3E") center/cover;
+    }
+}
+
+.mi-beef {
+    background: linear-gradient(135deg, #C4884A, #8B5A2B);
+}
+
+.mi-curry {
+    background: linear-gradient(135deg, #D4A017, #A0720F);
+}
+
+.mi-pho {
+    background: linear-gradient(135deg, #7BAE7F, #3D7A42);
+}
+
+.mi-ramen {
+    background: linear-gradient(135deg, #E8A87C, #C4683C);
+}
+
+.mi-bbt {
+    background: linear-gradient(135deg, #6B3A2A, #3D1C10);
+}
+
+.mi-matcha {
+    background: linear-gradient(135deg, #6BAD70, #2F6B35);
+}
+
+.menu-item-body {
+    flex: 1;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.menu-item-top {
+    display: flex;
+    flex-direction: column;
+    /* 讓內容自動由上往下排 */
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.menu-item-name {
+    font-family: var(--font-brand);
+    font-size: 16px;
+    color: var(--text-dark);
+    margin-bottom: 2px;
+    line-height: 1.3;
+}
+
+.menu-item-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.menu-item-badges {
+    display: flex;
+    gap: 6px;
+}
+
+.badge-hot {
+    background: var(--orange-badge);
+    color: var(--orange);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.badge-new {
+    background: rgba(240, 165, 0, 0.12);
+    color: #B87800;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.menu-item-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.menu-item-price {
+    font-size: 12px;
+    color: var(--text-mid);
+
+    strong {
+        font-family: var(--font-mono);
+        font-size: 18px;
+        color: var(--orange);
+    }
+}
+
+.menu-add-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--orange);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(217, 92, 26, 0.25);
+    transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+    will-change: transform;
+
+    svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        &:hover {
+            box-shadow: 0 4px 14px rgba(217, 92, 26, 0.4);
+            background: var(--orange-light);
+        }
+    }
+
+    /* 按鈕物理感回饋：縮小 */
+    &:active {
+        transform: scale(0.92);
+    }
+}
+
+/* Reduces Motion Protection */
+@media (prefers-reduced-motion: reduce) {
+
+    .menu-cat-btn,
+    .menu-item-card,
+    .menu-add-btn,
+    .menu-cart-float {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+    }
+
+    .menu-item-card {
+        opacity: 1;
+    }
+}
+
+/* 浮動購物車列 (精美膠囊設計) */
+.menu-cart-float {
+    position: fixed;
+    bottom: calc(var(--bottomnav-h) + 16px);
+    left: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-warm);
+    border-radius: 100px;
+    padding: 10px 16px 10px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(217, 92, 26, 0.15), 0 2px 8px rgba(0, 0, 0, 0.04);
+    z-index: 80;
+
+    /* 購物車滑入：ease-out */
+    opacity: 0;
+    animation: slideUpCart 400ms cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+    transition: all 300ms cubic-bezier(0.165, 0.84, 0.44, 1);
+    will-change: transform;
+
+    /* 桌機版：改為右下角優雅浮窗，不橫跨畫面滿版 */
+    @media (min-width: 1024px) {
+        left: auto;
+        right: 40px;
+        bottom: 40px;
+        width: 340px;
+        background: #fff;
+        border: 1.5px solid rgba(217, 92, 26, 0.3);
+        box-shadow: 0 12px 48px rgba(61, 32, 16, 0.12);
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+        &:hover {
+            transform: translateY(-4px) scale(1.02);
+            border-color: var(--orange);
+            box-shadow: 0 16px 40px rgba(217, 92, 26, 0.25);
+
+            .cart-float-arrow {
+                transform: translateX(3px);
+                color: var(--orange);
+            }
+
+            .cart-float-icon {
+                background: var(--orange);
+                color: #fff;
+                border-color: transparent;
+            }
+        }
+    }
+
+    /* 物理按壓互動 */
+    &:active {
+        transform: scale(0.96);
+    }
+}
+
+@keyframes slideUpCart {
+    from {
+        transform: translateY(40px) scale(0.95);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.cart-float-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cart-float-icon {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    background: var(--bg-cream);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--orange);
+    transition: all 0.3s ease;
+
+    svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+.cart-float-count {
+    position: absolute;
+    top: -2px;
+    right: -4px;
+    background: var(--orange-deep);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+}
+
+.cart-float-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.cart-float-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cart-float-total {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--orange-deep);
+}
+
+.cart-float-arrow {
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    transition: all 0.3s ease;
+}
+
+
+/* ══════════════════════════════════════════════════════
+   頁籤 3 💳  結帳
+══════════════════════════════════════════════════════ */
+.tab-checkout {
+    animation: fadeInUp 0.35s ease;
+}
+
+.checkout-container {
+    padding: 20px 16px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.checkout-title {
+    font-family: var(--font-brand);
+    font-size: 22px;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+
+    &::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--border-warm);
+    }
+
+    svg {
+        width: 22px;
+        height: 22px;
+        color: var(--orange);
+    }
+}
+
+/* 空購物車 */
+.checkout-empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-muted);
+}
+
+.empty-bowl {
+    font-size: 56px;
+    margin-bottom: 12px;
+    filter: grayscale(0.3);
+}
+
+.checkout-empty-btn {
+    margin-top: 20px;
+    background: var(--orange);
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 12px 28px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+        background: var(--orange-deep);
+    }
+}
+
+/* 品項列表 */
+.checkout-items {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--border-warm);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.checkout-item {
+    background: var(--bg-card);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.co-item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.co-item-name {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.co-item-unit {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.co-item-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-cream);
+    padding: 4px 8px;
+    border-radius: 100px;
+    border: 1px solid var(--border-warm);
+}
+
+/* 結帳清單一鍵刪除按鈕 (Trash Can) */
+.co-delete-btn {
+    background: transparent;
+    border: none;
+    padding: 4px;
+    margin-right: 4px;
+    cursor: pointer;
+    color: #EF4444;
+    /* 危險紅 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    opacity: 0.6;
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    &:hover {
+        opacity: 1;
+        transform: scale(1.1);
+        background: rgba(239, 68, 68, 0.1);
+        border-radius: 6px;
+    }
+
+    &:active {
+        transform: scale(0.9);
+    }
+}
+
+.co-qty-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid var(--border-warm);
+    color: var(--text-mid);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+
+    &:hover {
+        background: var(--orange-badge);
+        color: var(--orange);
+        border-color: var(--orange);
+    }
+
+    &:active {
+        transform: scale(0.9);
+    }
+}
+
+.co-qty {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+    min-width: 20px;
+    text-align: center;
+}
+
+.co-item-subtotal {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--orange);
+    min-width: 70px;
+    text-align: right;
+}
+
+/* 滿額贈品 */
+.checkout-gift {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--green-bg);
+    border: 1px solid rgba(46, 125, 50, 0.2);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+
+    .gift-icon {
+        font-size: 20px;
+    }
+
+    .gift-text {
+        flex: 1;
+        font-size: 13px;
+        color: var(--green);
+        font-weight: 500;
+    }
+
+    .gift-price {
+        font-family: var(--font-mono);
+        font-size: 13px;
+        color: var(--green);
+        font-weight: 600;
+    }
+}
+
+/* 金額明細 */
+.checkout-summary {
+    background: var(--bg-card);
+    border: 1px solid var(--border-warm);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 14px;
+    color: var(--text-mid);
+    border-bottom: 1px solid var(--border-warm);
+
+    &:last-child {
+        border-bottom: none;
+    }
+}
+
+.summary-row-total {
+    font-weight: 600;
+    color: var(--text-dark);
+    padding-top: 12px;
+    margin-top: 4px;
+}
+
+.summary-total-price {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    color: var(--orange);
+    font-weight: 700;
+}
+
+/* 備註欄 */
+.checkout-note {
+    margin-bottom: 16px;
+}
+
+.checkout-note-label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-mid);
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+
+.checkout-note-input {
+    width: 100%;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-warm);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--text-dark);
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+
+    &::placeholder {
+        color: var(--text-muted);
+    }
+
+    &:focus {
+        border-color: var(--border-focus);
+    }
+}
+
+/* 付款方式 */
+.checkout-payment {
+    margin-bottom: 20px;
+}
+
+.checkout-payment-title {
+    font-size: 13px;
+    color: var(--text-mid);
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.payment-options {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.payment-opt {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-warm);
+    border-radius: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-mid);
+    transition: all 0.2s;
+
+    input {
+        display: none;
+    }
+
+    .payment-icon {
+        font-size: 18px;
+    }
+
+    &.active,
+    &:has(input:checked) {
+        border-color: var(--orange);
+        color: var(--orange);
+        background: var(--orange-hover);
+    }
+}
+
+/* 送出訂單按鈕 */
+.checkout-submit {
+    width: 100%;
+    background: linear-gradient(135deg, var(--orange), var(--orange-deep));
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 16px 24px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 20px rgba(217, 92, 26, 0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 10px;
+
+    svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 28px rgba(217, 92, 26, 0.55);
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+}
+
+.checkout-clear {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 8px;
+    transition: color 0.2s;
+
+    &:hover {
+        color: var(--orange);
+    }
+}
+
+
+/* ══════════════════════════════════════════════════════
+   頁籤 4 🔔  訂單追蹤
+══════════════════════════════════════════════════════ */
+.tab-tracker {
+    animation: fadeInUp 0.35s ease;
+}
+
+.tracker-container {
+    padding: 20px 16px;
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+/* 取餐號碼卡 */
+.tracker-number-card {
+    background: linear-gradient(135deg, var(--orange), var(--orange-deep));
+    border-radius: 24px;
+    padding: 28px 24px;
+    text-align: center;
+    margin-bottom: 24px;
+    box-shadow: 0 6px 28px rgba(217, 92, 26, 0.4);
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+    }
+}
+
+.tracker-number-label {
+    font-size: 12px;
+    color: rgba(255, 245, 230, 0.8);
+    display: block;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.tracker-number {
+    font-family: var(--font-mono);
+    font-size: clamp(52px, 15vw, 72px);
+    font-weight: 500;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.tracker-time-label {
+    font-size: 13px;
+    color: rgba(255, 245, 230, 0.9);
+
+    strong {
+        font-family: var(--font-mono);
+        font-size: 20px;
+        color: var(--gold);
+    }
+}
+
+/* 進度步驟 */
+.tracker-steps {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+    margin-bottom: 24px;
+    padding: 0 8px;
+}
+
+.tracker-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    position: relative;
+}
+
+.step-dot {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--border-warm);
+    border: 2px solid var(--border-warm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s;
+
+    svg {
+        width: 16px;
+        height: 16px;
+        color: #fff;
+    }
+}
+
+.step-line {
+    position: absolute;
+    top: 18px;
+    left: calc(50% + 18px);
+    right: calc(-50% + 18px);
+    height: 2px;
+    background: var(--border-warm);
+    transition: background 0.3s;
+}
+
+.tracker-step:last-child .step-line {
+    display: none;
+}
+
+.step-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    font-weight: 500;
+}
+
+/* 完成狀態 */
+.tracker-step.step-done {
+    .step-dot {
+        background: var(--orange);
+        border-color: var(--orange);
+    }
+
+    .step-line {
+        background: var(--orange);
+    }
+
+    .step-label {
+        color: var(--orange);
+    }
+}
+
+/* 進行中 */
+.tracker-step.step-active {
+    .step-dot {
+        background: rgba(217, 92, 26, 0.12);
+        border-color: var(--orange);
+        animation: pulse-ring 1.8s ease infinite;
+    }
+
+    .step-label {
+        color: var(--orange);
+        font-weight: 700;
+    }
+}
+
+.step-cooking-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--orange);
+    animation: dot-beat 1s ease infinite;
+}
+
+/* 訂單明細卡 */
+.tracker-order-card {
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-warm);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+}
+
+.toc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-warm);
+}
+
+.toc-id {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.toc-time {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-mid);
+}
+
+.toc-items {
+    margin-bottom: 14px;
+}
+
+.toc-item-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-mid);
+    padding: 4px 0;
+}
+
+.toc-dot {
+    color: var(--orange);
+    font-size: 16px;
+}
+
+.toc-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-warm);
+    font-size: 14px;
+    color: var(--text-mid);
+}
+
+.toc-price {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--orange);
+}
+
+.tracker-more-btn {
+    width: 100%;
+    background: var(--orange-hover);
+    border: 1.5px solid rgba(217, 92, 26, 0.3);
+    border-radius: 16px;
+    padding: 14px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--orange);
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+        background: rgba(217, 92, 26, 0.15);
+    }
+}
+
+/* 空追蹤頁 */
+.tracker-empty {
+    text-align: center;
+    padding: 64px 24px;
+    color: var(--text-muted);
+}
+
+.tracker-empty-icon {
+    font-size: 52px;
+    display: block;
+    margin-bottom: 14px;
+    opacity: 0.5;
+}
+
+.tracker-start-btn {
+    margin-top: 20px;
+    background: var(--orange);
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 12px 28px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+        background: var(--orange-deep);
+    }
+}
+
+
+/* ══════════════════════════════════════════════════════
+   底部導覽列
+══════════════════════════════════════════════════════ */
+.ch-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--bottomnav-h);
+    background: rgba(255, 250, 243, 0.97);
+    backdrop-filter: blur(16px);
+    border-top: 1.5px solid var(--border-warm);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 200;
+    box-shadow: 0 -4px 20px rgba(61, 32, 16, 0.08);
+
+    @media (min-width: 1024px) {
+        display: none;
+    }
+}
+
+.ch-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 12px;
+    transition: all 0.2s;
+    color: var(--text-muted);
+    position: relative;
+    min-width: 52px;
+
+    svg {
+        width: 22px;
+        height: 22px;
+        transition: transform 0.2s;
+    }
+
+    &:hover {
+        color: var(--orange);
+        background: var(--orange-hover);
+
+        svg {
+            transform: translateY(-1px);
+        }
+    }
+}
+
+.ch-nav-btn--active {
+    color: var(--orange) !important;
+
+    svg {
+        stroke-width: 2.5 !important;
+        transform: translateY(-2px) !important;
+    }
+
+    .ch-nav-label {
+        font-weight: 700 !important;
+    }
+}
+
+.ch-nav-label {
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 400;
+    transition: all 0.2s;
+}
+
+.ch-nav-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: var(--orange);
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--bg-cream);
+}
+
+
+/* ══════════════════════════════════════════════════════
+   動畫 Keyframes
+══════════════════════════════════════════════════════ */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse-ring {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(217, 92, 26, 0.35);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(217, 92, 26, 0);
+    }
+}
+
+@keyframes dot-beat {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.4);
+    }
+}
+
+/* 訪客升級登入按鈕 */
+.sidebar-logout.guest-upgrade-btn {
+    background: linear-gradient(135deg, var(--orange-light), var(--orange));
+    color: #fff;
+    border-color: transparent;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(217, 92, 26, 0.25);
+    margin-top: 8px;
+
+    svg {
+        color: #fff;
+    }
+
+    &:hover {
+        background: linear-gradient(135deg, var(--orange), var(--orange-deep));
+        box-shadow: 0 6px 16px rgba(217, 92, 26, 0.35);
+        transform: translateY(-2px);
+    }
+}
+
+/* ==========================================================
+     訂單管理 (取代原本的會員中心)
+========================================================== */
+
+/*
+ * ══════════════════════════════════════════════════════════
+ * 訂單紀錄頁面樣式（Order History Section）
+ * 位置說明：customer-home.component.scss — 訂單紀錄區塊
+ * 設計風格：餐廳票據感（receipt aesthetic）
+ * 配色（禁用 CSS 變數，全部使用字面值）：
+ *   橘紅主色  ：#D95C1A   深橘輔助  ：#A84210
+ *   亮金黃    ：#F0A500   奶油白背景：#FFFAF3
+ *   卡片純白  ：#FFFFFF   暖米邊框  ：#F0D8B8
+ *   深棕文字  ：#3D2010   中棕文字  ：#6A4830
+ *   淡棕文字  ：#9E7A5A
+ * 動畫原則（Web Animation Design，claude_migration_guide.md 第 2 節）：
+ *   入場      ：cubic-bezier(0.165, 0.84, 0.44, 1) ease-out
+ *   互動回饋  ：active { transform: scale(0.96) } 觸感反饋
+ *   效能      ：只動 transform + opacity，GPU 加速 60fps
+ *   無障礙    ：動畫包裝在 @media (prefers-reduced-motion: no-preference)
+ *   Stagger   ：animation-delay 透過 HTML inline style 控制（i × 80ms）
+ * ══════════════════════════════════════════════════════════
+ */
+
+
+/* ── 訂單頁容器：頂部留白讓標題與 header 區域保持呼吸感 ── */
+.ord-section {
+  padding-top: 24px;
+}
+
+
+/* ════════════════════════════════════════════════════════
+   頁首區塊
+   標題左側橘色強調條 + 副標題顯示總筆數
+   ════════════════════════════════════════════════════════ */
+.ord-header {
+  margin-bottom: 24px;
+}
+
+/* 標題列：flex 水平排列，accent 條 + 標題文字 */
+.ord-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+/* 橘色左側強調條：4px 寬，漸層橘紅 → 深橘 */
+.ord-title-accent {
+  display: block;
+  width: 4px;
+  height: 24px;
+  border-radius: 2px;
+  /* 上方亮橘 → 下方深橘，呈現立體感 */
+  background: linear-gradient(180deg, #D95C1A 0%, #A84210 100%);
+  flex-shrink: 0;
+}
+
+/* 標題文字：楷書字體，深棕色，配合品牌溫暖調性 */
+.ord-title {
+  font-family: 'LXGW WenKai TC', cursive;
+  font-size: 22px;
+  font-weight: 700;
+  color: #3D2010;
+  letter-spacing: 1px;
+}
+
+/* 副標題：顯示總筆數，淡棕色小字 */
+.ord-subtitle {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  color: #9E7A5A;
+  /* padding-left 對齊 accent 條寬度（4px）+ gap（10px） */
+  padding-left: 14px;
+  letter-spacing: 0.5px;
+}
+
+
+/* ════════════════════════════════════════════════════════
+   狀態篩選列（三個並排按鈕）
+   設計：各自獨立圓角卡片感，非傳統膠囊 segmented control
+   ════════════════════════════════════════════════════════ */
+.ord-filter-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+/* 每個篩選按鈕基本樣式 */
+.ord-filter-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border-radius: 12px;
+  /* 暖米邊框，白色底 */
+  border: 1.5px solid #F0D8B8;
+  background: #FFFFFF;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9E7A5A;
+  cursor: pointer;
+  /* 色彩與陰影變化平滑過渡 */
+  transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease, box-shadow 0.22s ease, transform 0.15s ease;
+  will-change: transform;
+
+  /* active 態：奶油白底 + 橘紅邊框 + 橘色文字 + 暖暈陰影 */
+  &.active {
+    background: #FFFAF3;
+    border-color: #D95C1A;
+    color: #D95C1A;
+    box-shadow: 0 2px 12px rgba(217, 92, 26, 0.12);
+  }
+}
+
+/* 觸感回饋動畫 */
+@media (prefers-reduced-motion: no-preference) {
+  .ord-filter-btn:active {
+    transform: scale(0.96);
+  }
+}
+
+/* 篩選按鈕前的彩色小圓點（狀態語意識別） */
+.ord-filter-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* 圓點顏色對應各狀態 */
+.dot-completed { background: #22C55E; }   /* 薄荷綠 → 成功 */
+.dot-cancelled { background: #9CA3AF; }   /* 灰色   → 取消 */
+.dot-refunded  { background: #F43F5E; }   /* 玫瑰紅 → 退款 */
+
+/* 數量徽章：橘色底微淡、橘紅文字 */
+.ord-filter-count {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  background: rgba(217, 92, 26, 0.08);
+  color: #A84210;
+  min-width: 18px;
+  text-align: center;
+}
+
+
+/* ════════════════════════════════════════════════════════
+   訂單列表容器
+   ════════════════════════════════════════════════════════ */
+.ord-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+
+/* ════════════════════════════════════════════════════════
+   訂單卡片（票據感設計）
+   特徵：左側 4px 橘紅強調條 + 虛線撕票分隔線 + 等寬字體 ID
+   入場：ordCardIn（translateY + opacity），animation-delay 由 HTML 控制
+   ════════════════════════════════════════════════════════ */
+.ord-card {
+  background: #FFFFFF;
+  border-radius: 16px;
+  /* 一般邊框暖米，左側橘紅強調條（票根感） */
+  border: 1px solid #F0D8B8;
+  border-left: 4px solid #D95C1A;
+  padding: 18px 18px 16px 16px;
+  /* 近距離橘暈陰影 + 遠距離輕微黑陰影 */
+  box-shadow:
+    0 2px 8px rgba(217, 92, 26, 0.06),
+    0 1px 3px rgba(61, 32, 16, 0.04);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  will-change: transform;
+  /* 入場動畫，delay 由 HTML [style.animation-delay] 控制 */
+  animation: ordCardIn 0.45s cubic-bezier(0.165, 0.84, 0.44, 1) both;
+}
+
+/* 懸停浮起效果 + 觸感縮放 */
+@media (prefers-reduced-motion: no-preference) {
+  .ord-card:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 8px 24px rgba(217, 92, 26, 0.10),
+      0 2px 8px rgba(61, 32, 16, 0.06);
+  }
+
+  .ord-card:active {
+    transform: scale(0.98);
+  }
+}
+
+/*
+ * ordCardIn：卡片從下方 20px 滑入並淡入
+ * 使用 ease-out 曲線（快入慢停），符合 Web Animation Design 規範
+ * both：填充模式，delay 期間保持初始 opacity:0 狀態
+ */
+@keyframes ordCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* ── 卡片頂部：票據 icon + 訂單編號 | 狀態徽章 ──────── */
+.ord-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+/* 票據 icon + 訂單 ID 的水平排列組 */
+.ord-card-id-wrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* 票據 SVG 圖示容器 */
+.ord-card-icon {
+  width: 18px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/*
+ * 訂單編號：等寬字體增強「票根感」
+ * DM Mono 為首選，降級至 Courier New
+ */
+.ord-card-id {
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3D2010;
+  letter-spacing: 0.5px;
+}
+
+
+/* ── 狀態徽章 ──────────────────────────────────────── */
+.ord-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  letter-spacing: 0.5px;
+
+  svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+}
+
+/* 已完成：薄荷綠背景，深綠文字 */
+.badge-completed {
+  background: #DCFCE7;
+  color: #166534;
+  border: 1px solid rgba(22, 101, 52, 0.12);
+}
+
+/* 已取消：淺灰背景，深灰文字 */
+.badge-cancelled {
+  background: #F3F4F6;
+  color: #4B5563;
+  border: 1px solid rgba(75, 85, 99, 0.10);
+}
+
+/* 已退款：玫瑰粉背景，深紅文字 */
+.badge-refunded {
+  background: #FFE4E6;
+  color: #BE123C;
+  border: 1px solid rgba(190, 18, 60, 0.12);
+}
+
+
+/* ── 虛線撕票分隔線 ────────────────────────────────── */
+/*
+ * 使用 background-image 模擬虛線效果
+ * linear-gradient：50% 暖米色實色 + 50% 透明，重複 10px，呈現 5px dash + 5px gap
+ */
+.ord-card-dash {
+  width: 100%;
+  height: 1px;
+  background-image: linear-gradient(
+    90deg,
+    #F0D8B8 50%,
+    transparent 50%
+  );
+  background-size: 10px 1px;
+  background-repeat: repeat-x;
+  margin: 14px 0;
+}
+
+
+/* ── 日期列 ────────────────────────────────────────── */
+.ord-card-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 12px;
+  color: #9E7A5A;
+  margin-bottom: 10px;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+}
+
+
+/* ── 訂單品項文字 ──────────────────────────────────── */
+.ord-card-items {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 13px;
+  color: #6A4830;
+  line-height: 1.75;
+}
+
+
+/* ── 底部總計區塊 ───────────────────────────────────── */
+.ord-card-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+/* 「合　計」標籤（全形字距，呼應票據樣式） */
+.ord-card-total-label {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  color: #9E7A5A;
+  letter-spacing: 4px;
+}
+
+/* NT$ + 金額數字的水平組合 */
+.ord-card-total-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+/* NT$ 貨幣符號：較小等寬字體 */
+.ord-card-currency {
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #A84210;
+}
+
+/* 金額數字：大字等寬，橘紅色，微發光 */
+.ord-card-price {
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 26px;
+  font-weight: 800;
+  color: #D95C1A;
+  /* 微弱橘色光暈，強化金額視覺重量 */
+  text-shadow: 0 0 16px rgba(217, 92, 26, 0.18);
+}
+
+
+/* ════════════════════════════════════════════════════════
+   空狀態（無符合條件的訂單）
+   ════════════════════════════════════════════════════════ */
+.ord-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 24px 48px;
+  text-align: center;
+}
+
+/* 票據插圖 SVG */
+.ord-empty-icon {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 20px;
+  opacity: 0.75;
+}
+
+/* 主要提示文字 */
+.ord-empty-text {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #6A4830;
+  margin-bottom: 8px;
+}
+
+/* 引導副文字 */
+.ord-empty-sub {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 13px;
+  color: #9E7A5A;
+}
+
+/* ==========================================================
+     進階結帳流程 (Payment Flow View)
+========================================================== */
+.payment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border-warm);
+    margin-bottom: 24px;
+}
+
+.payment-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    
+    svg {
+        width: 18px;
+        height: 18px;
+    }
+    
+    &:hover {
+        background: var(--bg-cream);
+        color: var(--orange-deep);
+    }
+}
+
+.payment-header-center {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .payment-icon {
+        font-size: 20px;
+        color: var(--orange);
+    }
+}
+
+.payment-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0;
+}
+
+/* 唯讀購物明細 */
+.payment-summary-card {
+    background: #FFF;
+    border: 1px solid var(--border-warm);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(61, 32, 16, 0.03);
+    margin-bottom: 24px;
+}
+
+.psc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+}
+
+.psc-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.psc-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.psc-qty {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text-mid);
+    background: var(--bg-cream);
+    padding: 4px 8px;
+    border-radius: 8px;
+}
+
+.psc-price {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-dark);
+    min-width: 80px;
+    text-align: right;
+}
+
+.psc-divider {
+    height: 1px;
+    background: dashed 1px var(--border-warm);
+    margin: 16px 0;
+}
+
+.psc-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text-dark);
+}
+
+.psc-total-amount {
+    font-family: var(--font-mono);
+    color: var(--orange);
+    font-size: 22px;
+}
+
+/* 優化的清空購物車按鈕 */
+.checkout-clear.enhance-clear-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 16px;
+    padding: 14px;
+    background: #FFF5F5;
+    border: 1px solid #FECACA;
+    color: #DC2626;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    &:hover {
+        background: #FEE2E2;
+        border-color: #F87171;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+    }
+    
+    &:active {
+        transform: translateY(0);
+    }
+}

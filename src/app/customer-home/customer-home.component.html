@@ -1,0 +1,1211 @@
+<!--
+  =====================================================
+  檔案名稱：customer-home.component.html
+  位置說明：src/app/customer-home/customer-home.component.html
+  用途說明：客戶端主頁框架 Shell — 含 5 個頁籤
+  頁籤：首頁(Showcase) / 菜單 / 結帳 / 訂單追蹤 / 會員(導向)
+  設計方案：暖橘奶油 — 活力橘紅底 × 奶油白底色
+  =====================================================
+-->
+
+<div class="ch-shell">
+
+  <!-- ═══════════════════════════════════════════════
+       左側固定選單 (Side Sidebar - 桌機版顯示)
+  ═══════════════════════════════════════════════════ -->
+  <aside class="ch-sidebar">
+
+    <!-- 品牌標誌區 -->
+    <div class="sidebar-brand">
+      <div class="sidebar-logo-wrap">
+        <img src="/assets/logo圓形.png" alt="Logo" class="sidebar-logo" />
+        <div class="sidebar-logo-ring"></div>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">懶 飽 飽</span>
+        <span class="brand-en">Global Meals</span>
+      </div>
+    </div>
+
+    <!-- 用戶身份卡 (抽屜式) -->
+    <div class="sidebar-user-accordion-group">
+      <button class="sidebar-user-card" (click)="toggleProfile()" [class.expanded]="isProfileExpanded()">
+        <div class="suc-avatar">
+          <span class="suc-avatar-letter">{{ getAvatarLetter() }}</span>
+          <span class="suc-status-dot"></span>
+        </div>
+        <div class="suc-info">
+          <span class="suc-role-badge" [class.guest-badge]="isGuest()">
+            {{ userRoleLabel() }}
+          </span>
+          <span class="suc-name">{{ formattedName() }}</span>
+        </div>
+        <!-- 展開箭頭 (僅正式會員) -->
+        @if (!isGuest()) {
+          <svg class="suc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        }
+      </button>
+
+      <!-- 個人資料抽屜 (CSS Grid 動畫展開) -->
+      @if (!isGuest()) {
+        <div class="profile-drawer-wrapper" [class.expanded]="isProfileExpanded()">
+          <div class="profile-drawer-inner">
+            
+            <div class="pr-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+              個人資料
+            </div>
+
+            <!-- 資訊網格 (模擬圖2排版) -->
+            <div class="pr-grid">
+              <div class="pr-row">
+                <span class="pr-label">會員名稱</span>
+                @if (isEditingProfile()) {
+                  <input type="text" class="pr-input" [value]="authService.currentUser?.name">
+                } @else {
+                  <span class="pr-value">{{ authService.currentUser?.name }}</span>
+                }
+              </div>
+              <div class="pr-row">
+                <span class="pr-label">手機號碼</span>
+                @if (isEditingProfile()) {
+                  <input type="text" class="pr-input" [value]="authService.currentUser?.phone">
+                } @else {
+                  <span class="pr-value">{{ authService.currentUser?.phone }}</span>
+                }
+              </div>
+              <div class="pr-row">
+                <span class="pr-label">電子郵件</span>
+                @if (isEditingProfile()) {
+                  <input type="email" class="pr-input" [value]="authService.currentUser?.email || ''" placeholder="輸入Email">
+                } @else {
+                  <span class="pr-value">{{ authService.currentUser?.email || 'test@lazybao.com' }}</span>
+                }
+              </div>
+              <div class="pr-row">
+                <span class="pr-label">密碼</span>
+                <div class="pr-input-group">
+                  @if (isEditingProfile()) {
+                    <input [type]="showPassword() ? 'text' : 'password'" class="pr-input" value="12345678" placeholder="更新密碼">
+                    <button class="pr-eye-btn" (click)="togglePasswordVisibility()" aria-label="顯示/隱藏密碼">
+                      @if (showPassword()) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                      } @else {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      }
+                    </button>
+                  } @else {
+                    <span class="pr-value pr-password">
+                      <span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span><span>•</span>
+                    </span>
+                  }
+                </div>
+              </div>
+
+              <!-- 確認密碼 (僅編輯模式顯示) -->
+              @if (isEditingProfile()) {
+                <div class="pr-row">
+                  <span class="pr-label">確認新密碼</span>
+                  <div class="pr-input-group">
+                    <input [type]="showConfirmPassword() ? 'text' : 'password'" class="pr-input" value="12345678" placeholder="再次輸入密碼">
+                    <button class="pr-eye-btn" (click)="toggleConfirmPasswordVisibility()" aria-label="顯示/隱藏密碼">
+                      @if (showConfirmPassword()) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                      } @else {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      }
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- 兌換券與訂餐狀態 (模擬圖3 DB) -->
+            <div class="pr-database-status">
+              <div class="pr-status-header">
+                <span class="pr-status-title">兌換券紀錄</span>
+                <span class="pr-status-badge" [class.ready]="hasDiscountReady()">
+                  {{ hasDiscountReady() ? '可使用' : '累積中' }}
+                </span>
+              </div>
+              <div class="pr-progress-bar">
+                <div class="pr-progress-fill" [style.width.%]="(memberOrderCount() % 10) * 10"></div>
+              </div>
+              <p class="pr-status-desc">
+                @if (hasDiscountReady()) {
+                  點餐滿 10 次！您可在下一次點餐選擇折抵。
+                } @else {
+                  已點餐 <strong>{{ memberOrderCount() }}</strong> 次，差 <strong class="highlight">{{ ordersUntilDiscount() }}</strong> 次即可獲得折扣兌換券。
+                }
+              </p>
+            </div>
+
+            <!-- 修改/儲存資料按鈕 -->
+            <button class="pr-edit-btn" [class.editing]="isEditingProfile()" (click)="toggleEditProfile()" aria-label="修改資料">
+              @if (isEditingProfile()) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                <span>儲存資料</span>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+                <span>修改資料</span>
+              }
+            </button>
+
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- 分隔線 -->
+    <div class="sidebar-divider">
+      <span>導覽功能</span>
+    </div>
+
+    <!-- 導覽項目 -->
+    <nav class="sidebar-nav" role="navigation" aria-label="主導覽">
+      @for (tab of navTabs(); track tab.id) {
+        <button
+          class="sidebar-item"
+          [class.active]="activeTab() === tab.id"
+          (click)="setTab(tab.id)"
+          [attr.aria-label]="tab.label"
+          [attr.aria-current]="activeTab() === tab.id ? 'page' : null"
+        >
+          <div class="sidebar-icon-wrap">
+            <!-- 首頁 -->
+            @if (tab.icon === 'home') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            }
+            <!-- 菜單 -->
+            @if (tab.icon === 'menu') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                <line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
+              </svg>
+            }
+            <!-- 結帳 -->
+            @if (tab.icon === 'checkout') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+              </svg>
+              @if (cartCount() > 0) {
+                <span class="sidebar-badge">{{ cartCount() }}</span>
+              }
+            }
+            <!-- 追蹤 -->
+            @if (tab.icon === 'tracker') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/>
+              </svg>
+            }
+            <!-- 訂單管理 -->
+            @if (tab.icon === 'orders') {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            }
+          </div>
+          <span class="sidebar-label">{{ tab.label }}</span>
+          @if (activeTab() === tab.id) {
+            <span class="sidebar-active-pip"></span>
+          }
+        </button>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      
+      <!-- 獨家 promo 卡片 (填補空白並提升高級感) -->
+      @if (!isGuest()) {
+        <div class="sidebar-promo-card">
+          <div class="spc-icon">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+               <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/>
+               <rect x="2" y="6" width="20" height="6" rx="1"/>
+               <path d="M12 12v9"/>
+               <path d="M12 6L11.5 1.5l-2.5 2L12 6z"/>
+             </svg>
+          </div>
+          <div class="spc-text">
+            <span class="spc-title">探索絕妙風味</span>
+            <span class="spc-subtitle">加入老饕行列享優惠</span>
+          </div>
+        </div>
+      }
+
+      <div class="sidebar-footer-info">
+        <span class="footer-tip">✦ 懶懶吃，飽飽樂 ✦</span>
+      </div>
+      <!-- 登出 / 訪客升級按鈕 -->
+      <button 
+        class="sidebar-logout" 
+        [class.guest-upgrade-btn]="isGuest()" 
+        (click)="logout()" 
+        [attr.aria-label]="isGuest() ? '使用會員登入點餐' : '登出帳號'"
+      >
+        @if (isGuest()) {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span>使用會員登入點餐</span>
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          <span>登出帳號</span>
+        }
+      </button>
+    </div>
+  </aside>
+
+  <div class="ch-content-wrapper">
+
+    <!-- ═══════════════════════════════════════════════
+         主內容區（各頁籤在此切換）
+    ═══════════════════════════════════════════════════ -->
+    <main class="ch-main">
+
+
+    <!-- ╔═══════════════════════════════════════════╗
+         ║  頁籤 1 ✨  品牌形象首頁 (Showcase)        ║
+         ╚═══════════════════════════════════════════╝ -->
+    @if (activeTab() === 'home') {
+      <section class="tab-home" aria-label="品牌形象首頁" style="padding-top: 24px;">
+
+        <!-- 英雄區塊 -->
+        <div class="home-hero">
+          <div class="home-hero-bg">
+            <div class="hero-orb hero-orb-1"></div>
+            <div class="hero-orb hero-orb-2"></div>
+            <div class="hero-orb hero-orb-3"></div>
+          </div>
+          <div class="home-hero-content">
+            <div class="hero-badge">✦ 全球風味 • 一掌點餐 ✦</div>
+            <h1 class="hero-title">
+              <span class="hero-title-zh">懶 飽 飽</span>
+              <span class="hero-title-en">Global Meals</span>
+            </h1>
+            <p class="hero-subtitle">懶懶吃，飽飽樂 — 探索來自世界各地的絕妙風味</p>
+            <button class="hero-cta" (click)="setTab('menu')">
+              <span>立即點餐</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 首頁搜尋與分類列 (移回頂部功能) -->
+        <div class="home-section" style="padding-bottom: 0;">
+          <div class="menu-header" style="padding: 0; background: transparent; border: none; box-shadow: none;">
+            <div class="menu-search-wrap">
+              <svg class="menu-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+              <input type="text" placeholder="搜尋餐點名稱…" class="menu-search-input" />
+            </div>
+            <!-- 分類標籤列 -->
+            <div class="menu-cat-bar">
+              <button class="menu-cat-btn active">全部</button>
+              <button class="menu-cat-btn">🍜 台式</button>
+              <button class="menu-cat-btn">🍛 南洋</button>
+              <button class="menu-cat-btn">🍝 西式</button>
+              <button class="menu-cat-btn">🥗 輕食</button>
+              <button class="menu-cat-btn">🧋 飲品</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 今日推薦 -->
+        <div class="home-section">
+          <div class="home-section-header">
+            <span class="section-tag">今日精選</span>
+            <h2 class="section-title">主廚推薦</h2>
+          </div>
+          <div class="home-featured-grid">
+            <div class="featured-card featured-card-lg" (click)="setTab('menu')">
+              <div class="featured-img featured-img-beef"></div>
+              <div class="featured-info">
+                <span class="featured-tag hot-tag">🔥 本週熱銷</span>
+                <h3 class="featured-name">紅燒牛肉麵</h3>
+                <p class="featured-desc">慢燉 12 小時的濃醇牛骨高湯，配上軟嫩入味的牛腩</p>
+                <span class="featured-price">NT$ <strong>165</strong></span>
+              </div>
+            </div>
+            <div class="featured-card" (click)="setTab('menu')">
+              <div class="featured-img featured-img-curry"></div>
+              <div class="featured-info">
+                <span class="featured-tag new-tag">✨ 新品上市</span>
+                <h3 class="featured-name">印度奶油咖哩</h3>
+                <p class="featured-desc">香料比例恰到好處的道地印式咖哩</p>
+                <span class="featured-price">NT$ <strong>175</strong></span>
+              </div>
+            </div>
+            <div class="featured-card" (click)="setTab('menu')">
+              <div class="featured-img featured-img-pho"></div>
+              <div class="featured-info">
+                <span class="featured-tag">🌿 清爽系</span>
+                <h3 class="featured-name">越南牛肉河粉</h3>
+                <p class="featured-desc">鮮香牛骨湯底，搭配新鮮香草與豆芽</p>
+                <span class="featured-price">NT$ <strong>155</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 促銷橫幅 -->
+        <div class="home-promo-banner" (click)="setTab('menu')">
+          <div class="promo-content">
+            <span class="promo-icon">🎁</span>
+            <div class="promo-text">
+              <strong>消費滿 NT$300</strong>
+              <span>即贈招牌滷蛋 × 2</span>
+            </div>
+          </div>
+          <span class="promo-arrow">→</span>
+        </div>
+
+        <!-- 快速分類入口 -->
+        <div class="home-section">
+          <div class="home-section-header">
+            <h2 class="section-title">探索風味</h2>
+          </div>
+          <div class="home-category-grid">
+            <button class="cat-chip" (click)="setTab('menu')">
+              <span class="cat-emoji">🍜</span><span>台式料理</span>
+            </button>
+            <button class="cat-chip" (click)="setTab('menu')">
+              <span class="cat-emoji">🍛</span><span>南洋風味</span>
+            </button>
+            <button class="cat-chip" (click)="setTab('menu')">
+              <span class="cat-emoji">🍝</span><span>西式主食</span>
+            </button>
+            <button class="cat-chip" (click)="setTab('menu')">
+              <span class="cat-emoji">🥗</span><span>輕食沙拉</span>
+            </button>
+            <button class="cat-chip" (click)="setTab('menu')">
+              <span class="cat-emoji">🧋</span><span>特調飲品</span>
+            </button>
+            <button class="cat-chip" (click)="setTab('menu')">
+              <span class="cat-emoji">🍮</span><span>甜點小食</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 底部 padding for nav -->
+        <div style="height: 80px;"></div>
+
+      </section>
+    }
+
+
+    <!-- ╔═══════════════════════════════════════════╗
+         ║  頁籤 2 📱  線上自助點餐 (Mobile Menu)     ║
+         ╚═══════════════════════════════════════════╝ -->
+    @if (activeTab() === 'menu') {
+      <section class="tab-menu" aria-label="線上菜單">
+
+        <!-- 菜單頂部搜尋 + 分類列 -->
+        <div class="menu-header">
+          <div class="menu-search-wrap">
+            <svg class="menu-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input type="text" placeholder="搜尋餐點名稱…" class="menu-search-input" />
+          </div>
+          <!-- 分類標籤列（帶漸層遮罩暗示可左滑） -->
+          <div class="menu-cat-bar">
+            <button class="menu-cat-btn active">全部</button>
+            <button class="menu-cat-btn">🍜 台式</button>
+            <button class="menu-cat-btn">🍛 南洋</button>
+            <button class="menu-cat-btn">🍝 西式</button>
+            <button class="menu-cat-btn">🥗 輕食</button>
+            <button class="menu-cat-btn">🧋 飲品</button>
+          </div>
+
+          <!-- ── 滿額促銷橫幅（v5 全新設計）────────────────────────
+               觸發：購物車有品項（0 < cartTotal() < 300）
+               版面：左側橘紅色塊（禮品圖示）+ 右側三列資訊
+               三列：①標題膠囊 + 剩餘金額　②進度條　③計數器 + 獎勵標籤
+               動畫：promoReveal（translateY(-12px) + opacity 0→1 滑入）
+               位置：在 .menu-header 內，隨 sticky 固定，不被標頭覆蓋
+          ──────────────────────────────────────────────────────── -->
+          @if (cartTotal() > 0 && cartTotal() < 300) {
+          <div class="promo-wrap">
+            <div class="promo-card">
+
+              <!-- 左側：橘紅漸層色塊（禮品圖示 + 限定標籤） -->
+              <div class="promo-card-left">
+                <span class="promo-card-emoji">🎁</span>
+                <span class="promo-card-tag">限定</span>
+              </div>
+
+              <!-- 右側：三列式資訊區塊 -->
+              <div class="promo-card-right">
+
+                <!-- 第一列：標題標籤 + 剩餘金額 -->
+                <div class="promo-card-row-top">
+                  <span class="promo-card-title">免費贈品進度</span>
+                  <span class="promo-card-remain">差 <strong class="promo-card-amt">NT$ {{ 300 - cartTotal() }}</strong></span>
+                </div>
+
+                <!-- 第二列：進度條（含 shimmer 掃光 + 終點金色圓圈） -->
+                <div class="promo-card-track">
+                  <div class="promo-card-fill" [style.width.%]="(cartTotal() / 300) * 100">
+                    <div class="promo-fill-shimmer"></div>
+                  </div>
+                  <!-- 目標終點：金色小圓圈（視覺化目標位置） -->
+                  <div class="promo-track-goal">
+                    <svg viewBox="0 0 14 14" fill="none">
+                      <circle cx="7" cy="7" r="6" fill="#F0A500" stroke="#fff" stroke-width="1.5"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <!-- 第三列：進度計數 + 獎勵膠囊標籤 -->
+                <div class="promo-card-row-bottom">
+                  <span class="promo-card-counter">{{ cartTotal() }} <span class="promo-card-sep">/</span> 300</span>
+                  <span class="promo-card-reward">🏆 招牌滷蛋 × 2</span>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- 滿額達成狀態（cartTotal >= 300）：綠色成功卡 -->
+        @if (cartTotal() >= 300) {
+          <div class="promo-wrap">
+            <div class="promo-unlocked-card">
+
+              <!-- 左側綠色色塊（慶祝圖示） -->
+              <div class="promo-unlocked-left">
+                <span class="promo-unlocked-emoji">🎉</span>
+              </div>
+
+              <!-- 右側：成功標題 + 說明文字 -->
+              <div class="promo-unlocked-right">
+                <strong class="promo-unlocked-title">滿額贈品已達成！</strong>
+                <span class="promo-unlocked-sub">招牌滷蛋 × 2 將在結帳時自動加入</span>
+              </div>
+
+              <!-- 右側打勾圓形圖示（pop 動畫進場） -->
+              <svg class="promo-unlocked-check-icon" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="11" fill="#22C55E"/>
+                <path d="M7 12.5l3.5 3.5 6.5-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+
+            </div>
+          </div>
+        }
+        </div><!-- /.menu-header（含搜尋列、分類列、促銷橫幅） -->
+
+        <!-- ── 菜單分類：熱門精選 ────────────────────── -->
+        <div class="menu-category-section">
+          <h3 class="menu-cat-title">
+            <span class="menu-cat-line"></span>
+            🔥 熱門精選
+          </h3>
+          <!-- Bento Grid 卡片排列 -->
+          <div class="menu-items-list">
+
+            <!-- 卡片 1：紅燒牛肉麵 -->
+            <div class="menu-item-card">
+              <div class="menu-item-img mi-beef">
+                <span class="menu-item-badge-overlay badge-hot">熱銷</span>
+              </div>
+              <div class="menu-item-body">
+                <div>
+                  <h4 class="menu-item-name">紅燒牛肉麵</h4>
+                  <p class="menu-item-desc">慢燉 12 小時濃醇牛骨湯底</p>
+                </div>
+                <div class="menu-item-bottom">
+                  <span class="menu-item-price">NT$ <strong>165</strong></span>
+                  <button class="menu-add-btn" (click)="addToCart({id:1,name:'紅燒牛肉麵',nameEn:'Braised Beef Noodle',price:165,image:'',category:'台式',categoryEn:'Taiwanese',description:'',stock:20})" aria-label="加入紅燒牛肉麵">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 卡片 2：印度奶油咖哩飯 -->
+            <div class="menu-item-card">
+              <div class="menu-item-img mi-curry">
+                <span class="menu-item-badge-overlay badge-new">新品</span>
+              </div>
+              <div class="menu-item-body">
+                <div>
+                  <h4 class="menu-item-name">印度奶油咖哩飯</h4>
+                  <p class="menu-item-desc">道地印式香料，奶香濃郁</p>
+                </div>
+                <div class="menu-item-bottom">
+                  <span class="menu-item-price">NT$ <strong>175</strong></span>
+                  <button class="menu-add-btn" (click)="addToCart({id:2,name:'印度奶油咖哩飯',nameEn:'Butter Chicken Curry',price:175,image:'',category:'南洋',categoryEn:'Asian',description:'',stock:15})" aria-label="加入印度奶油咖哩飯">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 卡片 3：越南牛肉河粉 -->
+            <div class="menu-item-card">
+              <div class="menu-item-img mi-pho"></div>
+              <div class="menu-item-body">
+                <div>
+                  <h4 class="menu-item-name">越南牛肉河粉</h4>
+                  <p class="menu-item-desc">鮮香湯底，新鮮香草配料</p>
+                </div>
+                <div class="menu-item-bottom">
+                  <span class="menu-item-price">NT$ <strong>155</strong></span>
+                  <button class="menu-add-btn" (click)="addToCart({id:3,name:'越南牛肉河粉',nameEn:'Pho Bo',price:155,image:'',category:'南洋',categoryEn:'Asian',description:'',stock:18})" aria-label="加入越南牛肉河粉">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 卡片 4：叉燒豚骨拉麵 -->
+            <div class="menu-item-card">
+              <div class="menu-item-img mi-ramen">
+                <span class="menu-item-badge-overlay badge-hot">熱銷</span>
+              </div>
+              <div class="menu-item-body">
+                <div>
+                  <h4 class="menu-item-name">叉燒豚骨拉麵</h4>
+                  <p class="menu-item-desc">濃郁白湯，嫩煎叉燒兩片</p>
+                </div>
+                <div class="menu-item-bottom">
+                  <span class="menu-item-price">NT$ <strong>185</strong></span>
+                  <button class="menu-add-btn" (click)="addToCart({id:4,name:'叉燒豚骨拉麵',nameEn:'Tonkotsu Ramen',price:185,image:'',category:'日式',categoryEn:'Japanese',description:'',stock:10})" aria-label="加入叉燒豚骨拉麵">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── 菜單分類：特調飲品 ────────────────────── -->
+        <div class="menu-category-section">
+          <h3 class="menu-cat-title">
+            <span class="menu-cat-line"></span>
+            🧋 特調飲品
+          </h3>
+          <div class="menu-items-list">
+
+            <!-- 卡片 5：黑糖珍珠奶茶 -->
+            <div class="menu-item-card">
+              <div class="menu-item-img mi-bbt">
+                <span class="menu-item-badge-overlay badge-hot">熱銷</span>
+              </div>
+              <div class="menu-item-body">
+                <div>
+                  <h4 class="menu-item-name">黑糖珍珠奶茶</h4>
+                  <p class="menu-item-desc">現煮珍珠，手工黑糖虎紋</p>
+                </div>
+                <div class="menu-item-bottom">
+                  <span class="menu-item-price">NT$ <strong>75</strong></span>
+                  <button class="menu-add-btn" (click)="addToCart({id:5,name:'黑糖珍珠奶茶',nameEn:'Brown Sugar Boba',price:75,image:'',category:'飲品',categoryEn:'Drinks',description:'',stock:50})" aria-label="加入黑糖珍珠奶茶">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 卡片 6：抹茶拿鐵 -->
+            <div class="menu-item-card">
+              <div class="menu-item-img mi-matcha">
+                <span class="menu-item-badge-overlay badge-new">新品</span>
+              </div>
+              <div class="menu-item-body">
+                <div>
+                  <h4 class="menu-item-name">抹茶拿鐵</h4>
+                  <p class="menu-item-desc">京都宇治抹茶粉，鮮奶調製</p>
+                </div>
+                <div class="menu-item-bottom">
+                  <span class="menu-item-price">NT$ <strong>85</strong></span>
+                  <button class="menu-add-btn" (click)="addToCart({id:6,name:'抹茶拿鐵',nameEn:'Matcha Latte',price:85,image:'',category:'飲品',categoryEn:'Drinks',description:'',stock:30})" aria-label="加入抹茶拿鐵">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 底部購物車浮動列 -->
+        @if (cartCount() > 0) {
+          <div class="menu-cart-float" (click)="goToCheckout()" role="button" aria-label="查看購物車">
+            <div class="cart-float-left">
+              <div class="cart-float-icon">
+                <span class="cart-float-count">{{ cartCount() }}</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+              </div>
+              <span class="cart-float-label">查看購物車</span>
+            </div>
+            <div class="cart-float-right">
+              <span class="cart-float-total">NT$ {{ cartTotal() }}</span>
+              <svg class="cart-float-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+          </div>
+        }
+
+        <div style="height: 100px;"></div>
+
+      </section>
+    }
+
+
+    <!-- ╔═══════════════════════════════════════════╗
+         ║  頁籤 3 💳  多幣別安全結帳 (Checkout)       ║
+         ╚═══════════════════════════════════════════╝ -->
+    @if (activeTab() === 'checkout') {
+      <section class="tab-checkout" aria-label="結帳頁面">
+
+        <div class="checkout-container">
+
+          <h2 class="checkout-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            確認訂單
+          </h2>
+
+          <!-- 空購物車 -->
+          @if (cartCount() === 0) {
+            <div class="checkout-empty">
+              <div class="empty-bowl">🍜</div>
+              <p>購物車是空的</p>
+              <button class="checkout-empty-btn" (click)="setTab('menu')">前往菜單選餐</button>
+            </div>
+          }
+
+          <!-- 訂單品項列表 -->
+          @if (cartCount() > 0) {
+            <div class="checkout-items">
+              @for (item of cartItems(); track item.id) {
+                <div class="checkout-item">
+                  <div class="co-item-info">
+                    <span class="co-item-name">{{ item.name }}</span>
+                    <span class="co-item-unit">NT$ {{ item.price }}</span>
+                  </div>
+                  <div class="co-item-ctrl">
+                    <button class="co-delete-btn" (click)="removeFromCart(item.id)" aria-label="移除商品">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                      </svg>
+                    </button>
+                    <button class="co-qty-btn" (click)="updateCartQuantity(item.id, -1)">−</button>
+                    <span class="co-qty">{{ item.quantity }}</span>
+                    <button class="co-qty-btn" (click)="updateCartQuantity(item.id, 1)">＋</button>
+                  </div>
+                  <span class="co-item-subtotal">NT$ {{ item.price * item.quantity }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- 滿額贈品 -->
+            @if (cartTotal() >= 300) {
+              <div class="checkout-gift">
+                <span class="gift-icon">🎁</span>
+                <span class="gift-text">招牌滷蛋 × 2（滿額贈品）</span>
+                <span class="gift-price">免費</span>
+              </div>
+            }
+
+            <!-- 金額明細 -->
+            <div class="checkout-summary">
+              <div class="summary-row">
+                <span>小計</span>
+                <span>NT$ {{ cartTotal() }}</span>
+              </div>
+              <div class="summary-row">
+                <span>稅率（內含 5%）</span>
+                <span>已含稅</span>
+              </div>
+              <div class="summary-row summary-row-total">
+                <span>總計</span>
+                <span class="summary-total-price">NT$ {{ cartTotal() }}</span>
+              </div>
+            </div>
+
+            <!-- 進入結帳頁面 -->
+            <button class="checkout-submit" (click)="setTab('payment')">
+              進入結帳頁面 — NT$ {{ cartTotal() }}
+            </button>
+
+            <!-- 清空購物車 -->
+            <button class="checkout-clear enhance-clear-btn" (click)="clearCart()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <span>清空購物車</span>
+            </button>
+          }
+
+        </div>
+
+        <div style="height: 80px;"></div>
+
+      </section>
+    }
+
+    <!-- ═══════════════════════════════════════════════
+         確認訂單 (Checkout Payment Flow)
+    ═══════════════════════════════════════════════════ -->
+    @if (activeTab() === 'payment') {
+      <section class="ch-section fade-in">
+        <header class="payment-header">
+          <button class="payment-back-btn" (click)="setTab('checkout')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            返回
+          </button>
+          <div class="payment-header-center">
+            <span class="payment-icon">🛒</span>
+            <h2 class="payment-title">確認訂單</h2>
+          </div>
+          <div style="width: 40px;"></div> <!-- Spacer -->
+        </header>
+
+        <div class="payment-content-wrapper">
+          <!-- 唯讀購物明細簡介 -->
+          <div class="payment-summary-card">
+            @for (item of cartItems(); track item.id) {
+              <div class="psc-row">
+                <span class="psc-name">{{ item.name }}</span>
+                <div class="psc-right">
+                  <span class="psc-qty">× {{ item.quantity }}</span>
+                  <span class="psc-price">NT$ {{ item.price * item.quantity }}</span>
+                </div>
+              </div>
+            }
+            <div class="psc-divider"></div>
+            <div class="psc-total-row">
+              <span>總計</span>
+              <span class="psc-total-amount">NT$ {{ cartTotal() }}</span>
+            </div>
+          </div>
+
+          <!-- 備註欄位 -->
+          <div class="checkout-note">
+            <label class="checkout-note-label">訂單備註（選填）</label>
+            <textarea class="checkout-note-input" placeholder="如：不要香菜、少辣、外帶…" rows="2"></textarea>
+          </div>
+
+          <!-- 付款方式 -->
+          <div class="checkout-payment">
+            <p class="checkout-payment-title">付款方式</p>
+            <div class="payment-options">
+              <label class="payment-opt" [class.active]="paymentMethod() === 'credit'" (click)="setPaymentMethod('credit')">
+                <input type="radio" name="payment" [checked]="paymentMethod() === 'credit'" />
+                <span class="payment-icon">💳</span>
+                <span>信用卡</span>
+              </label>
+              <label class="payment-opt" [class.active]="paymentMethod() === 'mobile'" (click)="setPaymentMethod('mobile')">
+                <input type="radio" name="payment" [checked]="paymentMethod() === 'mobile'" />
+                <span class="payment-icon">📱</span>
+                <span>行動支付</span>
+              </label>
+              <label class="payment-opt" [class.active]="paymentMethod() === 'cash'" (click)="setPaymentMethod('cash')">
+                <input type="radio" name="payment" [checked]="paymentMethod() === 'cash'" />
+                <span class="payment-icon">💵</span>
+                <span>現金</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 送出訂單 -->
+          <button class="checkout-submit" (click)="clearCart(); setTab('tracker')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            確認下單 — NT$ {{ cartTotal() }}
+          </button>
+        </div>
+        <div style="height: 80px;"></div>
+      </section>
+    }
+
+
+    <!-- ╔═══════════════════════════════════════════╗
+         ║  頁籤 4 🔔  訂單狀態追蹤 (Tracker)         ║
+         ╚═══════════════════════════════════════════╝ -->
+    @if (activeTab() === 'tracker') {
+      <section class="tab-tracker" aria-label="訂單追蹤">
+
+        @if (trackingOrder()) {
+          <div class="tracker-container">
+
+            <!-- 取餐號碼大牌 -->
+            <div class="tracker-number-card">
+              <span class="tracker-number-label">您的取餐號碼</span>
+              <div class="tracker-number">{{ trackingOrder()!.number }}</div>
+              <span class="tracker-time-label">預估等候 <strong>{{ trackingOrder()!.estimatedMinutes }}</strong> 分鐘</span>
+            </div>
+
+            <!-- 製作進度條 -->
+            <div class="tracker-steps">
+              <div class="tracker-step"
+                   [class.step-done]="['cooking','ready','done'].includes(trackingOrder()!.status)"
+                   [class.step-active]="trackingOrder()!.status === 'waiting'">
+                <div class="step-dot">
+                  @if (['cooking','ready','done'].includes(trackingOrder()!.status)) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  }
+                </div>
+                <div class="step-line"></div>
+                <span class="step-label">訂單確認</span>
+              </div>
+              <div class="tracker-step"
+                   [class.step-done]="['ready','done'].includes(trackingOrder()!.status)"
+                   [class.step-active]="trackingOrder()!.status === 'cooking'">
+                <div class="step-dot">
+                  @if (trackingOrder()!.status === 'cooking') {
+                    <span class="step-cooking-dot"></span>
+                  }
+                  @if (['ready','done'].includes(trackingOrder()!.status)) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  }
+                </div>
+                <div class="step-line"></div>
+                <span class="step-label">備餐中</span>
+              </div>
+              <div class="tracker-step"
+                   [class.step-done]="trackingOrder()!.status === 'done'"
+                   [class.step-active]="trackingOrder()!.status === 'ready'">
+                <div class="step-dot">
+                  @if (trackingOrder()!.status === 'done') {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  }
+                </div>
+                <span class="step-label">可取餐 🎉</span>
+              </div>
+            </div>
+
+            <!-- 訂單明細 -->
+            <div class="tracker-order-card">
+              <div class="toc-header">
+                <span class="toc-id">{{ trackingOrder()!.id }}</span>
+                <span class="toc-time">{{ trackingOrder()!.createdAt }}</span>
+              </div>
+              <div class="toc-items">
+                @for (item of trackingOrder()!.items; track item) {
+                  <div class="toc-item-row">
+                    <span class="toc-dot">•</span>
+                    <span>{{ item }}</span>
+                  </div>
+                }
+              </div>
+              <div class="toc-total">
+                <span>合計</span>
+                <span class="toc-price">NT$ {{ trackingOrder()!.total }}</span>
+              </div>
+            </div>
+
+            <!-- 繼續點餐 -->
+            <button class="tracker-more-btn" (click)="setTab('menu')">繼續點餐</button>
+
+          </div>
+        }
+
+        @if (!trackingOrder()) {
+          <div class="tracker-empty">
+            <div class="tracker-empty-icon">🔔</div>
+            <p>目前沒有進行中的訂單</p>
+            <button class="tracker-start-btn" (click)="setTab('menu')">前往點餐</button>
+          </div>
+        }
+
+        <div style="height: 80px;"></div>
+
+      </section>
+    }
+
+
+    <!-- ═══════════════════════════════════════════════
+         訂單管理 (取代原有的獨立會員中心)
+    ═══════════════════════════════════════════════════ -->
+    <!-- ════════════════════════════════════════════════════
+         訂單紀錄（Order History）
+         設計風格：餐廳票據感（暖橘奶油配色 + receipt 分隔線）
+         動畫原則：Web Animation Design — ease-out 入場，stagger nth-child 延遲
+         ════════════════════════════════════════════════════ -->
+    @if (activeTab() === 'orders') {
+      <section class="ch-section ord-section">
+
+        <!-- 頁首：標題左側橘色強調條 + 總筆數副標 -->
+        <header class="ord-header">
+          <div class="ord-title-row">
+            <span class="ord-title-accent"></span>
+            <h2 class="ord-title">訂單紀錄</h2>
+          </div>
+          <p class="ord-subtitle">共 {{ orderHistoryList().length }} 筆歷史訂單</p>
+        </header>
+
+        <!-- ── 狀態篩選列 ───────────────────────────────────────
+             三個按鈕各帶彩色小點 + 數量 badge
+             active 態：奶油白底 + 橘紅邊框 + 橘色文字
+        ─────────────────────────────────────────────────────── -->
+        <div class="ord-filter-bar">
+
+          <!-- 已完成篩選（綠色圓點） -->
+          <button
+            class="ord-filter-btn"
+            [class.active]="activeOrderTab() === 'completed'"
+            (click)="activeOrderTab.set('completed')"
+          >
+            <span class="ord-filter-dot dot-completed"></span>
+            已完成
+            <span class="ord-filter-count">{{ completedCount() }}</span>
+          </button>
+
+          <!-- 已取消篩選（灰色圓點） -->
+          <button
+            class="ord-filter-btn"
+            [class.active]="activeOrderTab() === 'cancelled'"
+            (click)="activeOrderTab.set('cancelled')"
+          >
+            <span class="ord-filter-dot dot-cancelled"></span>
+            已取消
+            <span class="ord-filter-count">{{ cancelledCount() }}</span>
+          </button>
+
+          <!-- 已退款篩選（玫瑰紅圓點） -->
+          <button
+            class="ord-filter-btn"
+            [class.active]="activeOrderTab() === 'refunded'"
+            (click)="activeOrderTab.set('refunded')"
+          >
+            <span class="ord-filter-dot dot-refunded"></span>
+            已退款
+            <span class="ord-filter-count">{{ refundedCount() }}</span>
+          </button>
+
+        </div>
+
+        <!-- ── 訂單列表 ──────────────────────────────────────── -->
+        <div class="ord-list">
+
+          <!-- 空狀態：SVG 插圖 + 引導文字 -->
+          @if (filteredOrders().length === 0) {
+            <div class="ord-empty">
+              <!-- 票據插圖 SVG（純向量，無外部依賴） -->
+              <svg class="ord-empty-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- 票據主體 -->
+                <rect x="14" y="10" width="52" height="60" rx="8" fill="#F0D8B8" />
+                <!-- 票據高光 -->
+                <rect x="14" y="10" width="52" height="16" rx="8" fill="#FFFAF3" opacity="0.5" />
+                <!-- 內頁線條（模擬文字） -->
+                <rect x="24" y="32" width="32" height="3.5" rx="1.75" fill="#D95C1A" opacity="0.25" />
+                <rect x="24" y="42" width="24" height="3" rx="1.5" fill="#D95C1A" opacity="0.18" />
+                <rect x="24" y="51" width="28" height="3" rx="1.5" fill="#D95C1A" opacity="0.15" />
+                <!-- 訂單折角 -->
+                <path d="M54 10 L66 22 L54 22 Z" fill="#F0A500" opacity="0.3" />
+                <!-- 底部鋸齒（票根感） -->
+                <path d="M14 62 Q17 65 20 62 Q23 59 26 62 Q29 65 32 62 Q35 59 38 62 Q41 65 44 62 Q47 59 50 62 Q53 65 56 62 Q59 59 62 62 Q65 65 66 62 V70 H14 Z" fill="#FFFAF3" />
+                <!-- 空資料勾勾（淡色） -->
+                <circle cx="40" cy="44" r="10" stroke="#D95C1A" stroke-width="1.5" opacity="0.2" />
+                <path d="M35 44l3.5 3.5L46 40" stroke="#D95C1A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.25" />
+              </svg>
+              <p class="ord-empty-text">
+                目前沒有
+                @if (activeOrderTab() === 'completed') { 已完成 }
+                @else if (activeOrderTab() === 'cancelled') { 已取消 }
+                @else { 已退款 }
+                的訂單
+              </p>
+              <p class="ord-empty-sub">去點些美食吧！</p>
+            </div>
+
+          } @else {
+
+            <!-- 訂單卡片（票據感設計）
+                 animation-delay 透過 inline style 控制 stagger（每卡延遲 80ms）-->
+            @for (order of filteredOrders(); track order.id; let i = $index) {
+              <div class="ord-card" [style.animation-delay]="(i * 80) + 'ms'">
+
+                <!-- 卡片頂部：票據 icon + 訂單編號 | 狀態徽章 -->
+                <div class="ord-card-head">
+
+                  <div class="ord-card-id-wrap">
+                    <!-- 票據 SVG icon（橘色描邊） -->
+                    <svg class="ord-card-icon" viewBox="0 0 20 22" fill="none">
+                      <path d="M4 2h12a1 1 0 0 1 1 1v17l-3.5-2-3 2.5-3-2.5L4 20V3a1 1 0 0 1 1-1z" stroke="#D95C1A" stroke-width="1.6" stroke-linejoin="round" />
+                      <line x1="7" y1="8"  x2="13" y2="8"  stroke="#D95C1A" stroke-width="1.4" stroke-linecap="round" />
+                      <line x1="7" y1="11" x2="11" y2="11" stroke="#D95C1A" stroke-width="1.4" stroke-linecap="round" />
+                    </svg>
+                    <span class="ord-card-id">{{ order.id }}</span>
+                  </div>
+
+                  <!-- 狀態徽章：class binding 對應三種配色 -->
+                  <span
+                    class="ord-card-badge"
+                    [class.badge-completed]="order.status === 'completed'"
+                    [class.badge-cancelled]="order.status === 'cancelled'"
+                    [class.badge-refunded]="order.status === 'refunded'"
+                  >
+                    @if (order.status === 'completed') {
+                      <!-- 勾勾 icon -->
+                      <svg viewBox="0 0 12 12" fill="none">
+                        <circle cx="6" cy="6" r="5" fill="#22C55E" opacity="0.18" />
+                        <path d="M3.5 6l2 2 3-3.5" stroke="#166534" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                      已完成
+                    } @else if (order.status === 'cancelled') {
+                      <!-- × icon -->
+                      <svg viewBox="0 0 12 12" fill="none">
+                        <circle cx="6" cy="6" r="5" fill="#9CA3AF" opacity="0.18" />
+                        <path d="M4 4l4 4M8 4l-4 4" stroke="#4B5563" stroke-width="1.5" stroke-linecap="round" />
+                      </svg>
+                      已取消
+                    } @else {
+                      <!-- 退款箭頭 icon -->
+                      <svg viewBox="0 0 12 12" fill="none">
+                        <circle cx="6" cy="6" r="5" fill="#F43F5E" opacity="0.15" />
+                        <path d="M8 4H5a2 2 0 0 0 0 4h3" stroke="#BE123C" stroke-width="1.5" stroke-linecap="round" />
+                        <path d="M7 6l-2-2 2-2" stroke="#BE123C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                      已退款
+                    }
+                  </span>
+
+                </div>
+                <!-- 卡片頂部結束 -->
+
+                <!-- 虛線分隔（收據撕線感） -->
+                <div class="ord-card-dash"></div>
+
+                <!-- 日期列：行事曆 icon + 日期文字 -->
+                <div class="ord-card-date">
+                  <svg viewBox="0 0 16 16" fill="none">
+                    <rect x="1.5" y="3" width="13" height="11.5" rx="2" stroke="#9E7A5A" stroke-width="1.4" />
+                    <line x1="5"   y1="1"  x2="5"   y2="4.5"  stroke="#9E7A5A" stroke-width="1.4" stroke-linecap="round" />
+                    <line x1="11"  y1="1"  x2="11"  y2="4.5"  stroke="#9E7A5A" stroke-width="1.4" stroke-linecap="round" />
+                    <line x1="1.5" y1="7"  x2="14.5" y2="7"   stroke="#9E7A5A" stroke-width="1.2" />
+                  </svg>
+                  <span>{{ order.date }}</span>
+                </div>
+
+                <!-- 訂單品項文字 -->
+                <div class="ord-card-items">{{ order.items }}</div>
+
+                <!-- 虛線分隔 -->
+                <div class="ord-card-dash"></div>
+
+                <!-- 底部：合計標籤 + 金額（大字） -->
+                <div class="ord-card-foot">
+                  <span class="ord-card-total-label">合　計</span>
+                  <div class="ord-card-total-wrap">
+                    <span class="ord-card-currency">NT$</span>
+                    <span class="ord-card-price">{{ order.total }}</span>
+                  </div>
+                </div>
+
+              </div>
+              <!-- 訂單卡片結束 -->
+            }
+
+          }
+
+        </div>
+        <!-- 訂單列表結束 -->
+
+        <!-- 底部安全間距（避免被底部導覽列遮住） -->
+        <div style="height: 88px;"></div>
+
+      </section>
+    }
+
+  </main>
+
+
+
+  <!-- ═══════════════════════════════════════════════
+       底部導覽列
+  ═══════════════════════════════════════════════════ -->
+  <nav class="ch-bottom-nav" aria-label="主導覽">
+    @for (tab of navTabs(); track tab.id) {
+      <button
+        class="ch-nav-btn"
+        [class.ch-nav-btn--active]="activeTab() === tab.id"
+        (click)="setTab(tab.id)"
+        [attr.aria-label]="tab.label"
+      >
+        <!-- 購物車角標 -->
+        @if (tab.id === 'checkout' && cartCount() > 0) {
+          <span class="ch-nav-badge">{{ cartCount() }}</span>
+        }
+
+        <!-- SVG 圖示 -->
+        @if (tab.icon === 'home') {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        }
+        @if (tab.icon === 'menu') {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+            <line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
+          </svg>
+        }
+        @if (tab.icon === 'checkout') {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+        }
+        @if (tab.icon === 'tracker') {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/>
+          </svg>
+        }
+        @if (tab.icon === 'orders') {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        }
+
+        <span class="ch-nav-label">{{ tab.label }}</span>
+      </button>
+    }
+  </nav>
+
+
+
+</div>

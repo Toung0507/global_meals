@@ -91,14 +91,14 @@ export class CustomerLoginComponent {
 
     if (success) {
 
-      /* 登入成功：顯示客戶端 Loading，再導向會員中心 */
+      /* 登入成功：顯示客戶端 Loading，再導向客戶主頁（含 5 個頁籤） */
       this.loadingService.showCustomerLoading();
 
       setTimeout(() => {
-        this.router.navigate(['/customer-member']).then(() => {
+        this.router.navigate(['/customer-home']).then(() => {
           this.loadingService.hide();
         });
-      }, 1500);
+      }, 6200);
 
     } else {
 
@@ -118,7 +118,7 @@ export class CustomerLoginComponent {
       this.router.navigate(['/staff-login']).then(() => {
         this.loadingService.hide();
       });
-    }, 1500);
+    }, 1500); /* 藍色旋轉圈：短暫過場即可，無進度條 */
   }
 
 }

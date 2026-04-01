@@ -7,6 +7,48 @@
 
 ---
 
+## 本次同步事項（2026-04-02 更新）
+
+以下為本輪開發完成的重大變更，筆電端 `git pull` 後請確認這些元件均正常顯示：
+
+### 新增元件
+
+| 元件路徑 | 說明 |
+|---|---|
+| `src/app/manager-dashboard/` | 老闆管理後台，含 `.ts` / `.html` / `.scss` 三檔 |
+| `src/app/pos-terminal/` | 分店長 / 員工 POS 終端，含 `.ts` / `.html` / `.scss` 三檔 |
+| `src/app/customer-home/` | 客戶主頁骨架，含 `.ts` / `.html` / `.scss` 三檔 |
+
+### 修改檔案
+
+| 檔案路徑 | 修改說明 |
+|---|---|
+| `src/app/shared/auth.service.ts` | 新增 3 個管理測試帳號；新增 `staffLogin()` 方法（僅驗證 boss / branch_manager / staff） |
+| `src/app/global_meals_login/staff-login/staff-login.component.ts` | 加入 `FormsModule`、`submitLogin()` 方法、角色路由分流 |
+| `src/app/global_meals_login/staff-login/staff-login.component.html` | 加入 `[(ngModel)]` 綁定、錯誤訊息區塊 |
+| `src/app/global_meals_login/staff-login/staff-login.component.scss` | 新增 `.s-error-msg` 樣式 |
+| `src/app/app.routes.ts` | 新增 `manager-dashboard`、`pos-terminal`、`customer-home` 路由 |
+| `src/index.html` | 新增 Bootstrap 5.3.8 CDN（CSS + JS bundle）；新增 Noto Sans TC + IBM Plex Mono 字體 |
+| `src/app/global_meals_login/customer-guest/` | 訪客快速點餐入口頁面更新（Lottie 動畫改為本機路徑） |
+| `src/app/shared/customer-loading/` | 客戶端 Loading 元件更新（v4 分割卡片版本） |
+
+### 新增資源
+
+| 路徑 | 說明 |
+|---|---|
+| `public/assets/scan-to-order.lottie` | 掃碼點餐 Lottie 動畫（本機，取代 CDN） |
+| `public/assets/scan-to-order.json` | 掃碼點餐 Lottie 動畫（JSON 格式備份） |
+| `public/assets/logo圓形.png` | 品牌 Logo 圓形版（若筆電缺少此檔，請從辦公室電腦複製） |
+
+### 待辦事項（筆電端確認）
+
+- [ ] 執行 `npm install` 確認依賴套件同步
+- [ ] 執行 `ng serve` 確認各頁面正常顯示
+- [ ] 前往 `/staff-login` 測試三種角色登入流程
+- [ ] 確認 `public/assets/logo圓形.png` 存在（Loading 動畫左側 Logo 使用）
+
+---
+
 ## STEP 1 — 確認必要工具是否已安裝
 
 請執行以下指令確認版本：
@@ -203,21 +245,29 @@ ng serve
 | Angular CLI | 19.x |
 | Angular | 19.x（standalone components） |
 | 樣式 | SCSS（無 CSS Variables，純傳統寫法） |
-| 字體 | Fraunces、LXGW WenKai TC、DM Mono（Google Fonts） |
-| 控制流 | Angular 17+ `@if` 語法（非 `*ngIf`） |
+| Bootstrap | 5.3.8（CDN，全域引入於 index.html） |
+| 字體（客戶端） | Fraunces、LXGW WenKai TC、DM Mono（Google Fonts） |
+| 字體（管理端） | Noto Sans TC、IBM Plex Mono（Google Fonts） |
+| 控制流 | Angular 17+ `@if` / `@for` 語法（非 `*ngIf` / `*ngFor`） |
+| Lottie | dotlottie-wc 0.9.3（CDN）/ lottie-web（npm） |
+| 動畫 | GSAP（npm，Loading 過場用） |
 | GitHub CLI | gh（需 auth login） |
 
 ---
 
 ## 路由一覽
 
-| 路徑 | 頁面 |
-|------|------|
-| `/` | 自動導向 `/staff-login` |
-| `/staff-login` | 後台員工登入 |
-| `/customer-login` | 前台顧客登入 |
-| `/customer-register` | 客戶註冊 |
-| `/customer-guest` | 訪客快速點餐（無需帳號） |
+| 路徑 | 頁面 | 可存取角色 |
+|------|------|-----------|
+| `/` | 自動導向 `/staff-login` | — |
+| `/staff-login` | 後台員工登入 | 所有人 |
+| `/customer-login` | 前台顧客登入 | 所有人 |
+| `/customer-register` | 客戶註冊 | 所有人 |
+| `/customer-guest` | 訪客快速點餐（無需帳號） | 所有人 |
+| `/customer-home` | 客戶主頁 | customer |
+| `/customer-member` | 客戶會員中心 | customer |
+| `/manager-dashboard` | 老闆管理後台 | boss |
+| `/pos-terminal` | 分店長 / 員工 POS 終端 | branch_manager, staff |
 
 ---
 
@@ -228,13 +278,20 @@ ng serve
 
 ---
 
-> 文件最後更新：2026-03-26
-
 ## 測試帳戶
 
-會員帳戶
-電子郵件：test@lazybao.com
-手機號碼：0912-345-678
-密碼：    test1234
+> 以下為本機 Mock 測試用帳戶，**請勿寫入公開文件或對外分享**。
 
-> 文件最後更新：2026-03-27
+**客戶會員帳戶**
+- 電子郵件：`test@lazybao.com`
+- 手機號碼：`0912-345-678`
+- 密碼：`test1234`
+
+**管理系統帳戶**（三種角色）
+- 老闆：`admin@lazybao.com` / `admin1234`
+- 分店長：`manager@lazybao.com` / `mgr1234`
+- 員工：`staff@lazybao.com` / `staff1234`
+
+---
+
+> 文件最後更新：2026-04-02

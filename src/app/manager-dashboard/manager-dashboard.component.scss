@@ -1,0 +1,380 @@
+/*
+ * =====================================================
+ * 檔案名稱：manager-dashboard.component.scss
+ * 用途說明：老闆後台管理主控台的所有樣式
+ * 色彩說明：
+ *   深底色      #0d1117
+ *   側邊欄/頂欄  #111927
+ *   卡片背景    #1c2130
+ *   表格底色    #161b22
+ *   金色主題    #c49756 / #f0c68c
+ *   管理員紫色  #c084fc
+ *   文字色（主） #e2e8f8
+ *   文字色（次） #8892b0
+ * =====================================================
+ */
+
+
+/* ── :host 宿主元素：撐滿整個視窗 ───────────────────── */
+:host {
+    display: block;
+    min-height: 100vh;
+    background-color: #0d1117;
+    color: #e2e8f8;
+    font-family: 'Noto Sans TC', 'LXGW WenKai TC', sans-serif;
+    font-size: 0.875rem;
+    overflow-x: hidden;
+}
+
+
+/* ── 側邊欄 (Sidebar) ────────────────────────────────
+   固定在左側 240px，深色背景，金色強調邊線
+   ──────────────────────────────────────────────────── */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100vh;
+    background-color: #111927;
+    border-right: 1px solid rgba(255, 255, 255, 0.07);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+/* 品牌區：系統名稱 + 角色標識 */
+.sidebar-brand {
+    padding: 22px 20px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.sidebar-brand-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #f0c68c;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.sidebar-brand-role {
+    font-size: 0.7rem;
+    color: #c084fc;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* 使用者資訊區域 */
+.sidebar-user {
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.sidebar-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #c084fc 0%, #818cf8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.sidebar-uname { font-size: 0.85rem; color: #e2e8f8; font-weight: 500; }
+.sidebar-urole { font-size: 0.72rem; color: #8892b0; }
+
+/* 導覽按鈕列表 */
+.sidebar-nav { flex: 1; padding: 14px 0; }
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 10px 20px;
+    cursor: pointer;
+    color: #8892b0;
+    font-size: 0.855rem;
+    border-left: 3px solid transparent;
+    transition: background-color 0.15s, color 0.15s;
+    user-select: none;
+}
+
+.nav-item:hover {
+    background-color: rgba(240, 198, 140, 0.05);
+    color: #c9d1d9;
+}
+
+/* 目前選中頁籤：金色左邊線 + 金色文字 */
+.nav-item.active {
+    background-color: rgba(240, 198, 140, 0.10);
+    color: #f0c68c;
+    border-left-color: #c49756;
+    font-weight: 500;
+}
+
+.nav-icon { font-size: 1rem; width: 18px; text-align: center; flex-shrink: 0; }
+
+/* 側邊欄底部登出鈕區域 */
+.sidebar-footer {
+    padding: 14px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+
+/* ── 主內容框架 ──────────────────────────────────────
+   margin-left: 240px 對應側邊欄寬度
+   ──────────────────────────────────────────────────── */
+.main-wrapper {
+    margin-left: 240px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 頂部工具列 */
+.topbar {
+    height: 58px;
+    background-color: #111927;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    display: flex;
+    align-items: center;
+    padding: 0 26px;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.topbar-title { font-size: 0.95rem; font-weight: 600; color: #e2e8f8; }
+
+/* 主要內容區域 */
+.main-content { padding: 26px; flex: 1; }
+
+
+/* ── 統計卡片 (Stat Cards) ──────────────────────────── */
+.stat-card {
+    background-color: #1c2130;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    padding: 20px 22px;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #8892b0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #f0c68c;
+    line-height: 1.1;
+}
+
+.stat-sub { font-size: 0.75rem; color: #8892b0; margin-top: 5px; }
+
+
+/* ── 通用內容卡片 (Content Card) ────────────────────── */
+.content-card {
+    background-color: #1c2130;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    padding: 22px;
+    margin-bottom: 18px;
+}
+
+.card-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #e2e8f8;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+
+/* ── 深色表格覆寫 ─────────────────────────────────────
+   Bootstrap .table 的預設白色背景替換為透明深色系
+   ──────────────────────────────────────────────────── */
+.table-dark-custom { color: #c9d1d9; font-size: 0.855rem; }
+
+.table-dark-custom thead th {
+    background-color: #161b22;
+    color: #8892b0;
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 11px 14px;
+}
+
+.table-dark-custom td {
+    background-color: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 11px 14px;
+    vertical-align: middle;
+}
+
+.table-dark-custom tbody tr:hover td {
+    background-color: rgba(255, 255, 255, 0.025);
+}
+
+/* 表格外框圓角容器 */
+.table-wrapper { background-color: #161b22; border-radius: 8px; overflow: hidden; }
+
+
+/* ── 狀態徽章 (Status Badges) ───────────────────────── */
+.badge-ok    { background-color: rgba(62,207,142,0.15); color: #3ecf8e; border: 1px solid rgba(62,207,142,0.3); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+.badge-warn  { background-color: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+.badge-err   { background-color: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.3); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+.badge-blue  { background-color: rgba(79,142,247,0.15); color: #4f8ef7; border: 1px solid rgba(79,142,247,0.3); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+.badge-teal  { background-color: rgba(62,207,142,0.12); color: #3ecf8e; border: 1px solid rgba(62,207,142,0.25); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+
+
+/* ── 按鈕樣式 ─────────────────────────────────────────── */
+.btn-gold {
+    background-color: #c49756;
+    border-color: #c49756;
+    color: #0d1117;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+.btn-gold:hover { background-color: #f0c68c; border-color: #f0c68c; color: #0d1117; }
+
+.btn-ghost-gold {
+    background-color: rgba(196,151,86,0.12);
+    color: #c49756;
+    border: 1px solid rgba(196,151,86,0.28);
+    font-size: 0.75rem;
+}
+.btn-ghost-gold:hover { background-color: rgba(196,151,86,0.22); color: #f0c68c; border-color: rgba(196,151,86,0.4); }
+
+.btn-ghost-red {
+    background-color: rgba(248,113,113,0.10);
+    color: #f87171;
+    border: 1px solid rgba(248,113,113,0.25);
+    font-size: 0.75rem;
+}
+.btn-ghost-red:hover { background-color: rgba(248,113,113,0.2); color: #fca5a5; }
+
+.btn-ghost-green {
+    background-color: rgba(62,207,142,0.10);
+    color: #3ecf8e;
+    border: 1px solid rgba(62,207,142,0.25);
+    font-size: 0.75rem;
+}
+
+
+/* ── 深色表單覆寫 ─────────────────────────────────────── */
+.form-ctrl {
+    background-color: #161b22;
+    border: 1px solid rgba(255,255,255,0.10);
+    color: #e2e8f8;
+    font-size: 0.855rem;
+    border-radius: 7px;
+}
+.form-ctrl:focus {
+    background-color: #161b22;
+    border-color: #c49756;
+    color: #e2e8f8;
+    box-shadow: 0 0 0 3px rgba(196,151,86,0.15);
+}
+.form-ctrl::placeholder { color: #8892b0; }
+select.form-ctrl option { background-color: #1c2130; color: #e2e8f8; }
+
+
+/* ── 頁面標題 ─────────────────────────────────────────── */
+.page-title  { font-size: 1.1rem; font-weight: 700; color: #f0c68c; margin-bottom: 4px; }
+.page-sub    { font-size: 0.78rem; color: #8892b0; margin-bottom: 22px; }
+
+
+/* ── 分店色點 ─────────────────────────────────────────── */
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
+
+
+/* ── 庫存進度條 ───────────────────────────────────────── */
+.stock-bar { height: 5px; background-color: #2d3748; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+.fill-ok   { background-color: #3ecf8e; height: 100%; border-radius: 3px; }
+.fill-warn { background-color: #fbbf24; height: 100%; border-radius: 3px; }
+.fill-err  { background-color: #f87171; height: 100%; border-radius: 3px; }
+
+
+/* ── 商品行內卡片 ─────────────────────────────────────── */
+.product-row {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    background-color: #161b22;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 14px;
+}
+
+.product-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+
+/* ── 活動卡片 ─────────────────────────────────────────── */
+.promo-row {
+    background-color: #161b22;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-left: 4px solid #c49756;
+    border-radius: 0 10px 10px 0;
+    padding: 15px;
+    margin-bottom: 12px;
+}
+
+
+/* ── 稅率設定列 ───────────────────────────────────────── */
+.tax-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.tax-row:last-child { border-bottom: none; }
+
+
+/* ── 財報大數字 ───────────────────────────────────────── */
+.finance-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #f0c68c;
+    line-height: 1;
+}
+
+
+/* ── 等寬字體 ─────────────────────────────────────────── */
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+/* 訂單號碼色 */
+.order-id { font-family: 'IBM Plex Mono', monospace; color: #c49756; }
+
+
+/* ── Bootstrap form-switch 深色覆寫 ───────────────────── */
+.form-check-input:checked {
+    background-color: #3ecf8e;
+    border-color: #3ecf8e;
+}

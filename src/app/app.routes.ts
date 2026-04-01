@@ -4,12 +4,18 @@ import { CustomerLoginComponent } from './global_meals_login/customer-login/cust
 import { CustomerRegisterComponent } from './global_meals_login/customer-register/customer-register.component';
 import { CustomerGuestComponent } from './global_meals_login/customer-guest/customer-guest.component';
 import { CustomerMemberComponent } from './customer-member/customer-member.component';
+import { CustomerHomeComponent } from './customer-home/customer-home.component';
+import { ManagerDashboardComponent } from './manager-dashboard/manager-dashboard.component';
+import { PosTerminalComponent } from './pos-terminal/pos-terminal.component';
 
 export const routes: Routes = [
-  { path: 'staff-login',       component: StaffLoginComponent },
-  { path: 'customer-login',    component: CustomerLoginComponent },
-  { path: 'customer-register', component: CustomerRegisterComponent },
-  { path: 'customer-guest',    component: CustomerGuestComponent },
-  { path: 'customer-member',   component: CustomerMemberComponent },   /* 會員中心 */
-  { path: '',                  redirectTo: 'staff-login', pathMatch: 'full' },
+  { path: 'staff-login',        component: StaffLoginComponent },
+  { path: 'customer-login',     component: CustomerLoginComponent },
+  { path: 'customer-register',  component: CustomerRegisterComponent },
+  { path: 'customer-guest',     component: CustomerGuestComponent },
+  { path: 'customer-member',    component: CustomerMemberComponent },   /* 會員中心 */
+  { path: 'customer-home',      component: CustomerHomeComponent },     /* 客戶主頁 */
+  { path: 'manager-dashboard',  component: ManagerDashboardComponent }, /* 老闆管理後台 */
+  { path: 'pos-terminal',       component: PosTerminalComponent },      /* 分店長 / 員工 POS */
+  { path: '',                   redirectTo: 'staff-login', pathMatch: 'full' },
 ];
