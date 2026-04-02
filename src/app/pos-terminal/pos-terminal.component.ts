@@ -84,15 +84,16 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
 
   /* ── 商品清單（靜態假資料，未來替換為 API）────────── */
   readonly PRODUCTS: PosProduct[] = [
-    { id: 1, name: '紅燒牛肉麵',   eng: 'Braised Beef Noodle',   price: 165, emoji: '🍜', bg: 'linear-gradient(135deg,#2d1a0e,#5c3520)', badge: 'hot', stock: 48 },
-    { id: 2, name: '印度奶油咖哩飯', eng: 'Butter Chicken Curry', price: 175, emoji: '🍛', bg: 'linear-gradient(135deg,#2d1f0a,#5c4010)', badge: 'new', stock: 32 },
-    { id: 3, name: '越南牛肉河粉',  eng: 'Pho Bo',                price: 155, emoji: '🍲', bg: 'linear-gradient(135deg,#0a2d1a,#106030)', badge: 'low', stock: 5  },
-    { id: 4, name: '三杯雞飯',      eng: 'Three-Cup Chicken',     price: 150, emoji: '🍗', bg: 'linear-gradient(135deg,#1e1a2d,#3d3060)', stock: 24 },
-    { id: 5, name: '墨西哥辣雞捲',  eng: 'Spicy Chicken Wrap',    price: 145, emoji: '🌮', bg: 'linear-gradient(135deg,#2d0a0a,#6b1a1a)', badge: 'hot', stock: 18 },
-    { id: 6, name: '凱薩沙拉',      eng: 'Caesar Salad',          price: 120, emoji: '🥗', bg: 'linear-gradient(135deg,#0a2d12,#1a5c28)', stock: 15 },
-    { id: 7, name: '珍珠奶茶',      eng: 'Bubble Tea',            price: 65,  emoji: '🧋', bg: 'linear-gradient(135deg,#0a1e2d,#154060)', badge: 'hot', stock: 120 },
-    { id: 8, name: '招牌滷蛋',      eng: 'Marinated Egg',         price: 30,  emoji: '🥚', bg: 'linear-gradient(135deg,#1e1208,#4a2e10)', stock: 80 },
-    { id: 9, name: '味噌湯',        eng: 'Miso Soup',             price: 45,  emoji: '🍵', bg: 'linear-gradient(135deg,#1a1200,#3d2c00)', stock: 60 },
+    /* 台灣分店商品清單（未來替換為 API 資料） */
+    { id: 1, name: '招牌滷肉飯',   eng: 'Braised Pork Rice',         price: 120, emoji: '🍚', bg: 'linear-gradient(135deg,#2d1205,#5c2a10)', badge: 'hot', stock: 48 },
+    { id: 2, name: '古早味排骨飯', eng: 'Pork Chop Rice',            price: 145, emoji: '🍱', bg: 'linear-gradient(135deg,#2d1a05,#5c3a10)', badge: 'hot', stock: 32 },
+    { id: 3, name: '蚵仔煎',       eng: 'Oyster Pancake',            price: 80,  emoji: '🥚', bg: 'linear-gradient(135deg,#2d2005,#5c4510)', badge: 'low', stock: 5  },
+    { id: 4, name: '三杯雞飯',     eng: 'Three-Cup Chicken Rice',    price: 150, emoji: '🍗', bg: 'linear-gradient(135deg,#1e1208,#4a2e10)', stock: 24 },
+    { id: 5, name: '控肉飯',       eng: 'Braised Pork Belly Rice',   price: 130, emoji: '🥩', bg: 'linear-gradient(135deg,#2d0e0a,#5c2018)', badge: 'hot', stock: 18 },
+    { id: 6, name: '蚵仔麵線',     eng: 'Oyster Vermicelli',         price: 70,  emoji: '🍜', bg: 'linear-gradient(135deg,#2d1005,#6b2a10)', stock: 15 },
+    { id: 7, name: '黑糖珍珠奶茶', eng: 'Brown Sugar Boba',          price: 75,  emoji: '🧋', bg: 'linear-gradient(135deg,#0a0805,#2a1a0a)', badge: 'hot', stock: 120 },
+    { id: 8, name: '招牌滷蛋',     eng: 'Marinated Egg',             price: 30,  emoji: '🥚', bg: 'linear-gradient(135deg,#1e1208,#4a2e10)', stock: 80 },
+    { id: 9, name: '仙草奶茶',     eng: 'Grass Jelly Milk Tea',      price: 65,  emoji: '🌿', bg: 'linear-gradient(135deg,#051a05,#103010)', stock: 60 },
   ];
 
   /* 計時器 ID，用於 ngOnDestroy 清除 */

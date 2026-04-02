@@ -1436,17 +1436,14 @@
 }
 
 /* 精選卡片格線 */
+/* 三張推薦卡並排：手機單欄，640px 以上三欄等寬 */
 .home-featured-grid {
     display: grid;
     gap: 12px;
     grid-template-columns: 1fr;
 
     @media (min-width: 640px) {
-        grid-template-columns: 1fr 1fr;
-
-        .featured-card-lg {
-            grid-column: 1 / -1;
-        }
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 
@@ -1467,43 +1464,18 @@
     }
 }
 
+/* 大卡：並排模式下與其他卡片一致，直向排列 */
 .featured-card-lg {
-    flex-direction: row;
-
-    .featured-img {
-        min-width: 130px;
-        height: 130px;
-    }
-
-    .featured-info {
-        padding: 16px;
-    }
+    flex-direction: column;
 }
 
+/* 推薦卡圖片：三卡並排，固定高度裁切中心，呈現一致的專業食物卡 */
 .featured-img {
-    height: 160px;
-    background: linear-gradient(135deg, #E8C4A0, #D4A574);
-    position: relative;
-    overflow: hidden;
-
-    &::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='30' cy='30' r='20' fill='rgba(255,255,255,0.1)'/%3E%3C/svg%3E") center/cover;
-    }
-}
-
-.featured-img-beef {
-    background: linear-gradient(135deg, #C4884A, #8B5A2B);
-}
-
-.featured-img-curry {
-    background: linear-gradient(135deg, #D4A017, #A0720F);
-}
-
-.featured-img-pho {
-    background: linear-gradient(135deg, #7BAE7F, #3D7A42);
+    width: 100%;
+    height: 180px;
+    display: block;
+    object-fit: cover;
+    object-position: center;
 }
 
 .featured-info {
@@ -1644,6 +1616,114 @@
     font-size: 24px;
 }
 
+/* ── 今日優惠區塊 ────────────────────────────────────── */
+
+/* 橫向捲動列：手機左右滑、桌機直接顯示全部 */
+.deal-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    /* 隱藏捲軸，保持乾淨 */
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* 優惠卡：比主廚推薦稍小一階 */
+.deal-card {
+    flex: 0 0 240px;
+    background: #FFFAF3;
+    border-radius: 16px;
+    border: 1px solid #F0D8B8;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+
+    &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(217, 92, 26, 0.18);
+    }
+}
+
+/* 優惠卡頂部圖示區 */
+.deal-card-img {
+    height: 140px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 限時 / 折扣標籤（左上角膠囊） */
+.deal-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #D95C1A;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+}
+
+/* 優惠卡圖片：填滿容器並裁切中心 */
+.deal-card-photo {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: center;
+}
+
+/* 優惠卡文字區 */
+.deal-card-body {
+    padding: 12px 14px 14px;
+}
+
+/* 餐點名稱：單行截斷 */
+.deal-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #3D2010;
+    margin: 0 0 7px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 價格列：原價 + 優惠價並排 */
+.deal-prices {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+/* 原價：劃線灰色小字 */
+.deal-original {
+    font-size: 12px;
+    color: #B8A090;
+    text-decoration: line-through;
+    white-space: nowrap;
+}
+
+/* 優惠價：橘紅醒目，數字特別粗大 */
+.deal-sale {
+    font-size: 13px;
+    color: #D95C1A;
+    font-weight: 600;
+    white-space: nowrap;
+
+    strong {
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 1;
+    }
+}
 
 /* ══════════════════════════════════════════════════════
    頁籤 2 📱  菜單
@@ -2198,28 +2278,34 @@
     }
 }
 
-.mi-beef {
-    background: linear-gradient(135deg, #C4884A, #8B5A2B);
+/* 招牌滷肉飯：深褐滷汁色 */
+.mi-braised-pork {
+    background: linear-gradient(135deg, #7A4520, #4A2010);
 }
 
-.mi-curry {
-    background: linear-gradient(135deg, #D4A017, #A0720F);
+/* 古早味排骨飯：金褐炸排骨色 */
+.mi-pork-chop {
+    background: linear-gradient(135deg, #C4884A, #8B5020);
 }
 
-.mi-pho {
-    background: linear-gradient(135deg, #7BAE7F, #3D7A42);
+/* 蚵仔煎：金黃蛋液色 */
+.mi-oyster-pancake {
+    background: linear-gradient(135deg, #E8B840, #C49020);
 }
 
-.mi-ramen {
-    background: linear-gradient(135deg, #E8A87C, #C4683C);
+/* 控肉飯：紅褐豬皮色 */
+.mi-braised-belly {
+    background: linear-gradient(135deg, #9B5030, #6B3018);
 }
 
+/* 黑糖珍珠奶茶：深黑糖色（保留） */
 .mi-bbt {
     background: linear-gradient(135deg, #6B3A2A, #3D1C10);
 }
 
-.mi-matcha {
-    background: linear-gradient(135deg, #6BAD70, #2F6B35);
+/* 仙草奶茶：深墨綠仙草色 */
+.mi-grass-jelly {
+    background: linear-gradient(135deg, #3A5A3A, #1E3A1E);
 }
 
 .menu-item-body {

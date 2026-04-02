@@ -7,7 +7,7 @@
 
 ---
 
-## 本次同步事項（2026-04-02 更新）
+## 本次同步事項（2026-04-02 第二次更新）
 
 以下為本輪開發完成的重大變更，筆電端 `git pull` 後請確認這些元件均正常顯示：
 
@@ -31,6 +31,8 @@
 | `src/index.html` | 新增 Bootstrap 5.3.8 CDN（CSS + JS bundle）；新增 Noto Sans TC + IBM Plex Mono 字體 |
 | `src/app/global_meals_login/customer-guest/` | 訪客快速點餐入口頁面更新（Lottie 動畫改為本機路徑） |
 | `src/app/shared/customer-loading/` | 客戶端 Loading 元件更新（v4 分割卡片版本） |
+| `src/app/customer-home/customer-home.component.html` | 主廚推薦卡片換真實照片；首頁分類篩選改為飯食/麵食/小吃/輕食/飲品；「探索風味」改版為「今日優惠」橫向捲動卡片 |
+| `src/app/customer-home/customer-home.component.scss` | 配合主廚推薦與今日優惠的版型調整；新增 `.deal-scroll`、`.deal-card`、`.deal-card-photo` 等樣式 |
 
 ### 新增資源
 
@@ -39,6 +41,15 @@
 | `public/assets/scan-to-order.lottie` | 掃碼點餐 Lottie 動畫（本機，取代 CDN） |
 | `public/assets/scan-to-order.json` | 掃碼點餐 Lottie 動畫（JSON 格式備份） |
 | `public/assets/logo圓形.png` | 品牌 Logo 圓形版（若筆電缺少此檔，請從辦公室電腦複製） |
+| `public/assets/招牌滷肉飯.jpg` | 主廚推薦卡片照片（已上傳） |
+| `public/assets/古早味排骨.jpg` | 主廚推薦卡片照片（已上傳） |
+| `public/assets/蚵仔麵線.jpg` | 主廚推薦卡片照片（已上傳） |
+| `public/assets/阿三陽春麵.jpg` | 今日優惠卡片照片（已上傳） |
+| `public/assets/蚵仔煎.jpg` | 今日優惠卡片照片（已上傳） |
+| `public/assets/黑糖珍珠奶茶.jpg` | 今日優惠卡片照片（已上傳） |
+| `public/assets/牛排.jpg` | 今日優惠卡片照片（已上傳） |
+| `public/assets/仙草奶茶.jpg` | 今日優惠卡片照片（已上傳） |
+| `public/assets/三杯雞.jpg` | 今日優惠卡片照片（已上傳） |
 
 ### 待辦事項（筆電端確認）
 
@@ -46,6 +57,8 @@
 - [ ] 執行 `ng serve` 確認各頁面正常顯示
 - [ ] 前往 `/staff-login` 測試三種角色登入流程
 - [ ] 確認 `public/assets/logo圓形.png` 存在（Loading 動畫左側 Logo 使用）
+- [ ] 前往 `/customer-home` → 確認主廚推薦 3 張食物照片正常顯示
+- [ ] 前往 `/customer-home` → 確認今日優惠 6 張食物照片正常顯示（橫向捲動）
 
 ---
 
@@ -294,4 +307,4 @@ ng serve
 
 ---
 
-> 文件最後更新：2026-04-02
+> 文件最後更新：2026-04-02（第二次，加入食物照片同步說明）

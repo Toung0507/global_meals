@@ -516,12 +516,12 @@
                   class="menu-search-input"
                 />
               </div>
-              <!-- 分類標籤列 -->
+              <!-- 台灣分店分類標籤列 -->
               <div class="menu-cat-bar">
                 <button class="menu-cat-btn active">全部</button>
-                <button class="menu-cat-btn">🍜 台式</button>
-                <button class="menu-cat-btn">🍛 南洋</button>
-                <button class="menu-cat-btn">🍝 西式</button>
+                <button class="menu-cat-btn">🍚 飯食</button>
+                <button class="menu-cat-btn">🍜 麵食</button>
+                <button class="menu-cat-btn">🍢 小吃</button>
                 <button class="menu-cat-btn">🥗 輕食</button>
                 <button class="menu-cat-btn">🧋 飲品</button>
               </div>
@@ -535,36 +535,58 @@
               <h2 class="section-title">主廚推薦</h2>
             </div>
             <div class="home-featured-grid">
+              <!-- 首頁大卡：招牌滷肉飯 -->
               <div
                 class="featured-card featured-card-lg"
                 (click)="setTab('menu')"
               >
-                <div class="featured-img featured-img-beef"></div>
+                <!-- 招牌滷肉飯實體圖片 -->
+                <img
+                  class="featured-img"
+                  src="/assets/招牌滷肉飯.jpg"
+                  alt="招牌滷肉飯"
+                />
                 <div class="featured-info">
                   <span class="featured-tag hot-tag">🔥 本週熱銷</span>
-                  <h3 class="featured-name">紅燒牛肉麵</h3>
+                  <h3 class="featured-name">招牌滷肉飯</h3>
                   <p class="featured-desc">
-                    慢燉 12 小時的濃醇牛骨高湯，配上軟嫩入味的牛腩
+                    慢燉豬五花，滷汁濃醇入味，配半熟滷蛋與爽脆泡菜
                   </p>
-                  <span class="featured-price">NT$ <strong>165</strong></span>
+                  <span class="featured-price">NT$ <strong>120</strong></span>
                 </div>
               </div>
+              <!-- 首頁小卡：古早味排骨飯 -->
               <div class="featured-card" (click)="setTab('menu')">
-                <div class="featured-img featured-img-curry"></div>
+                <!-- 古早味排骨飯實體圖片 -->
+                <img
+                  class="featured-img"
+                  src="/assets/古早味排骨.jpg"
+                  alt="古早味排骨飯"
+                />
+                <div class="featured-info">
+                  <span class="featured-tag hot-tag">🔥 本週熱銷</span>
+                  <h3 class="featured-name">古早味排骨飯</h3>
+                  <p class="featured-desc">
+                    台式醃製炸排骨，搭配滷汁菜頭與白飯
+                  </p>
+                  <span class="featured-price">NT$ <strong>145</strong></span>
+                </div>
+              </div>
+              <!-- 首頁小卡：蚵仔麵線 -->
+              <div class="featured-card" (click)="setTab('menu')">
+                <!-- 蚵仔麵線實體圖片 -->
+                <img
+                  class="featured-img"
+                  src="/assets/蚵仔麵線.jpg"
+                  alt="蚵仔麵線"
+                />
                 <div class="featured-info">
                   <span class="featured-tag new-tag">✨ 新品上市</span>
-                  <h3 class="featured-name">印度奶油咖哩</h3>
-                  <p class="featured-desc">香料比例恰到好處的道地印式咖哩</p>
-                  <span class="featured-price">NT$ <strong>175</strong></span>
-                </div>
-              </div>
-              <div class="featured-card" (click)="setTab('menu')">
-                <div class="featured-img featured-img-pho"></div>
-                <div class="featured-info">
-                  <span class="featured-tag">🌿 清爽系</span>
-                  <h3 class="featured-name">越南牛肉河粉</h3>
-                  <p class="featured-desc">鮮香牛骨湯底，搭配新鮮香草與豆芽</p>
-                  <span class="featured-price">NT$ <strong>155</strong></span>
+                  <h3 class="featured-name">蚵仔麵線</h3>
+                  <p class="featured-desc">
+                    鮮蚵燴入麵線，甜辣醬提味，道地夜市風味
+                  </p>
+                  <span class="featured-price">NT$ <strong>70</strong></span>
                 </div>
               </div>
             </div>
@@ -583,29 +605,104 @@
           </div>
 
           <!-- 快速分類入口 -->
+          <!-- 今日優惠卡片列 -->
           <div class="home-section">
             <div class="home-section-header">
-              <h2 class="section-title">探索風味</h2>
+              <span class="section-tag">限時特惠</span>
+              <h2 class="section-title">今日優惠</h2>
             </div>
-            <div class="home-category-grid">
-              <button class="cat-chip" (click)="setTab('menu')">
-                <span class="cat-emoji">🍜</span><span>台式料理</span>
-              </button>
-              <button class="cat-chip" (click)="setTab('menu')">
-                <span class="cat-emoji">🍛</span><span>南洋風味</span>
-              </button>
-              <button class="cat-chip" (click)="setTab('menu')">
-                <span class="cat-emoji">🍝</span><span>西式主食</span>
-              </button>
-              <button class="cat-chip" (click)="setTab('menu')">
-                <span class="cat-emoji">🥗</span><span>輕食沙拉</span>
-              </button>
-              <button class="cat-chip" (click)="setTab('menu')">
-                <span class="cat-emoji">🧋</span><span>特調飲品</span>
-              </button>
-              <button class="cat-chip" (click)="setTab('menu')">
-                <span class="cat-emoji">🍮</span><span>甜點小食</span>
-              </button>
+
+            <!-- 橫向捲動優惠卡列（5 張） -->
+            <div class="deal-scroll">
+              <!-- 優惠卡 1：阿三陽春麵 -->
+              <div class="deal-card" (click)="setTab('menu')">
+                <div class="deal-card-img">
+                  <img class="deal-card-photo" src="/assets/阿三陽春麵.jpg" alt="阿三陽春麵">
+                  <span class="deal-badge">限時</span>
+                </div>
+                <div class="deal-card-body">
+                  <p class="deal-name">阿三陽春麵</p>
+                  <div class="deal-prices">
+                    <span class="deal-original">NT$120</span>
+                    <span class="deal-sale">NT$<strong>99</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 優惠卡 2：蚵仔煎 -->
+              <div class="deal-card" (click)="setTab('menu')">
+                <div class="deal-card-img">
+                  <img class="deal-card-photo" src="/assets/蚵仔煎.jpg" alt="蚵仔煎">
+                  <span class="deal-badge">8折</span>
+                </div>
+                <div class="deal-card-body">
+                  <p class="deal-name">蚵仔煎</p>
+                  <div class="deal-prices">
+                    <span class="deal-original">NT$80</span>
+                    <span class="deal-sale">NT$<strong>65</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 優惠卡 3：黑糖珍珠奶茶 -->
+              <div class="deal-card" (click)="setTab('menu')">
+                <div class="deal-card-img">
+                  <img class="deal-card-photo" src="/assets/黑糖珍珠奶茶.jpg" alt="黑糖珍珠奶茶">
+                  <span class="deal-badge">7折</span>
+                </div>
+                <div class="deal-card-body">
+                  <p class="deal-name">黑糖珍珠奶茶</p>
+                  <div class="deal-prices">
+                    <span class="deal-original">NT$75</span>
+                    <span class="deal-sale">NT$<strong>55</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 優惠卡 4：牛排 -->
+              <div class="deal-card" (click)="setTab('menu')">
+                <div class="deal-card-img">
+                  <img class="deal-card-photo" src="/assets/牛排.jpg" alt="牛排">
+                  <span class="deal-badge">限時</span>
+                </div>
+                <div class="deal-card-body">
+                  <p class="deal-name">牛排</p>
+                  <div class="deal-prices">
+                    <span class="deal-original">NT$130</span>
+                    <span class="deal-sale">NT$<strong>105</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 優惠卡 5：仙草奶茶 -->
+              <div class="deal-card" (click)="setTab('menu')">
+                <div class="deal-card-img">
+                  <img class="deal-card-photo" src="/assets/仙草奶茶.jpg" alt="仙草奶茶">
+                  <span class="deal-badge">今日</span>
+                </div>
+                <div class="deal-card-body">
+                  <p class="deal-name">仙草奶茶</p>
+                  <div class="deal-prices">
+                    <span class="deal-original">NT$65</span>
+                    <span class="deal-sale">NT$<strong>49</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 優惠卡 6：三杯雞 -->
+              <div class="deal-card" (click)="setTab('menu')">
+                <div class="deal-card-img">
+                  <img class="deal-card-photo" src="/assets/三杯雞.jpg" alt="三杯雞">
+                  <span class="deal-badge">9折</span>
+                </div>
+                <div class="deal-card-body">
+                  <p class="deal-name">三杯雞</p>
+                  <div class="deal-prices">
+                    <span class="deal-original">NT$150</span>
+                    <span class="deal-sale">NT$<strong>135</strong></span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -640,10 +737,11 @@
             </div>
             <!-- 分類標籤列（帶漸層遮罩暗示可左滑） -->
             <div class="menu-cat-bar">
+              <!-- 台灣分店菜單篩選標籤 -->
               <button class="menu-cat-btn active">全部</button>
-              <button class="menu-cat-btn">🍜 台式</button>
-              <button class="menu-cat-btn">🍛 南洋</button>
-              <button class="menu-cat-btn">🍝 西式</button>
+              <button class="menu-cat-btn">🍚 飯食</button>
+              <button class="menu-cat-btn">🍜 麵食</button>
+              <button class="menu-cat-btn">🍢 小吃</button>
               <button class="menu-cat-btn">🥗 輕食</button>
               <button class="menu-cat-btn">🧋 飲品</button>
             </div>
@@ -805,36 +903,36 @@
                 </div>
               </div>
 
-              <!-- 卡片 2：印度奶油咖哩飯 -->
+              <!-- 卡片 2：古早味排骨飯 -->
               <div class="menu-item-card">
-                <div class="menu-item-img mi-curry">
-                  <span class="menu-item-badge-overlay badge-new">新品</span>
+                <div class="menu-item-img mi-pork-chop">
+                  <span class="menu-item-badge-overlay badge-hot">熱銷</span>
                 </div>
                 <div class="menu-item-body">
                   <div>
-                    <h4 class="menu-item-name">印度奶油咖哩飯</h4>
-                    <p class="menu-item-desc">道地印式香料，奶香濃郁</p>
+                    <h4 class="menu-item-name">古早味排骨飯</h4>
+                    <p class="menu-item-desc">台式醃製炸排骨，滷汁菜頭配白飯</p>
                   </div>
                   <div class="menu-item-bottom">
                     <span class="menu-item-price"
-                      >NT$ <strong>175</strong></span
+                      >NT$ <strong>145</strong></span
                     >
                     <button
                       class="menu-add-btn"
                       (click)="
                         addToCart({
                           id: 2,
-                          name: '印度奶油咖哩飯',
-                          nameEn: 'Butter Chicken Curry',
-                          price: 175,
+                          name: '古早味排骨飯',
+                          nameEn: 'Pork Chop Rice',
+                          price: 145,
                           image: '',
-                          category: '南洋',
-                          categoryEn: 'Asian',
+                          category: '飯食',
+                          categoryEn: 'Rice',
                           description: '',
                           stock: 15,
                         })
                       "
-                      aria-label="加入印度奶油咖哩飯"
+                      aria-label="加入古早味排骨飯"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -849,34 +947,32 @@
                 </div>
               </div>
 
-              <!-- 卡片 3：越南牛肉河粉 -->
+              <!-- 卡片 3：蚵仔煎 -->
               <div class="menu-item-card">
-                <div class="menu-item-img mi-pho"></div>
+                <div class="menu-item-img mi-oyster-pancake"></div>
                 <div class="menu-item-body">
                   <div>
-                    <h4 class="menu-item-name">越南牛肉河粉</h4>
-                    <p class="menu-item-desc">鮮香湯底，新鮮香草配料</p>
+                    <h4 class="menu-item-name">蚵仔煎</h4>
+                    <p class="menu-item-desc">鮮蚵地瓜粉煎餅，淋上特製甜辣醬</p>
                   </div>
                   <div class="menu-item-bottom">
-                    <span class="menu-item-price"
-                      >NT$ <strong>155</strong></span
-                    >
+                    <span class="menu-item-price">NT$ <strong>80</strong></span>
                     <button
                       class="menu-add-btn"
                       (click)="
                         addToCart({
                           id: 3,
-                          name: '越南牛肉河粉',
-                          nameEn: 'Pho Bo',
-                          price: 155,
+                          name: '蚵仔煎',
+                          nameEn: 'Oyster Pancake',
+                          price: 80,
                           image: '',
-                          category: '南洋',
-                          categoryEn: 'Asian',
+                          category: '小吃',
+                          categoryEn: 'Snacks',
                           description: '',
                           stock: 18,
                         })
                       "
-                      aria-label="加入越南牛肉河粉"
+                      aria-label="加入蚵仔煎"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -891,36 +987,38 @@
                 </div>
               </div>
 
-              <!-- 卡片 4：叉燒豚骨拉麵 -->
+              <!-- 卡片 4：控肉飯 -->
               <div class="menu-item-card">
-                <div class="menu-item-img mi-ramen">
+                <div class="menu-item-img mi-braised-belly">
                   <span class="menu-item-badge-overlay badge-hot">熱銷</span>
                 </div>
                 <div class="menu-item-body">
                   <div>
-                    <h4 class="menu-item-name">叉燒豚骨拉麵</h4>
-                    <p class="menu-item-desc">濃郁白湯，嫩煎叉燒兩片</p>
+                    <h4 class="menu-item-name">控肉飯</h4>
+                    <p class="menu-item-desc">
+                      大塊豬五花慢燉入味，皮Q肉嫩配白飯
+                    </p>
                   </div>
                   <div class="menu-item-bottom">
                     <span class="menu-item-price"
-                      >NT$ <strong>185</strong></span
+                      >NT$ <strong>130</strong></span
                     >
                     <button
                       class="menu-add-btn"
                       (click)="
                         addToCart({
                           id: 4,
-                          name: '叉燒豚骨拉麵',
-                          nameEn: 'Tonkotsu Ramen',
-                          price: 185,
+                          name: '控肉飯',
+                          nameEn: 'Braised Pork Belly Rice',
+                          price: 130,
                           image: '',
-                          category: '日式',
-                          categoryEn: 'Japanese',
+                          category: '飯食',
+                          categoryEn: 'Rice',
                           description: '',
                           stock: 10,
                         })
                       "
-                      aria-label="加入叉燒豚骨拉麵"
+                      aria-label="加入控肉飯"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -986,26 +1084,26 @@
                 </div>
               </div>
 
-              <!-- 卡片 6：抹茶拿鐵 -->
+              <!-- 卡片 6：仙草奶茶 -->
               <div class="menu-item-card">
-                <div class="menu-item-img mi-matcha">
+                <div class="menu-item-img mi-grass-jelly">
                   <span class="menu-item-badge-overlay badge-new">新品</span>
                 </div>
                 <div class="menu-item-body">
                   <div>
-                    <h4 class="menu-item-name">抹茶拿鐵</h4>
-                    <p class="menu-item-desc">京都宇治抹茶粉，鮮奶調製</p>
+                    <h4 class="menu-item-name">仙草奶茶</h4>
+                    <p class="menu-item-desc">台灣本產仙草凍，搭配濃醇鮮奶茶</p>
                   </div>
                   <div class="menu-item-bottom">
-                    <span class="menu-item-price">NT$ <strong>85</strong></span>
+                    <span class="menu-item-price">NT$ <strong>65</strong></span>
                     <button
                       class="menu-add-btn"
                       (click)="
                         addToCart({
                           id: 6,
-                          name: '抹茶拿鐵',
-                          nameEn: 'Matcha Latte',
-                          price: 85,
+                          name: '仙草奶茶',
+                          nameEn: 'Grass Jelly Milk Tea',
+                          price: 65,
                           image: '',
                           category: '飲品',
                           categoryEn: 'Drinks',
@@ -1013,7 +1111,7 @@
                           stock: 30,
                         })
                       "
-                      aria-label="加入抹茶拿鐵"
+                      aria-label="加入仙草奶茶"
                     >
                       <svg
                         viewBox="0 0 24 24"
