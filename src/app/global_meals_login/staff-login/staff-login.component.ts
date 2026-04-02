@@ -82,6 +82,21 @@ export class StaffLoginComponent {
       return;
     }
 
+    /*
+     * 驗證所選分頁與帳號角色是否相符
+     * - 系統經理分頁（'M'）僅允許 boss 角色登入
+     * - 現場收銀員分頁（'S'）僅允許 branch_manager / staff 角色登入
+     */
+    if (this.activeRole === 'M' && user.role !== 'boss') {
+      this.errorMsg = '此帳號非系統經理，請切換至「現場收銀員」分頁';
+      return;
+    }
+
+    if (this.activeRole === 'S' && user.role === 'boss') {
+      this.errorMsg = '此帳號非現場收銀員，請切換至「系統經理」分頁';
+      return;
+    }
+
     /* 依角色導向對應頁面 */
     if (user.role === 'boss') {
       this.router.navigate(['/manager-dashboard']);

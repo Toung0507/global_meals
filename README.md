@@ -157,7 +157,19 @@ git push origin dev-xxx
 - [x] 客戶主頁面（商品列表含購物車）
 - [x] 點餐流程頁面
 - [x] 訂單管理後台
+- [x] Staff 登入角色驗證（boss / branch_manager / staff 三路分流）
+- [x] 老闆管理後台淺色主題轉換（移除 inline 深色樣式）
+- [x] POS 終端對比度提升與動畫優化
 
 ---
 
-> 文件最後更新：2026-03-27
+## 待辦事項
+
+- [ ] 收集 18 張實物食材照片並放入 `public/assets/food/`
+- [ ] 客戶主頁 + POS 終端以真實照片替換 CSS 漸層佔位符
+- [ ] CustomerRegister / CustomerGuest 串接後端 API
+- [ ] Angular Router 頁面轉場動畫
+
+---
+
+> 文件最後更新：2026-04-02
