@@ -314,6 +314,8 @@ export class AuthService {
       if (newPassword.trim().length > 0) {
         this.currentUser.password = newPassword;
       }
+      /* sessionStorage 同步更新，確保重新整理後資料不回復 */
+      sessionStorage.setItem('currentUser', JSON.stringify(this.currentUser));
     }
   }
 
