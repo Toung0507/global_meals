@@ -182,6 +182,17 @@ export class AuthService {
    * ────────────────────────────────────────────────── */
   login(account: string, password: string): boolean {
 
+    // ⚠ TODO [API串接點 - 客戶登入]：將以下 Mock 邏輯替換為 HTTP 呼叫：
+    // import { API_CONFIG } from './api.config';
+    // return this.http.post<{token: string, user: MockUser}>(
+    //   `${API_CONFIG.BASE_URL}/api/${API_CONFIG.VERSION}${API_CONFIG.ENDPOINTS.AUTH.LOGIN}`,
+    //   { account, password }
+    // ).pipe(
+    //   tap(response => { this.currentUser = response.user; }),
+    //   map(() => true),
+    //   catchError(() => of(false))
+    // );
+
     /* Array.find() 在陣列中尋找第一個符合條件的項目 */
     const found = MOCK_USERS.find(function(user) {
       return (user.email === account || user.phone === account)
@@ -214,6 +225,17 @@ export class AuthService {
    * 未來替換：HttpClient POST /api/auth/staff-login
    * ─────────────────────────────────────────────────*/
   staffLogin(email: string, password: string): MockUser | null {
+
+    // ⚠ TODO [API串接點 - 管理員登入]：將以下 Mock 邏輯替換為 HTTP 呼叫：
+    // import { API_CONFIG } from './api.config';
+    // return this.http.post<{token: string, user: MockUser}>(
+    //   `${API_CONFIG.BASE_URL}/api/${API_CONFIG.VERSION}${API_CONFIG.ENDPOINTS.AUTH.LOGIN}`,
+    //   { email, password }
+    // ).pipe(
+    //   tap(response => { this.currentUser = response.user; }),
+    //   map(response => response.user),
+    //   catchError(() => of(null))
+    // );
 
     /* Array.find() 尋找 email 與 password 都符合的管理帳號 */
     const found = MOCK_USERS.find(function(user) {

@@ -14,6 +14,25 @@
  * =====================================================
  */
 
+// ── 引入全域設計代字 ──────────────────────────────
+// 說明：$spacing-* / $radius-* / $shadow-* / $transition-* 來自此檔
+//       客戶端與後台共用同一份 Token，確保基礎視覺一致性
+@use 'design-tokens' as *;
+
+// ── 後台管理專屬色彩變數 ────────────────────────────
+// 說明：後台 UI 使用深海軍藍 + 金黃配色，與客戶端橘紅品牌色明確區隔。
+//       將色碼集中定義，方便日後主題切換或品牌更新。
+$admin-navy-dark:  #111927;   // 側邊欄深底色
+$admin-bg:         #F4F6FA;   // 主內容背景
+$admin-card:       #FFFFFF;   // 卡片白色
+$admin-border:     #D4DCE8;   // 邊框線條
+$admin-text:       #1A2840;   // 主要文字
+$admin-text-sub:   #4A5A70;   // 次要文字
+$admin-navy:       #1E3A5F;   // 深海軍藍（標題、大數字）
+$admin-gold:       #c49756;   // 金黃點綴（按鈕、強調）
+$admin-gold-light: #f0c68c;   // 淺金黃（文字、圖示）
+$admin-purple:     #c084fc;   // 側邊欄副標題紫色
+
 
 /* ── :host 宿主元素：撐滿整個視窗 ───────────────────── */
 :host {
@@ -64,7 +83,7 @@
     margin-bottom: 8px;
     border: 2px solid rgba(240, 198, 140, 0.35);
     box-shadow: 0 0 12px rgba(196, 151, 86, 0.20);
-    transition: box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: box-shadow $transition-base;
 }
 
 .sidebar-brand-logo:hover {
@@ -125,7 +144,7 @@
     color: #8892b0;
     font-size: 0.855rem;
     border-left: 3px solid transparent;
-    transition: background-color 0.15s, color 0.15s;
+    transition: background-color $transition-fast, color $transition-fast;
     user-select: none;
 }
 
@@ -190,8 +209,7 @@
     border-radius: 12px;
     padding: 20px 22px;
     box-shadow: 0 2px 8px rgba(30, 58, 95, 0.06);
-    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-                box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform $transition-base, box-shadow $transition-base;
 }
 
 .stat-card:hover {
@@ -229,7 +247,7 @@
     padding: 22px;
     margin-bottom: 18px;
     box-shadow: 0 2px 8px rgba(30, 58, 95, 0.06);
-    transition: box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: box-shadow $transition-base;
 }
 
 .content-card:hover {
@@ -375,9 +393,7 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     border: 1px solid #D4DCE8;
     border-radius: 10px;
     padding: 14px;
-    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
-                box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1),
-                border-color 0.2s;
+    transition: transform $transition-base, box-shadow $transition-base, border-color $transition-base;
 }
 
 .product-row:hover {
@@ -406,8 +422,7 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     border-radius: 0 10px 10px 0;
     padding: 15px;
     margin-bottom: 12px;
-    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
-                box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform $transition-base, box-shadow $transition-base;
 }
 
 .promo-row:hover {
