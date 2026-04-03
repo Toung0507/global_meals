@@ -167,8 +167,22 @@ export class AuthService {
    * 目前登入中的使用者
    * null  = 尚未登入（未驗證狀態）
    * MockUser = 已成功登入的使用者物件
+   *
+   * 初始化時從 sessionStorage 還原登入狀態，
+   * 讓使用者重新整理頁面後不需要重新登入。
+   * sessionStorage 會在瀏覽器分頁關閉後自動清除。
+   *
+   * ⚠ TODO [API串接點]：串接後端後改為驗證 JWT token，
+   *   不再使用 sessionStorage 儲存使用者物件
    */
-  currentUser: MockUser | null = null;
+  currentUser: MockUser | null = (() => {
+    try {
+      const saved = sessionStorage.getItem('currentUser');
+      return saved ? JSON.parse(saved) as MockUser : null;
+    } catch {
+      return null;
+    }
+  })();
 
 
   /*
@@ -201,6 +215,7 @@ export class AuthService {
 
     if (found) {
       this.currentUser = found;
+      sessionStorage.setItem('currentUser', JSON.stringify(found));
       return true;
     }
 
@@ -215,6 +230,7 @@ export class AuthService {
    * ─────────────────────────────────────────────────*/
   logout(): void {
     this.currentUser = null;
+    sessionStorage.removeItem('currentUser');
   }
 
 
@@ -246,6 +262,7 @@ export class AuthService {
 
     if (found) {
       this.currentUser = found;
+      sessionStorage.setItem('currentUser', JSON.stringify(found));
       return found;
     }
 
@@ -259,7 +276,7 @@ export class AuthService {
    * 未來替換：可在後端建立暫時 session 紀錄訪客行為
    * ─────────────────────────────────────────────────*/
   loginAsGuest(phone: string): void {
-    this.currentUser = {
+    const guest: MockUser = {
       id: 0,
       role: 'guest',
       name: '訪客',
@@ -268,6 +285,8 @@ export class AuthService {
       password: '',
       isGuest: true
     };
+    this.currentUser = guest;
+    sessionStorage.setItem('currentUser', JSON.stringify(guest));
   }
 
 

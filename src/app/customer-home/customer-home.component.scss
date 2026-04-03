@@ -7,6 +7,14 @@
  * =====================================================
  */
 
+/* ── 設計代字（共用基礎）─────────────────────────────
+   此元件使用 CSS 自訂屬性（:host { --var }）管理色彩，
+   @use 'design-tokens' 讓此 SCSS 可使用共用的 SCSS 變數
+   （如 $transition-fast / $transition-base / $shadow-*），
+   未來可逐步與 CSS 自訂屬性整合
+──────────────────────────────────────────────────── */
+@use 'design-tokens' as *;
+
 /* ── Google Fonts 引入 ──────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC&family=Noto+Sans+TC:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,400&display=swap');
 

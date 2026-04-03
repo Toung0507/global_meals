@@ -1,4 +1,11 @@
 /*
+ * ── 設計代字（共用基礎）──────────────────────────────
+ * @use 'design-tokens' 引入共用 SCSS 變數（transition / shadow / spacing 等）
+ * 客戶端色彩為品牌專屬（暖橘奶油），以本地 SCSS 值維護
+ * ─────────────────────────────────────────────────── */
+@use 'design-tokens' as *;
+
+/*
  * =====================================================
  * 檔案名稱：customer-member.component.scss
  * 位置說明：src/app/customer-member/customer-member.component.scss
@@ -79,7 +86,7 @@
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;
-  transition: background-color 0.2s, color 0.2s;
+  transition: background-color $transition-base, color $transition-base;
 }
 
 .mode-nav .nav-staff {
@@ -203,7 +210,7 @@
   font-size: 13px;
   font-family: 'Noto Sans TC', sans-serif;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  transition: background-color $transition-base, border-color $transition-base, color $transition-base;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -327,7 +334,7 @@
   font-family: 'Noto Sans TC', sans-serif;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  transition: background-color $transition-base, box-shadow $transition-base, transform $transition-fast;
   align-self: flex-start;
 }
 
@@ -381,7 +388,7 @@
   font-family: 'Noto Sans TC', sans-serif;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.2s;
+  transition: border-color $transition-base;
 }
 
 .cm-input-field input:focus {
@@ -410,7 +417,7 @@
   cursor: pointer;
   padding: 4px;
   color: #A89080;
-  transition: color 0.2s;
+  transition: color $transition-base;
 }
 
 .cm-eye-btn:hover {
@@ -441,7 +448,7 @@
   font-family: 'Noto Sans TC', sans-serif;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s, box-shadow 0.2s, transform 0.15s;
+  transition: background-color $transition-base, box-shadow $transition-base, transform $transition-fast;
 }
 
 .cm-save-btn:hover {
@@ -461,7 +468,7 @@
   font-family: 'Noto Sans TC', sans-serif;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
+  transition: background-color $transition-base, border-color $transition-base;
 }
 
 .cm-cancel-btn:hover {
@@ -499,7 +506,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: box-shadow 0.2s;
+  transition: box-shadow $transition-base;
   margin-bottom: 12px;
 }
 
