@@ -113,9 +113,12 @@ export class CustomerHomeComponent implements OnInit {
   showConfirmPassword = signal(false);
 
   /* ── 結帳：付款方式選擇 ────────────────────────────── */
-  paymentMethod = signal('credit');
+  paymentMethod = signal<'credit' | 'mobile' | 'cash' | 'cod'>('cod');
 
-  setPaymentMethod(method: string): void {
+  /* ── 訂單備註 ───────────────────────────────────────── */
+  orderNote = signal('');
+
+  setPaymentMethod(method: 'credit' | 'mobile' | 'cash' | 'cod'): void {
     this.paymentMethod.set(method);
   }
 
@@ -337,6 +340,61 @@ export class CustomerHomeComponent implements OnInit {
   /* ── 前往結帳 ─────────────────────────────────────── */
   goToCheckout(): void {
     this.activeTab.set('checkout');
+  }
+
+  /* ── 送出訂單（完整流程）────────────────────────────
+   * 1. 從購物車建立 TrackingOrder（含動態訂單號）
+   * 2. 更新即時追蹤訂單
+   * 3. 新增至歷史訂單紀錄
+   * 4. 清空購物車
+   * 5. 導向訂單追蹤頁
+   * ────────────────────────────────────────────────── */
+  placeOrder(): void {
+    if (this.cartItems().length === 0) return;
+
+    const now  = new Date();
+    const pad  = (n: number) => String(n).padStart(2, '0');
+    const dateStr   = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+    const timeStr   = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const orderNum  = 'A-' + String(Math.floor(Math.random() * 900) + 100);
+    const orderId   = `LBB-${dateStr}-${String(now.getTime()).slice(-3)}`;
+
+    /* 品項文字列表（例：紅燒牛肉麵 × 2） */
+    const itemTexts = this.cartItems().map(i => `${i.name} × ${i.quantity}`);
+
+    /* 預估備餐時間：每件商品約 2 分鐘，最少 5 分鐘 */
+    const totalQty = this.cartItems().reduce((s, i) => s + i.quantity, 0);
+    const estMin   = Math.max(5, Math.ceil(totalQty * 2));
+
+    /* 更新即時追蹤訂單 */
+    this.trackingOrder.set({
+      id:               orderId,
+      number:           orderNum,
+      status:           'waiting',
+      estimatedMinutes: estMin,
+      items:            itemTexts,
+      total:            this.cartTotal(),
+      createdAt:        timeStr
+    });
+
+    /* 加入歷史訂單（最新在最上方） */
+    this.orderHistoryList.set([
+      {
+        id:     orderId,
+        date:   `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
+        items:  itemTexts.join('、'),
+        total:  this.cartTotal(),
+        status: 'completed'
+      },
+      ...this.orderHistoryList()
+    ]);
+
+    /* 清空購物車並清除備註 */
+    this.clearCart();
+    this.orderNote.set('');
+
+    /* 跳至訂單追蹤頁 */
+    this.setTab('tracker');
   }
 
   /* ── 取得頭像文字 ────────────────────────────────── */

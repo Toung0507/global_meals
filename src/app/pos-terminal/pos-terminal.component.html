@@ -15,9 +15,12 @@
 
 <!-- ── POS 系統頂部欄 ─────────────────────────────── -->
 <div class="pos-topbar">
-  <div>
-    <span class="pos-brand">⚡ OmniPOS</span>
-    <span class="pos-branch ms-2">台灣台北店</span>
+  <div class="d-flex align-items-center gap-2">
+    <img src="/assets/logo圓形.png" alt="懶飽飽 Logo" class="pos-logo" />
+    <div>
+      <span class="pos-brand">懶飽飽</span>
+      <span class="pos-branch ms-2">Lazy BaoBao</span>
+    </div>
   </div>
   <!-- 依 role 顯示不同顏色的角色徽章 -->
   @if (isBM) {
@@ -83,24 +86,24 @@
     <!-- ── 左側：商品瀏覽 ── -->
     <div class="pos-left">
 
-      <!-- 分類篩選 -->
+      <!-- 分類篩選（有效綁定） -->
       <div class="category-bar">
-        <span class="cat-btn active">全部</span>
-        <span class="cat-btn">🍜 台式</span>
-        <span class="cat-btn">🍛 南洋</span>
-        <span class="cat-btn">🍝 西式</span>
-        <span class="cat-btn">🥗 輕食</span>
-        <span class="cat-btn">🧋 飲品</span>
+        <span class="cat-btn" [class.active]="activeCategory() === 'all'"   (click)="setCategory('all')">全部</span>
+        <span class="cat-btn" [class.active]="activeCategory() === '台式'"  (click)="setCategory('台式')">🍜 台式</span>
+        <span class="cat-btn" [class.active]="activeCategory() === '南洋'"  (click)="setCategory('南洋')">🍛 南洋</span>
+        <span class="cat-btn" [class.active]="activeCategory() === '西式'"  (click)="setCategory('西式')">🍝 西式</span>
+        <span class="cat-btn" [class.active]="activeCategory() === '輕食'"  (click)="setCategory('輕食')">🥗 輕食</span>
+        <span class="cat-btn" [class.active]="activeCategory() === '飲品'"  (click)="setCategory('飲品')">🧋 飲品</span>
       </div>
 
-      <!-- 搜尋列 -->
+      <!-- 搜尋列（有效綁定） -->
       <div class="product-search">
-        <input type="text" placeholder="🔍  搜尋餐點名稱…">
+        <input type="text" placeholder="🔍  搜尋餐點名稱…" (input)="onSearch($event)" [value]="searchQuery()">
       </div>
 
-      <!-- 商品網格：@for 渲染 PRODUCTS 陣列 -->
+      <!-- 商品網格：@for 渲染篩選後的商品（支援分類 + 搜尋） -->
       <div class="product-grid">
-        @for (product of PRODUCTS; track product.id) {
+        @for (product of filteredProducts(); track product.id) {
           <div class="prod-card" (click)="addToCart(product)">
             <div class="prod-img" [style.background]="product.bg">{{ product.emoji }}</div>
             <div class="prod-body">
@@ -141,10 +144,20 @@
         <button class="btn btn-sm btn-ghost-red" style="font-size:0.75rem;" (click)="clearCart()">清空</button>
       </div>
 
+      <!-- 結帳成功覆蓋層 -->
+      @if (checkoutSuccess()) {
+        <div class="checkout-success-overlay">
+          <div class="checkout-success-icon">✅</div>
+          <div class="checkout-success-title">結帳成功！</div>
+          <div class="checkout-success-num">訂單 #{{ lastOrderNum() }}</div>
+          <div class="checkout-success-sub">已送出廚房，請備餐</div>
+        </div>
+      }
+
       <!-- 品項列表 -->
       <div class="cart-items">
         <!-- 空購物車提示 -->
-        @if (cartItems().length === 0) {
+        @if (cartItems().length === 0 && !checkoutSuccess()) {
           <div class="cart-empty">
             <span class="cart-empty-icon">🛒</span>
             <div style="font-size:0.82rem;">點擊左側商品加入訂單</div>

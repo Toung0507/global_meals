@@ -2286,34 +2286,52 @@
     }
 }
 
-/* 招牌滷肉飯：深褐滷汁色 */
+/* ── 菜單卡片食物照片（真實圖片取代漸層色塊）────────
+   所有圖片使用 cover + center 確保各螢幕裁切一致
+   疊加半透明深色遮罩讓文字徽章清晰可讀
+──────────────────────────────────────────────────── */
+
+/* 紅燒牛肉麵（用阿三陽春麵代替，同屬麵食） */
+.mi-beef {
+    background: url('/assets/阿三陽春麵.jpg') center/cover no-repeat;
+    &::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.18); }
+}
+
+/* 招牌滷肉飯 */
 .mi-braised-pork {
-    background: linear-gradient(135deg, #7A4520, #4A2010);
+    background: url('/assets/招牌滷肉飯.jpg') center/cover no-repeat;
+    &::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.15); }
 }
 
-/* 古早味排骨飯：金褐炸排骨色 */
+/* 古早味排骨飯 */
 .mi-pork-chop {
-    background: linear-gradient(135deg, #C4884A, #8B5020);
+    background: url('/assets/古早味排骨.jpg') center/cover no-repeat;
+    &::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.15); }
 }
 
-/* 蚵仔煎：金黃蛋液色 */
+/* 蚵仔煎 */
 .mi-oyster-pancake {
-    background: linear-gradient(135deg, #E8B840, #C49020);
+    background: url('/assets/蚵仔煎.jpg') center/cover no-repeat;
+    &::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.15); }
 }
 
-/* 控肉飯：紅褐豬皮色 */
+/* 控肉飯（用招牌滷肉飯圖作視覺近似） */
 .mi-braised-belly {
-    background: linear-gradient(135deg, #9B5030, #6B3018);
+    background: url('/assets/招牌滷肉飯.jpg') center/cover no-repeat;
+    filter: saturate(1.1) hue-rotate(5deg);
+    &::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.2); }
 }
 
-/* 黑糖珍珠奶茶：深黑糖色（保留） */
+/* 黑糖珍珠奶茶 */
 .mi-bbt {
-    background: linear-gradient(135deg, #6B3A2A, #3D1C10);
+    background: url('/assets/黑糖珍珠奶茶.jpg') center/cover no-repeat;
+    &::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.15); }
 }
 
-/* 仙草奶茶：深墨綠仙草色 */
+/* 仙草奶茶 */
 .mi-grass-jelly {
-    background: linear-gradient(135deg, #3A5A3A, #1E3A1E);
+    background: url('/assets/仙草奶茶.jpg') center/cover no-repeat;
+    &::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.15); }
 }
 
 .menu-item-body {

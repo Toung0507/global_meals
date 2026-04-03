@@ -1364,6 +1364,8 @@
                 class="checkout-note-input"
                 placeholder="如：不要香菜、少辣、外帶…"
                 rows="2"
+                [value]="orderNote()"
+                (input)="orderNote.set($any($event.target).value)"
               ></textarea>
             </div>
 
@@ -1371,6 +1373,20 @@
             <div class="checkout-payment">
               <p class="checkout-payment-title">付款方式</p>
               <div class="payment-options">
+                <!-- 貨到付款（預設選項） -->
+                <label
+                  class="payment-opt"
+                  [class.active]="paymentMethod() === 'cod'"
+                  (click)="setPaymentMethod('cod')"
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    [checked]="paymentMethod() === 'cod'"
+                  />
+                  <span class="payment-icon">🏠</span>
+                  <span>貨到付款</span>
+                </label>
                 <label
                   class="payment-opt"
                   [class.active]="paymentMethod() === 'credit'"
@@ -1413,10 +1429,10 @@
               </div>
             </div>
 
-            <!-- 送出訂單 -->
+            <!-- 送出訂單（呼叫 placeOrder()，建立真實訂單並跳至追蹤頁） -->
             <button
               class="checkout-submit"
-              (click)="clearCart(); setTab('tracker')"
+              (click)="placeOrder()"
             >
               <svg
                 viewBox="0 0 24 24"
