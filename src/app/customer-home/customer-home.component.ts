@@ -4,10 +4,11 @@
  * 位置說明：src/app/customer-home/customer-home.component.ts
  * 用途說明：客戶端登入後的主頁框架（Shell）
  * 功能說明：
- *   - 底部導覽列（主頁 / 菜單 / 結帳 / 追蹤 / 會員）
+ *   - 底部導覽列（主頁 / 菜單 / 結帳 / 追蹤 / 訂單管理）
  *   - 登入保護守衛（未登入者自動跳回登入頁）
  *   - 購物車狀態管理（供菜單、結帳頁共用）
  *   - 頁籤切換狀態管理
+ *   - 下單後透過 OrderService 即時推送至 POS 看板
  * =====================================================
  */
 
@@ -17,6 +18,7 @@ import { CommonModule } from '@angular/common';
 
 import { AuthService } from '../shared/auth.service';
 import { LoadingService } from '../shared/loading.service';
+import { OrderService } from '../shared/order.service';
 
 /* ── 購物車品項型別 ─────────────────────────────────── */
 export interface CartItem {
@@ -105,10 +107,36 @@ export class CustomerHomeComponent implements OnInit {
     return user.name || '無名氏';
   });
 
+  /* ── 菜單：分類篩選 & 搜尋 ────────────────────────── */
+  activeMenuCategory = signal<string>('all');
+  menuSearchQuery    = signal<string>('');
+
+  setMenuCategory(cat: string): void {
+    this.activeMenuCategory.set(cat);
+  }
+
+  onMenuSearch(event: Event): void {
+    this.menuSearchQuery.set((event.target as HTMLInputElement).value);
+  }
+
+  /** 回傳該品項是否應顯示（分類 + 名稱模糊搜尋） */
+  isMenuItemShown(name: string, category: string): boolean {
+    const cat = this.activeMenuCategory();
+    const q   = this.menuSearchQuery().trim().toLowerCase();
+    const catMatch  = cat === 'all' || cat === category;
+    const nameMatch = q === '' || name.toLowerCase().includes(q);
+    return catMatch && nameMatch;
+  }
+
+  /** 回傳整個分類區塊是否應顯示（只要有任一品項符合篩選即顯示） */
+  isSectionShown(sectionItems: Array<{ name: string; category: string }>): boolean {
+    return sectionItems.some(item => this.isMenuItemShown(item.name, item.category));
+  }
+
   /* ── 側邊欄：個人資料抽屜狀態 ────────────────────── */
   isProfileExpanded = signal(false);
   isEditingProfile = signal(false);
-  
+
   showPassword = signal(false);
   showConfirmPassword = signal(false);
 
@@ -118,15 +146,18 @@ export class CustomerHomeComponent implements OnInit {
   /* ── 訂單備註 ───────────────────────────────────────── */
   orderNote = signal('');
 
+  /* ── 下單中狀態（true 時按鈕顯示 spinner，防止重複送出） */
+  isPlacingOrder = signal(false);
+
   setPaymentMethod(method: 'credit' | 'mobile' | 'cash' | 'cod'): void {
     this.paymentMethod.set(method);
   }
 
   toggleProfile(): void {
-    if (this.isGuest()) return; // 訪客不支援個人資料展開
+    if (this.isGuest()) return;
     this.isProfileExpanded.update(v => !v);
     if (!this.isProfileExpanded()) {
-      this.isEditingProfile.set(false); // 收合時重置編輯狀態
+      this.isEditingProfile.set(false);
       this.showPassword.set(false);
       this.showConfirmPassword.set(false);
     }
@@ -149,12 +180,12 @@ export class CustomerHomeComponent implements OnInit {
   }
 
   /* ── 側邊欄：進度與折扣邏輯 (模擬 Database) ────────── */
-  memberOrderCount = signal(7); // 假資料：已點餐次數
-  
+  memberOrderCount = signal(7);
+
   ordersUntilDiscount = computed(() => {
     const total = this.memberOrderCount();
     const remainder = total % 10;
-    if (remainder === 0 && total > 0) return 0; // 可以領券了
+    if (remainder === 0 && total > 0) return 0;
     return 10 - remainder;
   });
 
@@ -162,18 +193,22 @@ export class CustomerHomeComponent implements OnInit {
     return this.memberOrderCount() > 0 && this.memberOrderCount() % 10 === 0;
   });
 
-  /* ── 模擬即時追蹤訂單 ──────────────────────────────── */
-  trackingOrder = signal<TrackingOrder | null>({
-    id: 'LBB-20260330-009',
-    number: 'A-047',
-    status: 'cooking',
-    estimatedMinutes: 8,
-    items: ['紅燒牛肉麵 × 1', '滷蛋 × 2', '珍珠奶茶 × 1'],
-    total: 285,
-    createdAt: '14:32'
+  /* ── 即時追蹤訂單（從 OrderService 取得最新客戶訂單） ── */
+  trackingOrder = computed<TrackingOrder | null>(() => {
+    const o = this.orderService.latestCustomerOrder();
+    if (!o) return null;
+    return {
+      id:               o.id,
+      number:           o.number,
+      status:           o.status,
+      estimatedMinutes: o.estimatedMinutes,
+      items:            o.items,
+      total:            o.total,
+      createdAt:        o.createdAt
+    };
   });
 
-  /* ── 底部導覽列定義 (computed: 訪客不顯示「會員」頁籤) ── */
+  /* ── 底部導覽列定義 ───────────────────────────────── */
   private readonly ALL_TABS: NavTab[] = [
     { id: 'home',     label: '首頁',   icon: 'home'     },
     { id: 'menu',     label: '菜單',   icon: 'menu'     },
@@ -184,19 +219,13 @@ export class CustomerHomeComponent implements OnInit {
 
   navTabs = computed<NavTab[]>(() =>
     this.isGuest()
-      ? this.ALL_TABS.filter(t => t.id !== 'orders')   /* 訪客：暫不顯示訂單管理，視業務需求可開放 */
+      ? this.ALL_TABS.filter(t => t.id !== 'orders')
       : this.ALL_TABS
   );
 
-  /* ── 訂單管理資料 ──────────────────────────────────────── */
-
-  /* 目前篩選中的狀態頁籤 */
+  /* ── 訂單管理資料 ──────────────────────────────────── */
   activeOrderTab = signal<'completed' | 'cancelled' | 'refunded'>('completed');
 
-  /*
-   * 歷史訂單假資料（對應 auth.service.ts MOCK_ORDERS，未來串接後端時替換）
-   * status 採用英文 key，方便與 CSS class 對應（badge-completed / badge-cancelled / badge-refunded）
-   */
   orderHistoryList = signal([
     {
       id: 'LBB-20240315-001',
@@ -256,12 +285,10 @@ export class CustomerHomeComponent implements OnInit {
     }
   ]);
 
-  /* 各狀態的訂單數量（用於篩選頁籤上的數量徽章） */
   completedCount = computed(() => this.orderHistoryList().filter(o => o.status === 'completed').length);
   cancelledCount = computed(() => this.orderHistoryList().filter(o => o.status === 'cancelled').length);
   refundedCount  = computed(() => this.orderHistoryList().filter(o => o.status === 'refunded').length);
 
-  /* 依目前篩選頁籤過濾的訂單清單 */
   filteredOrders = computed(() => {
     return this.orderHistoryList().filter(o => o.status === this.activeOrderTab());
   });
@@ -270,11 +297,11 @@ export class CustomerHomeComponent implements OnInit {
   constructor(
     private router: Router,
     public authService: AuthService,
-    private loadingService: LoadingService
+    private loadingService: LoadingService,
+    public orderService: OrderService
   ) {}
 
   ngOnInit(): void {
-    /* 登入保護 */
     if (!this.authService.currentUser) {
       this.router.navigate(['/customer-login']);
       return;
@@ -284,7 +311,7 @@ export class CustomerHomeComponent implements OnInit {
   /* ── 切換頁籤 ─────────────────────────────────────── */
   setTab(tab: TabId): void {
     if (tab === 'orders' && this.isGuest()) {
-      return; /* 訪客保護 */
+      return;
     }
     this.activeTab.set(tab);
   }
@@ -308,7 +335,6 @@ export class CustomerHomeComponent implements OnInit {
         category: item.category
       }]);
     }
-    /* 震動反饋（手機） */
     if (navigator.vibrate) navigator.vibrate(30);
   }
 
@@ -343,41 +369,59 @@ export class CustomerHomeComponent implements OnInit {
   }
 
   /* ── 送出訂單（完整流程）────────────────────────────
-   * 1. 從購物車建立 TrackingOrder（含動態訂單號）
-   * 2. 更新即時追蹤訂單
-   * 3. 新增至歷史訂單紀錄
-   * 4. 清空購物車
-   * 5. 導向訂單追蹤頁
+   * 1. 顯示「處理中」spinner（isPlacingOrder = true）
+   * 2. 模擬後端處理延遲 1.2 秒
+   * 3. 建立 LiveOrder 並推送至 OrderService（POS 看板即時同步）
+   * 4. 新增至本地歷史訂單清單
+   * 5. 清空購物車
+   * 6. 導向訂單追蹤頁
    * ────────────────────────────────────────────────── */
   placeOrder(): void {
     if (this.cartItems().length === 0) return;
+    if (this.isPlacingOrder()) return;   /* 防重複送出 */
+
+    this.isPlacingOrder.set(true);
+
+    setTimeout(() => {
+      this._doPlaceOrder();
+      this.isPlacingOrder.set(false);
+    }, 1200);
+  }
+
+  private _doPlaceOrder(): void {
 
     const now  = new Date();
     const pad  = (n: number) => String(n).padStart(2, '0');
     const dateStr   = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
     const timeStr   = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    const orderNum  = 'A-' + String(Math.floor(Math.random() * 900) + 100);
-    const orderId   = `LBB-${dateStr}-${String(now.getTime()).slice(-3)}`;
+    const orderNum  = this.orderService.generateOrderNumber();
+    const orderId   = this.orderService.generateOrderId();
 
-    /* 品項文字列表（例：紅燒牛肉麵 × 2） */
     const itemTexts = this.cartItems().map(i => `${i.name} × ${i.quantity}`);
+    const totalQty  = this.cartItems().reduce((s, i) => s + i.quantity, 0);
+    const estMin    = Math.max(5, Math.ceil(totalQty * 2));
 
-    /* 預估備餐時間：每件商品約 2 分鐘，最少 5 分鐘 */
-    const totalQty = this.cartItems().reduce((s, i) => s + i.quantity, 0);
-    const estMin   = Math.max(5, Math.ceil(totalQty * 2));
+    /* 付款方式標籤 */
+    const payLabels: Record<string, string> = {
+      credit: '信用卡', mobile: '行動支付', cash: '現金', cod: '取貨付款'
+    };
+    const payLabel = payLabels[this.paymentMethod()] ?? '現金';
 
-    /* 更新即時追蹤訂單 */
-    this.trackingOrder.set({
+    /* 推送至 OrderService → POS 看板即時同步 */
+    this.orderService.addOrder({
       id:               orderId,
       number:           orderNum,
       status:           'waiting',
       estimatedMinutes: estMin,
       items:            itemTexts,
       total:            this.cartTotal(),
-      createdAt:        timeStr
+      createdAt:        timeStr,
+      payMethod:        payLabel,
+      source:           'customer',
+      customerName:     this.authService.currentUser?.name
     });
 
-    /* 加入歷史訂單（最新在最上方） */
+    /* 加入本地歷史訂單（最新在最上方） */
     this.orderHistoryList.set([
       {
         id:     orderId,
@@ -389,7 +433,7 @@ export class CustomerHomeComponent implements OnInit {
       ...this.orderHistoryList()
     ]);
 
-    /* 清空購物車並清除備註 */
+    /* 清空購物車與備註 */
     this.clearCart();
     this.orderNote.set('');
 
@@ -401,7 +445,7 @@ export class CustomerHomeComponent implements OnInit {
   getAvatarLetter(): string {
     const user = this.authService.currentUser;
     if (!user) return '?';
-    if (user.isGuest) return 'G'; /* Guest的首字母 */
+    if (user.isGuest) return 'G';
     return user.name?.charAt(0) ?? '?';
   }
 

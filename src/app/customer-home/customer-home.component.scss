@@ -175,8 +175,8 @@
 
 .sidebar-logo-wrap {
     position: relative;
-    width: 44px;
-    height: 44px;
+    width: 58px;
+    height: 58px;
 }
 
 .sidebar-logo {
@@ -184,20 +184,20 @@
     height: 100%;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #fff;
-    box-shadow: 0 2px 8px rgba(217, 92, 26, 0.2);
+    border: 2.5px solid #fff;
+    box-shadow: 0 3px 12px rgba(217, 92, 26, 0.28);
     position: relative;
     z-index: 2;
 }
 
 .sidebar-logo-ring {
     position: absolute;
-    inset: -3px;
+    inset: -4px;
     border-radius: 50%;
     background: conic-gradient(from 0deg, var(--orange), var(--gold), var(--orange));
     z-index: 1;
     animation: spin 8s linear infinite;
-    opacity: 0.8;
+    opacity: 0.85;
 }
 
 @keyframes spin {
@@ -2276,14 +2276,6 @@
     position: relative;
     overflow: hidden;
 
-    /* 紋理疊加 */
-    &::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='30' cy='30' r='20' fill='rgba(0,0,0,0.03)'/%3E%3C/svg%3E") center/cover;
-    }
 }
 
 /* ── 菜單卡片食物照片（真實圖片取代漸層色塊）────────
@@ -2294,44 +2286,37 @@
 /* 紅燒牛肉麵（用阿三陽春麵代替，同屬麵食） */
 .mi-beef {
     background: url('/assets/阿三陽春麵.jpg') center/cover no-repeat;
-    &::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.18); }
 }
 
 /* 招牌滷肉飯 */
 .mi-braised-pork {
     background: url('/assets/招牌滷肉飯.jpg') center/cover no-repeat;
-    &::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.15); }
 }
 
 /* 古早味排骨飯 */
 .mi-pork-chop {
     background: url('/assets/古早味排骨.jpg') center/cover no-repeat;
-    &::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.15); }
 }
 
 /* 蚵仔煎 */
 .mi-oyster-pancake {
     background: url('/assets/蚵仔煎.jpg') center/cover no-repeat;
-    &::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.15); }
 }
 
 /* 控肉飯（用招牌滷肉飯圖作視覺近似） */
 .mi-braised-belly {
     background: url('/assets/招牌滷肉飯.jpg') center/cover no-repeat;
     filter: saturate(1.1) hue-rotate(5deg);
-    &::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.2); }
 }
 
 /* 黑糖珍珠奶茶 */
 .mi-bbt {
     background: url('/assets/黑糖珍珠奶茶.jpg') center/cover no-repeat;
-    &::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.15); }
 }
 
 /* 仙草奶茶 */
 .mi-grass-jelly {
     background: url('/assets/仙草奶茶.jpg') center/cover no-repeat;
-    &::before { content:''; position:absolute; inset:0; background:rgba(0,0,0,0.15); }
 }
 
 .menu-item-body {
@@ -2972,6 +2957,34 @@
     &:active {
         transform: scale(0.98);
     }
+
+    /* 處理中狀態：降低不透明度 + 禁止點擊 */
+    &.is-placing {
+        opacity: 0.82;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: 0 2px 10px rgba(217, 92, 26, 0.25);
+    }
+
+    &:disabled {
+        pointer-events: none;
+    }
+}
+
+/* ── 下單 Spinner（純 CSS，16px 旋轉圓環）── */
+.placing-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2.5px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spinRing 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes spinRing {
+    to { transform: rotate(360deg); }
 }
 
 .checkout-clear {
@@ -4004,4 +4017,417 @@
     &:active {
         transform: translateY(0);
     }
+}
+
+
+/* ════════════════════════════════════════════════════════
+   ✦ LUXURY UPGRADE — 精緻餐飲奢華視覺升級
+   設計方向：Fine-Dining Editorial × Warm Amber Luxury
+   策略：覆寫既有樣式，不破壞 HTML 結構
+════════════════════════════════════════════════════════ */
+
+/* ── 奢華色彩調整 ─────────────────────────────────────── */
+:host {
+    --bg-cream:       #FFF6E8;          /* 更深邃的琥珀奶油底 */
+    --orange:         #C84B0F;          /* 更沉穩的深磚橘 */
+    --orange-deep:    #8B2E06;
+    --orange-light:   #E8693A;
+    --gold:           #C9893A;          /* 更精緻的暗金 */
+    --text-dark:      #1E0D04;          /* 接近濃縮咖啡色 */
+    --text-mid:       #5A3520;
+    --text-muted:     #9C7060;
+    --border-warm:    rgba(180, 120, 60, 0.18);  /* 極細淡邊框 */
+
+    /* 新增奢華陰影層 */
+    --shadow-luxury:  0 8px 40px rgba(61, 32, 16, 0.16),
+                      0 2px 8px  rgba(61, 32, 16, 0.08);
+    --shadow-hover:   0 20px 60px rgba(61, 32, 16, 0.22),
+                      0 4px 16px rgba(61, 32, 16, 0.10);
+}
+
+/* ── Hero 區塊 — 更高、更戲劇化 ──────────────────────── */
+.home-hero {
+    min-height: 380px;
+    padding: 56px 24px 48px;
+
+    @media (min-width: 1024px) {
+        min-height: 460px;
+        padding: 80px 48px 72px;
+    }
+}
+
+.home-hero-bg {
+    /* 更深邃的電影感漸層：從琥珀深橘 → 濃縮咖啡深色 */
+    background: linear-gradient(
+        150deg,
+        #8B2E06 0%,
+        #A84210 30%,
+        #2A0E00 70%,
+        #120600 100%
+    );
+
+    /* 疊加極細緻噪點質感（SVG 紋理） */
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+        opacity: 0.5;
+        pointer-events: none;
+    }
+}
+
+/* Hero 光暈更精緻：減少數量、增加質感 */
+.hero-orb-1 {
+    width: 360px;
+    height: 360px;
+    background: radial-gradient(circle, rgba(201, 137, 58, 0.55) 0%, transparent 70%);
+    top: -80px;
+    right: -80px;
+    filter: blur(70px);
+    opacity: 0.6;
+}
+
+.hero-orb-2 {
+    width: 240px;
+    height: 240px;
+    background: radial-gradient(circle, rgba(200, 75, 15, 0.45) 0%, transparent 70%);
+    filter: blur(60px);
+    opacity: 0.5;
+}
+
+.hero-orb-3 {
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, rgba(255, 210, 140, 0.30) 0%, transparent 70%);
+    filter: blur(50px);
+    opacity: 0.45;
+}
+
+/* Hero 徽章：更精緻的玻璃邊框 */
+.hero-badge {
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 220, 150, 0.30);
+    backdrop-filter: blur(12px);
+    color: rgba(255, 220, 160, 0.92);
+    font-size: 0.7rem;
+    letter-spacing: 2.5px;
+    padding: 6px 18px;
+    border-radius: 100px;
+    font-family: var(--font-serif);
+    font-style: italic;
+}
+
+/* Hero 中文標題：更大、更有氣場 */
+.hero-title-zh {
+    font-size: clamp(36px, 10vw, 60px);
+    color: #FFFFFF;
+    text-shadow:
+        0 2px 20px rgba(201, 137, 58, 0.50),
+        0 4px 40px rgba(139, 46, 6, 0.40);
+    letter-spacing: 0.18em;
+}
+
+/* Hero 英文副標：Fraunces italic 精緻感 */
+.hero-title-en {
+    font-family: var(--font-serif);
+    font-size: clamp(15px, 4vw, 22px);
+    font-style: italic;
+    font-weight: 300;
+    color: rgba(255, 200, 120, 0.82);
+    letter-spacing: 0.1em;
+}
+
+/* Hero 副標題文字 */
+.hero-subtitle {
+    font-size: 0.9rem;
+    color: rgba(255, 240, 210, 0.72);
+    letter-spacing: 0.04em;
+    line-height: 1.6;
+}
+
+/* Hero CTA 按鈕：更精緻的金邊框 */
+.hero-cta {
+    background: transparent;
+    border: 1.5px solid rgba(255, 200, 110, 0.70);
+    color: rgba(255, 225, 160, 0.95);
+    font-size: 0.88rem;
+    font-family: var(--font-serif);
+    font-style: italic;
+    letter-spacing: 0.08em;
+    padding: 11px 28px;
+    border-radius: 100px;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 20px rgba(201, 137, 58, 0.20);
+
+    &:hover {
+        background: rgba(255, 200, 110, 0.18);
+        border-color: rgba(255, 200, 110, 0.95);
+        color: #FFE8AA;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 32px rgba(201, 137, 58, 0.35);
+    }
+}
+
+
+/* ── 菜單分類按鈕：更精緻 ───────────────────────────── */
+.menu-cat-btn {
+    border: 1.5px solid var(--border-warm);
+    background: rgba(255, 255, 255, 0.80);
+    color: var(--text-mid);
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 0.85rem;
+    padding: 7px 18px;
+    letter-spacing: 0.03em;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 2px 8px rgba(61, 32, 16, 0.05);
+    transition: all 0.25s ease;
+
+    &.active {
+        background: var(--orange);
+        border-color: var(--orange);
+        color: #FFFFFF;
+        font-style: normal;
+        font-weight: 600;
+        box-shadow: 0 4px 16px rgba(200, 75, 15, 0.30);
+        letter-spacing: 0.02em;
+    }
+
+    &:hover:not(.active) {
+        border-color: var(--orange-light);
+        color: var(--orange);
+        background: rgba(255, 255, 255, 0.95);
+        transform: translateY(-1px);
+    }
+}
+
+
+/* ── 菜單卡片：Premium Card 升級 ───────────────────────── */
+.menu-item-card {
+    border: none;                              /* 移除舊邊框 */
+    border-radius: 22px;
+    box-shadow: var(--shadow-luxury);
+    background: #FFFFFF;
+    overflow: hidden;
+    transition:
+        transform  0.30s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.30s ease;
+
+    &:hover {
+        transform: translateY(-6px) scale(1.012);
+        box-shadow: var(--shadow-hover);
+    }
+}
+
+/* 食物相片區：更高、更有衝擊感 */
+.menu-item-img {
+    height: 190px;
+    position: relative;
+    overflow: hidden;
+
+    /* 全局：所有食物圖片底部漸層遮罩，增加餐飲質感（細緻、不搶眼） */
+    &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 40%;
+        background: linear-gradient(
+            to top,
+            rgba(0, 0, 0, 0.16) 0%,
+            transparent 100%
+        );
+        pointer-events: none;
+    }
+
+    @media (min-width: 1024px) {
+        height: 220px;
+    }
+}
+
+/* 熱銷/新品徽章：精緻無邊框膠囊 */
+.menu-item-badge-overlay {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 100px;
+    backdrop-filter: blur(8px);
+
+    &.badge-hot {
+        background: rgba(200, 75, 15, 0.88);
+        color: #FFE8C0;
+        border: 1px solid rgba(255, 200, 100, 0.35);
+        box-shadow: 0 2px 8px rgba(200, 75, 15, 0.40);
+    }
+
+    &.badge-new {
+        background: rgba(22, 163, 74, 0.88);
+        color: #C6F6D5;
+        border: 1px solid rgba(134, 239, 172, 0.35);
+    }
+}
+
+/* 卡片文字區：更精緻的排版 */
+.menu-item-body {
+    padding: 16px 18px 14px;
+    background: #FFFFFF;
+}
+
+/* 菜名：更大更有氣場 */
+.menu-item-name {
+    font-family: var(--font-serif);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-dark);
+    letter-spacing: 0.01em;
+    margin-bottom: 3px;
+    line-height: 1.35;
+}
+
+/* 描述文字：更精緻 */
+.menu-item-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    line-height: 1.55;
+}
+
+/* 價格：更突出 */
+.menu-item-price {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+
+    strong {
+        font-family: var(--font-serif);
+        font-size: 19px;
+        font-weight: 600;
+        color: var(--orange);
+        font-style: italic;
+    }
+}
+
+/* 加入購物車按鈕：更精緻的金色調 */
+.menu-add-btn {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--orange-light) 0%, var(--orange) 100%);
+    border: none;
+    box-shadow:
+        0 4px 14px rgba(200, 75, 15, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    &:hover {
+        background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%);
+        transform: scale(1.12) rotate(8deg);
+        box-shadow: 0 6px 20px rgba(200, 75, 15, 0.45);
+    }
+
+    &:active {
+        transform: scale(0.94);
+    }
+}
+
+
+/* ── 側邊欄品牌區域升級 ───────────────────────────────── */
+.sidebar-brand {
+    padding: 28px 20px 24px;
+}
+
+.brand-name {
+    font-family: var(--font-brand);
+    font-size: 1.35rem;
+    letter-spacing: 0.25em;
+    background: linear-gradient(135deg, var(--orange) 0%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 1px 4px rgba(200, 75, 15, 0.25));
+}
+
+.brand-en {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.12em;
+    opacity: 0.80;
+}
+
+
+/* ── 購物車浮動列升級 ────────────────────────────────── */
+.menu-cart-float {
+    background: rgba(255, 252, 245, 0.97);
+    border: 1.5px solid rgba(200, 137, 58, 0.25);
+    box-shadow:
+        0 8px 32px rgba(61, 32, 16, 0.18),
+        0 2px 8px rgba(61, 32, 16, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.90);
+    border-radius: 100px;
+}
+
+
+/* ── 全域 Content Card 陰影升級 ──────────────────────── */
+.ch-tab-content {
+    background: var(--bg-cream);
+}
+
+/* 統一所有卡片陰影升級 */
+.order-card,
+.tracking-card,
+.checkout-section,
+.profile-drawer-inner {
+    box-shadow: var(--shadow-luxury) !important;
+    border-color: var(--border-warm) !important;
+}
+
+
+/* ── 點餐人數：符合品牌風格的暖橘小標籤 ─────────────────── */
+.menu-price-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.menu-order-count {
+    font-size: 0.67rem;
+    color: var(--gold);
+    letter-spacing: 0.04em;
+    font-family: var(--font-body);
+    font-weight: 500;
+    opacity: 0.85;
+}
+
+
+/* ── 首頁主廚推薦卡片：點餐人數 ────────────────────────── */
+.featured-order-count {
+    display: block;
+    font-size: 0.68rem;
+    color: var(--gold);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    opacity: 0.82;
+    margin-top: 4px;
+}
+
+/* ── 首頁今日優惠卡片：點餐人數 ────────────────────────── */
+.deal-order-count {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--gold);
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    opacity: 0.80;
+    margin-top: 3px;
 }

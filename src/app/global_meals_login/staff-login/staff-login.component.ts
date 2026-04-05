@@ -97,12 +97,22 @@ export class StaffLoginComponent {
       return;
     }
 
-    /* 依角色導向對應頁面 */
+    /* 依角色顯示對應 Loading 動畫，再導向對應頁面 */
     if (user.role === 'boss') {
-      this.router.navigate(['/manager-dashboard']);
+      this.loadingService.showStaffLoading();
+      setTimeout(() => {
+        this.router.navigate(['/manager-dashboard']).then(() => {
+          this.loadingService.hide();
+        });
+      }, 1400);
     } else {
       /* branch_manager / staff 都進 POS 終端機 */
-      this.router.navigate(['/pos-terminal']);
+      this.loadingService.showPosLoading();
+      setTimeout(() => {
+        this.router.navigate(['/pos-terminal']).then(() => {
+          this.loadingService.hide();
+        });
+      }, 1400);
     }
   }
 

@@ -518,12 +518,12 @@
               </div>
               <!-- 台灣分店分類標籤列 -->
               <div class="menu-cat-bar">
-                <button class="menu-cat-btn active">全部</button>
-                <button class="menu-cat-btn">🍚 飯食</button>
-                <button class="menu-cat-btn">🍜 麵食</button>
-                <button class="menu-cat-btn">🍢 小吃</button>
-                <button class="menu-cat-btn">🥗 輕食</button>
-                <button class="menu-cat-btn">🧋 飲品</button>
+                <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='all'"  (click)="setMenuCategory('all');setTab('menu')">全部</button>
+                <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='飯食'" (click)="setMenuCategory('飯食');setTab('menu')">🍚 飯食</button>
+                <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='麵食'" (click)="setMenuCategory('麵食');setTab('menu')">🍜 麵食</button>
+                <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='小吃'" (click)="setMenuCategory('小吃');setTab('menu')">🍢 小吃</button>
+                <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='輕食'" (click)="setMenuCategory('輕食');setTab('menu')">🥗 輕食</button>
+                <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='飲品'" (click)="setMenuCategory('飲品');setTab('menu')">🧋 飲品</button>
               </div>
             </div>
           </div>
@@ -553,6 +553,7 @@
                     慢燉豬五花，滷汁濃醇入味，配半熟滷蛋與爽脆泡菜
                   </p>
                   <span class="featured-price">NT$ <strong>120</strong></span>
+                  <span class="featured-order-count">👥 156 人點過</span>
                 </div>
               </div>
               <!-- 首頁小卡：古早味排骨飯 -->
@@ -570,6 +571,7 @@
                     台式醃製炸排骨，搭配滷汁菜頭與白飯
                   </p>
                   <span class="featured-price">NT$ <strong>145</strong></span>
+                  <span class="featured-order-count">👥 215 人點過</span>
                 </div>
               </div>
               <!-- 首頁小卡：蚵仔麵線 -->
@@ -587,6 +589,7 @@
                     鮮蚵燴入麵線，甜辣醬提味，道地夜市風味
                   </p>
                   <span class="featured-price">NT$ <strong>70</strong></span>
+                  <span class="featured-order-count">👥 68 人點過</span>
                 </div>
               </div>
             </div>
@@ -626,6 +629,7 @@
                     <span class="deal-original">NT$120</span>
                     <span class="deal-sale">NT$<strong>99</strong></span>
                   </div>
+                  <span class="deal-order-count">👥 94 人點過</span>
                 </div>
               </div>
 
@@ -641,6 +645,7 @@
                     <span class="deal-original">NT$80</span>
                     <span class="deal-sale">NT$<strong>65</strong></span>
                   </div>
+                  <span class="deal-order-count">👥 147 人點過</span>
                 </div>
               </div>
 
@@ -656,6 +661,7 @@
                     <span class="deal-original">NT$75</span>
                     <span class="deal-sale">NT$<strong>55</strong></span>
                   </div>
+                  <span class="deal-order-count">👥 412 人點過</span>
                 </div>
               </div>
 
@@ -671,6 +677,7 @@
                     <span class="deal-original">NT$130</span>
                     <span class="deal-sale">NT$<strong>105</strong></span>
                   </div>
+                  <span class="deal-order-count">👥 73 人點過</span>
                 </div>
               </div>
 
@@ -686,6 +693,7 @@
                     <span class="deal-original">NT$65</span>
                     <span class="deal-sale">NT$<strong>49</strong></span>
                   </div>
+                  <span class="deal-order-count">👥 96 人點過</span>
                 </div>
               </div>
 
@@ -701,6 +709,7 @@
                     <span class="deal-original">NT$150</span>
                     <span class="deal-sale">NT$<strong>135</strong></span>
                   </div>
+                  <span class="deal-order-count">👥 128 人點過</span>
                 </div>
               </div>
             </div>
@@ -733,17 +742,19 @@
                 type="text"
                 placeholder="搜尋餐點名稱…"
                 class="menu-search-input"
+                [value]="menuSearchQuery()"
+                (input)="onMenuSearch($event)"
               />
             </div>
             <!-- 分類標籤列（帶漸層遮罩暗示可左滑） -->
             <div class="menu-cat-bar">
               <!-- 台灣分店菜單篩選標籤 -->
-              <button class="menu-cat-btn active">全部</button>
-              <button class="menu-cat-btn">🍚 飯食</button>
-              <button class="menu-cat-btn">🍜 麵食</button>
-              <button class="menu-cat-btn">🍢 小吃</button>
-              <button class="menu-cat-btn">🥗 輕食</button>
-              <button class="menu-cat-btn">🧋 飲品</button>
+              <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='all'"  (click)="setMenuCategory('all')">全部</button>
+              <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='飯食'" (click)="setMenuCategory('飯食')">🍚 飯食</button>
+              <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='麵食'" (click)="setMenuCategory('麵食')">🍜 麵食</button>
+              <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='小吃'" (click)="setMenuCategory('小吃')">🍢 小吃</button>
+              <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='輕食'" (click)="setMenuCategory('輕食')">🥗 輕食</button>
+              <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='飲品'" (click)="setMenuCategory('飲品')">🧋 飲品</button>
             </div>
 
             <!-- ── 滿額促銷橫幅（v5 全新設計）────────────────────────
@@ -852,7 +863,14 @@
           <!-- /.menu-header（含搜尋列、分類列、促銷橫幅） -->
 
           <!-- ── 菜單分類：熱門精選 ────────────────────── -->
-          <div class="menu-category-section">
+          <div class="menu-category-section"
+            [hidden]="!isSectionShown([
+              {name:'紅燒牛肉麵', category:'麵食'},
+              {name:'古早味排骨飯', category:'飯食'},
+              {name:'蚵仔煎', category:'小吃'},
+              {name:'控肉飯', category:'飯食'}
+            ])"
+          >
             <h3 class="menu-cat-title">
               <span class="menu-cat-line"></span>
               🔥 熱門精選
@@ -860,7 +878,7 @@
             <!-- Bento Grid 卡片排列 -->
             <div class="menu-items-list">
               <!-- 卡片 1：紅燒牛肉麵 -->
-              <div class="menu-item-card">
+              <div class="menu-item-card" [hidden]="!isMenuItemShown('紅燒牛肉麵','麵食')">
                 <div class="menu-item-img mi-beef">
                   <span class="menu-item-badge-overlay badge-hot">熱銷</span>
                 </div>
@@ -870,9 +888,10 @@
                     <p class="menu-item-desc">慢燉 12 小時濃醇牛骨湯底</p>
                   </div>
                   <div class="menu-item-bottom">
-                    <span class="menu-item-price"
-                      >NT$ <strong>165</strong></span
-                    >
+                    <div class="menu-price-group">
+                      <span class="menu-item-price">NT$ <strong>165</strong></span>
+                      <span class="menu-order-count">👥 328 人點過</span>
+                    </div>
                     <button
                       class="menu-add-btn"
                       (click)="
@@ -882,8 +901,8 @@
                           nameEn: 'Braised Beef Noodle',
                           price: 165,
                           image: '',
-                          category: '台式',
-                          categoryEn: 'Taiwanese',
+                          category: '麵食',
+                          categoryEn: 'Noodles',
                           description: '',
                           stock: 20,
                         })
@@ -904,7 +923,7 @@
               </div>
 
               <!-- 卡片 2：古早味排骨飯 -->
-              <div class="menu-item-card">
+              <div class="menu-item-card" [hidden]="!isMenuItemShown('古早味排骨飯','飯食')">
                 <div class="menu-item-img mi-pork-chop">
                   <span class="menu-item-badge-overlay badge-hot">熱銷</span>
                 </div>
@@ -914,9 +933,10 @@
                     <p class="menu-item-desc">台式醃製炸排骨，滷汁菜頭配白飯</p>
                   </div>
                   <div class="menu-item-bottom">
-                    <span class="menu-item-price"
-                      >NT$ <strong>145</strong></span
-                    >
+                    <div class="menu-price-group">
+                      <span class="menu-item-price">NT$ <strong>145</strong></span>
+                      <span class="menu-order-count">👥 215 人點過</span>
+                    </div>
                     <button
                       class="menu-add-btn"
                       (click)="
@@ -948,7 +968,7 @@
               </div>
 
               <!-- 卡片 3：蚵仔煎 -->
-              <div class="menu-item-card">
+              <div class="menu-item-card" [hidden]="!isMenuItemShown('蚵仔煎','小吃')">
                 <div class="menu-item-img mi-oyster-pancake"></div>
                 <div class="menu-item-body">
                   <div>
@@ -956,7 +976,10 @@
                     <p class="menu-item-desc">鮮蚵地瓜粉煎餅，淋上特製甜辣醬</p>
                   </div>
                   <div class="menu-item-bottom">
-                    <span class="menu-item-price">NT$ <strong>80</strong></span>
+                    <div class="menu-price-group">
+                      <span class="menu-item-price">NT$ <strong>80</strong></span>
+                      <span class="menu-order-count">👥 147 人點過</span>
+                    </div>
                     <button
                       class="menu-add-btn"
                       (click)="
@@ -988,7 +1011,7 @@
               </div>
 
               <!-- 卡片 4：控肉飯 -->
-              <div class="menu-item-card">
+              <div class="menu-item-card" [hidden]="!isMenuItemShown('控肉飯','飯食')">
                 <div class="menu-item-img mi-braised-belly">
                   <span class="menu-item-badge-overlay badge-hot">熱銷</span>
                 </div>
@@ -1000,9 +1023,10 @@
                     </p>
                   </div>
                   <div class="menu-item-bottom">
-                    <span class="menu-item-price"
-                      >NT$ <strong>130</strong></span
-                    >
+                    <div class="menu-price-group">
+                      <span class="menu-item-price">NT$ <strong>130</strong></span>
+                      <span class="menu-order-count">👥 189 人點過</span>
+                    </div>
                     <button
                       class="menu-add-btn"
                       (click)="
@@ -1036,14 +1060,19 @@
           </div>
 
           <!-- ── 菜單分類：特調飲品 ────────────────────── -->
-          <div class="menu-category-section">
+          <div class="menu-category-section"
+            [hidden]="!isSectionShown([
+              {name:'黑糖珍珠奶茶', category:'飲品'},
+              {name:'仙草奶茶', category:'飲品'}
+            ])"
+          >
             <h3 class="menu-cat-title">
               <span class="menu-cat-line"></span>
               🧋 特調飲品
             </h3>
             <div class="menu-items-list">
               <!-- 卡片 5：黑糖珍珠奶茶 -->
-              <div class="menu-item-card">
+              <div class="menu-item-card" [hidden]="!isMenuItemShown('黑糖珍珠奶茶','飲品')">
                 <div class="menu-item-img mi-bbt">
                   <span class="menu-item-badge-overlay badge-hot">熱銷</span>
                 </div>
@@ -1053,7 +1082,10 @@
                     <p class="menu-item-desc">現煮珍珠，手工黑糖虎紋</p>
                   </div>
                   <div class="menu-item-bottom">
-                    <span class="menu-item-price">NT$ <strong>75</strong></span>
+                    <div class="menu-price-group">
+                      <span class="menu-item-price">NT$ <strong>75</strong></span>
+                      <span class="menu-order-count">👥 412 人點過</span>
+                    </div>
                     <button
                       class="menu-add-btn"
                       (click)="
@@ -1085,7 +1117,7 @@
               </div>
 
               <!-- 卡片 6：仙草奶茶 -->
-              <div class="menu-item-card">
+              <div class="menu-item-card" [hidden]="!isMenuItemShown('仙草奶茶','飲品')">
                 <div class="menu-item-img mi-grass-jelly">
                   <span class="menu-item-badge-overlay badge-new">新品</span>
                 </div>
@@ -1095,7 +1127,10 @@
                     <p class="menu-item-desc">台灣本產仙草凍，搭配濃醇鮮奶茶</p>
                   </div>
                   <div class="menu-item-bottom">
-                    <span class="menu-item-price">NT$ <strong>65</strong></span>
+                    <div class="menu-price-group">
+                      <span class="menu-item-price">NT$ <strong>65</strong></span>
+                      <span class="menu-order-count">👥 96 人點過</span>
+                    </div>
                     <button
                       class="menu-add-btn"
                       (click)="
@@ -1429,20 +1464,28 @@
               </div>
             </div>
 
-            <!-- 送出訂單（呼叫 placeOrder()，建立真實訂單並跳至追蹤頁） -->
+            <!-- 送出訂單（isPlacingOrder 防重複 + spinner 回饋） -->
             <button
               class="checkout-submit"
+              [class.is-placing]="isPlacingOrder()"
+              [disabled]="isPlacingOrder()"
               (click)="placeOrder()"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-              >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              確認下單 — NT$ {{ cartTotal() }}
+              @if (isPlacingOrder()) {
+                <!-- 處理中：ldrs ring spinner -->
+                <span class="placing-spinner" aria-hidden="true"></span>
+                處理中...
+              } @else {
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                確認下單 — NT$ {{ cartTotal() }}
+              }
             </button>
           </div>
           <div style="height: 80px"></div>

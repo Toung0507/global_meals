@@ -16,7 +16,7 @@
 <!-- 管理端 Loading 遮罩（深海軍藍 + 金黃圓環）
      當使用者切換到管理系統時顯示 -->
 @if (loadingService.isLoading && loadingService.loadingType === 'staff') {
-  <app-staff-loading></app-staff-loading>
+  <app-staff-loading [subtitle]="loadingService.loadingSubtitle"></app-staff-loading>
 }
 
 <!-- 客戶端 Loading 遮罩（奶油白 + 橘紅彈跳點）

@@ -28,15 +28,33 @@ export class LoadingService {
    * Loading 的風格類型
    *   'staff'    → 深海軍藍風格（管理系統）
    *   'customer' → 橘紅暖色風格（客戶入口）
+   * 注意：POS 登入與 staff 共用同一元件，以 loadingSubtitle 區分文字
    */
   loadingType: string = 'staff';
 
   /*
+   * Loading 副標題文字（動態，供 staff-loading 元件讀取）
+   * 不同入口顯示不同說明文字
+   */
+  loadingSubtitle: string = '正在連線至管理後台...';
+
+  /*
    * 顯示管理端 Loading（深海軍藍 + 金黃色圓環）
-   * 呼叫時機：使用者點擊「切換到管理系統」的導覽連結
+   * 呼叫時機：boss 帳號登入成功，導向 /manager-dashboard 之前
    */
   showStaffLoading(): void {
     this.loadingType = 'staff';
+    this.loadingSubtitle = '正在連線至管理後台...';
+    this.isLoading = true;
+  }
+
+  /*
+   * 顯示 POS Loading（深海軍藍 + 金黃色圓環，副標題不同）
+   * 呼叫時機：branch_manager / staff 帳號登入成功，導向 /pos-terminal 之前
+   */
+  showPosLoading(): void {
+    this.loadingType = 'staff';
+    this.loadingSubtitle = '正在載入 POS 系統...';
     this.isLoading = true;
   }
 

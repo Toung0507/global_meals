@@ -20,7 +20,7 @@
  * =====================================================
  */
 
-import { Component, ElementRef, ViewChild, AfterViewInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, Input, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 /* GSAP 動畫引擎，從已安裝的 gsap 套件引入 */
 import { gsap } from 'gsap';
@@ -38,6 +38,9 @@ ring.register();
   styleUrls: ['./staff-loading.component.scss']
 })
 export class StaffLoadingComponent implements AfterViewInit {
+
+  /** 副標題文字（由 app.component.html 傳入，依登入身份不同） */
+  @Input() subtitle: string = '正在連線至管理後台...';
 
   /*
    * @ViewChild('overlay')
