@@ -1286,6 +1286,245 @@
     animation: fadeInUp 0.35s ease;
 }
 
+/* ════════════════════════════════════════════════════════
+   首頁輪播（Home Carousel）
+   結構：容器 → 滑動軌道 → 三張卡片
+   動畫：translateX 切換，cubic-bezier 滑入
+   ════════════════════════════════════════════════════════ */
+
+/* 外層容器：固定高度，溢出隱藏 */
+.home-carousel {
+    position: relative;
+    width: 100%;
+    height: 310px;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* 滑動軌道：三張卡片並排成 300% 寬度 */
+.hc-track {
+    display: flex;
+    width: 300%;
+    height: 100%;
+    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+}
+
+/* 每張卡片佔 1/3 軌道（= 100% 容器寬） */
+.hc-slide {
+    flex: 0 0 33.3333%;
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+/* ── 左側文字區（內縮避免被箭頭遮擋，箭頭寬 36px + 偏移 12px = 留 60px） */
+.hcs-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 32px 28px 32px 64px;
+    gap: 8px;
+    z-index: 1;
+}
+
+.hcs-tag {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 20px;
+    padding: 4px 12px;
+    width: fit-content;
+    letter-spacing: 0.5px;
+}
+
+.hcs-tag-dark {
+    color: rgba(120, 60, 10, 0.9);
+    background: rgba(200, 120, 20, 0.2);
+}
+
+.hcs-tag-light {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.hcs-title {
+    font-size: 34px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+    line-height: 1.15;
+    letter-spacing: 2px;
+}
+
+.hcs-title-dark {
+    color: #5c2e00;
+}
+
+.hcs-en {
+    font-size: 15px;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    font-weight: 500;
+}
+
+.hcs-desc {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+    line-height: 1.6;
+}
+
+.hcs-desc-dark {
+    color: rgba(80, 40, 0, 0.8);
+}
+
+/* CTA 按鈕 */
+.hcs-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 10px 24px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #c0400a;
+    border: none;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    width: fit-content;
+    transition: background 0.2s, transform 0.15s;
+}
+
+.hcs-btn:hover {
+    background: #fff;
+    transform: translateY(-1px);
+}
+
+.hcs-btn-dark {
+    background: rgba(180, 80, 10, 0.9);
+    color: #fff;
+}
+
+.hcs-btn-dark:hover {
+    background: rgba(180, 80, 10, 1);
+}
+
+/* ── 右側視覺區（三張卡共用，右側留出箭頭空間） */
+.hcs-right {
+    flex: 0 0 44%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 20px 60px 20px 12px;
+}
+
+/* 食物照片：四邊漸層 mask 淡出，自然融入卡片背景 */
+.hcsr-img {
+    max-width: 100%;
+    max-height: 100%;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    /* mask：四邊由透明往中心漸入黑色（black = 顯示，transparent = 隱藏）
+       兩組 linear-gradient 透過 intersect 取交集，同時作用於水平與垂直 */
+    -webkit-mask-image:
+        linear-gradient(to right,  transparent 0%,  black 8%, black 92%, transparent 100%),
+        linear-gradient(to bottom, transparent 0%,  black 5%, black 95%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-image:
+        linear-gradient(to right,  transparent 0%,  black 8%, black 92%, transparent 100%),
+        linear-gradient(to bottom, transparent 0%,  black 5%, black 95%, transparent 100%);
+    mask-composite: intersect;
+}
+
+/* 卡片 1：品牌 — 深橘漸層 */
+.hc-slide-brand {
+    background: linear-gradient(130deg, #b84a14 0%, #3d1204 100%);
+}
+
+/* 卡片 2：促銷 — 暖米黃 */
+.hc-slide-promo {
+    background: linear-gradient(130deg, #fff3d4 0%, #ffe4a0 100%);
+}
+
+/* 卡片 3：主廚推薦 — 深墨綠 */
+.hc-slide-chef {
+    background: linear-gradient(130deg, #1a5c3a 0%, #0d3322 100%);
+}
+
+/* ── 左右箭頭按鈕 ── */
+.hc-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.85);
+    color: #5c2e00;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    transition: background 0.2s, transform 0.15s;
+    z-index: 10;
+}
+
+.hc-arrow:hover {
+    background: #fff;
+    transform: translateY(-50%) scale(1.08);
+}
+
+.hc-arrow svg {
+    width: 18px;
+    height: 18px;
+}
+
+.hc-arrow-prev { left: 12px; }
+.hc-arrow-next { right: 12px; }
+
+/* ── 底部圓點指示器 ── */
+.hc-dots {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 10;
+}
+
+.hc-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.45);
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.25s, width 0.25s;
+}
+
+.hc-dot.active {
+    background: rgba(255, 255, 255, 0.95);
+    width: 20px;
+    border-radius: 4px;
+}
+
 /* 英雄區塊 */
 .home-hero {
     position: relative;
@@ -1516,7 +1755,8 @@
 .featured-name {
     font-family: var(--font-brand);
     font-size: 16px;
-    color: var(--text-dark);
+    font-weight: 600;
+    color: #3D2010;
 }
 
 .featured-desc {
@@ -1695,7 +1935,8 @@
 
 /* 餐點名稱：單行截斷 */
 .deal-name {
-    font-size: 14px;
+    font-family: var(--font-brand);
+    font-size: 16px;
     font-weight: 600;
     color: #3D2010;
     margin: 0 0 7px;
@@ -2319,6 +2560,21 @@
     background: url('/assets/仙草奶茶.jpg') center/cover no-repeat;
 }
 
+/* 蚵仔麵線 */
+.mi-oyster-noodle {
+    background: url('/assets/蚵仔麵線.jpg') center/cover no-repeat;
+}
+
+/* 牛排 */
+.mi-steak {
+    background: url('/assets/牛排.jpg') center/cover no-repeat;
+}
+
+/* 三杯雞 */
+.mi-3cup-chicken {
+    background: url('/assets/三杯雞.jpg') center/cover no-repeat;
+}
+
 .menu-item-body {
     flex: 1;
     padding: 16px;
@@ -2339,7 +2595,8 @@
 .menu-item-name {
     font-family: var(--font-brand);
     font-size: 16px;
-    color: var(--text-dark);
+    font-weight: 600;
+    color: #3D2010;
     margin-bottom: 2px;
     line-height: 1.3;
 }
@@ -2669,6 +2926,18 @@
     gap: 12px;
 }
 
+/* 贈品列：淡綠底，無操作按鈕 */
+.checkout-item-gift {
+    background: #f0fdf4;
+    border-left: 3px solid #22c55e;
+}
+
+/* 贈品金額欄位：綠色標示 0 元 */
+.co-gift-free {
+    font-weight: 600;
+    color: #16a34a;
+}
+
 .co-item-info {
     flex: 1;
     display: flex;
@@ -2677,10 +2946,10 @@
 }
 
 .co-item-name {
-    font-family: var(--font-body);
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-dark);
+    font-family: var(--font-brand);
+    font-size: 16px;
+    font-weight: 600;
+    color: #3D2010;
 }
 
 .co-item-unit {
@@ -3462,8 +3731,10 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 13px;
-    color: var(--text-mid);
+    font-family: var(--font-brand);
+    font-size: 16px;
+    font-weight: 600;
+    color: #3D2010;
     padding: 4px 0;
 }
 
@@ -4241,6 +4512,20 @@
     text-align: right;
 }
 
+/* 付款頁贈品列：淡綠底 */
+.psc-gift-row {
+    background: #f0fdf4;
+    border-left: 3px solid #22c55e;
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin: 2px 0;
+}
+
+/* 付款頁贈品金額：綠色 0 元 */
+.psc-gift-free {
+    color: #16a34a;
+}
+
 .psc-divider {
     height: 1px;
     background: dashed 1px var(--border-warm);
@@ -4561,12 +4846,12 @@
     background: #FFFFFF;
 }
 
-/* 菜名：更大更有氣場 */
+/* 菜名：統一品牌字體 */
 .menu-item-name {
-    font-family: var(--font-serif);
-    font-size: 17px;
+    font-family: var(--font-brand);
+    font-size: 16px;
     font-weight: 600;
-    color: var(--text-dark);
+    color: #3D2010;
     letter-spacing: 0.01em;
     margin-bottom: 3px;
     line-height: 1.35;

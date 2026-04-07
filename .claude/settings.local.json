@@ -24,7 +24,16 @@
       "Bash(powershell -Command \"Test-Path ''C:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\團專\\\\global_meals\\\\public\\\\assets\\\\scan-to-order.json''; Test-Path ''C:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\團專\\\\global_meals\\\\public\\\\assets\\\\scan-to-order.lottie''\")",
       "Bash(gh pr:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "Skill(ship)",
+      "Skill(ship:*)",
+      "Bash(~/.claude/skills/gstack/bin/gstack-config get:*)",
+      "Bash(gstack status:*)",
+      "Bash(npx gstack:*)",
+      "Bash(~/.claude/skills/gstack/bin/gstack-config)",
+      "Bash(ls ~/.claude/skills/gstack/bin/gstack*)",
+      "Bash(~/.claude/skills/gstack/setup --version)",
+      "Bash(~/.claude/skills/gstack/bin/gstack-update-check)"
     ]
   }
 }

@@ -12,7 +12,7 @@
  * =====================================================
  */
 
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
@@ -71,10 +71,32 @@ interface NavTab { id: TabId; label: string; icon: string; }
   templateUrl: './customer-home.component.html',
   styleUrls: ['./customer-home.component.scss']
 })
-export class CustomerHomeComponent implements OnInit {
+export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   /* ── 當前頁籤 ───────────────────────────────────────── */
   activeTab = signal<TabId>('home');
+
+  /* ── 首頁輪播 ───────────────────────────────────────── */
+  heroSlideIndex = signal(0);
+  readonly HERO_SLIDE_COUNT = 3;
+  private heroTimer: ReturnType<typeof setInterval> | null = null;
+  private heroPaused = false;
+
+  prevHeroSlide(): void {
+    this.heroSlideIndex.update(i => (i - 1 + this.HERO_SLIDE_COUNT) % this.HERO_SLIDE_COUNT);
+  }
+
+  nextHeroSlide(): void {
+    this.heroSlideIndex.update(i => (i + 1) % this.HERO_SLIDE_COUNT);
+  }
+
+  goToHeroSlide(index: number): void {
+    this.heroSlideIndex.set(index);
+  }
+
+  pauseCarousel(): void { this.heroPaused = true; }
+
+  resumeCarousel(): void { this.heroPaused = false; }
 
   /* ── 購物車 ─────────────────────────────────────────── */
   cartItems = signal<CartItem[]>([]);
@@ -141,7 +163,7 @@ export class CustomerHomeComponent implements OnInit {
   showConfirmPassword = signal(false);
 
   /* ── 結帳：付款方式選擇 ────────────────────────────── */
-  paymentMethod = signal<'credit' | 'mobile' | 'cash' | 'cod'>('cod');
+  paymentMethod = signal<'credit' | 'mobile' | 'cash'>('cash');
 
   /* ── 訂單備註 ───────────────────────────────────────── */
   orderNote = signal('');
@@ -149,7 +171,7 @@ export class CustomerHomeComponent implements OnInit {
   /* ── 下單中狀態（true 時按鈕顯示 spinner，防止重複送出） */
   isPlacingOrder = signal(false);
 
-  setPaymentMethod(method: 'credit' | 'mobile' | 'cash' | 'cod'): void {
+  setPaymentMethod(method: 'credit' | 'mobile' | 'cash'): void {
     this.paymentMethod.set(method);
   }
 
@@ -252,8 +274,8 @@ export class CustomerHomeComponent implements OnInit {
   private readonly ALL_TABS: NavTab[] = [
     { id: 'home',     label: '首頁',   icon: 'home'     },
     { id: 'menu',     label: '菜單',   icon: 'menu'     },
-    { id: 'checkout', label: '結帳',   icon: 'checkout' },
-    { id: 'tracker',  label: '追蹤',   icon: 'tracker'  },
+    { id: 'checkout', label: '購物車',  icon: 'checkout' },
+    { id: 'tracker',  label: '訂單追蹤', icon: 'tracker'  },
     { id: 'orders',   label: '訂單管理', icon: 'orders'   },
   ];
 
@@ -346,6 +368,16 @@ export class CustomerHomeComponent implements OnInit {
       this.router.navigate(['/customer-login']);
       return;
     }
+    /* 啟動首頁輪播自動播放（5 秒換一張） */
+    this.heroTimer = setInterval(() => {
+      if (!this.heroPaused) {
+        this.heroSlideIndex.update(i => (i + 1) % this.HERO_SLIDE_COUNT);
+      }
+    }, 5000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.heroTimer) clearInterval(this.heroTimer);
   }
 
   /* ── 切換頁籤 ─────────────────────────────────────── */
@@ -438,12 +470,16 @@ export class CustomerHomeComponent implements OnInit {
     const orderId   = this.orderService.generateOrderId();
 
     const itemTexts = this.cartItems().map(i => `${i.name} × ${i.quantity}`);
+    /* 若有滿額贈品，一併加入品項列表 */
+    if (this.selectedGift()) {
+      itemTexts.push(`🎁 ${this.selectedGift()}（滿額贈品）`);
+    }
     const totalQty  = this.cartItems().reduce((s, i) => s + i.quantity, 0);
     const estMin    = Math.max(5, Math.ceil(totalQty * 2));
 
     /* 付款方式標籤 */
     const payLabels: Record<string, string> = {
-      credit: '信用卡', mobile: '行動支付', cash: '現金', cod: '取貨付款'
+      credit: '信用卡', mobile: '行動支付', cash: '現金'
     };
     const payLabel = payLabels[this.paymentMethod()] ?? '現金';
 
