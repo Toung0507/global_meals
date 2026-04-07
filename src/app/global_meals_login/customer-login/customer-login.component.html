@@ -9,6 +9,40 @@
   =====================================================
 -->
 
+<!--
+  =====================================================
+  ⚠ 測試帳號一覽（API 串接前請保留，勿刪除）
+  驗證邏輯位於 src/app/shared/auth.service.ts → MOCK_USERS
+  =====================================================
+
+  【客戶帳號】
+    信箱：test@lazybao.com
+    手機：0912-345-678
+    密碼：test1234
+    角色：customer（一般會員）
+    前往：/customer-login → 客戶主頁
+
+  【老闆帳號】
+    信箱：admin@lazybao.com
+    密碼：admin1234
+    角色：boss（超級管理員，可存取全部分店）
+    前往：/staff-login → 管理後台（manager-dashboard）
+
+  【分店長帳號】
+    信箱：manager@lazybao.com
+    密碼：mgr1234
+    角色：branch_manager（可管理自己分店的員工、訂單、庫存）
+    前往：/staff-login → POS 終端（pos-terminal）
+
+  【員工帳號】
+    信箱：staff@lazybao.com
+    密碼：staff1234
+    角色：staff（只能操作 POS、查看所屬分店庫存）
+    前往：/staff-login → POS 終端（pos-terminal）
+
+  =====================================================
+-->
+
 
 <!-- ===================================================
    頂部導覽列：讓 Demo 時可以切換到管理系統登入頁面
@@ -164,12 +198,7 @@
         </div>
       }
 
-      <!-- 測試帳號提示區塊（⚠ 未來串接後端後移除） -->
-      <div class="c-test-hint">
-        <span class="c-test-label">⚠ 測試帳號</span>
-        <span>信箱：test&#64;lazybao.com</span>
-        <span>密碼：test1234</span>
-      </div>
+      <!-- ⚠ 測試帳號提示區塊：API 串接後移除此區塊，帳號資訊改在頂部 HTML 註解保存 -->
 
       <!-- 登入按鈕與註冊按鈕群組 -->
       <div class="c-btn-group">

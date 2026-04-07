@@ -179,8 +179,35 @@ export class CustomerHomeComponent implements OnInit {
     this.showConfirmPassword.update(v => !v);
   }
 
+  /* ── 今日優惠橫向滾動 ───────────────────────────────── */
+  scrollDeals(el: HTMLElement): void {
+    /* 每次滾動一張卡片寬度（240px 卡片 + 12px gap） */
+    el.scrollBy({ left: 252, behavior: 'smooth' });
+  }
+
+  /* ── 贈品選擇 ───────────────────────────────────────── */
+  giftOptions: string[] = ['招牌滷蛋 × 2', '特製泡菜 × 1', '古早味豆干 × 2'];
+  selectedGift = signal<string>('');
+  giftDropdownOpen = signal(false);
+
+  toggleGiftDropdown(): void {
+    this.giftDropdownOpen.update(v => !v);
+  }
+
+  selectGift(gift: string): void {
+    this.selectedGift.set(gift);
+    this.giftDropdownOpen.set(false);
+  }
+
+  /* ── 折扣兌換券 ─────────────────────────────────────── */
+  useDiscountCoupon = signal(false);
+
+  toggleDiscountCoupon(): void {
+    this.useDiscountCoupon.update(v => !v);
+  }
+
   /* ── 側邊欄：進度與折扣邏輯 (模擬 Database) ────────── */
-  memberOrderCount = signal(7);
+  memberOrderCount = signal(9);
 
   ordersUntilDiscount = computed(() => {
     const total = this.memberOrderCount();
@@ -191,6 +218,19 @@ export class CustomerHomeComponent implements OnInit {
 
   hasDiscountReady = computed(() => {
     return this.memberOrderCount() > 0 && this.memberOrderCount() % 10 === 0;
+  });
+
+  /* 8折後總計（使用折扣券時才生效） */
+  discountedTotal = computed(() => {
+    if (this.useDiscountCoupon()) {
+      return Math.round(this.cartTotal() * 0.8);
+    }
+    return this.cartTotal();
+  });
+
+  /* 折扣省下金額 */
+  discountAmount = computed(() => {
+    return this.cartTotal() - this.discountedTotal();
   });
 
   /* ── 即時追蹤訂單（從 OrderService 取得最新客戶訂單） ── */
@@ -228,57 +268,57 @@ export class CustomerHomeComponent implements OnInit {
 
   orderHistoryList = signal([
     {
-      id: 'LBB-20240315-001',
-      date: '2024-03-15',
+      id: 'LBB-20260115-001',
+      date: '2026-01-15',
       items: '紅燒牛肉麵 × 1、滷蛋 × 2',
       total: 185,
       status: 'completed'
     },
     {
-      id: 'LBB-20240320-002',
-      date: '2024-03-20',
+      id: 'LBB-20260210-002',
+      date: '2026-02-10',
       items: '三杯雞飯 × 1、味噌湯 × 1',
       total: 150,
       status: 'completed'
     },
     {
-      id: 'LBB-20240401-004',
-      date: '2024-04-01',
+      id: 'LBB-20260301-003',
+      date: '2026-03-01',
       items: '咖哩雞飯 × 1、珍珠奶茶 × 2、小菜 × 1',
       total: 320,
       status: 'completed'
     },
     {
-      id: 'LBB-20240408-005',
-      date: '2024-04-08',
+      id: 'LBB-20260318-004',
+      date: '2026-03-18',
       items: '麻辣燙 × 1、白飯 × 1',
       total: 175,
       status: 'completed'
     },
     {
-      id: 'LBB-20240418-007',
-      date: '2024-04-18',
+      id: 'LBB-20260325-005',
+      date: '2026-03-25',
       items: '越南河粉 × 1、春捲 × 3',
       total: 210,
       status: 'completed'
     },
     {
-      id: 'LBB-20240425-008',
-      date: '2024-04-25',
+      id: 'LBB-20260401-006',
+      date: '2026-04-01',
       items: '印度咖哩飯 × 2、饢餅 × 1、優格飲 × 2',
       total: 395,
       status: 'completed'
     },
     {
-      id: 'LBB-20240412-006',
-      date: '2024-04-12',
+      id: 'LBB-20260308-007',
+      date: '2026-03-08',
       items: '鐵板燒套餐 × 2、冬瓜茶 × 2',
       total: 480,
       status: 'cancelled'
     },
     {
-      id: 'LBB-20240402-003',
-      date: '2024-04-02',
+      id: 'LBB-20260220-008',
+      date: '2026-02-20',
       items: '紅油抄手 × 2',
       total: 120,
       status: 'refunded'
@@ -427,7 +467,7 @@ export class CustomerHomeComponent implements OnInit {
         id:     orderId,
         date:   `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
         items:  itemTexts.join('、'),
-        total:  this.cartTotal(),
+        total:  this.discountedTotal(),
         status: 'completed'
       },
       ...this.orderHistoryList()
@@ -436,6 +476,18 @@ export class CustomerHomeComponent implements OnInit {
     /* 清空購物車與備註 */
     this.clearCart();
     this.orderNote.set('');
+
+    /* 折扣券使用：重置計數（本次訂單算第 1 次）；未使用：計數 +1 */
+    if (this.useDiscountCoupon()) {
+      this.memberOrderCount.set(1);
+      this.useDiscountCoupon.set(false);
+    } else {
+      this.memberOrderCount.update(c => c + 1);
+    }
+
+    /* 重置贈品選擇 */
+    this.selectedGift.set('');
+    this.giftDropdownOpen.set(false);
 
     /* 跳至訂單追蹤頁 */
     this.setTab('tracker');

@@ -117,7 +117,7 @@
                   />
                 } @else {
                   <span class="pr-value">{{
-                    authService.currentUser?.email || "test@lazybao.com"
+                    authService.currentUser?.email || '（未設定）'
                   }}</span>
                 }
               </div>
@@ -128,8 +128,8 @@
                     <input
                       [type]="showPassword() ? 'text' : 'password'"
                       class="pr-input"
-                      value="12345678"
-                      placeholder="更新密碼"
+                      value=""
+                      placeholder="輸入新密碼"
                     />
                     <button
                       class="pr-eye-btn"
@@ -179,8 +179,8 @@
                     <input
                       [type]="showConfirmPassword() ? 'text' : 'password'"
                       class="pr-input"
-                      value="12345678"
-                      placeholder="再次輸入密碼"
+                      value=""
+                      placeholder="再次輸入新密碼"
                     />
                     <button
                       class="pr-eye-btn"
@@ -237,7 +237,7 @@
               </div>
               <p class="pr-status-desc">
                 @if (hasDiscountReady()) {
-                  點餐滿 10 次！您可在下一次點餐選擇折抵。
+                  已點餐 <strong>{{ memberOrderCount() }}</strong> 次，您獲得了折扣兌換券 !! 請於購物車結帳時使用。
                 } @else {
                   已點餐 <strong>{{ memberOrderCount() }}</strong> 次，差
                   <strong class="highlight">{{ ordersUntilDiscount() }}</strong>
@@ -615,8 +615,9 @@
               <h2 class="section-title">今日優惠</h2>
             </div>
 
-            <!-- 橫向捲動優惠卡列（5 張） -->
-            <div class="deal-scroll">
+            <!-- 橫向捲動優惠卡列（含右側箭頭按鈕） -->
+            <div class="deal-scroll-wrapper">
+            <div class="deal-scroll" #dealScrollEl>
               <!-- 優惠卡 1：阿三陽春麵 -->
               <div class="deal-card" (click)="setTab('menu')">
                 <div class="deal-card-img">
@@ -712,6 +713,13 @@
                   <span class="deal-order-count">👥 128 人點過</span>
                 </div>
               </div>
+            </div>
+            <!-- 右側箭頭按鈕：點擊後向右滾動一張卡片 -->
+            <button class="deal-scroll-arrow" (click)="scrollDeals(dealScrollEl)" aria-label="向右捲動">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
             </div>
           </div>
 
@@ -1291,12 +1299,85 @@
                 }
               </div>
 
-              <!-- 滿額贈品 -->
+              <!-- 滿額贈品：下拉選擇 -->
               @if (cartTotal() >= 300) {
-                <div class="checkout-gift">
-                  <span class="gift-icon">🎁</span>
-                  <span class="gift-text">招牌滷蛋 × 2（滿額贈品）</span>
-                  <span class="gift-price">免費</span>
+                <div class="checkout-gift-select">
+                  <!-- 主列：點擊展開下拉 -->
+                  <button class="gift-select-row" (click)="toggleGiftDropdown()" type="button">
+                    <span class="gift-icon">🎁</span>
+                    <span class="gift-select-label">
+                      @if (selectedGift()) {
+                        {{ selectedGift() }}（滿額贈品）
+                      } @else {
+                        點選此處選擇贈品
+                      }
+                    </span>
+                    <span class="gift-price">免費</span>
+                    <!-- 展開箭頭 -->
+                    <svg class="gift-chevron" [class.open]="giftDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </button>
+                  <!-- 下拉選項列表 -->
+                  @if (giftDropdownOpen()) {
+                    <div class="gift-dropdown">
+                      @for (opt of giftOptions; track opt) {
+                        <button
+                          class="gift-option"
+                          [class.selected]="selectedGift() === opt"
+                          (click)="selectGift(opt)"
+                          type="button"
+                        >
+                          <span>{{ opt }}</span>
+                          @if (selectedGift() === opt) {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                          }
+                        </button>
+                      }
+                    </div>
+                  }
+                  <!-- 已選贈品顯示在確認訂單列表（無 - + 按鈕） -->
+                  @if (selectedGift()) {
+                    <div class="checkout-gift-confirmed">
+                      <span class="gift-icon">🎁</span>
+                      <span class="gift-text">{{ selectedGift() }}（滿額贈品）</span>
+                      <span class="gift-price">免費</span>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- 折扣兌換券（達 10 次才顯示） -->
+              @if (hasDiscountReady()) {
+                <div class="discount-coupon-block" [class.active]="useDiscountCoupon()">
+                  <div class="dcb-left">
+                    <svg class="dcb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4" />
+                      <rect x="2" y="6" width="20" height="6" rx="1" />
+                      <path d="M12 12v9" />
+                      <path d="M12 6L11.5 1.5l-2.5 2L12 6z" />
+                    </svg>
+                  </div>
+                  <div class="dcb-body">
+                    <span class="dcb-title">折扣兌換券</span>
+                    <span class="dcb-desc">
+                      @if (useDiscountCoupon()) {
+                        已選擇使用，本次享 8 折優惠
+                      } @else {
+                        您有 1 張折扣券，是否在本次訂單使用？
+                      }
+                    </span>
+                  </div>
+                  <button
+                    class="dcb-toggle"
+                    [class.used]="useDiscountCoupon()"
+                    (click)="toggleDiscountCoupon()"
+                    type="button"
+                  >
+                    {{ useDiscountCoupon() ? '取消使用' : '使用折扣券' }}
+                  </button>
                 </div>
               }
 
@@ -1306,19 +1387,26 @@
                   <span>小計</span>
                   <span>NT$ {{ cartTotal() }}</span>
                 </div>
+                <!-- 8折折扣行（使用折扣券時顯示） -->
+                @if (useDiscountCoupon()) {
+                  <div class="summary-row summary-row-discount">
+                    <span>折扣券折扣（8折）</span>
+                    <span class="summary-discount-price">－ NT$ {{ discountAmount() }}</span>
+                  </div>
+                }
                 <div class="summary-row">
                   <span>稅率（內含 5%）</span>
                   <span>已含稅</span>
                 </div>
                 <div class="summary-row summary-row-total">
                   <span>總計</span>
-                  <span class="summary-total-price">NT$ {{ cartTotal() }}</span>
+                  <span class="summary-total-price">NT$ {{ discountedTotal() }}</span>
                 </div>
               </div>
 
               <!-- 進入結帳頁面 -->
               <button class="checkout-submit" (click)="setTab('payment')">
-                進入結帳頁面 — NT$ {{ cartTotal() }}
+                進入結帳頁面 — NT$ {{ discountedTotal() }}
               </button>
 
               <!-- 清空購物車 -->
@@ -1351,25 +1439,23 @@
     ═══════════════════════════════════════════════════ -->
       @if (activeTab() === "payment") {
         <section class="ch-section fade-in">
-          <header class="payment-header">
+          <!-- 返回按鈕 -->
+          <div class="payment-back-row">
             <button class="payment-back-btn" (click)="setTab('checkout')">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
               返回
             </button>
-            <div class="payment-header-center">
-              <span class="payment-icon">🛒</span>
-              <h2 class="payment-title">確認訂單</h2>
-            </div>
-            <div style="width: 40px"></div>
-            <!-- Spacer -->
-          </header>
+          </div>
+          <!-- 標題：比照 checkout-title 樣式 -->
+          <h2 class="checkout-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+              <line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+            付款頁面
+          </h2>
 
           <div class="payment-content-wrapper">
             <!-- 唯讀購物明細簡介 -->
@@ -1386,9 +1472,17 @@
                 </div>
               }
               <div class="psc-divider"></div>
+              @if (useDiscountCoupon()) {
+                <div class="psc-row psc-discount-row">
+                  <span class="psc-name">折扣券折扣（8折）</span>
+                  <div class="psc-right">
+                    <span class="psc-discount-price">－ NT$ {{ discountAmount() }}</span>
+                  </div>
+                </div>
+              }
               <div class="psc-total-row">
                 <span>總計</span>
-                <span class="psc-total-amount">NT$ {{ cartTotal() }}</span>
+                <span class="psc-total-amount">NT$ {{ discountedTotal() }}</span>
               </div>
             </div>
 
@@ -1484,7 +1578,7 @@
                 >
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                確認下單 — NT$ {{ cartTotal() }}
+                確認下單 — NT$ {{ discountedTotal() }}
               }
             </button>
           </div>

@@ -81,6 +81,8 @@
     >
       <span class="nav-icon">👥</span> 帳號管理
     </div>
+    <!-- 稅率設定：台灣展示期間暫時隱藏 -->
+    <!--
     <div
       class="nav-item"
       [class.active]="activeTab() === 'tax'"
@@ -88,12 +90,20 @@
     >
       <span class="nav-icon">🌍</span> 稅率設定
     </div>
+    -->
     <div
       class="nav-item"
       [class.active]="activeTab() === 'finance'"
       (click)="setTab('finance')"
     >
       <span class="nav-icon">💰</span> 財務報表
+    </div>
+    <div
+      class="nav-item"
+      [class.active]="activeTab() === 'branches'"
+      (click)="setTab('branches')"
+    >
+      <span class="nav-icon">🏪</span> 分店管理
     </div>
   </nav>
 
@@ -184,7 +194,11 @@
           <!-- 分店業績條 -->
           <div class="col-lg-4">
             <div class="content-card h-100">
-              <div class="card-title">🏪 分店業績分佈（今日）</div>
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="card-title mb-0">🏪 分店業績分佈（今日）</div>
+                <button class="btn btn-sm btn-gold" (click)="openAddBranch()">+ 新增分店</button>
+              </div>
+              <!-- 固定顯示三間示範分店業績（假資料，API 串接後替換） -->
               <div class="mb-3">
                 <div class="d-flex justify-content-between mb-1">
                   <span style="font-size: 0.82rem"
@@ -241,6 +255,23 @@
                   ></div>
                 </div>
               </div>
+              <!-- 新增的分店（無業績假資料，標示待資料接入） -->
+              @for (b of branches(); track b.id) {
+                @if (b.id > 3) {
+                  <div class="mb-2">
+                    <div class="d-flex justify-content-between mb-1">
+                      <span style="font-size: 0.82rem">
+                        <span class="dot" style="background: #8892b0"></span>
+                        {{ b.name }}
+                      </span>
+                      <span style="font-size: 0.76rem; color: #4A5A70">待資料接入</span>
+                    </div>
+                    <div class="stock-bar">
+                      <div style="width: 0%; height: 100%; border-radius: 3px; background: #8892b0;"></div>
+                    </div>
+                  </div>
+                }
+              }
             </div>
           </div>
 
@@ -319,9 +350,9 @@
               <label class="form-label" style="font-size:0.75rem;color:#4A5A70">選擇分店</label>
               <select class="form-select form-select-sm form-ctrl" (change)="onBranchFilter($event)">
                 <option>全部分店</option>
-                <option>台灣台北店</option>
-                <option>日本東京店</option>
-                <option>泰國曼谷店</option>
+                @for (b of branches(); track b.id) {
+                  <option>{{ b.name }}</option>
+                }
               </select>
             </div>
             <div class="col-sm-2">
@@ -623,8 +654,9 @@
     }
 
     <!-- ════════════════════════════════════════
-         頁籤 7：稅率設定（Signal 驅動，inline 編輯即時生效）
+         頁籤 7：稅率設定（台灣展示期間暫時隱藏，已從側邊欄移除入口）
          ════════════════════════════════════════ -->
+    <!-- @if (activeTab() === "tax") { ... } 稅率設定暫時隱藏 -->
     @if (activeTab() === "tax") {
       <div>
         <div class="page-title">稅率設定</div>
@@ -759,6 +791,58 @@
         </div>
       </div>
     }
+
+    <!-- ════════════════════════════════════════
+         頁籤 9：分店管理（對應 global_area 資料表）
+         ════════════════════════════════════════ -->
+    @if (activeTab() === "branches") {
+      <div>
+        <div class="page-title">分店管理</div>
+        <div class="page-sub">管理所有分店基本資訊，對應資料庫 global_area 資料表</div>
+
+        <div class="content-card">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="card-title mb-0">分店列表</div>
+            <button class="btn btn-sm btn-gold" (click)="openAddBranch()">+ 新增分店家</button>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="table table-borderless table-dark-custom mb-0">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>分店名稱</th>
+                  <th>國家</th>
+                  <th>城市</th>
+                  <th>地址</th>
+                  <th>電話</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (b of branches(); track b.id) {
+                  <tr>
+                    <td class="mono" style="color:#4A5A70">{{ b.id }}</td>
+                    <td style="font-weight:600;color:#1A2840">{{ b.name }}</td>
+                    <td>{{ b.country }}</td>
+                    <td>{{ b.city }}</td>
+                    <td style="font-size:0.8rem;color:#4A5A70">{{ b.address || '—' }}</td>
+                    <td class="mono" style="font-size:0.8rem">{{ b.phone || '—' }}</td>
+                    <td>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-ghost-gold" (click)="openEditBranch(b.id)">編輯</button>
+                        <button class="btn btn-sm btn-ghost-red" (click)="deleteBranch(b.id)">刪除</button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    }
+
   </div>
   <!-- /.main-content -->
 
@@ -955,9 +1039,9 @@
           <div class="col-6">
             <label class="modal-label">所屬分店</label>
             <select class="form-select form-ctrl" [(ngModel)]="accountDraft.branch">
-              <option>台灣台北店</option>
-              <option>日本東京店</option>
-              <option>泰國曼谷店</option>
+              @for (b of branches(); track b.id) {
+                <option>{{ b.name }}</option>
+              }
             </select>
           </div>
         </div>
@@ -1028,6 +1112,103 @@
       <div class="modal-ft">
         <button class="btn btn-sm btn-ghost-red" (click)="closeModal()">取消</button>
         <button class="btn btn-sm btn-gold" (click)="saveCountry()">確認新增</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════
+     Modal：新增分店
+     ════════════════════════════════════════════════════ -->
+@if (activeModal() === 'addBranch') {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-hd">
+        <div class="modal-hd-title">新增分店</div>
+        <button class="modal-close-btn" (click)="closeModal()">✕</button>
+      </div>
+      <div class="modal-bd">
+        <div class="mb-3">
+          <label class="modal-label">分店名稱 <span class="required">*</span></label>
+          <input type="text" class="form-control form-ctrl"
+            [(ngModel)]="branchDraft.name" placeholder="例：韓國首爾店" />
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="modal-label">國家</label>
+            <input type="text" class="form-control form-ctrl"
+              [(ngModel)]="branchDraft.country" placeholder="例：韓國" />
+          </div>
+          <div class="col-6">
+            <label class="modal-label">所在城市</label>
+            <input type="text" class="form-control form-ctrl"
+              [(ngModel)]="branchDraft.city" placeholder="例：首爾" />
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="modal-label">地址</label>
+          <input type="text" class="form-control form-ctrl"
+            [(ngModel)]="branchDraft.address" placeholder="例：首爾市江南區某路 1 號" />
+        </div>
+        <div class="mb-3">
+          <label class="modal-label">電話</label>
+          <input type="text" class="form-control form-ctrl"
+            [(ngModel)]="branchDraft.phone" placeholder="例：+82-2-1234-5678" />
+        </div>
+        <div style="font-size:0.76rem;color:#4A5A70;">
+          新增後可在帳號管理中指派分店長與員工至此分店。
+        </div>
+      </div>
+      <div class="modal-ft">
+        <button class="btn btn-sm btn-ghost-red" (click)="closeModal()">取消</button>
+        <button class="btn btn-sm btn-gold" (click)="saveBranch()">確認新增</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════
+     Modal：編輯分店
+     ════════════════════════════════════════════════════ -->
+@if (activeModal() === 'editBranch') {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-hd">
+        <div class="modal-hd-title">編輯分店</div>
+        <button class="modal-close-btn" (click)="closeModal()">✕</button>
+      </div>
+      <div class="modal-bd">
+        <div class="mb-3">
+          <label class="modal-label">分店名稱 <span class="required">*</span></label>
+          <input type="text" class="form-control form-ctrl"
+            [(ngModel)]="editBranchDraft.name" placeholder="例：台灣台北店" />
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="modal-label">國家</label>
+            <input type="text" class="form-control form-ctrl"
+              [(ngModel)]="editBranchDraft.country" placeholder="例：台灣" />
+          </div>
+          <div class="col-6">
+            <label class="modal-label">所在城市</label>
+            <input type="text" class="form-control form-ctrl"
+              [(ngModel)]="editBranchDraft.city" placeholder="例：台北" />
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="modal-label">地址</label>
+          <input type="text" class="form-control form-ctrl"
+            [(ngModel)]="editBranchDraft.address" placeholder="例：台北市中山區南京東路一段 88 號" />
+        </div>
+        <div class="mb-3">
+          <label class="modal-label">電話</label>
+          <input type="text" class="form-control form-ctrl"
+            [(ngModel)]="editBranchDraft.phone" placeholder="例：02-2345-6789" />
+        </div>
+      </div>
+      <div class="modal-ft">
+        <button class="btn btn-sm btn-ghost-red" (click)="closeModal()">取消</button>
+        <button class="btn btn-sm btn-gold" (click)="saveEditBranch()">儲存變更</button>
       </div>
     </div>
   </div>

@@ -25,7 +25,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../shared/auth.service';
 
 /* ── 側邊欄頁籤型別 ─────────────────────────────────── */
-export type DashTab = 'dashboard' | 'orders' | 'products' | 'promotions' | 'inventory' | 'users' | 'tax' | 'finance';
+export type DashTab = 'dashboard' | 'orders' | 'products' | 'promotions' | 'inventory' | 'users' | 'tax' | 'finance' | 'branches';
 
 /* ── 帳號管理子頁籤型別 ─────────────────────────────── */
 export type UserSubTab = 'bm' | 'staff';
@@ -72,6 +72,16 @@ interface DashAccount {
   lastLogin: string;
   isActive: boolean;
   role: 'bm' | 'staff';
+}
+
+/* ── 分店型別（對應 global_area 資料表）───────────── */
+interface DashBranch {
+  id: number;
+  name: string;     /* 完整分店名稱，例：台灣台北店 (= branch) */
+  city: string;     /* 城市，例：台北 */
+  country: string;  /* 國家，例：台灣 */
+  address: string;  /* 地址 */
+  phone: string;    /* 電話 */
 }
 
 /* ── 稅率型別 ──────────────────────────────────────── */
@@ -121,7 +131,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     inventory:  '📦 庫存管理',
     users:      '👥 帳號管理',
     tax:        '🌍 稅率設定',
-    finance:    '💰 財務報表'
+    finance:    '💰 財務報表',
+    branches:   '🏪 分店管理'
   };
 
   /* ── 商品清單（Signal） ─────────────────────────── */
@@ -207,8 +218,15 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   financeOrders  = signal<number>(0);
   financeAvgPrice = signal<number>(0);
 
+  /* ── 分店清單（Signal，對應 global_area 資料表）─── */
+  branches = signal<DashBranch[]>([
+    { id: 1, name: '台灣台北店', city: '台北', country: '台灣', address: '台北市中山區南京東路一段 88 號', phone: '02-2345-6789' },
+    { id: 2, name: '日本東京店', city: '東京', country: '日本', address: '東京都新宿区新宿3-10-1',          phone: '+81-3-1234-5678' },
+    { id: 3, name: '泰國曼谷店', city: '曼谷', country: '泰國', address: '101 Sukhumvit Rd, Bangkok',       phone: '+66-2-987-6543' },
+  ]);
+
   /* ── Modal 狀態 ─────────────────────────────────────── */
-  activeModal       = signal<'orderDetail' | 'addProduct' | 'addPromo' | 'addAccount' | 'addCountry' | null>(null);
+  activeModal       = signal<'orderDetail' | 'addProduct' | 'addPromo' | 'addAccount' | 'addCountry' | 'addBranch' | 'editBranch' | null>(null);
   selectedOrder     = signal<DashOrder | null>(null);
   editingAccountId  = signal<number | null>(null);
   editingProductId  = signal<number | null>(null);
@@ -219,6 +237,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   accountDraft: { name: string; account: string; branch: string; shift: string; role: 'bm' | 'staff'; isActive: boolean } =
     { name: '', account: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true };
   taxDraft = { flag: '🇹🇼', country: '', branch: '', rate: 5 };
+  branchDraft     = { name: '', city: '', country: '', address: '', phone: '' };
+  editBranchDraft = { id: 0, name: '', city: '', country: '', address: '', phone: '' };
 
   showToast(msg: string): void {
     /* 清除所有計時器，重置離場狀態 */
@@ -281,10 +301,10 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   filteredOrders = computed(() => {
     return this.allOrders().filter(o => {
-      const branchMap: Record<string, string> = { '台北': '台北', '東京': '東京', '曼谷': '曼谷' };
       const bf = this.orderFilterBranch();
       const sf = this.orderFilterStatus();
-      const branchOk = bf === 'all' || o.branch === branchMap[bf];
+      /* 以完整分店名稱包含簡稱來比對（例：'台灣台北店'.includes('台北')） */
+      const branchOk = bf === 'all' || bf.includes(o.branch);
       const statusOk = sf === 'all' || o.statusLabel === sf;
       return branchOk && statusOk;
     });
@@ -641,13 +661,68 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     }, 600);
   }
 
+  /* ── 分店：新增 Modal ─────────────────────────────── */
+  openAddBranch(): void {
+    this.branchDraft = { name: '', city: '', country: '', address: '', phone: '' };
+    this.activeModal.set('addBranch');
+  }
+
+  saveBranch(): void {
+    if (!this.branchDraft.name.trim()) { this.showToast('⚠️ 請輸入分店名稱'); return; }
+    const ids = this.branches().map(b => b.id);
+    const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+    const saved = { ...this.branchDraft };
+    this.branches.update(list => [...list, {
+      id: newId,
+      name: saved.name.trim(),
+      city: saved.city.trim(),
+      country: saved.country.trim(),
+      address: saved.address.trim(),
+      phone: saved.phone.trim()
+    }]);
+    this.closeModal();
+    this.showToast(`✅ 分店「${saved.name.trim()}」已新增`);
+  }
+
+  /* ── 分店：編輯 Modal ─────────────────────────────── */
+  openEditBranch(id: number): void {
+    const b = this.branches().find(x => x.id === id);
+    if (!b) return;
+    this.editBranchDraft = { ...b };
+    this.activeModal.set('editBranch');
+  }
+
+  saveEditBranch(): void {
+    if (!this.editBranchDraft.name.trim()) { this.showToast('⚠️ 請輸入分店名稱'); return; }
+    const saved = { ...this.editBranchDraft };
+    this.branches.update(list =>
+      list.map(b => b.id === saved.id ? {
+        ...b,
+        name:    saved.name.trim(),
+        city:    saved.city.trim(),
+        country: saved.country.trim(),
+        address: saved.address.trim(),
+        phone:   saved.phone.trim()
+      } : b)
+    );
+    this.closeModal();
+    this.showToast(`✅ 分店「${saved.name.trim()}」已更新`);
+  }
+
+  /* ── 分店：刪除 ───────────────────────────────────── */
+  deleteBranch(id: number): void {
+    const b = this.branches().find(x => x.id === id);
+    if (!b) return;
+    if (!confirm(`確定刪除分店「${b.name}」？此操作無法復原。`)) return;
+    this.branches.update(list => list.filter(x => x.id !== id));
+    this.showToast(`🗑️ 分店「${b.name}」已刪除`);
+  }
+
   /* ── 訂單篩選 ─────────────────────────────────── */
   onBranchFilter(event: Event): void {
     const val = (event.target as HTMLSelectElement).value;
-    const map: Record<string, string> = {
-      '全部分店': 'all', '台灣台北店': '台北', '日本東京店': '東京', '泰國曼谷店': '曼谷'
-    };
-    this.orderFilterBranch.set(map[val] ?? 'all');
+    /* '全部分店' → 'all'；其餘直接使用完整分店名稱供 filteredOrders 比對 */
+    this.orderFilterBranch.set(val === '全部分店' ? 'all' : val);
   }
 
   onStatusFilter(event: Event): void {

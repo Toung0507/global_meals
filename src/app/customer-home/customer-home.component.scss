@@ -2805,6 +2805,249 @@
     }
 }
 
+/* 今日優惠：帶箭頭按鈕的包裝層 */
+.deal-scroll-wrapper {
+    position: relative;
+    overflow: hidden;
+}
+
+/* 右側箭頭按鈕：絕對定位貼右側 */
+.deal-scroll-arrow {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1.5px solid #F0D8B8;
+    box-shadow: 0 2px 8px rgba(217, 92, 26, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    transition: background 0.18s ease, box-shadow 0.18s ease;
+
+    svg {
+        width: 18px;
+        height: 18px;
+        color: #D95C1A;
+        stroke: #D95C1A;
+    }
+
+    &:hover {
+        background: #FFF0E6;
+        box-shadow: 0 4px 12px rgba(217, 92, 26, 0.28);
+    }
+}
+
+/* 贈品選擇容器：取代原本 checkout-gift */
+.checkout-gift-select {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+/* 主列按鈕（點擊展開下拉） */
+.gift-select-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(46, 125, 50, 0.08);
+    border: 1px solid rgba(46, 125, 50, 0.2);
+    border-radius: 12px;
+    padding: 12px 14px;
+    width: 100%;
+    cursor: pointer;
+    text-align: left;
+
+    .gift-icon {
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .gift-select-label {
+        flex: 1;
+        font-size: 13px;
+        color: #2E7D32;
+        font-weight: 500;
+    }
+
+    .gift-price {
+        font-family: 'DM Mono', monospace;
+        font-size: 13px;
+        color: #2E7D32;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .gift-chevron {
+        width: 16px;
+        height: 16px;
+        stroke: #2E7D32;
+        transition: transform 0.2s ease;
+        flex-shrink: 0;
+
+        &.open {
+            transform: rotate(180deg);
+        }
+    }
+}
+
+/* 下拉選項列表 */
+.gift-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1.5px solid rgba(46, 125, 50, 0.25);
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    z-index: 10;
+}
+
+/* 單個贈品選項 */
+.gift-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: #3D2010;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(46, 125, 50, 0.1);
+    text-align: left;
+    transition: background 0.15s ease;
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &:hover {
+        background: rgba(46, 125, 50, 0.06);
+    }
+
+    &.selected {
+        background: rgba(46, 125, 50, 0.1);
+        color: #2E7D32;
+        font-weight: 600;
+
+        svg {
+            width: 16px;
+            height: 16px;
+            stroke: #2E7D32;
+        }
+    }
+}
+
+/* 已選贈品確認行（顯示在下方） */
+.checkout-gift-confirmed {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(46, 125, 50, 0.06);
+    border: 1px dashed rgba(46, 125, 50, 0.3);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-top: 8px;
+
+    .gift-icon {
+        font-size: 18px;
+    }
+
+    .gift-text {
+        flex: 1;
+        font-size: 13px;
+        color: #2E7D32;
+        font-weight: 500;
+    }
+
+    .gift-price {
+        font-family: 'DM Mono', monospace;
+        font-size: 13px;
+        color: #2E7D32;
+        font-weight: 600;
+    }
+}
+
+/* 折扣兌換券區塊（結帳付款頁） */
+.discount-coupon-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #FFF8EC;
+    border: 1.5px solid #F0A500;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+
+    &.active {
+        background: #FFF3D6;
+        border-color: #D95C1A;
+    }
+
+    .dcb-icon {
+        width: 28px;
+        height: 28px;
+        stroke: #F0A500;
+        flex-shrink: 0;
+    }
+
+    &.active .dcb-icon {
+        stroke: #D95C1A;
+    }
+}
+
+.dcb-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dcb-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #3D2010;
+}
+
+.dcb-desc {
+    font-size: 12px;
+    color: #8A6040;
+}
+
+/* 使用/取消 按鈕 */
+.dcb-toggle {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1.5px solid #F0A500;
+    background: transparent;
+    color: #D95C1A;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.18s ease, color 0.18s ease;
+
+    &.used {
+        background: #D95C1A;
+        border-color: #D95C1A;
+        color: #ffffff;
+    }
+
+    &:hover:not(.used) {
+        background: rgba(240, 165, 0, 0.12);
+    }
+}
+
 /* 金額明細 */
 .checkout-summary {
     background: var(--bg-card);
@@ -2833,6 +3076,19 @@
     color: var(--text-dark);
     padding-top: 12px;
     margin-top: 4px;
+}
+
+/* 折扣行：綠色強調 */
+.summary-row-discount {
+    color: #2E7D32;
+    font-weight: 600;
+}
+
+.summary-discount-price {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: #2E7D32;
+    font-weight: 700;
 }
 
 .summary-total-price {
@@ -3863,6 +4119,11 @@
 /* ==========================================================
      進階結帳流程 (Payment Flow View)
 ========================================================== */
+/* 付款頁：返回按鈕獨立一列 */
+.payment-back-row {
+    margin-bottom: 8px;
+}
+
 .payment-header {
     display: flex;
     justify-content: space-between;
@@ -3870,6 +4131,24 @@
     padding-bottom: 16px;
     border-bottom: 2px solid var(--border-warm);
     margin-bottom: 24px;
+}
+
+/* 付款頁折扣行（payment-summary-card 內） */
+.psc-discount-row {
+    padding: 6px 0;
+
+    .psc-name {
+        color: #2E7D32;
+        font-size: 13px;
+        font-weight: 600;
+    }
+}
+
+.psc-discount-price {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: #2E7D32;
+    font-weight: 700;
 }
 
 .payment-back-btn {
