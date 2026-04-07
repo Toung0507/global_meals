@@ -1,0 +1,638 @@
+<!--
+  =====================================================
+  檔案名稱：pos-terminal.component.html
+  用途說明：分店長 / 員工 POS 點餐終端機的 HTML 結構
+  說明：
+    - isBM getter 控制分店長專屬頁籤（員工帳號）
+    - @if (activeTab() === 'pos') 控制 pos-main 與各 page-panel 的顯示
+    - [class.active] / [class.staff-active] 控制頁籤底線顏色
+    - @for 迴圈渲染商品卡 & 購物車品項
+    - (click) 呼叫 addToCart / updateQty / clearCart / checkout
+    - computed signals（subtotal / tax / total）供樣板直接使用
+  =====================================================
+-->
+
+
+<!-- ── POS 系統頂部欄 ─────────────────────────────── -->
+<div class="pos-topbar">
+  <div class="d-flex align-items-center gap-2">
+    <img src="/assets/logo圓形.png" alt="懶飽飽 Logo" class="pos-logo" />
+    <div class="pos-brand-block">
+      <div class="d-flex align-items-baseline gap-2">
+        <span class="pos-brand">懶飽飽</span>
+        <span class="pos-branch">Lazy BaoBao</span>
+      </div>
+      <span class="pos-location">📍 台灣台北店</span>
+    </div>
+  </div>
+  <!-- 依 role 顯示不同顏色的角色徽章 -->
+  @if (isBM) {
+    <span class="role-badge-bm">Branch Manager</span>
+  } @else {
+    <span class="role-badge-st">Staff</span>
+  }
+  <span style="font-size:0.82rem;color:#c9d1d9;">{{ authService.currentUser?.name }}</span>
+  <div class="ms-auto d-flex align-items-center gap-3">
+    <span class="pos-time">{{ clockStr() }}</span>
+    <button class="btn btn-sm btn-ghost-red" style="font-size:0.75rem;" (click)="logout()">登出</button>
+  </div>
+</div>
+
+
+<!-- ── 頁籤列 ────────────────────────────────────── -->
+<div class="pos-tabs">
+  <!-- POS 點餐（全部角色可見） -->
+  <div class="pos-tab-btn"
+    [class.active]="activeTab() === 'pos' && isBM"
+    [class.staff-active]="activeTab() === 'pos' && !isBM"
+    (click)="setTab('pos')">🖥️ POS 點餐</div>
+
+  <!-- 訂單看板（全部可見） -->
+  <div class="pos-tab-btn"
+    [class.active]="activeTab() === 'board' && isBM"
+    [class.staff-active]="activeTab() === 'board' && !isBM"
+    (click)="setTab('board')">📋 訂單看板</div>
+
+  <!-- 庫存管理（全部可見，員工僅查看） -->
+  <div class="pos-tab-btn"
+    [class.active]="activeTab() === 'stock' && isBM"
+    [class.staff-active]="activeTab() === 'stock' && !isBM"
+    (click)="setTab('stock')">📦 庫存管理</div>
+
+  <!-- 活動管理（全部可見） -->
+  <div class="pos-tab-btn"
+    [class.active]="activeTab() === 'promo' && isBM"
+    [class.staff-active]="activeTab() === 'promo' && !isBM"
+    (click)="setTab('promo')">🎯 活動管理</div>
+
+  <!-- 員工帳號（僅分店長可見） -->
+  @if (isBM) {
+    <div class="pos-tab-btn"
+      [class.active]="activeTab() === 'staff'"
+      (click)="setTab('staff')">👤 員工帳號</div>
+  }
+
+  <!-- 今日報表（全部可見） -->
+  <div class="pos-tab-btn"
+    [class.active]="activeTab() === 'report' && isBM"
+    [class.staff-active]="activeTab() === 'report' && !isBM"
+    (click)="setTab('report')">📊 今日報表</div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     頁籤 1：POS 點餐主介面（左商品 / 右購物車）
+     ════════════════════════════════════════ -->
+@if (activeTab() === 'pos') {
+  <div class="pos-main">
+
+    <!-- ── 左側：商品瀏覽 ── -->
+    <div class="pos-left">
+
+      <!-- 分類篩選（有效綁定） -->
+      <div class="category-bar">
+        <span class="cat-btn" [class.active]="activeCategory() === 'all'"   (click)="setCategory('all')">全部</span>
+        <span class="cat-btn" [class.active]="activeCategory() === '台式'"  (click)="setCategory('台式')">🍜 台式</span>
+        <span class="cat-btn" [class.active]="activeCategory() === '南洋'"  (click)="setCategory('南洋')">🍛 南洋</span>
+        <span class="cat-btn" [class.active]="activeCategory() === '西式'"  (click)="setCategory('西式')">🍝 西式</span>
+        <span class="cat-btn" [class.active]="activeCategory() === '輕食'"  (click)="setCategory('輕食')">🥗 輕食</span>
+        <span class="cat-btn" [class.active]="activeCategory() === '飲品'"  (click)="setCategory('飲品')">🧋 飲品</span>
+      </div>
+
+      <!-- 搜尋列（有效綁定） -->
+      <div class="product-search">
+        <input type="text" placeholder="🔍  搜尋餐點名稱…" (input)="onSearch($event)" [value]="searchQuery()">
+      </div>
+
+      <!-- 商品網格：@for 渲染篩選後的商品（支援分類 + 搜尋） -->
+      <div class="product-grid">
+        @for (product of filteredProducts(); track product.id) {
+          <div class="prod-card" (click)="addToCart(product)">
+
+            <!-- ① 媒體區：圖片 or emoji + badge -->
+            <div class="prod-media">
+              @if (product.imgSrc) {
+                <img [src]="product.imgSrc" [alt]="product.name" class="prod-real-img" />
+              } @else {
+                <div class="prod-emoji-bg" [style.background]="product.bg">
+                  <span class="prod-emoji-icon">{{ product.emoji }}</span>
+                </div>
+              }
+              <!-- 圖片底部漸層遮罩，讓資訊列過渡自然 -->
+              <div class="prod-img-fade"></div>
+              @if (product.badge) {
+                <span class="prod-badge"
+                  [class.pb-hot]="product.badge === 'hot'"
+                  [class.pb-new]="product.badge === 'new'"
+                  [class.pb-low]="product.badge === 'low'">
+                  {{ product.badge === 'hot' ? '熱銷' : product.badge === 'new' ? '新品' : '低庫存' }}
+                </span>
+              }
+            </div>
+
+            <!-- ② 資訊區：名稱、價格（大）、庫存 + 加入按鈕 -->
+            <div class="prod-info">
+              <div class="prod-name">{{ product.name }}</div>
+              <div class="prod-bottom-row">
+                <div class="prod-price-block">
+                  <span class="prod-currency">NT$</span>
+                  <span class="prod-price">{{ product.price }}</span>
+                </div>
+                <div class="prod-right-block">
+                  <span class="prod-stock" [class.stock-low]="product.stock <= 5">
+                    庫存 {{ product.stock }}
+                  </span>
+                  <button class="prod-add-btn">+</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        }
+      </div>
+
+    </div><!-- /.pos-left -->
+
+
+    <!-- ── 右側：購物車 / 結帳面板 ── -->
+    <div class="pos-right">
+
+      <!-- 訂單頭部 -->
+      <div class="cart-header">
+        <div>
+          <div class="cart-title">目前訂單</div>
+          <div class="cart-order-id">#TW-2061</div>
+        </div>
+        <button class="btn btn-sm btn-ghost-red" style="font-size:0.75rem;" (click)="clearCart()">清空</button>
+      </div>
+
+      <!-- 結帳成功覆蓋層（SVG 動畫打勾版） -->
+      @if (checkoutSuccess()) {
+        <div class="checkout-success-overlay">
+          <!-- SVG 打勾：外圓 + 勾線各自有 stroke-dashoffset 動畫 -->
+          <div class="checkout-success-icon">
+            <svg viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+              <circle class="success-circle" cx="35" cy="35" r="32"/>
+              <polyline class="success-check" points="20,36 30,46 50,24"/>
+            </svg>
+          </div>
+          <div class="checkout-success-title">結帳成功</div>
+          <div class="checkout-success-num">訂單 #{{ lastOrderNum() }}</div>
+          <div class="checkout-success-sub">已送出廚房，請備餐</div>
+        </div>
+      }
+
+      <!-- 品項列表 -->
+      <div class="cart-items">
+        <!-- 空購物車提示 -->
+        @if (cartItems().length === 0 && !checkoutSuccess()) {
+          <div class="cart-empty">
+            <span class="cart-empty-icon">🛒</span>
+            <div style="font-size:0.82rem;">點擊左側商品加入訂單</div>
+          </div>
+        }
+
+        <!-- @for 渲染購物車品項 -->
+        @for (item of cartItems(); track item.id) {
+          <div class="cart-row">
+            <div class="cart-item-name">
+              {{ item.name }}
+              <span class="cart-item-eng">{{ item.eng }}</span>
+            </div>
+            <div class="qty-ctrl">
+              <div class="qty-btn" (click)="updateQty(item.id, -1)">−</div>
+              <span class="qty-num">{{ item.qty }}</span>
+              <div class="qty-btn" (click)="updateQty(item.id, +1)">+</div>
+            </div>
+            <div class="cart-item-price">${{ item.price * item.qty }}</div>
+          </div>
+        }
+      </div>
+
+      <!-- 小計區域 -->
+      <div class="cart-summary">
+        <div class="summary-row">
+          <span class="summary-label">小計</span>
+          <span class="summary-val mono">${{ subtotal() }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">營業稅 (5%)</span>
+          <span class="summary-val mono">${{ tax() }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-label">折扣</span>
+          <span class="summary-val mono" style="color:#3ecf8e;">-$0</span>
+        </div>
+
+        <div class="summary-total-row">
+          <span class="summary-total-label">合計</span>
+          <span class="summary-total-val">${{ total() }}</span>
+        </div>
+
+        <!-- 滿額提示 -->
+        @if (showPromoHint()) {
+          <div class="promo-hint">
+            🎁 再加 <strong>${{ promoRemain() }}</strong> 即可獲得 招牌滷蛋×2 免費贈品！
+          </div>
+        }
+      </div>
+
+      <!-- 付款方式 + 結帳 -->
+      <div class="cart-payment">
+        <div class="payment-label">選擇付款方式</div>
+        <div class="payment-methods">
+          <div class="pay-btn" [class.active]="payMethod() === 'cash'"   (click)="payMethod.set('cash')">💵 現金</div>
+          <div class="pay-btn" [class.active]="payMethod() === 'card'"   (click)="payMethod.set('card')">💳 信用卡</div>
+          <div class="pay-btn" [class.active]="payMethod() === 'mobile'" (click)="payMethod.set('mobile')">📱 行動支付</div>
+        </div>
+        <button class="checkout-btn" (click)="checkout()">結帳 ✓</button>
+      </div>
+
+    </div><!-- /.pos-right -->
+
+  </div>
+}
+
+
+<!-- ════════════════════════════════════════
+     頁籤 2：訂單看板（即時 Signal 驅動）
+     ════════════════════════════════════════ -->
+@if (activeTab() === 'board') {
+  <div class="page-panel" style="display:block;">
+    <div class="panel-title">訂單看板</div>
+    <div class="panel-sub">即時廚房出餐進度（含客戶端點餐），可標記製作完成</div>
+
+    <div class="row g-3">
+
+      <!-- ── 待製作欄 ── -->
+      <div class="col-md-4">
+        <div style="font-size:0.82rem;font-weight:600;color:#fbbf24;margin-bottom:10px;">
+          ⏳ 待製作 ({{ orderService.waiting().length }})
+        </div>
+        @if (orderService.waiting().length === 0) {
+          <div class="ob-empty">目前無待製作訂單</div>
+        }
+        @for (order of orderService.waiting(); track order.id) {
+          <div class="order-board-card mb-2" [class.ob-customer]="order.source === 'customer'">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="ob-num">{{ order.number }}</span>
+              <div class="d-flex gap-1 align-items-center">
+                @if (order.source === 'customer') {
+                  <span class="badge-customer">線上</span>
+                }
+                <span class="badge-warn">等待中</span>
+              </div>
+            </div>
+            @for (item of order.items; track item) {
+              <div class="ob-item">{{ item }}</div>
+            }
+            <div class="ob-meta">
+              <span>{{ order.createdAt }}</span>
+              <span>{{ order.payMethod }}</span>
+              <span class="mono">${{ order.total }}</span>
+            </div>
+            <button class="btn btn-sm btn-ghost-gold mt-2" style="width:100%;"
+              (click)="startCooking(order.id)">🔥 開始製作</button>
+          </div>
+        }
+      </div>
+
+      <!-- ── 製作中欄 ── -->
+      <div class="col-md-4">
+        <div style="font-size:0.82rem;font-weight:600;color:#818cf8;margin-bottom:10px;">
+          🔥 製作中 ({{ orderService.cooking().length }})
+        </div>
+        @if (orderService.cooking().length === 0) {
+          <div class="ob-empty">目前無製作中訂單</div>
+        }
+        @for (order of orderService.cooking(); track order.id) {
+          <div class="order-board-card mb-2" style="border:1px solid rgba(129,140,248,0.25);"
+            [class.ob-customer]="order.source === 'customer'">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="ob-num">{{ order.number }}</span>
+              <div class="d-flex gap-1 align-items-center">
+                @if (order.source === 'customer') {
+                  <span class="badge-customer">線上</span>
+                }
+                <span class="badge-blue">製作中</span>
+              </div>
+            </div>
+            @for (item of order.items; track item) {
+              <div class="ob-item">{{ item }}</div>
+            }
+            <div class="ob-meta">
+              <span>{{ order.createdAt }}</span>
+              <span>預估 {{ order.estimatedMinutes }} 分</span>
+              <span class="mono">${{ order.total }}</span>
+            </div>
+            <button class="btn btn-sm btn-ghost-green mt-2" style="width:100%;"
+              (click)="finishOrder(order.id)">✅ 完成出餐</button>
+          </div>
+        }
+      </div>
+
+      <!-- ── 已完成欄 ── -->
+      <div class="col-md-4">
+        <div style="font-size:0.82rem;font-weight:600;color:#3ecf8e;margin-bottom:10px;">
+          ✅ 已完成 ({{ orderService.done().length }})
+        </div>
+        @if (orderService.done().length === 0) {
+          <div class="ob-empty">今日暫無完成訂單</div>
+        }
+        @for (order of orderService.done(); track order.id) {
+          <div class="order-board-card mb-2" style="opacity:0.65;">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="ob-num">{{ order.number }}</span>
+              <span class="badge-ok">已完成</span>
+            </div>
+            <div class="ob-item">{{ order.items.join('、') }}</div>
+            <div class="ob-meta">
+              <span>{{ order.createdAt }}</span>
+              <span class="mono">${{ order.total }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+    </div>
+  </div>
+}
+
+
+<!-- ════════════════════════════════════════
+     頁籤 3：庫存管理（Signal 驅動，分店長可 inline 調整）
+     ════════════════════════════════════════ -->
+@if (activeTab() === 'stock') {
+  <div class="page-panel" style="display:block;">
+    <div class="panel-title">庫存管理</div>
+    <div class="panel-sub">
+      @if (isBM) { 點擊「調整」後直接輸入新庫存量，確認後即時生效 }
+      @else { 查看本分店目前庫存狀態（僅供查看） }
+    </div>
+
+    <div class="content-card">
+      <div class="table-wrapper">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>商品名稱</th><th>庫存量</th><th>安全庫存</th><th>狀態</th>
+              @if (isBM) { <th>操作</th> }
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of products(); track p.id) {
+              <tr>
+                <td>{{ p.name }}</td>
+                <td class="mono" [style.color]="p.stock <= 0 ? '#f87171' : p.stock <= 10 ? '#fbbf24' : ''">
+                  {{ p.stock }}
+                </td>
+                <td class="mono" style="color:#a0aec0;">10</td>
+                <td>
+                  @if (p.stock <= 0) { <span class="badge-err">缺貨</span> }
+                  @else if (p.stock <= 10) { <span class="badge-warn">偏低</span> }
+                  @else { <span class="badge-ok">充足</span> }
+                </td>
+                @if (isBM) {
+                  <td>
+                    <!-- 已儲存確認（savedPop 縮放動畫） -->
+                    @if (adjustStockSavedId() === p.id) {
+                      <span class="stock-saved-badge">✓ 已更新</span>
+                    }
+                    <!-- inline 調整輸入 -->
+                    @else if (adjustingStockId() === p.id) {
+                      <div class="d-flex gap-1 align-items-center">
+                        <input type="number" class="stock-input"
+                          [value]="adjustStockAmount()"
+                          (input)="onAdjustInput($event)"
+                          min="0" style="width:64px;" />
+                        <button class="btn btn-sm btn-ghost-gold" (click)="confirmAdjustStock()">確認</button>
+                        <button class="btn btn-sm btn-ghost-red" style="font-size:0.72rem;" (click)="cancelAdjustStock()">✕</button>
+                      </div>
+                    }
+                    @else {
+                      <button class="btn btn-sm btn-ghost-gold" (click)="startAdjustStock(p.id)">調整</button>
+                    }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+}
+
+
+<!-- ════════════════════════════════════════
+     頁籤 4：活動管理
+     ════════════════════════════════════════ -->
+@if (activeTab() === 'promo') {
+  <div class="page-panel" style="display:block;">
+    <div class="panel-title">活動管理</div>
+    <div class="panel-sub">本分店目前套用的促銷活動（老闆可另設定全店活動）</div>
+
+    <div class="promo-row">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div style="font-size:0.9rem;font-weight:600;color:#e2e8f8;">🎁 滿 $300 贈招牌滷蛋×2</div>
+          <div style="font-size:0.75rem;color:#8892b0;margin-top:3px;">由老闆設定 · 全部分店 · 無限期</div>
+        </div>
+        <span class="badge-ok">進行中</span>
+      </div>
+    </div>
+
+    <div class="promo-row" style="border-left-color:#4f8ef7;">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div style="font-size:0.9rem;font-weight:600;color:#e2e8f8;">🛍 本月新品嚐鮮 95 折</div>
+          <div style="font-size:0.75rem;color:#8892b0;margin-top:3px;">本分店自設 · 期限：2026-04-30</div>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+          <span class="badge-ok">進行中</span>
+          @if (isBM) {
+            <div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" checked></div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+
+<!-- ════════════════════════════════════════
+     頁籤 5：員工帳號管理（Signal 驅動，停/復權即時生效）
+     ════════════════════════════════════════ -->
+@if (activeTab() === 'staff' && isBM) {
+  <div class="page-panel" style="display:block;">
+    <div class="panel-title">員工帳號管理</div>
+    <div class="panel-sub">管理本分店員工帳號，點擊按鈕即時停/復權</div>
+
+    <div class="d-flex justify-content-end mb-3">
+      <button class="btn btn-sm" style="background-color:#c49756;border-color:#c49756;color:#0d1117;font-weight:600;font-size:0.8rem;" (click)="openAddStaff()">+ 新增員工帳號</button>
+    </div>
+
+    <div class="content-card">
+      <div class="table-wrapper">
+        <table class="tbl">
+          <thead>
+            <tr><th>姓名</th><th>帳號</th><th>班別</th><th>上次登入</th><th>狀態</th><th>操作</th></tr>
+          </thead>
+          <tbody>
+            @for (staff of staffAccounts(); track staff.id) {
+              <tr>
+                <td>{{ staff.name }}</td>
+                <td class="mono" style="color:#8892b0;">{{ staff.account }}</td>
+                <td>{{ staff.shift }}</td>
+                <td style="color:#8892b0;">{{ staff.lastLogin }}</td>
+                <td>
+                  @if (staff.isActive) {
+                    <span class="badge-ok">啟用</span>
+                  } @else {
+                    <span class="badge-err">停權</span>
+                  }
+                </td>
+                <td class="d-flex gap-1">
+                  <button class="btn btn-sm btn-ghost-gold">編輯</button>
+                  @if (staff.isActive) {
+                    <button class="btn btn-sm btn-ghost-red" (click)="toggleStaff(staff.id)">停權</button>
+                  } @else {
+                    <button class="btn btn-sm btn-ghost-green" (click)="toggleStaff(staff.id)">復權</button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 新增員工 Modal ── -->
+  @if (showAddStaffModal()) {
+    <div class="modal-backdrop" (click)="cancelAddStaff()"></div>
+    <div class="add-staff-modal">
+      <div class="modal-header-row">
+        <span class="modal-title-text">新增員工帳號</span>
+        <button class="modal-close-btn" (click)="cancelAddStaff()">✕</button>
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-label">姓名 *</label>
+        <input type="text" class="modal-input" placeholder="請輸入姓名"
+          [value]="newStaffName()"
+          (input)="newStaffName.set($any($event.target).value)" />
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-label">帳號 *</label>
+        <input type="text" class="modal-input" placeholder="例：chen.xy"
+          [value]="newStaffAccount()"
+          (input)="newStaffAccount.set($any($event.target).value)" />
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-label">班別</label>
+        <select class="modal-input" [value]="newStaffShift()"
+          (change)="newStaffShift.set($any($event.target).value)">
+          <option value="早班">早班</option>
+          <option value="晚班">晚班</option>
+          <option value="假日班">假日班</option>
+          <option value="彈性班">彈性班</option>
+        </select>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-sm btn-ghost-red" (click)="cancelAddStaff()">取消</button>
+        <button class="btn btn-sm"
+          style="background-color:#c49756;color:#0d1117;font-weight:600;"
+          (click)="confirmAddStaff()">確認新增</button>
+      </div>
+    </div>
+  }
+}
+
+
+<!-- ════════════════════════════════════════
+     頁籤 6：今日報表
+     ════════════════════════════════════════ -->
+@if (activeTab() === 'report') {
+  <div class="page-panel" style="display:block;">
+    <div class="panel-title">今日報表</div>
+    <div class="panel-sub">本分店今日班次數據彙整</div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-sm-4">
+        <div class="stat-card">
+          <div class="stat-label">今日營收</div>
+          <div class="stat-val">$14,230</div>
+          <div class="stat-sub">↑ 8.2% 較昨日</div>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div class="stat-card">
+          <div class="stat-label">今日訂單數</div>
+          <div class="stat-val">89</div>
+          <div class="stat-sub">平均客單 $159</div>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div class="stat-card">
+          <div class="stat-label">贈品核發</div>
+          <div class="stat-val">4 份</div>
+          <div class="stat-sub">招牌滷蛋×2 共 8 顆</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <div style="font-size:0.9rem;font-weight:600;color:#e2e8f8;margin-bottom:14px;">熱銷品項排行</div>
+      <div class="table-wrapper">
+        <table class="tbl">
+          <thead><tr><th>#</th><th>品項</th><th>銷售數量</th><th>佔比</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="mono" style="color:#f0c68c;">1</td>
+              <td>紅燒牛肉麵</td>
+              <td class="mono">28</td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="flex:1;height:5px;background:#2d3748;border-radius:3px;overflow:hidden;">
+                    <div style="width:90%;height:100%;background:#c49756;border-radius:3px;"></div>
+                  </div>
+                  <span class="mono" style="font-size:0.72rem;color:#8892b0;">31%</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="mono" style="color:#f0c68c;">2</td>
+              <td>珍珠奶茶</td>
+              <td class="mono">22</td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="flex:1;height:5px;background:#2d3748;border-radius:3px;overflow:hidden;">
+                    <div style="width:70%;height:100%;background:#4f8ef7;border-radius:3px;"></div>
+                  </div>
+                  <span class="mono" style="font-size:0.72rem;color:#8892b0;">25%</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="mono" style="color:#f0c68c;">3</td>
+              <td>印度咖哩飯</td>
+              <td class="mono">18</td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="flex:1;height:5px;background:#2d3748;border-radius:3px;overflow:hidden;">
+                    <div style="width:57%;height:100%;background:#3ecf8e;border-radius:3px;"></div>
+                  </div>
+                  <span class="mono" style="font-size:0.72rem;color:#8892b0;">20%</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+}
