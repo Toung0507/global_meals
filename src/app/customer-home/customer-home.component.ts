@@ -12,10 +12,17 @@
  * =====================================================
  */
 
-import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  signal,
+  computed,
+  inject,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../shared/auth.service';
 import { LoadingService } from '../shared/loading.service';
 import { OrderService } from '../shared/order.service';
@@ -59,20 +66,29 @@ export interface TrackingOrder {
 }
 
 /* ── 頁籤型別 ──────────────────────────────────────────── */
-export type TabId = 'home' | 'menu' | 'checkout' | 'payment' | 'tracker' | 'orders';
+export type TabId =
+  | 'home'
+  | 'menu'
+  | 'checkout'
+  | 'payment'
+  | 'tracker'
+  | 'orders';
 
 /* ── 頁籤定義型別 ──────────────────────────────────────── */
-interface NavTab { id: TabId; label: string; icon: string; }
+interface NavTab {
+  id: TabId;
+  label: string;
+  icon: string;
+}
 
 @Component({
   selector: 'app-customer-home',
   standalone: true,
-  imports: [CommonModule],
+  imports: [RouterLink, CommonModule],
   templateUrl: './customer-home.component.html',
-  styleUrls: ['./customer-home.component.scss']
+  styleUrls: ['./customer-home.component.scss'],
 })
 export class CustomerHomeComponent implements OnInit, OnDestroy {
-
   /* ── 當前頁籤 ───────────────────────────────────────── */
   activeTab = signal<TabId>('home');
 
@@ -83,30 +99,36 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   private heroPaused = false;
 
   prevHeroSlide(): void {
-    this.heroSlideIndex.update(i => (i - 1 + this.HERO_SLIDE_COUNT) % this.HERO_SLIDE_COUNT);
+    this.heroSlideIndex.update(
+      (i) => (i - 1 + this.HERO_SLIDE_COUNT) % this.HERO_SLIDE_COUNT,
+    );
   }
 
   nextHeroSlide(): void {
-    this.heroSlideIndex.update(i => (i + 1) % this.HERO_SLIDE_COUNT);
+    this.heroSlideIndex.update((i) => (i + 1) % this.HERO_SLIDE_COUNT);
   }
 
   goToHeroSlide(index: number): void {
     this.heroSlideIndex.set(index);
   }
 
-  pauseCarousel(): void { this.heroPaused = true; }
+  pauseCarousel(): void {
+    this.heroPaused = true;
+  }
 
-  resumeCarousel(): void { this.heroPaused = false; }
+  resumeCarousel(): void {
+    this.heroPaused = false;
+  }
 
   /* ── 購物車 ─────────────────────────────────────────── */
   cartItems = signal<CartItem[]>([]);
 
   cartCount = computed(() =>
-    this.cartItems().reduce((sum, item) => sum + item.quantity, 0)
+    this.cartItems().reduce((sum, item) => sum + item.quantity, 0),
   );
 
   cartTotal = computed(() =>
-    this.cartItems().reduce((sum, item) => sum + item.price * item.quantity, 0)
+    this.cartItems().reduce((sum, item) => sum + item.price * item.quantity, 0),
   );
 
   /* ── 訪客判斷 ──────────────────────────────────────── */
@@ -131,7 +153,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   /* ── 菜單：分類篩選 & 搜尋 ────────────────────────── */
   activeMenuCategory = signal<string>('all');
-  menuSearchQuery    = signal<string>('');
+  menuSearchQuery = signal<string>('');
 
   setMenuCategory(cat: string): void {
     this.activeMenuCategory.set(cat);
@@ -144,15 +166,19 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   /** 回傳該品項是否應顯示（分類 + 名稱模糊搜尋） */
   isMenuItemShown(name: string, category: string): boolean {
     const cat = this.activeMenuCategory();
-    const q   = this.menuSearchQuery().trim().toLowerCase();
-    const catMatch  = cat === 'all' || cat === category;
+    const q = this.menuSearchQuery().trim().toLowerCase();
+    const catMatch = cat === 'all' || cat === category;
     const nameMatch = q === '' || name.toLowerCase().includes(q);
     return catMatch && nameMatch;
   }
 
   /** 回傳整個分類區塊是否應顯示（只要有任一品項符合篩選即顯示） */
-  isSectionShown(sectionItems: Array<{ name: string; category: string }>): boolean {
-    return sectionItems.some(item => this.isMenuItemShown(item.name, item.category));
+  isSectionShown(
+    sectionItems: Array<{ name: string; category: string }>,
+  ): boolean {
+    return sectionItems.some((item) =>
+      this.isMenuItemShown(item.name, item.category),
+    );
   }
 
   /* ── 側邊欄：個人資料抽屜狀態 ────────────────────── */
@@ -177,7 +203,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   toggleProfile(): void {
     if (this.isGuest()) return;
-    this.isProfileExpanded.update(v => !v);
+    this.isProfileExpanded.update((v) => !v);
     if (!this.isProfileExpanded()) {
       this.isEditingProfile.set(false);
       this.showPassword.set(false);
@@ -186,7 +212,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   toggleEditProfile(): void {
-    this.isEditingProfile.update(v => !v);
+    this.isEditingProfile.update((v) => !v);
     if (!this.isEditingProfile()) {
       this.showPassword.set(false);
       this.showConfirmPassword.set(false);
@@ -194,11 +220,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   togglePasswordVisibility(): void {
-    this.showPassword.update(v => !v);
+    this.showPassword.update((v) => !v);
   }
 
   toggleConfirmPasswordVisibility(): void {
-    this.showConfirmPassword.update(v => !v);
+    this.showConfirmPassword.update((v) => !v);
   }
 
   /* ── 今日優惠橫向滾動 ───────────────────────────────── */
@@ -213,7 +239,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   giftDropdownOpen = signal(false);
 
   toggleGiftDropdown(): void {
-    this.giftDropdownOpen.update(v => !v);
+    this.giftDropdownOpen.update((v) => !v);
   }
 
   selectGift(gift: string): void {
@@ -225,7 +251,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   useDiscountCoupon = signal(false);
 
   toggleDiscountCoupon(): void {
-    this.useDiscountCoupon.update(v => !v);
+    this.useDiscountCoupon.update((v) => !v);
   }
 
   /* ── 側邊欄：進度與折扣邏輯 (模擬 Database) ────────── */
@@ -260,29 +286,29 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     const o = this.orderService.latestCustomerOrder();
     if (!o) return null;
     return {
-      id:               o.id,
-      number:           o.number,
-      status:           o.status,
+      id: o.id,
+      number: o.number,
+      status: o.status,
       estimatedMinutes: o.estimatedMinutes,
-      items:            o.items,
-      total:            o.total,
-      createdAt:        o.createdAt
+      items: o.items,
+      total: o.total,
+      createdAt: o.createdAt,
     };
   });
 
   /* ── 底部導覽列定義 ───────────────────────────────── */
   private readonly ALL_TABS: NavTab[] = [
-    { id: 'home',     label: '首頁',   icon: 'home'     },
-    { id: 'menu',     label: '菜單',   icon: 'menu'     },
-    { id: 'checkout', label: '購物車',  icon: 'checkout' },
-    { id: 'tracker',  label: '訂單追蹤', icon: 'tracker'  },
-    { id: 'orders',   label: '訂單管理', icon: 'orders'   },
+    { id: 'home', label: '首頁', icon: 'home' },
+    { id: 'menu', label: '菜單', icon: 'menu' },
+    { id: 'checkout', label: '購物車', icon: 'checkout' },
+    { id: 'tracker', label: '訂單追蹤', icon: 'tracker' },
+    { id: 'orders', label: '訂單管理', icon: 'orders' },
   ];
 
   navTabs = computed<NavTab[]>(() =>
     this.isGuest()
-      ? this.ALL_TABS.filter(t => t.id !== 'orders')
-      : this.ALL_TABS
+      ? this.ALL_TABS.filter((t) => t.id !== 'orders')
+      : this.ALL_TABS,
   );
 
   /* ── 訂單管理資料 ──────────────────────────────────── */
@@ -294,73 +320,82 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       date: '2026-01-15',
       items: '紅燒牛肉麵 × 1、滷蛋 × 2',
       total: 185,
-      status: 'completed'
+      status: 'completed',
     },
     {
       id: 'LBB-20260210-002',
       date: '2026-02-10',
       items: '三杯雞飯 × 1、味噌湯 × 1',
       total: 150,
-      status: 'completed'
+      status: 'completed',
     },
     {
       id: 'LBB-20260301-003',
       date: '2026-03-01',
       items: '咖哩雞飯 × 1、珍珠奶茶 × 2、小菜 × 1',
       total: 320,
-      status: 'completed'
+      status: 'completed',
     },
     {
       id: 'LBB-20260318-004',
       date: '2026-03-18',
       items: '麻辣燙 × 1、白飯 × 1',
       total: 175,
-      status: 'completed'
+      status: 'completed',
     },
     {
       id: 'LBB-20260325-005',
       date: '2026-03-25',
       items: '越南河粉 × 1、春捲 × 3',
       total: 210,
-      status: 'completed'
+      status: 'completed',
     },
     {
       id: 'LBB-20260401-006',
       date: '2026-04-01',
       items: '印度咖哩飯 × 2、饢餅 × 1、優格飲 × 2',
       total: 395,
-      status: 'completed'
+      status: 'completed',
     },
     {
       id: 'LBB-20260308-007',
       date: '2026-03-08',
       items: '鐵板燒套餐 × 2、冬瓜茶 × 2',
       total: 480,
-      status: 'cancelled'
+      status: 'cancelled',
     },
     {
       id: 'LBB-20260220-008',
       date: '2026-02-20',
       items: '紅油抄手 × 2',
       total: 120,
-      status: 'refunded'
-    }
+      status: 'refunded',
+    },
   ]);
 
-  completedCount = computed(() => this.orderHistoryList().filter(o => o.status === 'completed').length);
-  cancelledCount = computed(() => this.orderHistoryList().filter(o => o.status === 'cancelled').length);
-  refundedCount  = computed(() => this.orderHistoryList().filter(o => o.status === 'refunded').length);
+  completedCount = computed(
+    () =>
+      this.orderHistoryList().filter((o) => o.status === 'completed').length,
+  );
+  cancelledCount = computed(
+    () =>
+      this.orderHistoryList().filter((o) => o.status === 'cancelled').length,
+  );
+  refundedCount = computed(
+    () => this.orderHistoryList().filter((o) => o.status === 'refunded').length,
+  );
 
   filteredOrders = computed(() => {
-    return this.orderHistoryList().filter(o => o.status === this.activeOrderTab());
+    return this.orderHistoryList().filter(
+      (o) => o.status === this.activeOrderTab(),
+    );
   });
-
 
   constructor(
     private router: Router,
     public authService: AuthService,
     private loadingService: LoadingService,
-    public orderService: OrderService
+    public orderService: OrderService,
   ) {}
 
   ngOnInit(): void {
@@ -371,7 +406,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     /* 啟動首頁輪播自動播放（5 秒換一張） */
     this.heroTimer = setInterval(() => {
       if (!this.heroPaused) {
-        this.heroSlideIndex.update(i => (i + 1) % this.HERO_SLIDE_COUNT);
+        this.heroSlideIndex.update((i) => (i + 1) % this.HERO_SLIDE_COUNT);
       }
     }, 5000);
   }
@@ -391,21 +426,26 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   /* ── 加入購物車 ──────────────────────────────────── */
   addToCart(item: MenuItem): void {
     const current = this.cartItems();
-    const existing = current.find(c => c.id === item.id);
+    const existing = current.find((c) => c.id === item.id);
     if (existing) {
-      this.cartItems.set(current.map(c =>
-        c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c
-      ));
+      this.cartItems.set(
+        current.map((c) =>
+          c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c,
+        ),
+      );
     } else {
-      this.cartItems.set([...current, {
-        id: item.id,
-        name: item.name,
-        nameEn: item.nameEn,
-        price: item.price,
-        quantity: 1,
-        image: item.image,
-        category: item.category
-      }]);
+      this.cartItems.set([
+        ...current,
+        {
+          id: item.id,
+          name: item.name,
+          nameEn: item.nameEn,
+          price: item.price,
+          quantity: 1,
+          image: item.image,
+          category: item.category,
+        },
+      ]);
     }
     if (navigator.vibrate) navigator.vibrate(30);
   }
@@ -413,21 +453,21 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   /* ── 更新購物車數量 ──────────────────────────────── */
   updateCartQuantity(id: number, delta: number): void {
     const current = this.cartItems();
-    const item = current.find(c => c.id === id);
+    const item = current.find((c) => c.id === id);
     if (!item) return;
     const newQty = item.quantity + delta;
     if (newQty <= 0) {
-      this.cartItems.set(current.filter(c => c.id !== id));
+      this.cartItems.set(current.filter((c) => c.id !== id));
     } else {
-      this.cartItems.set(current.map(c =>
-        c.id === id ? { ...c, quantity: newQty } : c
-      ));
+      this.cartItems.set(
+        current.map((c) => (c.id === id ? { ...c, quantity: newQty } : c)),
+      );
     }
   }
 
   /* ── 從購物車移除 ─────────────────────────────────── */
   removeFromCart(id: number): void {
-    this.cartItems.set(this.cartItems().filter(c => c.id !== id));
+    this.cartItems.set(this.cartItems().filter((c) => c.id !== id));
   }
 
   /* ── 清空購物車 ──────────────────────────────────── */
@@ -450,7 +490,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
    * ────────────────────────────────────────────────── */
   placeOrder(): void {
     if (this.cartItems().length === 0) return;
-    if (this.isPlacingOrder()) return;   /* 防重複送出 */
+    if (this.isPlacingOrder()) return; /* 防重複送出 */
 
     this.isPlacingOrder.set(true);
 
@@ -461,52 +501,53 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   private _doPlaceOrder(): void {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const orderNum = this.orderService.generateOrderNumber();
+    const orderId = this.orderService.generateOrderId();
 
-    const now  = new Date();
-    const pad  = (n: number) => String(n).padStart(2, '0');
-    const dateStr   = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
-    const timeStr   = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    const orderNum  = this.orderService.generateOrderNumber();
-    const orderId   = this.orderService.generateOrderId();
-
-    const itemTexts = this.cartItems().map(i => `${i.name} × ${i.quantity}`);
+    const itemTexts = this.cartItems().map((i) => `${i.name} × ${i.quantity}`);
     /* 若有滿額贈品，一併加入品項列表 */
     if (this.selectedGift()) {
       itemTexts.push(`🎁 ${this.selectedGift()}（滿額贈品）`);
     }
-    const totalQty  = this.cartItems().reduce((s, i) => s + i.quantity, 0);
-    const estMin    = Math.max(5, Math.ceil(totalQty * 2));
+    const totalQty = this.cartItems().reduce((s, i) => s + i.quantity, 0);
+    const estMin = Math.max(5, Math.ceil(totalQty * 2));
 
     /* 付款方式標籤 */
     const payLabels: Record<string, string> = {
-      credit: '信用卡', mobile: '行動支付', cash: '現金'
+      credit: '信用卡',
+      mobile: '行動支付',
+      cash: '現金',
     };
     const payLabel = payLabels[this.paymentMethod()] ?? '現金';
 
     /* 推送至 OrderService → POS 看板即時同步 */
     this.orderService.addOrder({
-      id:               orderId,
-      number:           orderNum,
-      status:           'waiting',
+      id: orderId,
+      number: orderNum,
+      status: 'waiting',
       estimatedMinutes: estMin,
-      items:            itemTexts,
-      total:            this.cartTotal(),
-      createdAt:        timeStr,
-      payMethod:        payLabel,
-      source:           'customer',
-      customerName:     this.authService.currentUser?.name
+      items: itemTexts,
+      total: this.cartTotal(),
+      createdAt: timeStr,
+      payMethod: payLabel,
+      source: 'customer',
+      customerName: this.authService.currentUser?.name,
     });
 
     /* 加入本地歷史訂單（最新在最上方） */
     this.orderHistoryList.set([
       {
-        id:     orderId,
-        date:   `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
-        items:  itemTexts.join('、'),
-        total:  this.discountedTotal(),
-        status: 'completed'
+        id: orderId,
+        date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
+        items: itemTexts.join('、'),
+        total: this.discountedTotal(),
+        status: 'completed',
       },
-      ...this.orderHistoryList()
+      ...this.orderHistoryList(),
     ]);
 
     /* 清空購物車與備註 */
@@ -518,7 +559,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       this.memberOrderCount.set(1);
       this.useDiscountCoupon.set(false);
     } else {
-      this.memberOrderCount.update(c => c + 1);
+      this.memberOrderCount.update((c) => c + 1);
     }
 
     /* 重置贈品選擇 */
