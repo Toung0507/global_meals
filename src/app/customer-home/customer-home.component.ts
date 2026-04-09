@@ -390,6 +390,60 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   /* ── 訂單管理資料 ──────────────────────────────────── */
   activeOrderTab = signal<'completed' | 'cancelled' | 'refunded'>('completed');
 
+  /* ── 退款申請 Modal ─────────────────────────────────── */
+  refundModalOpen = signal(false);
+  refundTargetOrder = signal<{ id: string; total: number } | null>(null);
+  refundSubmitted = signal(false);
+
+  refundReasons = signal([
+    { id: 'r1', label: '餐點品項錯誤（與訂單內容不符）', checked: false },
+    { id: 'r2', label: '食物有異物或異味', checked: false },
+    { id: 'r3', label: '食物未熟透或過度烹調', checked: false },
+    { id: 'r4', label: '份量明顯不足', checked: false },
+    { id: 'r5', label: '餐點送達時已嚴重冷卻', checked: false },
+    { id: 'r6', label: '包裝破損，影響食品衛生', checked: false },
+    { id: 'r7', label: '含有過敏原且未事先告知', checked: false },
+  ]);
+  refundOtherText = signal('');
+
+  hasRefundSelection = computed(() =>
+    this.refundReasons().some((r) => r.checked) || this.refundOtherText().trim().length > 0
+  );
+
+  openRefundModal(order: { id: string; total: number }): void {
+    this.refundTargetOrder.set(order);
+    this.refundReasons.update((list) => list.map((r) => ({ ...r, checked: false })));
+    this.refundOtherText.set('');
+    this.refundSubmitted.set(false);
+    this.refundModalOpen.set(true);
+  }
+
+  closeRefundModal(): void {
+    this.refundModalOpen.set(false);
+    this.refundTargetOrder.set(null);
+  }
+
+  toggleRefundReason(id: string): void {
+    this.refundReasons.update((list) =>
+      list.map((r) => (r.id === id ? { ...r, checked: !r.checked } : r))
+    );
+  }
+
+  updateRefundOther(value: string): void {
+    this.refundOtherText.set(value);
+  }
+
+  submitRefund(): void {
+    if (!this.hasRefundSelection()) return;
+    const orderId = this.refundTargetOrder()?.id;
+    // ⚠ TODO [API串接點]：呼叫 apiService.requestRefund({ orderId, reasons, other })
+    console.log('[退款申請]', orderId, this.refundReasons().filter(r => r.checked).map(r => r.label), this.refundOtherText());
+    this.refundSubmitted.set(true);
+    setTimeout(() => {
+      this.closeRefundModal();
+    }, 2000);
+  }
+
   orderHistoryList = signal([
     {
       id: 'LBB-20260115-001',

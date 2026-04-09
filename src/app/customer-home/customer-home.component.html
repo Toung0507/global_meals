@@ -2497,12 +2497,26 @@
                   <!-- 虛線分隔 -->
                   <div class="ord-card-dash"></div>
 
-                  <!-- 底部：合計標籤 + 金額（大字） -->
+                  <!-- 底部：合計標籤 + 金額（大字） + 退款按鈕（已完成才顯示） -->
                   <div class="ord-card-foot">
                     <span class="ord-card-total-label">合　計</span>
-                    <div class="ord-card-total-wrap">
-                      <span class="ord-card-currency">NT$</span>
-                      <span class="ord-card-price">{{ order.total }}</span>
+                    <div class="ord-card-foot-right">
+                      <div class="ord-card-total-wrap">
+                        <span class="ord-card-currency">NT$</span>
+                        <span class="ord-card-price">{{ order.total }}</span>
+                      </div>
+                      @if (order.status === 'completed') {
+                        <button
+                          class="ord-refund-btn"
+                          (click)="openRefundModal(order)"
+                        >
+                          <svg viewBox="0 0 20 20" fill="none" class="ord-refund-icon">
+                            <path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2z" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                          </svg>
+                          申請退款
+                        </button>
+                      }
                     </div>
                   </div>
                 </div>
@@ -2609,3 +2623,101 @@
     </nav>
   </div>
 </div>
+
+<!-- ═══════════════════════════════════════════════════════════
+   退款申請 Modal
+   點擊遮罩層關閉；stopPropagation 防止點 Dialog 內部觸發關閉
+═══════════════════════════════════════════════════════════ -->
+@if (refundModalOpen()) {
+  <div class="refund-overlay" (click)="closeRefundModal()">
+    <div class="refund-dialog" (click)="$event.stopPropagation()">
+
+      <!-- 成功送出畫面 -->
+      @if (refundSubmitted()) {
+        <div class="refund-success">
+          <div class="refund-success-icon">
+            <svg viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="22" stroke="#27AE60" stroke-width="2.5"/>
+              <path d="M14 24l7 7 13-14" stroke="#27AE60" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <p class="refund-success-title">申請已送出</p>
+          <p class="refund-success-sub">我們將盡快為您處理退款，請稍候。</p>
+        </div>
+      }
+
+      <!-- 申請表單 -->
+      @if (!refundSubmitted()) {
+
+        <!-- 標題列 -->
+        <div class="refund-header">
+          <div class="refund-title-wrap">
+            <svg class="refund-title-icon" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z" stroke="#D95C1A" stroke-width="1.8"/>
+              <path d="M12 8v5" stroke="#D95C1A" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="12" cy="16" r="1" fill="#D95C1A"/>
+            </svg>
+            <span class="refund-title">申請退款</span>
+          </div>
+          <div class="refund-order-id">{{ refundTargetOrder()?.id }}</div>
+          <button class="refund-close-btn" (click)="closeRefundModal()">
+            <svg viewBox="0 0 20 20" fill="none">
+              <path d="M5 5l10 10M15 5l-10 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- 副標 -->
+        <p class="refund-subtitle">請選擇退款原因（可複選）</p>
+
+        <!-- 勾選原因清單 -->
+        <div class="refund-reasons">
+          @for (reason of refundReasons(); track reason.id) {
+            <label
+              class="refund-reason-item"
+              [class.is-checked]="reason.checked"
+              (click)="toggleRefundReason(reason.id)"
+            >
+              <span class="refund-checkbox" [class.checked]="reason.checked">
+                @if (reason.checked) {
+                  <svg viewBox="0 0 14 14" fill="none">
+                    <path d="M2.5 7l3.5 3.5 5.5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                }
+              </span>
+              <span class="refund-reason-label">{{ reason.label }}</span>
+            </label>
+          }
+        </div>
+
+        <!-- 其他問題文字輸入框 -->
+        <div class="refund-other-wrap">
+          <label class="refund-other-label">其他問題</label>
+          <textarea
+            class="refund-other-input"
+            placeholder="請描述您遇到的問題（選填）…"
+            rows="3"
+            [value]="refundOtherText()"
+            (input)="updateRefundOther($any($event.target).value)"
+          ></textarea>
+        </div>
+
+        <!-- 操作按鈕列 -->
+        <div class="refund-actions">
+          <button class="refund-cancel-btn" (click)="closeRefundModal()">
+            取消申請退款
+          </button>
+          <button
+            class="refund-submit-btn"
+            [class.disabled]="!hasRefundSelection()"
+            [disabled]="!hasRefundSelection()"
+            (click)="submitRefund()"
+          >
+            送出申請退款
+          </button>
+        </div>
+
+      }
+    </div>
+  </div>
+}
