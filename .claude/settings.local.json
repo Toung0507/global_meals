@@ -33,7 +33,10 @@
       "Bash(~/.claude/skills/gstack/bin/gstack-config)",
       "Bash(ls ~/.claude/skills/gstack/bin/gstack*)",
       "Bash(~/.claude/skills/gstack/setup --version)",
-      "Bash(~/.claude/skills/gstack/bin/gstack-update-check)"
+      "Bash(~/.claude/skills/gstack/bin/gstack-update-check)",
+      "Bash(xargs grep:*)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(echo \"Exit: $?\")"
     ]
   }
 }

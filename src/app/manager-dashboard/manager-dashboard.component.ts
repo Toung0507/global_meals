@@ -23,6 +23,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '../shared/auth.service';
+// ⚠ TODO [API串接點 - 步驟1]：取消下方兩行 import
+// import { ApiService, GlobalAreaVO, RegionVO } from '../shared/api.service';
 
 /* ── 側邊欄頁籤型別 ─────────────────────────────────── */
 export type DashTab = 'dashboard' | 'orders' | 'products' | 'promotions' | 'inventory' | 'users' | 'tax' | 'finance' | 'branches';
@@ -118,7 +120,8 @@ interface DashOrder {
 export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 頁籤狀態 ──────────────────────────────────── */
-  activeTab    = signal<DashTab>('dashboard');
+  /* 預設頁籤改為分店管理（綜合總覽等5個功能暫時停用） */
+  activeTab    = signal<DashTab>('branches');
   userSubTab   = signal<UserSubTab>('bm');
   clockStr     = signal('');
 
@@ -315,7 +318,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    public authService: AuthService
+    public authService: AuthService,
+    // ⚠ TODO [API串接點 - 步驟2]：取消下方 apiService 參數
+    // private apiService: ApiService,
   ) {}
 
   ngOnInit(): void {
@@ -326,6 +331,39 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     }
     this.updateClock();
     this.clockInterval = setInterval(() => this.updateClock(), 1000);
+
+    // ⚠ TODO [API串接點 - 載入分店清單]
+    // 取消下方區塊，並將 branches signal 的初始值改為空陣列 []
+    // this.apiService.getAllBranches().subscribe({
+    //   next: (res) => {
+    //     this.branches.set(res.branches.map((b: GlobalAreaVO) => ({
+    //       id: b.id,
+    //       name: b.branch,
+    //       city: '',              // city 欄位後端未分離，可從 branch 名稱推導
+    //       country: b.country,
+    //       address: b.address,
+    //       phone: b.phone
+    //     })));
+    //   },
+    //   error: (err) => console.error('[Manager] 載入分店失敗', err)
+    // });
+
+    // ⚠ TODO [API串接點 - 載入稅率清單]
+    // 取消下方區塊，並將 taxes signal 的初始值改為空陣列 []
+    // this.apiService.getAllTax().subscribe({
+    //   next: (res) => {
+    //     this.taxes.set(res.regions.map((r: RegionVO) => ({
+    //       id: r.id,
+    //       flag: '🏳️',           // 後端無 flag，可用 country 對應旗幟
+    //       country: r.country,
+    //       branch: r.country + '分店',
+    //       rate: +(r.taxRate * 100).toFixed(2),   // 0.05 → 5
+    //       editing: false,
+    //       editValue: +(r.taxRate * 100).toFixed(2)
+    //     })));
+    //   },
+    //   error: (err) => console.error('[Manager] 載入稅率失敗', err)
+    // });
   }
 
   ngOnDestroy(): void {
@@ -437,6 +475,20 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.taxes.update(list =>
       list.map(t => t.id === id ? { ...t, rate: t.editValue, editing: false } : t)
     );
+    // ⚠ TODO [API串接點 - 更新稅率]
+    // 取消下方區塊（需從稅率清單取得 country / currencyCode 等欄位）：
+    // const target = this.taxes().find(t => t.id === id);
+    // if (!target) return;
+    // this.apiService.updateRegion({
+    //   id: target.id,
+    //   country: target.country,
+    //   currencyCode: 'TWD',        // 需後端回傳 currencyCode，或建立 country→code 對照表
+    //   taxRate: target.editValue / 100,  // UI 顯示 5 → 後端存 0.05
+    //   taxType: 'INCLUSIVE'        // 依各國設定，可擴充為下拉選單
+    // }).subscribe({
+    //   next: () => this.showToast('✅ 稅率已同步至後端'),
+    //   error: () => this.showToast('❌ 稅率更新失敗，請確認後端連線')
+    // });
   }
 
   cancelEditTax(id: number): void {
@@ -633,6 +685,28 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     }]);
     this.closeModal();
     this.showToast(`✅ 已新增 ${saved.flag} ${saved.country} 稅率 ${saved.rate}%`);
+    // ⚠ TODO [API串接點 - 新增國家稅率]
+    // 取消下方區塊，並移除上方 taxes.update / closeModal / showToast 這三行：
+    // this.apiService.createRegion({
+    //   country: saved.country.trim(),
+    //   currencyCode: 'TWD',          // 可擴充為表單欄位
+    //   taxRate: saved.rate / 100,    // UI 輸入 5 → 後端存 0.05
+    //   taxType: 'INCLUSIVE'          // 可擴充為下拉選單
+    // }).subscribe({
+    //   next: () => {
+    //     this.apiService.getAllTax().subscribe(res => {
+    //       this.taxes.set(res.regions.map((r: RegionVO) => ({
+    //         id: r.id, flag: '🏳️', country: r.country,
+    //         branch: r.country + '分店',
+    //         rate: +(r.taxRate * 100).toFixed(2),
+    //         editing: false, editValue: +(r.taxRate * 100).toFixed(2)
+    //       })));
+    //     });
+    //     this.closeModal();
+    //     this.showToast(`✅ 已新增 ${saved.flag} ${saved.country} 稅率 ${saved.rate}%`);
+    //   },
+    //   error: () => this.showToast('❌ 新增失敗，請確認後端連線')
+    // });
   }
 
   /* ── 財務報表：匯出 CSV（isExporting spinner 保護）── */
@@ -682,6 +756,26 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     }]);
     this.closeModal();
     this.showToast(`✅ 分店「${saved.name.trim()}」已新增`);
+    // ⚠ TODO [API串接點 - 新增分店]
+    // 取消下方區塊，並移除上方 branches.update / closeModal / showToast 這三行：
+    // this.apiService.createBranch({
+    //   country: saved.country.trim(),
+    //   branch: saved.name.trim(),
+    //   address: saved.address.trim(),
+    //   phone: saved.phone.trim()
+    // }).subscribe({
+    //   next: () => {
+    //     this.apiService.getAllBranches().subscribe(res => {
+    //       this.branches.set(res.branches.map((b: GlobalAreaVO) => ({
+    //         id: b.id, name: b.branch, city: '', country: b.country,
+    //         address: b.address, phone: b.phone
+    //       })));
+    //     });
+    //     this.closeModal();
+    //     this.showToast(`✅ 分店「${saved.name.trim()}」已新增`);
+    //   },
+    //   error: () => this.showToast('❌ 新增失敗，請確認後端連線')
+    // });
   }
 
   /* ── 分店：編輯 Modal ─────────────────────────────── */
@@ -707,6 +801,27 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     );
     this.closeModal();
     this.showToast(`✅ 分店「${saved.name.trim()}」已更新`);
+    // ⚠ TODO [API串接點 - 修改分店]
+    // 取消下方區塊，並移除上方 branches.update / closeModal / showToast 這三行：
+    // this.apiService.updateBranch({
+    //   id: saved.id,
+    //   country: saved.country.trim(),
+    //   branch: saved.name.trim(),
+    //   address: saved.address.trim(),
+    //   phone: saved.phone.trim()
+    // }).subscribe({
+    //   next: () => {
+    //     this.apiService.getAllBranches().subscribe(res => {
+    //       this.branches.set(res.branches.map((b: GlobalAreaVO) => ({
+    //         id: b.id, name: b.branch, city: '', country: b.country,
+    //         address: b.address, phone: b.phone
+    //       })));
+    //     });
+    //     this.closeModal();
+    //     this.showToast(`✅ 分店「${saved.name.trim()}」已更新`);
+    //   },
+    //   error: () => this.showToast('❌ 更新失敗，請確認後端連線')
+    // });
   }
 
   /* ── 分店：刪除 ───────────────────────────────────── */
@@ -716,6 +831,15 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     if (!confirm(`確定刪除分店「${b.name}」？此操作無法復原。`)) return;
     this.branches.update(list => list.filter(x => x.id !== id));
     this.showToast(`🗑️ 分店「${b.name}」已刪除`);
+    // ⚠ TODO [API串接點 - 刪除分店]
+    // 取消下方區塊，並移除上方 branches.update / showToast 這兩行：
+    // this.apiService.deleteBranch({ id }).subscribe({
+    //   next: () => {
+    //     this.branches.update(list => list.filter(x => x.id !== id));
+    //     this.showToast(`🗑️ 分店「${b.name}」已刪除`);
+    //   },
+    //   error: () => this.showToast('❌ 刪除失敗，請確認後端連線')
+    // });
   }
 
   /* ── 訂單篩選 ─────────────────────────────────── */

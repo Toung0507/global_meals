@@ -31,7 +31,7 @@ import { AuthService } from '../../shared/auth.service';
 })
 export class StaffLoginComponent {
 
-  /* 目前選中的角色分頁：預設為 'M'（系統經理） */
+  /* 目前選中的角色分頁：'M' 經理 / 'B' 分店長 / 'S' 現場收銀員，預設為 'M' */
   activeRole: string = 'M';
 
   /* 密碼是否明文顯示 */
@@ -84,16 +84,22 @@ export class StaffLoginComponent {
 
     /*
      * 驗證所選分頁與帳號角色是否相符
-     * - 系統經理分頁（'M'）僅允許 boss 角色登入
-     * - 現場收銀員分頁（'S'）僅允許 branch_manager / staff 角色登入
+     * - 經理分頁（'M'）僅允許 boss 角色登入
+     * - 分店長分頁（'B'）僅允許 branch_manager 角色登入
+     * - 現場收銀員分頁（'S'）僅允許 staff 角色登入
      */
     if (this.activeRole === 'M' && user.role !== 'boss') {
-      this.errorMsg = '此帳號非系統經理，請切換至「現場收銀員」分頁';
+      this.errorMsg = '此帳號非經理，請切換至正確分頁後登入';
       return;
     }
 
-    if (this.activeRole === 'S' && user.role === 'boss') {
-      this.errorMsg = '此帳號非現場收銀員，請切換至「系統經理」分頁';
+    if (this.activeRole === 'B' && user.role !== 'branch_manager') {
+      this.errorMsg = '此帳號非分店長，請切換至正確分頁後登入';
+      return;
+    }
+
+    if (this.activeRole === 'S' && user.role !== 'staff') {
+      this.errorMsg = '此帳號非現場收銀員，請切換至正確分頁後登入';
       return;
     }
 

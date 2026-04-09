@@ -22,10 +22,12 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+// import { RouterLink } from '@angular/router';
 import { AuthService } from '../shared/auth.service';
 import { LoadingService } from '../shared/loading.service';
 import { OrderService } from '../shared/order.service';
+// ⚠ TODO [API串接點 - 步驟1]：取消下方 import（含所需型別）
+// import { ApiService, GetOrdersVo } from '../shared/api.service';
 
 /* ── 購物車品項型別 ─────────────────────────────────── */
 export interface CartItem {
@@ -84,7 +86,7 @@ interface NavTab {
 @Component({
   selector: 'app-customer-home',
   standalone: true,
-  imports: [RouterLink, CommonModule],
+  imports: [CommonModule],
   templateUrl: './customer-home.component.html',
   styleUrls: ['./customer-home.component.scss'],
 })
@@ -233,18 +235,92 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     el.scrollBy({ left: 252, behavior: 'smooth' });
   }
 
-  /* ── 贈品選擇 ───────────────────────────────────────── */
-  giftOptions: string[] = ['招牌滷蛋 × 2', '特製泡菜 × 1', '古早味豆干 × 2'];
-  selectedGift = signal<string>('');
-  giftDropdownOpen = signal(false);
+  /* ── 活動優惠選擇（每個活動有獨立贈品清單）─────────── */
+  readonly PROMO_ACTIVITIES = [
+    {
+      name: '新會員首單禮',
+      minSpend: 150,
+      gifts: ['招牌豆漿 × 1', '仙草奶茶 × 1'],
+    },
+    {
+      name: '週末滿額禮',
+      minSpend: 300,
+      gifts: ['古早味豆干 × 2', '特製泡菜 × 1', '招牌滷蛋 × 2'],
+    },
+    {
+      name: '消費達人大禮包',
+      minSpend: 500,
+      gifts: ['仙草奶茶 × 1 + 招牌滷蛋 × 2', '特製泡菜 × 1 + 古早味豆干 × 2'],
+    },
+  ];
 
-  toggleGiftDropdown(): void {
-    this.giftDropdownOpen.update((v) => !v);
+  /* 已選活動名稱（'' = 未選, '不參加活動優惠' = 放棄） */
+  selectedPromoName  = signal<string>('');
+  /* 已選活動內的贈品 */
+  selectedPromoGift  = signal<string>('');
+  /* 結帳頁綠色贈品面板是否展開 */
+  promoGiftPanelOpen = signal(false);
+  /* 菜單頁各活動進度條的展開狀態（key = 活動名稱） */
+  promoProgressExpanded = signal<Record<string, boolean>>({});
+
+  /* 根據目前小計，篩出已達門檻的活動 */
+  unlockedPromos = computed(() =>
+    this.PROMO_ACTIVITIES.filter(p => this.cartTotal() >= p.minSpend)
+  );
+
+  /* 目前選中的活動物件 */
+  get selectedPromoActivity() {
+    return this.PROMO_ACTIVITIES.find(p => p.name === this.selectedPromoName()) ?? null;
   }
 
-  selectGift(gift: string): void {
-    this.selectedGift.set(gift);
-    this.giftDropdownOpen.set(false);
+  /* 菜單頁：切換特定活動進度條的展開/收折 */
+  togglePromoProgressBar(name: string): void {
+    this.promoProgressExpanded.update(v => ({ ...v, [name]: !v[name] }));
+  }
+
+  isPromoBarExpanded(name: string): boolean {
+    return this.promoProgressExpanded()[name] ?? false;
+  }
+
+  /* 結帳頁：切換綠色贈品面板 */
+  togglePromoGiftPanel(): void {
+    this.promoGiftPanelOpen.update(v => !v);
+  }
+
+  selectPromo(name: string): void {
+    this.selectedPromoName.set(name);
+    this.selectedPromoGift.set('');   /* 切換活動時重置贈品選擇 */
+    this.promoGiftPanelOpen.set(true); /* 自動展開贈品面板 */
+  }
+
+  selectPromoGift(gift: string): void {
+    this.selectedPromoGift.set(gift);
+    this.promoGiftPanelOpen.set(false); /* 選完自動收折 */
+  }
+
+  /* ── 訂單預覽彈出視窗 ─────────────────────────────────── */
+  showOrderPreview = signal(false);
+
+  openOrderPreview(): void {
+    if (this.cartItems().length === 0) return;
+    this.showOrderPreview.set(true);
+  }
+
+  closeOrderPreview(): void { this.showOrderPreview.set(false); }
+
+  goToPayment(): void {
+    this.showOrderPreview.set(false);
+    this.setTab('payment');
+  }
+
+  /* 取消本次訂單：清空購物車並回到首頁 */
+  cancelCurrentOrder(): void {
+    this.clearCart();
+    this.selectedPromoName.set('');
+    this.selectedPromoGift.set('');
+    this.promoGiftPanelOpen.set(false);
+    this.useDiscountCoupon.set(false);
+    this.setTab('home');
   }
 
   /* ── 折扣兌換券 ─────────────────────────────────────── */
@@ -396,6 +472,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     public authService: AuthService,
     private loadingService: LoadingService,
     public orderService: OrderService,
+    // ⚠ TODO [API串接點 - 步驟2]：取消下方 apiService 參數
+    // private apiService: ApiService,
   ) {}
 
   ngOnInit(): void {
@@ -409,6 +487,47 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
         this.heroSlideIndex.update((i) => (i + 1) % this.HERO_SLIDE_COUNT);
       }
     }, 5000);
+
+    // ⚠ TODO [API串接點 - 載入菜單商品]
+    // 後端 ProductsController 建立後，取消下方區塊：
+    // this.apiService.getAllActiveProducts().subscribe({
+    //   next: (res) => {
+    //     this.menuItems.set(res.products.map(p => ({
+    //       id: p.id,
+    //       name: p.name,
+    //       nameEn: p.name,                // 後端若有英文名欄位則帶入
+    //       price: p.basePrice,
+    //       image: `/api/products/${p.id}/image`,  // BLOB 圖片路徑
+    //       category: p.category,
+    //       categoryEn: p.category,
+    //       description: p.description ?? '',
+    //       stock: p.stockQuantity,
+    //       isActive: p.isActive
+    //     })));
+    //   },
+    //   error: (err) => console.error('[Customer] 載入菜單失敗', err)
+    // });
+
+    // ⚠ TODO [API串接點 - 載入訂單歷史]
+    // 登入後立即取得真實歷史訂單（僅會員，訪客跳過）：
+    // const user = this.authService.currentUser;
+    // if (!user?.isGuest && user?.id) {
+    //   this.apiService.getAllOrders({ memberId: user.id }).subscribe({
+    //     next: (res) => {
+    //       this.orderHistoryList.set(res.orders.map((o: GetOrdersVo) => ({
+    //         id: o.orderId,
+    //         date: o.completedAt?.slice(0, 10) ?? '',
+    //         items: o.details.map(d => `${d.name} × ${d.quantity}`).join('、'),
+    //         total: o.totalAmount,
+    //         status: o.status === 'COMPLETED' ? 'completed'
+    //               : o.status === 'CANCELLED' ? 'cancelled'
+    //               : o.status === 'REFUNDED'  ? 'refunded'
+    //               : 'completed'
+    //       })));
+    //     },
+    //     error: (err) => console.error('[Customer] 載入訂單歷史失敗', err)
+    //   });
+    // }
   }
 
   ngOnDestroy(): void {
@@ -501,6 +620,41 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   private _doPlaceOrder(): void {
+    // ⚠ TODO [API串接點 - 下單與結帳]
+    // 串接後，此方法整體替換為以下兩步驟流程：
+    //
+    // 步驟 A：先同步購物車至後端（或直接用前端 cartId）
+    // 步驟 B：createOrder → 取得 orderId / orderDateId
+    // 步驟 C：pay → 結帳完成
+    //
+    // const user = this.authService.currentUser;
+    // const cartReq = {
+    //   cartId: 0,                                    // 0 = 新建購物車
+    //   globalAreaId: 1,                              // 需從 branch 選擇取得
+    //   productId: 0,                                 // 逐筆 syncCart 後再 createOrder
+    //   quantity: 1,
+    //   operation: user?.id ?? 0,
+    //   operationType: 'CUSTOMER' as const
+    // };
+    // this.apiService.createOrder({
+    //   cartId: 0,                                    // 使用已同步的購物車 ID
+    //   globalAreaId: 1,
+    //   memberId: user?.isGuest ? 0 : (user?.id ?? 0),
+    //   phone: user?.phone ?? '',
+    //   paymentMethod: this.paymentMethod().toUpperCase()
+    // }).subscribe({
+    //   next: (orderRes) => {
+    //     this.apiService.pay({
+    //       orderId: orderRes.orderId,
+    //       orderDateId: orderRes.orderDateId
+    //     }).subscribe({
+    //       next: () => { /* 清空購物車 + 跳訂單追蹤 */ },
+    //       error: () => console.error('[Customer] 結帳失敗')
+    //     });
+    //   },
+    //   error: () => console.error('[Customer] 建立訂單失敗')
+    // });
+
     const now = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
     const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
@@ -509,9 +663,12 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     const orderId = this.orderService.generateOrderId();
 
     const itemTexts = this.cartItems().map((i) => `${i.name} × ${i.quantity}`);
-    /* 若有滿額贈品，一併加入品項列表 */
-    if (this.selectedGift()) {
-      itemTexts.push(`🎁 ${this.selectedGift()}（滿額贈品）`);
+
+    /* 若有選擇活動贈品，以「活動名稱 - 贈品」格式加入品項列表 */
+    const promoGift = this.selectedPromoGift();
+    const promoName = this.selectedPromoName();
+    if (promoGift && promoName && promoName !== '不參加活動優惠') {
+      itemTexts.push(`${promoName} - ${promoGift}`);
     }
     const totalQty = this.cartItems().reduce((s, i) => s + i.quantity, 0);
     const estMin = Math.max(5, Math.ceil(totalQty * 2));
@@ -554,17 +711,19 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     this.clearCart();
     this.orderNote.set('');
 
-    /* 折扣券使用：重置計數（本次訂單算第 1 次）；未使用：計數 +1 */
+    /* 折扣券使用：本次訂單算第 1 次，從 1 重新開始累積
+     * 未使用：+1，但上限 10（已達 10 次的話維持 10，不繼續往上）*/
     if (this.useDiscountCoupon()) {
       this.memberOrderCount.set(1);
       this.useDiscountCoupon.set(false);
     } else {
-      this.memberOrderCount.update((c) => c + 1);
+      this.memberOrderCount.update((c) => Math.min(c + 1, 10));
     }
 
-    /* 重置贈品選擇 */
-    this.selectedGift.set('');
-    this.giftDropdownOpen.set(false);
+    /* 重置活動贈品選擇 */
+    this.selectedPromoName.set('');
+    this.selectedPromoGift.set('');
+    this.promoGiftPanelOpen.set(false);
 
     /* 跳至訂單追蹤頁 */
     this.setTab('tracker');

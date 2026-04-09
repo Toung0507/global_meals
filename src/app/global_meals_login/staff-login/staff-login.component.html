@@ -89,10 +89,13 @@
         <p>請輸入您的管理帳號以開始後台操作</p>
       </div>
 
-      <!-- 角色切換分頁：系統經理 / 現場收銀員 -->
+      <!-- 角色切換分頁：經理 / 分店長 / 現場收銀員 -->
       <div class="s-role-tabs">
         <button [class.active]="activeRole === 'M'" (click)="setRole('M')">
-          系統經理
+          經理
+        </button>
+        <button [class.active]="activeRole === 'B'" (click)="setRole('B')">
+          分店長
         </button>
         <button [class.active]="activeRole === 'S'" (click)="setRole('S')">
           現場收銀員
