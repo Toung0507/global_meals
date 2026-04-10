@@ -352,7 +352,7 @@
 
 
 /* =====================================================
-   角色切換分頁（系統經理 / 現場收銀員）
+   角色切換分頁（經理 / 分店長 / 現場收銀員）
    ===================================================== */
 .s-role-tabs {
     display: flex;
@@ -365,14 +365,14 @@
 /* 每個角色分頁按鈕 */
 .s-role-tabs button {
     flex: 1;
-    padding-top: clamp(8px, 1.3vh, 11px);
+    padding-top: clamp(6px, 1.1vh, 10px);
     padding-right: 0;
-    padding-bottom: clamp(8px, 1.3vh, 11px);
+    padding-bottom: clamp(6px, 1.1vh, 10px);
     padding-left: 0;
     border: none;
     background-color: transparent;
     font-family: 'Noto Sans TC', sans-serif;
-    font-size: clamp(14px, 1.8vh, 16px);
+    font-size: clamp(13px, 1.6vh, 15px);
     font-weight: 700;
     color: #4A5A70;
     cursor: pointer;
@@ -380,8 +380,8 @@
     letter-spacing: 0.5px;
 }
 
-/* 第一個按鈕（系統經理）的右側分隔線 */
-.s-role-tabs button:first-child {
+/* 第一、二個按鈕的右側分隔線 */
+.s-role-tabs button:not(:last-child) {
     border-right: 2px solid #D4DCE8;
 }
 

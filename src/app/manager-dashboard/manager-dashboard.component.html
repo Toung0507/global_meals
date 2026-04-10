@@ -39,6 +39,8 @@
 
   <!-- 主導覽列 -->
   <nav class="sidebar-nav">
+    <!-- 暫時停用：綜合總覽 -->
+    <!--
     <div
       class="nav-item"
       [class.active]="activeTab() === 'dashboard'"
@@ -46,6 +48,9 @@
     >
       <span class="nav-icon">📊</span> 綜合總覽
     </div>
+    -->
+    <!-- 暫時停用：訂單管理 -->
+    <!--
     <div
       class="nav-item"
       [class.active]="activeTab() === 'orders'"
@@ -53,6 +58,9 @@
     >
       <span class="nav-icon">📋</span> 訂單管理
     </div>
+    -->
+    <!-- 暫時停用：商品管理 -->
+    <!--
     <div
       class="nav-item"
       [class.active]="activeTab() === 'products'"
@@ -60,13 +68,16 @@
     >
       <span class="nav-icon">🛍️</span> 商品管理
     </div>
+    -->
     <div
       class="nav-item"
       [class.active]="activeTab() === 'promotions'"
       (click)="setTab('promotions')"
     >
-      <span class="nav-icon">🎯</span> 活動管理
+      <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none"/></svg></span> 活動管理
     </div>
+    <!-- 暫時停用：庫存管理 -->
+    <!--
     <div
       class="nav-item"
       [class.active]="activeTab() === 'inventory'"
@@ -74,12 +85,13 @@
     >
       <span class="nav-icon">📦</span> 庫存管理
     </div>
+    -->
     <div
       class="nav-item"
       [class.active]="activeTab() === 'users'"
       (click)="setTab('users')"
     >
-      <span class="nav-icon">👥</span> 帳號管理
+      <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> 帳號管理
     </div>
     <!-- 稅率設定：台灣展示期間暫時隱藏 -->
     <!--
@@ -91,6 +103,8 @@
       <span class="nav-icon">🌍</span> 稅率設定
     </div>
     -->
+    <!-- 暫時停用：財務報表 -->
+    <!--
     <div
       class="nav-item"
       [class.active]="activeTab() === 'finance'"
@@ -98,12 +112,13 @@
     >
       <span class="nav-icon">💰</span> 財務報表
     </div>
+    -->
     <div
       class="nav-item"
       [class.active]="activeTab() === 'branches'"
       (click)="setTab('branches')"
     >
-      <span class="nav-icon">🏪</span> 分店管理
+      <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span> 分店管理
     </div>
   </nav>
 
@@ -131,7 +146,7 @@
     <!-- ════════════════════════════════════════
          頁籤 1：綜合總覽 (Dashboard)
          ════════════════════════════════════════ -->
-    @if (activeTab() === "dashboard") {
+    @if (false && activeTab() === "dashboard") {<!-- 暫時停用：綜合總覽 -->
       <div>
         <div class="page-title">綜合總覽</div>
         <div class="page-sub">今日即時數據，全部分店彙整</div>
@@ -338,7 +353,7 @@
     <!-- ════════════════════════════════════════
          頁籤 2：訂單管理（Signal 篩選驅動）
          ════════════════════════════════════════ -->
-    @if (activeTab() === "orders") {
+    @if (false && activeTab() === "orders") {<!-- 暫時停用：訂單管理 -->
       <div>
         <div class="page-title">訂單管理</div>
         <div class="page-sub">查看並篩選全部分店的訂單紀錄（即時篩選，無需按鈕）</div>
@@ -410,7 +425,7 @@
     <!-- ════════════════════════════════════════
          頁籤 3：商品管理（Signal 驅動，toggle 即時生效）
          ════════════════════════════════════════ -->
-    @if (activeTab() === "products") {
+    @if (false && activeTab() === "products") {<!-- 暫時停用：商品管理 -->
       <div>
         <div class="page-title">商品管理</div>
         <div class="page-sub">全部商品一覽，切換開關即時上架 / 下架</div>
@@ -503,7 +518,7 @@
     <!-- ════════════════════════════════════════
          頁籤 5：庫存管理（Signal 驅動，inline 調整）
          ════════════════════════════════════════ -->
-    @if (activeTab() === "inventory") {
+    @if (false && activeTab() === "inventory") {<!-- 暫時停用：庫存管理 -->
       <div>
         <div class="page-title">庫存管理</div>
         <div class="page-sub">點擊「調整」直接修改庫存量，確認後即時生效</div>
@@ -698,7 +713,7 @@
     <!-- ════════════════════════════════════════
          頁籤 8：財務報表
          ════════════════════════════════════════ -->
-    @if (activeTab() === "finance") {
+    @if (false && activeTab() === "finance") {<!-- 暫時停用：財務報表 -->
       <div>
         <div class="page-title">財務報表</div>
         <div class="page-sub">各分店月度營收彙整，可匯出 CSV</div>

@@ -111,14 +111,24 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 }
 
 .pos-tab-btn {
-    padding: 9px 16px;
-    font-size: 0.8rem;
+    padding: 9px 14px;
+    font-size: 0.78rem;
     color: #a0aec0;
     cursor: pointer;
     border-bottom: 2px solid transparent;
     transition: color $transition-base, border-color $transition-base;
     white-space: nowrap;
     user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* 頁籤 SVG 圖示 */
+.tab-svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
 }
 
 .pos-tab-btn:hover { color: #e2e8f8; }
@@ -128,6 +138,13 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 
 /* 員工模式下的藍色底線 */
 .pos-tab-btn.staff-active { color: #4f8ef7; border-bottom-color: #4f8ef7; font-weight: 600; }
+
+/* 分類按鈕 SVG 圖示 */
+.cat-svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
 
 
 /* ── 主 POS 區域（左：商品 / 右：購物車）────────── */
@@ -161,9 +178,12 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 .category-bar::-webkit-scrollbar { display: none; }
 
 .cat-btn {
-    padding: 6px 18px;
-    font-size: 0.8rem;
+    padding: 6px 14px;
+    font-size: 0.78rem;
     font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     background-color: rgba(255,255,255,0.06);
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 9999px;
@@ -190,10 +210,21 @@ $pos-blue:        #4f8ef7;   // 員工藍色
     background-color: #111927;
     border-bottom: 1px solid rgba(255,255,255,0.09);
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 搜尋 SVG 放大鏡圖示 */
+.search-svg {
+    width: 16px;
+    height: 16px;
+    color: #718096;
+    flex-shrink: 0;
 }
 
 .product-search input {
-    width: 100%;
+    flex: 1;
     background-color: #1c2130;
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 8px;
@@ -225,71 +256,41 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 .product-grid::-webkit-scrollbar-track { background: transparent; }
 .product-grid::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.12); border-radius: 3px; }
 
-/* 商品卡片：深色背景，hover 時黃金邊線 + 上浮 */
+/* ══════════════════════════════════════════════════
+   商品卡片 — POS 點餐版（純文字精美按鈕，無圖片無 SVG）
+   漸層色背景 + 品名 + 價格 + 加入按鈕，大觸控目標
+   ══════════════════════════════════════════════════ */
 .prod-card {
+    position: relative;
     display: flex;
     flex-direction: column;
-    background-color: #1c2130;
-    border: 1px solid rgba(255,255,255,0.09);
+    justify-content: flex-end;
+    min-height: 100px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255,255,255,0.10);
     border-radius: 12px;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.25);  /* 靜置陰影增加層次 */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
     transition: border-color $transition-base, transform $transition-base,
-                box-shadow $transition-base, background-color $transition-base;
+                box-shadow $transition-base, filter $transition-base;
+    overflow: hidden;
 }
-.prod-card:hover  {
+.prod-card:hover {
     border-color: rgba(196,151,86,0.7);
-    background-color: #202840;
-    transform: translateY(-4px);
+    transform: translateY(-3px);
     box-shadow: 0 10px 24px rgba(0,0,0,0.45), 0 0 12px rgba(196,151,86,0.12);
+    filter: brightness(1.12);
 }
 .prod-card:active { transform: scale(0.96); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
 
-/* ══════════════════════════════════════════════════
-   商品卡片 — POS 點餐版（圖片 + 資訊區，確保價格一眼可見）
-   ══════════════════════════════════════════════════ */
-
-/* 媒體區：比例縮放，隨欄寬自動調整高度；自己負責裁切圖片並套用頂部圓角 */
-.prod-media {
-    position: relative;
-    aspect-ratio: 4 / 3;
-    overflow: hidden;
-    border-radius: 12px 12px 0 0;
-    background: #111927;
+/* 付款方式 SVG 圖示 */
+.pay-svg {
+    width: 15px;
+    height: 15px;
     flex-shrink: 0;
 }
 
-/* 實體圖片 */
-.prod-real-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-    display: block;
-    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.prod-card:hover .prod-real-img { transform: scale(1.05); }
-
-/* emoji fallback */
-.prod-emoji-bg {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.prod-emoji-icon { font-size: 2.2rem; }
-
-/* 圖片底部漸層過渡 */
-.prod-img-fade {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 35%;
-    background: linear-gradient(to bottom, transparent, rgba(13,17,23,0.6));
-    pointer-events: none;
-}
-
-/* badge：圖片左上角橘色藥丸 */
+/* badge：卡片左上角橘色藥丸 */
 .prod-badge {
     position: absolute;
     top: 8px; left: 8px;
@@ -299,36 +300,31 @@ $pos-blue:        #4f8ef7;   // 員工藍色
     border-radius: 20px;
     letter-spacing: 0.4px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    z-index: 1;
 }
 .pb-hot { background: #d95a1e; color: #fff; }
 .pb-new { background: #3b7de8; color: #fff; }
 .pb-low { background: #c9900f; color: #fff; }
 
-/* ── 資訊區：品名 + 底列（價格 + 庫存 + 加入鈕）── */
-.prod-info {
-    padding: 7px 9px 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    background: #1c2130;
-}
-
-/* 品名：單行截斷 */
+/* 品名：單行截斷，觸控 POS 稍大字體 */
 .prod-name {
-    font-size: 0.82rem;
+    font-size: 0.92rem;
     font-weight: 700;
     color: #f1f5f9;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.3;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    margin-top: auto;
 }
 
-/* 底列：價格（左）+ 庫存+加入（右）*/
+/* 底列：價格（左）+ 加入按鈕（右）*/
 .prod-bottom-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: 6px;
 }
 
 .prod-price-block {
@@ -339,30 +335,20 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 
 .prod-currency {
     font-size: 0.62rem;
-    color: #c49756;
+    color: #f0c68c;
     font-weight: 600;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 /* 價格：金黃等寬字，POS 首要資訊 */
 .prod-price {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: #f0c68c;
     line-height: 1;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
-
-.prod-right-block {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.prod-stock {
-    font-size: 0.6rem;
-    color: #718096;
-}
-.stock-low { color: #fbbf24 !important; }
 
 /* 加入按鈕：金色圓形 */
 .prod-add-btn {
@@ -454,9 +440,27 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 /* 品項價格：金黃清晰 */
 .cart-item-price { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; color: #f0c68c; font-weight: 700; min-width: 50px; text-align: right; flex-shrink: 0; }
 
+/* 贈品列：淡綠底色區隔，標籤字樣式 */
+.cart-row-gift { background-color: rgba(62,207,142,0.07); }
+.cart-gift-tag { color: #3ecf8e; font-size: 0.72rem; margin-left: 4px; }
+/* 贈品列：佔位用（替代 qty-ctrl 的寬度，保持對齊） */
+.qty-gift-placeholder { width: 74px; flex-shrink: 0; }
+/* 贈品價格：顯示 $0，以綠色標示免費 */
+.cart-item-price-free { color: #3ecf8e; }
+
 /* 空購物車提示 */
-.cart-empty { text-align: center; padding: 48px 0; color: #718096; }
-.cart-empty-icon { font-size: 2.5rem; display: block; margin-bottom: 8px; opacity: 0.45; }
+.cart-empty { text-align: center; padding: 36px 0; color: #718096; }
+
+/* SVG 購物車圖示 */
+.cart-empty-icon {
+    width: 48px;
+    height: 48px;
+    display: block;
+    margin: 0 auto 10px;
+    opacity: 0.38;
+    color: #a0aec0;
+}
+
 
 /* ── 結帳成功覆蓋層（全新動畫版）──────────────────── */
 .checkout-success-overlay {
@@ -602,6 +606,161 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 }
 
 
+/* ══════════════════════════════════════════════════
+   購物車合計區 — 滿額贈品選擇下拉（小計 >= $300）
+   ══════════════════════════════════════════════════ */
+
+.cart-gift-section {
+    margin-top: 10px;
+    border: 1px solid rgba(196,151,86,0.28);
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: rgba(196,151,86,0.06);
+}
+
+.cart-gift-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+.cart-gift-header:hover { background-color: rgba(196,151,86,0.12); }
+
+.cart-gift-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #f0c68c;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cart-gift-free {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #3ecf8e;
+    background: rgba(62,207,142,0.12);
+    padding: 2px 8px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.cart-gift-dropdown {
+    border-top: 1px solid rgba(196,151,86,0.18);
+    animation: fadeUp 0.2s ease both;
+}
+
+.cart-gift-option {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    color: #cbd5e1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.12s;
+}
+.cart-gift-option:hover { background-color: rgba(196,151,86,0.12); }
+.cart-gift-option.selected {
+    background-color: rgba(62,207,142,0.10);
+    color: #3ecf8e;
+    font-weight: 600;
+}
+/* 「不需要」選項：灰色低調樣式 */
+.cart-gift-option.no-gift {
+    color: #718096;
+    font-style: italic;
+}
+.cart-gift-option.no-gift:hover { background-color: rgba(255,255,255,0.04); }
+.cart-gift-option.no-gift.selected { background-color: transparent; color: #718096; }
+
+
+/* ══════════════════════════════════════════════════
+   活動優惠選擇下拉（橘色主題，仿贈品區塊）
+   ══════════════════════════════════════════════════ */
+
+.cart-promo-section {
+    margin-top: 8px;
+    border: 1px solid rgba(245,166,35,0.3);
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: rgba(245,166,35,0.06);
+}
+
+.cart-promo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    font-size: 0.75rem;
+}
+.cart-promo-header:hover { background-color: rgba(245,166,35,0.12); }
+
+.cart-promo-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #f5a623;
+    font-weight: 500;
+}
+
+.cart-promo-free {
+    font-size: 0.68rem;
+    background-color: #f5a623;
+    color: #1a1a1a;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* 第二層：選擇活動贈品按鈕（虛線邊框表示從屬關係） */
+.cart-promo-gift-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 12px;
+    cursor: pointer;
+    border-top: 1px dashed rgba(245,166,35,0.25);
+    background-color: rgba(245,166,35,0.04);
+    font-size: 0.74rem;
+    transition: background-color 0.15s;
+}
+.cart-promo-gift-header:hover { background-color: rgba(245,166,35,0.10); }
+
+.cart-promo-dropdown {
+    border-top: 1px solid rgba(245,166,35,0.2);
+    animation: fadeUp 0.2s ease both;
+}
+
+.cart-promo-option {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    color: #cbd5e1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.12s;
+}
+.cart-promo-option:hover { background-color: rgba(245,166,35,0.1); }
+.cart-promo-option.selected {
+    background-color: rgba(245,166,35,0.15);
+    color: #f5a623;
+    font-weight: 600;
+}
+.cart-promo-option.no-promo { color: #718096; font-style: italic; }
+.cart-promo-option.no-promo:hover { background-color: rgba(255,255,255,0.04); }
+.cart-promo-option.no-promo.selected { background-color: transparent; color: #718096; }
+
+
 /* ── 付款區域 ─────────────────────────────────────── */
 .cart-payment {
     padding: 12px 18px;
@@ -619,6 +778,10 @@ $pos-blue:        #4f8ef7;   // 員工藍色
     font-size: 0.78rem;
     cursor: pointer;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
     background-color: rgba(255,255,255,0.06);
     border: 1px solid rgba(255,255,255,0.12);
     color: #a0aec0;
@@ -970,4 +1133,627 @@ select.modal-input option {
     justify-content: flex-end;
     gap: 10px;
     margin-top: 20px;
+}
+
+
+/* ══════════════════════════════════════════════════
+   會員 / 訪客 選擇面板（order-mode-panel）
+   位置：購物車右側，訂單頭部下方
+   ══════════════════════════════════════════════════ */
+
+.order-mode-panel {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.09);
+    flex-shrink: 0;
+    background-color: #0e1520;
+}
+
+/* 未選擇狀態的說明文字 */
+.omp-label {
+    font-size: 0.7rem;
+    color: #718096;
+    margin-bottom: 8px;
+    letter-spacing: 0.3px;
+}
+
+/* 兩個選擇按鈕的容器 */
+.omp-btns {
+    display: flex;
+    gap: 8px;
+}
+
+/* 共用按鈕樣式 */
+.omp-btn {
+    flex: 1;
+    padding: 9px 10px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: 'Noto Sans TC', sans-serif;
+    cursor: pointer;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background-color 0.18s, border-color 0.18s, transform 0.12s;
+    user-select: none;
+}
+.omp-btn:active { transform: scale(0.96); }
+
+/* 會員點餐按鈕：綠色 */
+.omp-member {
+    background-color: rgba(62,207,142,0.14);
+    border-color: rgba(62,207,142,0.35);
+    color: #3ecf8e;
+}
+.omp-member:hover { background-color: rgba(62,207,142,0.22); border-color: rgba(62,207,142,0.55); }
+
+/* 訪客按鈕：藍色 */
+.omp-guest {
+    background-color: rgba(79,142,247,0.12);
+    border-color: rgba(79,142,247,0.30);
+    color: #4f8ef7;
+}
+.omp-guest:hover { background-color: rgba(79,142,247,0.20); border-color: rgba(79,142,247,0.50); }
+
+/* 選中模式後的標題列 */
+.omp-mode-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.omp-mode-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.omp-title-green { color: #3ecf8e; }
+.omp-title-blue  { color: #4f8ef7; }
+
+/* 取消按鈕（文字型） */
+.omp-cancel-btn {
+    font-size: 0.7rem;
+    color: #718096;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color 0.15s, background-color 0.15s;
+}
+.omp-cancel-btn:hover { color: #a0aec0; background-color: rgba(255,255,255,0.07); }
+
+/* 輸入框（會員查詢 / 訪客手機） */
+.omp-input {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background-color: #111927;
+    color: #f1f5f9;
+    font-size: 0.78rem;
+    font-family: 'Noto Sans TC', sans-serif;
+    outline: none;
+    transition: border-color 0.18s;
+}
+.omp-input:focus { border-color: rgba(196,151,86,0.5); }
+.omp-input::placeholder { color: #4a5568; }
+
+/* 查詢按鈕 + 輸入框組合列 */
+.omp-query-row {
+    display: flex;
+    gap: 6px;
+}
+
+.omp-query-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    background-color: rgba(196,151,86,0.18);
+    border: 1px solid rgba(196,151,86,0.4);
+    color: #f0c68c;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: 'Noto Sans TC', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s;
+}
+.omp-query-btn:hover { background-color: rgba(196,151,86,0.28); }
+
+/* 錯誤訊息 */
+.omp-error {
+    font-size: 0.7rem;
+    color: #f87171;
+    margin-top: 6px;
+}
+
+/* 查到的會員資料 */
+.omp-member-info {
+    margin-bottom: 10px;
+}
+
+.omp-member-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #3ecf8e;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.omp-member-phone {
+    font-size: 0.72rem;
+    color: #718096;
+    margin-top: 2px;
+    padding-left: 17px;
+}
+
+/* 折扣累積進度條 */
+.omp-discount-label {
+    font-size: 0.68rem;
+    color: #8892b0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.omp-discount-num {
+    font-family: 'IBM Plex Mono', monospace;
+    color: #f0c68c;
+    font-size: 0.7rem;
+}
+
+.omp-progress-track {
+    height: 6px;
+    border-radius: 3px;
+    background-color: rgba(255,255,255,0.1);
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.omp-progress-bar {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #3ecf8e 0%, #6ee7b7 100%);
+    transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.omp-progress-pct {
+    font-size: 0.68rem;
+    color: #718096;
+    text-align: right;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.omp-unlock {
+    color: #3ecf8e;
+    font-weight: 700;
+    font-size: 0.7rem;
+}
+
+/* 訪客模式提示說明 */
+.omp-hint {
+    font-size: 0.68rem;
+    color: #4a5568;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+/* SVG 圖示 in omp-btn */
+.omp-svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+
+/* ══════════════════════════════════════════════════
+   折扣券次數狀態區（仿客戶端側邊欄樣式）
+   ══════════════════════════════════════════════════ */
+
+.omp-coupon-status {
+    margin-top: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    background-color: #0f1520;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.omp-coupon-status-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 7px;
+}
+
+.omp-coupon-status-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #a0aec0;
+}
+
+.omp-coupon-status-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #718096;
+    background-color: rgba(255,255,255,0.06);
+    transition: color 0.2s, background-color 0.2s, border-color 0.2s;
+}
+.omp-coupon-status-badge.ready {
+    color: #f0c68c;
+    background-color: rgba(196,151,86,0.15);
+    border-color: rgba(196,151,86,0.40);
+}
+
+.omp-coupon-status-desc {
+    font-size: 0.7rem;
+    color: #8892b0;
+    margin: 0;
+    margin-top: 5px;
+    line-height: 1.5;
+}
+
+/* 強調數字（差 N 次） */
+.omp-highlight {
+    color: #f0c68c;
+    font-weight: 700;
+}
+
+
+/* ══════════════════════════════════════════════════
+   滿額贈品選擇 + 折扣兌換券（POS 會員模式）
+   ══════════════════════════════════════════════════ */
+
+/* 贈品選擇區 */
+.omp-gift-section {
+    margin-top: 10px;
+    border: 1px solid rgba(196,151,86,0.28);
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: rgba(196,151,86,0.06);
+}
+
+.omp-gift-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+.omp-gift-header:hover { background-color: rgba(196,151,86,0.12); }
+
+.omp-gift-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #f0c68c;
+}
+
+.omp-gift-free {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #3ecf8e;
+    background: rgba(62,207,142,0.12);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+/* 贈品下拉選單 */
+.omp-gift-dropdown {
+    border-top: 1px solid rgba(196,151,86,0.18);
+    animation: fadeUp 0.2s ease both;
+}
+
+.omp-gift-option {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    color: #cbd5e1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.12s;
+}
+.omp-gift-option:hover { background-color: rgba(196,151,86,0.12); }
+.omp-gift-option.selected {
+    background-color: rgba(62,207,142,0.10);
+    color: #3ecf8e;
+    font-weight: 600;
+}
+
+/* 折扣兌換券區塊 */
+.omp-coupon-block {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(129,140,248,0.25);
+    background-color: rgba(129,140,248,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+.omp-coupon-block.active {
+    border-color: rgba(62,207,142,0.4);
+    background-color: rgba(62,207,142,0.08);
+}
+
+.omp-coupon-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.omp-coupon-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #a5b4fc;
+}
+.omp-coupon-block.active .omp-coupon-title { color: #3ecf8e; }
+
+.omp-coupon-desc {
+    font-size: 0.68rem;
+    color: #718096;
+}
+
+.omp-coupon-btn {
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-family: 'Noto Sans TC', sans-serif;
+    cursor: pointer;
+    border: 1px solid rgba(129,140,248,0.35);
+    background-color: rgba(129,140,248,0.15);
+    color: #a5b4fc;
+    white-space: nowrap;
+    transition: background-color 0.15s, color 0.15s;
+}
+.omp-coupon-btn:hover { background-color: rgba(129,140,248,0.25); }
+.omp-coupon-btn.used {
+    border-color: rgba(248,113,113,0.35);
+    background-color: rgba(248,113,113,0.12);
+    color: #fca5a5;
+}
+.omp-coupon-btn.used:hover { background-color: rgba(248,113,113,0.22); }
+
+
+/* ══════════════════════════════════════════════════
+   現金收款計算器（POS 專用覆蓋層）
+   按下「結帳」時彈出，提供數字鍵盤輸入收取金額並計算找零
+   ══════════════════════════════════════════════════ */
+
+.cash-calc-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 12, 20, 0.97);
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 18px;
+    animation: successSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow-y: auto;
+}
+
+/* 標題列 */
+.cash-calc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.cash-calc-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #f0c68c;
+    letter-spacing: 0.5px;
+}
+
+.cash-calc-cancel {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #a0aec0;
+    font-size: 0.85rem;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s, color 0.15s;
+}
+.cash-calc-cancel:hover { background: rgba(248,113,113,0.18); color: #fca5a5; }
+
+/* 應收金額 */
+.cash-calc-due {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: rgba(196,151,86,0.10);
+    border: 1px solid rgba(196,151,86,0.22);
+    margin-bottom: 10px;
+}
+
+.cash-calc-due-label {
+    font-size: 0.75rem;
+    color: #a0aec0;
+}
+
+.cash-calc-due-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #f0c68c;
+}
+
+/* 收取金額顯示 */
+.cash-calc-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #111927;
+    border: 1px solid rgba(255,255,255,0.12);
+    margin-bottom: 10px;
+}
+
+.cash-calc-display-label {
+    font-size: 0.75rem;
+    color: #718096;
+}
+
+.cash-calc-display-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #e2e8f8;
+    letter-spacing: 1px;
+}
+
+/* 快速金額按鈕列 */
+.cash-calc-quick {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.cash-quick-btn {
+    flex: 1;
+    min-width: 60px;
+    padding: 7px 6px;
+    border-radius: 6px;
+    background: rgba(129,140,248,0.12);
+    border: 1px solid rgba(129,140,248,0.30);
+    color: #a5b4fc;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.15s, transform 0.1s;
+}
+.cash-quick-btn:hover { background: rgba(129,140,248,0.22); }
+.cash-quick-btn:active { transform: scale(0.95); }
+
+/* 數字鍵盤（3×4 grid） */
+.cash-calc-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.cash-key {
+    padding: 14px 8px;
+    border-radius: 8px;
+    background: #1c2130;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #e2e8f8;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.15rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.12s, transform 0.1s, border-color 0.12s;
+    user-select: none;
+}
+.cash-key:hover { background: #202840; border-color: rgba(196,151,86,0.35); }
+.cash-key:active { transform: scale(0.94); background: rgba(196,151,86,0.15); }
+
+/* 功能鍵（退格 / 清除）稍暗底色 */
+.cash-key-fn {
+    background: #141a28;
+    color: #a0aec0;
+    font-size: 0.85rem;
+}
+.cash-key-fn:hover { background: #1a2238; color: #f87171; }
+
+/* 找零顯示 */
+.cash-calc-change {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    animation: fadeUp 0.2s ease both;
+}
+
+.cash-calc-change.change-ok {
+    background: rgba(62,207,142,0.10);
+    border: 1px solid rgba(62,207,142,0.30);
+}
+
+.cash-calc-change.change-short {
+    background: rgba(248,113,113,0.10);
+    border: 1px solid rgba(248,113,113,0.30);
+}
+
+.cash-change-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.change-ok .cash-change-label  { color: #3ecf8e; }
+.change-short .cash-change-label { color: #f87171; }
+
+.cash-change-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+.change-ok .cash-change-val  { color: #6ee7b7; }
+.change-short .cash-change-val { color: #fca5a5; }
+
+/* 確認結帳大按鈕 */
+.cash-confirm-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1a8a5a 0%, #3ecf8e 50%, #1a8a5a 100%);
+    background-size: 200% auto;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.95rem;
+    font-family: 'Noto Sans TC', sans-serif;
+    letter-spacing: 0.8px;
+    border: none;
+    cursor: pointer;
+    transition: background-position 0.3s, transform 0.12s, box-shadow 0.2s, opacity 0.2s;
+    box-shadow: 0 4px 16px rgba(62,207,142,0.35);
+}
+.cash-confirm-btn:hover:not(:disabled) {
+    background-position: right center;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 22px rgba(62,207,142,0.45);
+}
+.cash-confirm-btn:active:not(:disabled) { transform: scale(0.97); }
+.cash-confirm-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
 }
