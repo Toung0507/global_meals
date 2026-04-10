@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1.0] - 2026-04-10
+
+### Added
+- **信用卡付款完整流程（客戶端）**：3D 翻轉卡片視覺（CSS `perspective` + `rotateY`），正面深藍漸層 + 晶片/Logo SVG，背面磁條；卡號自動補空格（4 碼一組）、到期日自動補斜線、CVV 聚焦翻面；表單 Signal 驗證（16 碼卡號 / MM/YY / CVV ≥ 3 / 持卡人非空），未通過時確認按鈕禁用
+- **行動支付 QR Code 流程（客戶端）**：SVG 手繪 QR Code（finder patterns + 資料模組 + 米飯中心圖示）含金額 badge；「模擬手機掃碼」開啟手機外框 Modal，顯示完整訂單品項；確認付款後觸發成功動畫（ripple / 圓形縮放 / 路徑打勾 / 文字淡入），2.2 秒自動完成訂單
+- **聯絡電話輸入欄（客戶端結帳）**：取代舊版訂單備註欄；會員自動帶入已登記電話號碼，訪客為必填（未填寫時送出按鈕鎖定）
+- **活動輪播（Promo Banner）**：3 個活動自動輪播（每 3 秒切換），支援手動圓點切換，SVG 禮物圖示取代 emoji，修正 translateX 比例避免跑版
+- **今日優惠左側捲動按鈕**：在今日優惠區塊新增 `<` 按鈕，與既有 `>` 按鈕對稱
+
+### Changed
+- **全站價格字體統一（客戶端）**：精選商品卡、今日優惠卡、菜單商品、Hero 區塊，所有 NT$ 數字統一為 Fraunces serif italic 橙色（Hero 區白色）
+- **Demo 信用卡資訊**：在 `auth.service.ts` 測試會員帳號下新增 Demo 信用卡資料註解（`4532 1234 5678 9012`，到期 `12/28`，CVV `123`）
+
 ## [0.2.0.0] - 2026-04-09
 
 ### Added
