@@ -36,7 +36,9 @@
       "Bash(~/.claude/skills/gstack/bin/gstack-update-check)",
       "Bash(xargs grep:*)",
       "Bash(node_modules/.bin/tsc --noEmit)",
-      "Bash(echo \"Exit: $?\")"
+      "Bash(echo \"Exit: $?\")",
+      "Read(//c/Users/joker/OneDrive/桌面/團專/global_meals_gradle/**)",
+      "Read(//c/Users/joker/OneDrive/桌面/團專/**)"
     ]
   }
 }
