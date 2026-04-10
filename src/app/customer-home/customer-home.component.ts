@@ -100,6 +100,10 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   private heroTimer: ReturnType<typeof setInterval> | null = null;
   private heroPaused = false;
 
+  /* ── 促銷橫幅輪播 ────────────────────────────────────── */
+  promoBannerIndex = signal(0);
+  private promoBannerTimer: ReturnType<typeof setInterval> | null = null;
+
   prevHeroSlide(): void {
     this.heroSlideIndex.update(
       (i) => (i - 1 + this.HERO_SLIDE_COUNT) % this.HERO_SLIDE_COUNT,
@@ -193,8 +197,83 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   /* ── 結帳：付款方式選擇 ────────────────────────────── */
   paymentMethod = signal<'credit' | 'mobile' | 'cash'>('cash');
 
-  /* ── 訂單備註 ───────────────────────────────────────── */
+  /* ── 訂單備註（暫停使用，以電話號碼欄取代）────────────── */
   orderNote = signal('');
+
+  /* ── 電話號碼（結帳用）─────────────────────────────────
+   * 會員：ngOnInit 自動填入 currentUser.phone
+   * 訪客：空白，為必填欄位（提交前需驗證）
+   * ────────────────────────────────────────────────── */
+  phoneNumber = signal('');
+
+  /** 訪客時電話為必填；會員時有預設值但可修改（均不能為空） */
+  isPhoneValid = computed(() => this.phoneNumber().trim().length > 0);
+
+  /* ── 信用卡表單 ─────────────────────────────────────────
+   * Demo 假卡：4532 1234 5678 9012 / 12/28 / CVV:123
+   * ─────────────────────────────────────────────────── */
+  cardNumber  = signal('');
+  cardExpiry  = signal('');
+  cardCvv     = signal('');
+  cardHolder  = signal('');
+  cardFlipped = signal(false);   /* true = 顯示卡背面（CVV 輸入中） */
+
+  /** 四欄均完整才視為有效 */
+  isCreditCardValid = computed(() => {
+    const num = this.cardNumber().replace(/\s/g, '');
+    return (
+      num.length === 16 &&
+      /^\d{2}\/\d{2}$/.test(this.cardExpiry()) &&
+      this.cardCvv().replace(/\D/g, '').length >= 3 &&
+      this.cardHolder().trim().length > 0
+    );
+  });
+
+  /** 格式化卡號：每 4 碼加空格 */
+  onCardNumberInput(val: string): void {
+    const clean = val.replace(/\D/g, '').slice(0, 16);
+    this.cardNumber.set(clean.match(/.{1,4}/g)?.join(' ') ?? clean);
+  }
+
+  /** 格式化到期日：第 3 碼前自動插入斜線 */
+  onCardExpiryInput(val: string): void {
+    const clean = val.replace(/\D/g, '').slice(0, 4);
+    this.cardExpiry.set(
+      clean.length >= 3 ? clean.slice(0, 2) + '/' + clean.slice(2) : clean
+    );
+  }
+
+  onCardCvvFocus(): void  { this.cardFlipped.set(true);  }
+  onCardCvvBlur(): void   { this.cardFlipped.set(false); }
+
+  /* ── 行動支付 QR Modal ──────────────────────────────── */
+  showMobilePayModal  = signal(false);
+  mobilePayCompleted  = signal(false);
+  private mobilePayTimer: ReturnType<typeof setTimeout> | null = null;
+
+  openMobilePayModal(): void {
+    this.showMobilePayModal.set(true);
+    this.mobilePayCompleted.set(false);
+  }
+
+  /** 使用者在 Modal 按下「確認付款」→ 顯示成功動畫 → 自動送出訂單 */
+  completeMobilePayment(): void {
+    this.mobilePayCompleted.set(true);
+    this.mobilePayTimer = setTimeout(() => {
+      this.showMobilePayModal.set(false);
+      this._doPlaceOrder();
+      this.isPlacingOrder.set(false);
+    }, 2200);
+  }
+
+  closeMobilePayModal(): void {
+    this.showMobilePayModal.set(false);
+    this.mobilePayCompleted.set(false);
+    if (this.mobilePayTimer) {
+      clearTimeout(this.mobilePayTimer);
+      this.mobilePayTimer = null;
+    }
+  }
 
   /* ── 下單中狀態（true 時按鈕顯示 spinner，防止重複送出） */
   isPlacingOrder = signal(false);
@@ -233,6 +312,10 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   scrollDeals(el: HTMLElement): void {
     /* 每次滾動一張卡片寬度（240px 卡片 + 12px gap） */
     el.scrollBy({ left: 252, behavior: 'smooth' });
+  }
+
+  scrollDealsLeft(el: HTMLElement): void {
+    el.scrollBy({ left: -252, behavior: 'smooth' });
   }
 
   /* ── 活動優惠選擇（每個活動有獨立贈品清單）─────────── */
@@ -303,6 +386,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   openOrderPreview(): void {
     if (this.cartItems().length === 0) return;
+    /* 訪客必須填入電話號碼才能送出 */
+    if (!this.isPhoneValid()) return;
     this.showOrderPreview.set(true);
   }
 
@@ -320,6 +405,14 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     this.selectedPromoGift.set('');
     this.promoGiftPanelOpen.set(false);
     this.useDiscountCoupon.set(false);
+    /* 重置信用卡表單 */
+    this.cardNumber.set('');
+    this.cardExpiry.set('');
+    this.cardCvv.set('');
+    this.cardHolder.set('');
+    this.cardFlipped.set(false);
+    /* 重置行動支付 Modal */
+    this.closeMobilePayModal();
     this.setTab('home');
   }
 
@@ -542,6 +635,17 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       }
     }, 5000);
 
+    /* 啟動促銷橫幅自動輪播（3 秒換一則活動） */
+    this.promoBannerTimer = setInterval(() => {
+      this.promoBannerIndex.update((i) => (i + 1) % this.PROMO_ACTIVITIES.length);
+    }, 3000);
+
+    /* 會員自動填入電話號碼（訪客保持空白，為必填） */
+    const user = this.authService.currentUser;
+    if (user && !user.isGuest && user.phone) {
+      this.phoneNumber.set(user.phone);
+    }
+
     // ⚠ TODO [API串接點 - 載入菜單商品]
     // 後端 ProductsController 建立後，取消下方區塊：
     // this.apiService.getAllActiveProducts().subscribe({
@@ -586,6 +690,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.heroTimer) clearInterval(this.heroTimer);
+    if (this.promoBannerTimer) clearInterval(this.promoBannerTimer);
+    if (this.mobilePayTimer) clearTimeout(this.mobilePayTimer);
   }
 
   /* ── 切換頁籤 ─────────────────────────────────────── */
@@ -664,6 +770,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   placeOrder(): void {
     if (this.cartItems().length === 0) return;
     if (this.isPlacingOrder()) return; /* 防重複送出 */
+    /* 信用卡付款必須完整填寫卡片資料才能送出 */
+    if (this.paymentMethod() === 'credit' && !this.isCreditCardValid()) return;
 
     this.isPlacingOrder.set(true);
 

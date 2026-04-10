@@ -709,16 +709,39 @@
             </div>
           </div>
 
-          <!-- 促銷橫幅 -->
+          <!-- 促銷橫幅：三個活動自動輪播（每 3 秒切換一則） -->
           <div class="home-promo-banner" (click)="setTab('menu')">
-            <div class="promo-content">
-              <span class="promo-icon">🎁</span>
-              <div class="promo-text">
-                <strong>消費滿 NT$300</strong>
-                <span>即贈招牌滷蛋 × 2</span>
-              </div>
+            <!-- 滑動軌道：transform 驅動橫向切換 -->
+            <div
+              class="promo-slide-track"
+              [style.transform]="'translateX(-' + (promoBannerIndex() * 33.3333) + '%)'"
+            >
+              @for (promo of PROMO_ACTIVITIES; track promo.name) {
+                <div class="promo-slide">
+                  <div class="promo-content">
+                    <!-- 禮物 SVG（取代 emoji，避免跨平台字型差異） -->
+                    <svg class="promo-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                      <rect x="2" y="7" width="20" height="5"></rect>
+                      <line x1="12" y1="22" x2="12" y2="7"></line>
+                      <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                      <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                    </svg>
+                    <div class="promo-text">
+                      <strong>{{ promo.name }}・消費滿 NT${{ promo.minSpend }}</strong>
+                      <span>即贈 {{ promo.gifts[0] }}</span>
+                    </div>
+                  </div>
+                  <span class="promo-arrow">→</span>
+                </div>
+              }
             </div>
-            <span class="promo-arrow">→</span>
+            <!-- 指示點：顯示目前是第幾則活動 -->
+            <div class="promo-dots">
+              @for (promo of PROMO_ACTIVITIES; track promo.name; let i = $index) {
+                <span class="promo-dot" [class.active]="promoBannerIndex() === i"></span>
+              }
+            </div>
           </div>
 
           <!-- 快速分類入口 -->
@@ -840,6 +863,21 @@
                   </div>
                 </div>
               </div>
+              <!-- 左側箭頭按鈕：點擊後向左滾動一張卡片 -->
+              <button
+                class="deal-scroll-arrow deal-scroll-arrow-left"
+                (click)="scrollDealsLeft(dealScrollEl)"
+                aria-label="向左捲動"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
               <!-- 右側箭頭按鈕：點擊後向右滾動一張卡片 -->
               <button
                 class="deal-scroll-arrow"
@@ -1946,7 +1984,7 @@
               </div>
             </div>
 
-            <!-- 備註欄位 -->
+            <!-- 備註欄位（暫停使用，改由電話號碼欄取代）
             <div class="checkout-note">
               <label class="checkout-note-label">訂單備註（選填）</label>
               <textarea
@@ -1957,76 +1995,307 @@
                 (input)="orderNote.set($any($event.target).value)"
               ></textarea>
             </div>
+            -->
 
-            <!-- 付款方式 -->
+            <!-- 電話號碼欄位
+                 ‧ 會員：預設自動填入帳號電話，可手動修改
+                 ‧ 訪客：空白＋必填，未填不能進入下一步 -->
+            <div class="checkout-note">
+              <label class="checkout-note-label">
+                聯絡電話
+                @if (isGuest()) {
+                  <span class="checkout-required-mark">*&nbsp;必填</span>
+                }
+              </label>
+              <input
+                type="tel"
+                class="checkout-note-input checkout-phone-input"
+                [placeholder]="isGuest() ? '請輸入電話號碼（訪客必填）' : '確認聯絡電話'"
+                [value]="phoneNumber()"
+                (input)="phoneNumber.set($any($event.target).value)"
+              />
+              <!-- 訪客未填時顯示提示 -->
+              @if (isGuest() && !isPhoneValid()) {
+                <span class="checkout-phone-hint">請填入電話號碼後才能送出訂單</span>
+              }
+            </div>
+
+            <!-- 付款方式選擇列 -->
             <div class="checkout-payment">
               <p class="checkout-payment-title">付款方式</p>
               <div class="payment-options">
-                <label
-                  class="payment-opt"
-                  [class.active]="paymentMethod() === 'credit'"
-                  (click)="setPaymentMethod('credit')"
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    [checked]="paymentMethod() === 'credit'"
-                  />
-                  <span class="payment-icon">💳</span>
+                <label class="payment-opt" [class.active]="paymentMethod() === 'credit'" (click)="setPaymentMethod('credit')">
+                  <input type="radio" name="payment" [checked]="paymentMethod() === 'credit'" />
+                  <svg class="payment-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                   <span>信用卡</span>
                 </label>
-                <label
-                  class="payment-opt"
-                  [class.active]="paymentMethod() === 'mobile'"
-                  (click)="setPaymentMethod('mobile')"
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    [checked]="paymentMethod() === 'mobile'"
-                  />
-                  <span class="payment-icon">📱</span>
+                <label class="payment-opt" [class.active]="paymentMethod() === 'mobile'" (click)="setPaymentMethod('mobile')">
+                  <input type="radio" name="payment" [checked]="paymentMethod() === 'mobile'" />
+                  <svg class="payment-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
                   <span>行動支付</span>
                 </label>
-                <label
-                  class="payment-opt"
-                  [class.active]="paymentMethod() === 'cash'"
-                  (click)="setPaymentMethod('cash')"
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    [checked]="paymentMethod() === 'cash'"
-                  />
-                  <span class="payment-icon">💵</span>
+                <label class="payment-opt" [class.active]="paymentMethod() === 'cash'" (click)="setPaymentMethod('cash')">
+                  <input type="radio" name="payment" [checked]="paymentMethod() === 'cash'" />
+                  <svg class="payment-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>
                   <span>現金</span>
                 </label>
               </div>
             </div>
 
-            <!-- 送出訂單（isPlacingOrder 防重複 + spinner 回饋） -->
-            <button
-              class="checkout-submit"
-              [class.is-placing]="isPlacingOrder()"
-              [disabled]="isPlacingOrder()"
-              (click)="placeOrder()"
-            >
-              @if (isPlacingOrder()) {
-                <!-- 處理中：ldrs ring spinner -->
-                <span class="placing-spinner" aria-hidden="true"></span>
-                處理中...
-              } @else {
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                >
-                  <polyline points="20 6 9 17 4 12" />
+            <!-- ╔══════════════════════════════════════╗
+                 ║  信用卡表單（選信用卡時顯示）          ║
+                 ╚══════════════════════════════════════╝ -->
+            @if (paymentMethod() === 'credit') {
+              <div class="credit-card-panel">
+
+                <!-- 3D 翻轉視覺卡片 -->
+                <div class="card-visual-wrap">
+                  <div class="card-visual" [class.flipped]="cardFlipped()">
+                    <!-- 正面 -->
+                    <div class="card-face card-front">
+                      <div class="card-front-top">
+                        <!-- 晶片圖示（SVG） -->
+                        <svg class="card-chip-svg" viewBox="0 0 38 28" fill="none">
+                          <rect width="38" height="28" rx="4" fill="#c9a84c"/>
+                          <rect x="1" y="9" width="36" height="10" fill="#b8963e" opacity=".6"/>
+                          <rect x="12" y="1" width="14" height="26" fill="#b8963e" opacity=".6"/>
+                          <rect x="4" y="4" width="30" height="20" rx="2" fill="none" stroke="#e2c97e" stroke-width="1"/>
+                          <line x1="19" y1="1" x2="19" y2="27" stroke="#c9a84c" stroke-width=".8"/>
+                          <line x1="1" y1="14" x2="37" y2="14" stroke="#c9a84c" stroke-width=".8"/>
+                        </svg>
+                        <div class="card-bank-name">懶飽飽銀行</div>
+                      </div>
+                      <div class="card-number-display">
+                        {{ cardNumber() || '•••• •••• •••• ••••' }}
+                      </div>
+                      <div class="card-front-bottom">
+                        <div class="card-bottom-field">
+                          <span class="card-field-label">持卡人</span>
+                          <span class="card-field-value">{{ cardHolder() || 'YOUR NAME' }}</span>
+                        </div>
+                        <div class="card-bottom-field">
+                          <span class="card-field-label">有效期限</span>
+                          <span class="card-field-value">{{ cardExpiry() || 'MM/YY' }}</span>
+                        </div>
+                        <div class="card-network">
+                          <svg viewBox="0 0 50 32" class="card-network-svg">
+                            <circle cx="18" cy="16" r="14" fill="#eb001b" opacity=".85"/>
+                            <circle cx="32" cy="16" r="14" fill="#f79e1b" opacity=".85"/>
+                            <path d="M25 5.5a14 14 0 0 1 0 21 14 14 0 0 1 0-21z" fill="#ff5f00" opacity=".9"/>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 背面 -->
+                    <div class="card-face card-back">
+                      <div class="card-mag-stripe"></div>
+                      <div class="card-cvv-area">
+                        <div class="card-sig-strip">
+                          <span class="card-sig-text">AUTHORIZED SIGNATURE</span>
+                          <div class="card-cvv-box">
+                            <span class="card-cvv-label">CVV</span>
+                            <span class="card-cvv-val">{{ cardCvv() || '•••' }}</span>
+                          </div>
+                        </div>
+                        <p class="card-back-note">此卡僅供 Demo 流程演示使用</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 輸入表單 -->
+                <div class="cc-form">
+                  <div class="cc-field">
+                    <label class="cc-label">卡號</label>
+                    <input
+                      type="text"
+                      class="cc-input"
+                      placeholder="1234 5678 9012 3456"
+                      maxlength="19"
+                      inputmode="numeric"
+                      [value]="cardNumber()"
+                      (input)="onCardNumberInput($any($event.target).value)"
+                    />
+                  </div>
+                  <div class="cc-row-2">
+                    <div class="cc-field">
+                      <label class="cc-label">有效期限</label>
+                      <input
+                        type="text"
+                        class="cc-input"
+                        placeholder="MM/YY"
+                        maxlength="5"
+                        inputmode="numeric"
+                        [value]="cardExpiry()"
+                        (input)="onCardExpiryInput($any($event.target).value)"
+                      />
+                    </div>
+                    <div class="cc-field">
+                      <label class="cc-label">安全碼 CVV</label>
+                      <input
+                        type="text"
+                        class="cc-input"
+                        placeholder="•••"
+                        maxlength="4"
+                        inputmode="numeric"
+                        [value]="cardCvv()"
+                        (input)="cardCvv.set($any($event.target).value.replace(/\D/g,'').slice(0,4))"
+                        (focus)="onCardCvvFocus()"
+                        (blur)="onCardCvvBlur()"
+                      />
+                    </div>
+                  </div>
+                  <div class="cc-field">
+                    <label class="cc-label">持卡人姓名（英文大寫）</label>
+                    <input
+                      type="text"
+                      class="cc-input"
+                      placeholder="CARDHOLDER NAME"
+                      [value]="cardHolder()"
+                      (input)="cardHolder.set($any($event.target).value.toUpperCase())"
+                    />
+                  </div>
+                  @if (cardNumber().length > 0 && !isCreditCardValid()) {
+                    <p class="cc-error">
+                      <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm-.75 3.75h1.5v4.5h-1.5v-4.5zm0 6h1.5v1.5h-1.5v-1.5z"/></svg>
+                      請確認卡片資料均填寫完整
+                    </p>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- ╔══════════════════════════════════════╗
+                 ║  行動支付 QR 碼（選行動支付時顯示）   ║
+                 ╚══════════════════════════════════════╝ -->
+            @if (paymentMethod() === 'mobile') {
+              <div class="mobile-pay-panel">
+                <div class="mp-amount-badge">NT$ {{ discountedTotal() }}</div>
+                <p class="mp-desc">請使用手機掃描以下 QR Code 完成付款</p>
+                <div class="qr-wrapper">
+                  <!-- QR Code SVG（Demo 假碼，視覺演示用） -->
+                  <svg class="qr-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="200" height="200" fill="#fff" rx="6"/>
+                    <!-- 定位方塊：左上 -->
+                    <rect x="12" y="12" width="56" height="56" fill="#111"/>
+                    <rect x="20" y="20" width="40" height="40" fill="#fff"/>
+                    <rect x="28" y="28" width="24" height="24" fill="#111"/>
+                    <!-- 定位方塊：右上 -->
+                    <rect x="132" y="12" width="56" height="56" fill="#111"/>
+                    <rect x="140" y="20" width="40" height="40" fill="#fff"/>
+                    <rect x="148" y="28" width="24" height="24" fill="#111"/>
+                    <!-- 定位方塊：左下 -->
+                    <rect x="12" y="132" width="56" height="56" fill="#111"/>
+                    <rect x="20" y="140" width="40" height="40" fill="#fff"/>
+                    <rect x="28" y="148" width="24" height="24" fill="#111"/>
+                    <!-- 時序條 horizontal -->
+                    <rect x="76" y="60" width="8" height="8" fill="#111"/>
+                    <rect x="92" y="60" width="8" height="8" fill="#111"/>
+                    <rect x="108" y="60" width="8" height="8" fill="#111"/>
+                    <rect x="124" y="60" width="8" height="8" fill="#111"/>
+                    <!-- 時序條 vertical -->
+                    <rect x="60" y="76" width="8" height="8" fill="#111"/>
+                    <rect x="60" y="92" width="8" height="8" fill="#111"/>
+                    <rect x="60" y="108" width="8" height="8" fill="#111"/>
+                    <rect x="60" y="124" width="8" height="8" fill="#111"/>
+                    <!-- Logo 中心白框 -->
+                    <rect x="82" y="82" width="36" height="36" fill="#fff" rx="4"/>
+                    <text x="100" y="107" text-anchor="middle" font-size="22" fill="#d95c1a">🍚</text>
+                    <!-- 資料模組（偽隨機視覺填充） -->
+                    <rect x="76" y="76" width="8" height="8" fill="#111"/>
+                    <rect x="124" y="76" width="8" height="8" fill="#111"/>
+                    <rect x="76" y="124" width="8" height="8" fill="#111"/>
+                    <rect x="140" y="76" width="8" height="8" fill="#111"/>
+                    <rect x="156" y="76" width="8" height="8" fill="#111"/>
+                    <rect x="172" y="76" width="8" height="8" fill="#111"/>
+                    <rect x="140" y="92" width="8" height="8" fill="#111"/>
+                    <rect x="164" y="92" width="8" height="8" fill="#111"/>
+                    <rect x="148" y="100" width="8" height="8" fill="#111"/>
+                    <rect x="172" y="100" width="8" height="8" fill="#111"/>
+                    <rect x="140" y="108" width="8" height="8" fill="#111"/>
+                    <rect x="156" y="108" width="8" height="8" fill="#111"/>
+                    <rect x="148" y="116" width="8" height="8" fill="#111"/>
+                    <rect x="164" y="116" width="8" height="8" fill="#111"/>
+                    <rect x="140" y="124" width="8" height="8" fill="#111"/>
+                    <rect x="172" y="124" width="8" height="8" fill="#111"/>
+                    <rect x="12" y="76" width="8" height="8" fill="#111"/>
+                    <rect x="28" y="76" width="8" height="8" fill="#111"/>
+                    <rect x="44" y="84" width="8" height="8" fill="#111"/>
+                    <rect x="12" y="92" width="8" height="8" fill="#111"/>
+                    <rect x="36" y="92" width="8" height="8" fill="#111"/>
+                    <rect x="20" y="100" width="8" height="8" fill="#111"/>
+                    <rect x="44" y="100" width="8" height="8" fill="#111"/>
+                    <rect x="28" y="108" width="8" height="8" fill="#111"/>
+                    <rect x="12" y="116" width="8" height="8" fill="#111"/>
+                    <rect x="44" y="116" width="8" height="8" fill="#111"/>
+                    <rect x="76" y="140" width="8" height="8" fill="#111"/>
+                    <rect x="92" y="140" width="8" height="8" fill="#111"/>
+                    <rect x="108" y="148" width="8" height="8" fill="#111"/>
+                    <rect x="124" y="140" width="8" height="8" fill="#111"/>
+                    <rect x="84" y="156" width="8" height="8" fill="#111"/>
+                    <rect x="100" y="156" width="8" height="8" fill="#111"/>
+                    <rect x="116" y="164" width="8" height="8" fill="#111"/>
+                    <rect x="76" y="164" width="8" height="8" fill="#111"/>
+                    <rect x="108" y="164" width="8" height="8" fill="#111"/>
+                    <rect x="92" y="172" width="8" height="8" fill="#111"/>
+                    <rect x="124" y="172" width="8" height="8" fill="#111"/>
+                    <rect x="76" y="180" width="8" height="8" fill="#111"/>
+                    <rect x="108" y="180" width="8" height="8" fill="#111"/>
+                    <rect x="116" y="76" width="8" height="8" fill="#111"/>
+                    <rect x="92" y="84" width="8" height="8" fill="#111"/>
+                    <rect x="108" y="92" width="8" height="8" fill="#111"/>
+                    <rect x="76" y="92" width="8" height="8" fill="#111"/>
+                    <rect x="100" y="100" width="8" height="8" fill="#111"/>
+                    <rect x="124" y="108" width="8" height="8" fill="#111"/>
+                    <rect x="84" y="116" width="8" height="8" fill="#111"/>
+                    <rect x="116" y="116" width="8" height="8" fill="#111"/>
+                  </svg>
+                  <p class="qr-expiry">此 QR Code 僅供演示 · 請在 5 分鐘內掃碼</p>
+                </div>
+                <!-- Demo 掃碼按鈕 -->
+                <button class="mp-scan-btn" (click)="openMobilePayModal()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18">
+                    <rect x="5" y="2" width="14" height="20" rx="2"/>
+                    <line x1="12" y1="18" x2="12.01" y2="18"/>
+                  </svg>
+                  模擬手機掃碼（Demo）
+                </button>
+                <p class="mp-note">實際場景：掃碼後手機將顯示訂單明細與付款確認畫面</p>
+              </div>
+            }
+
+            <!-- 送出訂單：現金 / 信用卡顯示按鈕；行動支付改為提示文字 -->
+            @if (paymentMethod() !== 'mobile') {
+              <button
+                class="checkout-submit"
+                [class.is-placing]="isPlacingOrder()"
+                [class.disabled]="paymentMethod() === 'credit' && !isCreditCardValid()"
+                [disabled]="isPlacingOrder() || (paymentMethod() === 'credit' && !isCreditCardValid())"
+                (click)="placeOrder()"
+              >
+                @if (isPlacingOrder()) {
+                  <span class="placing-spinner" aria-hidden="true"></span>
+                  處理中...
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  @if (paymentMethod() === 'credit') {
+                    確認付款（信用卡）— NT$ {{ discountedTotal() }}
+                  } @else {
+                    確認下單 — NT$ {{ discountedTotal() }}
+                  }
+                }
+              </button>
+            } @else {
+              <div class="mp-submit-hint">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
-                確認下單 — NT$ {{ discountedTotal() }}
-              }
-            </button>
+                請掃描上方 QR Code，在手機上完成付款
+              </div>
+            }
           </div>
           <div style="height: 80px"></div>
         </section>
@@ -2623,6 +2892,89 @@
     </nav>
   </div>
 </div>
+
+<!-- ═══════════════════════════════════════════════════════════
+   行動支付 Modal（模擬手機掃碼後的付款畫面）
+   ─ 點擊遮罩關閉（僅在未完成付款時）
+═══════════════════════════════════════════════════════════ -->
+@if (showMobilePayModal()) {
+  <div class="mobile-pay-overlay" (click)="!mobilePayCompleted() && closeMobilePayModal()">
+    <div class="mobile-phone-frame" (click)="$event.stopPropagation()">
+      <!-- 手機頂部瀏海 -->
+      <div class="phone-notch"></div>
+
+      <div class="phone-screen">
+        @if (!mobilePayCompleted()) {
+          <!-- ── 訂單確認畫面 ── -->
+          <div class="mp-screen-header">
+            <div class="mp-screen-brand">🍚 懶飽飽 Lazy BaoBao</div>
+            <div class="mp-screen-subtitle">行動支付確認</div>
+          </div>
+
+          <div class="mp-screen-amount">
+            <span class="mp-screen-amount-label">付款金額</span>
+            <span class="mp-screen-amount-value">NT$ {{ discountedTotal() }}</span>
+          </div>
+
+          <div class="mp-screen-divider"></div>
+
+          <div class="mp-screen-items">
+            <p class="mp-screen-items-title">訂單明細</p>
+            @for (item of cartItems(); track item.id) {
+              <div class="mp-screen-item">
+                <span class="mp-screen-item-name">{{ item.name }} × {{ item.quantity }}</span>
+                <span class="mp-screen-item-price">NT$ {{ item.price * item.quantity }}</span>
+              </div>
+            }
+            @if (selectedPromoGift() && selectedPromoName() !== '不參加活動優惠') {
+              <div class="mp-screen-item mp-screen-item-gift">
+                <span class="mp-screen-item-name">🎁 {{ selectedPromoGift() }}</span>
+                <span class="mp-screen-item-price">NT$ 0</span>
+              </div>
+            }
+            @if (useDiscountCoupon()) {
+              <div class="mp-screen-item mp-screen-item-discount">
+                <span class="mp-screen-item-name">折扣券（8 折）</span>
+                <span class="mp-screen-item-price">－ NT$ {{ discountAmount() }}</span>
+              </div>
+            }
+          </div>
+
+          <div class="mp-screen-total">
+            <span>合計</span>
+            <span class="mp-screen-total-amt">NT$ {{ discountedTotal() }}</span>
+          </div>
+
+          <button class="mp-confirm-pay-btn" (click)="completeMobilePayment()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            確認付款
+          </button>
+          <button class="mp-cancel-btn" (click)="closeMobilePayModal()">取消</button>
+
+        } @else {
+          <!-- ── 付款成功動畫 ── -->
+          <div class="mp-success-screen">
+            <div class="mp-success-ripple"></div>
+            <div class="mp-success-circle">
+              <svg class="mp-success-check" viewBox="0 0 52 52" fill="none">
+                <circle cx="26" cy="26" r="25" stroke="#fff" stroke-width="2" fill="none"/>
+                <polyline class="mp-check-stroke" points="14,27 22,35 38,18" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              </svg>
+            </div>
+            <p class="mp-success-title">付款成功！</p>
+            <p class="mp-success-amount">NT$ {{ discountedTotal() }}</p>
+            <p class="mp-success-msg">訂單正在備餐中，感謝您使用懶飽飽</p>
+          </div>
+        }
+      </div>
+
+      <!-- 手機底部 Home 指示線 -->
+      <div class="phone-home-bar"></div>
+    </div>
+  </div>
+}
 
 <!-- ═══════════════════════════════════════════════════════════
    退款申請 Modal

@@ -1434,6 +1434,15 @@
   color: rgba(255, 255, 255, 0.85);
   margin: 0;
   line-height: 1.6;
+
+  /* hero 卡片內的價格數字：同全站 Fraunces 斜體，保留白色（深色底背景） */
+  strong {
+    font-family: var(--font-serif);
+    font-size: 22px;
+    font-weight: 600;
+    font-style: italic;
+    color: #fff;
+  }
 }
 
 .hcs-desc-dark {
@@ -1857,6 +1866,7 @@
   line-height: 1.5;
 }
 
+/* 主廚推薦卡片定價：Fraunces 斜體橘色，全站統一價格數字風格 */
 .featured-price {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -1865,22 +1875,21 @@
 
   strong {
     font-family: var(--font-serif);
-    font-size: 19px;
+    font-size: 20px;
     font-weight: 600;
     color: var(--orange);
     font-style: italic;
   }
 }
 
-/* 促銷橫幅 */
+/* 促銷橫幅：三活動輪播容器 */
 .home-promo-banner {
   margin: 16px;
   background: linear-gradient(135deg, var(--orange), var(--gold));
   border-radius: 16px;
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  padding: 0;                           /* 由 promo-slide 自行撐高 */
+  overflow: hidden;                     /* 裁切滑出的 slide */
+  position: relative;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(217, 92, 26, 0.3);
   transition: transform 0.2s;
@@ -1890,14 +1899,39 @@
   }
 }
 
+/* 滑動軌道：寬度 = 100% × 活動數，transition 驅動 */
+.promo-slide-track {
+  display: flex;
+  width: 300%;                          /* 3 個 slide 並排 */
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* 每一則活動 slide：佔軌道 1/3（= 容器 100%）；min-width 防止 flex 壓縮跑板 */
+.promo-slide {
+  width: calc(100% / 3);
+  min-width: calc(100% / 3);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
 .promo-content {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.promo-icon {
-  font-size: 28px;
+/* SVG 禮物圖示：固定尺寸 + 白色，不受字型渲染影響 */
+.promo-icon-svg {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  color: #fff;
+  stroke: #fff;
 }
 
 .promo-text {
@@ -1907,7 +1941,8 @@
   color: #fff;
 
   strong {
-    font-size: 15px;
+    font-size: 14px;
+    line-height: 1.3;
   }
 
   span {
@@ -1920,6 +1955,34 @@
   color: #fff;
   font-size: 20px;
   opacity: 0.8;
+  flex-shrink: 0;
+}
+
+/* 指示點：固定在橫幅右下角 */
+.promo-dots {
+  position: absolute;
+  bottom: 7px;
+  right: 14px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  pointer-events: none;
+}
+
+/* 一般指示點：半透明小圓 */
+.promo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+  transition: width 0.3s ease, background 0.3s ease, border-radius 0.3s ease;
+
+  /* 目前活動：拉長成膠囊形，全白 */
+  &.active {
+    width: 16px;
+    border-radius: 3px;
+    background: #fff;
+  }
 }
 
 /* 快速分類格線 */
@@ -2058,16 +2121,20 @@
   white-space: nowrap;
 }
 
-/* 優惠價：橘紅醒目，數字特別粗大 */
+/* 優惠價：NT$ 前綴小字，數字用 Fraunces 斜體與全站統一 */
 .deal-sale {
-  font-size: 13px;
-  color: #d95c1a;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
   white-space: nowrap;
 
   strong {
-    font-size: 22px;
-    font-weight: 800;
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--orange);
+    font-style: italic;
     line-height: 1;
   }
 }
@@ -2742,13 +2809,17 @@
 }
 
 .menu-item-price {
-  font-size: 12px;
-  color: var(--text-mid);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
 
   strong {
-    font-family: var(--font-mono);
-    font-size: 18px;
+    font-family: var(--font-serif);
+    font-size: 20px;
+    font-weight: 600;
     color: var(--orange);
+    font-style: italic;
   }
 }
 
@@ -3219,6 +3290,12 @@
     background: #fff0e6;
     box-shadow: 0 4px 12px rgba(217, 92, 26, 0.28);
   }
+}
+
+/* 左側箭頭按鈕：覆寫 right 為 left 定位 */
+.deal-scroll-arrow-left {
+  right: auto;
+  left: 0;
 }
 
 /* 贈品選擇容器：取代原本 checkout-gift */
@@ -3786,20 +3863,32 @@
   font-weight: 700;
 }
 
-/* 備註欄 */
+/* 備註 / 電話欄共用容器 */
 .checkout-note {
   margin-bottom: 16px;
 }
 
 .checkout-note-label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   color: var(--text-mid);
   font-weight: 500;
   margin-bottom: 6px;
 }
 
+/* 必填紅字標示 */
+.checkout-required-mark {
+  font-size: 11px;
+  font-weight: 600;
+  color: #e05454;
+  letter-spacing: 0.02em;
+}
+
+/* textarea（備註）與 input[tel]（電話）共用外觀 */
 .checkout-note-input {
+  display: block;
   width: 100%;
   background: var(--bg-card);
   border: 1.5px solid var(--border-warm);
@@ -3810,6 +3899,7 @@
   color: var(--text-dark);
   resize: none;
   outline: none;
+  box-sizing: border-box;
   transition: border-color 0.2s;
 
   &::placeholder {
@@ -3819,6 +3909,22 @@
   &:focus {
     border-color: var(--border-focus);
   }
+}
+
+/* 電話欄專屬：移除 textarea 的 resize，保持單行高度 */
+.checkout-phone-input {
+  resize: none;
+  height: 42px;
+  line-height: 1.4;
+}
+
+/* 訪客未填電話時的提示文字 */
+.checkout-phone-hint {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: #e05454;
+  letter-spacing: 0.01em;
 }
 
 /* 付款方式 */
@@ -6313,4 +6419,746 @@
   color: #A89080;
   text-align: center;
   letter-spacing: 0.02em;
+}
+
+/* ══════════════════════════════════════════════════════
+   付款 SVG icon（取代 emoji）
+══════════════════════════════════════════════════════ */
+.payment-svg-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: inherit;
+  stroke: currentColor;
+}
+
+/* ══════════════════════════════════════════════════════
+   信用卡 3D 翻轉面板
+══════════════════════════════════════════════════════ */
+.credit-card-panel {
+  margin-bottom: 20px;
+}
+
+/* 外層透視容器 */
+.card-visual-wrap {
+  perspective: 1000px;
+  width: 100%;
+  max-width: 360px;
+  height: 210px;
+  margin: 0 auto 24px;
+}
+
+/* 翻轉容器 */
+.card-visual {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
+
+  &.flipped {
+    transform: rotateY(180deg);
+  }
+}
+
+/* 正面 / 背面共用 */
+.card-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  backface-visibility: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+/* ── 卡片正面 ── */
+.card-front {
+  background: linear-gradient(135deg, #0d1b4b 0%, #1a3a6b 50%, #0f2a50 100%);
+  color: #fff;
+  padding: 20px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  /* 裝飾光暈 */
+  &::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -50px;
+    left: -20px;
+    width: 200px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+
+.card-front-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-chip-svg {
+  width: 38px;
+  height: 28px;
+}
+
+.card-bank-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  opacity: 0.85;
+}
+
+.card-number-display {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 20px;
+  letter-spacing: 0.15em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  position: relative;
+  z-index: 1;
+}
+
+.card-front-bottom {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.card-bottom-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.card-field-label {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+  text-transform: uppercase;
+}
+
+.card-field-value {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-network {
+  flex-shrink: 0;
+}
+
+.card-network-svg {
+  width: 50px;
+  height: 32px;
+}
+
+/* ── 卡片背面 ── */
+.card-back {
+  background: linear-gradient(135deg, #1c1c2e 0%, #2d2d44 100%);
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 0;
+}
+
+.card-mag-stripe {
+  width: 100%;
+  height: 44px;
+  background: #111;
+  margin-top: 24px;
+}
+
+.card-cvv-area {
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card-sig-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: repeating-linear-gradient(
+    90deg,
+    #e8e0d8 0px,
+    #e8e0d8 12px,
+    #d0c8c0 12px,
+    #d0c8c0 14px
+  );
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+
+.card-sig-text {
+  font-size: 7px;
+  letter-spacing: 0.06em;
+  color: #555;
+  flex: 1;
+  font-style: italic;
+}
+
+.card-cvv-box {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  border-radius: 4px;
+  padding: 4px 8px;
+  flex-shrink: 0;
+}
+
+.card-cvv-label {
+  font-size: 8px;
+  color: #888;
+  letter-spacing: 0.06em;
+}
+
+.card-cvv-val {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #222;
+  letter-spacing: 0.1em;
+  min-width: 28px;
+}
+
+.card-back-note {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  text-align: center;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+/* ── 信用卡表單輸入 ── */
+.cc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cc-row-2 {
+  display: flex;
+  gap: 12px;
+
+  .cc-field {
+    flex: 1;
+  }
+}
+
+.cc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cc-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-mid);
+  letter-spacing: 0.03em;
+}
+
+.cc-input {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-warm);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 15px;
+  color: var(--text-dark);
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  letter-spacing: 0.05em;
+
+  &::placeholder {
+    color: #c0aea0;
+    font-family: var(--font-body);
+    letter-spacing: 0.02em;
+  }
+
+  &:focus {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px rgba(217, 92, 26, 0.12);
+  }
+}
+
+.cc-error {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #e05454;
+  margin: 0;
+  padding: 8px 10px;
+  background: rgba(224, 84, 84, 0.08);
+  border-radius: 8px;
+  letter-spacing: 0.02em;
+}
+
+/* 送出按鈕 disabled 狀態 */
+.checkout-submit.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ══════════════════════════════════════════════════════
+   行動支付 QR Code 面板
+══════════════════════════════════════════════════════ */
+.mobile-pay-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0 8px;
+  margin-bottom: 12px;
+}
+
+.mp-amount-badge {
+  background: linear-gradient(135deg, var(--orange), var(--gold));
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  padding: 8px 24px;
+  border-radius: 24px;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 12px rgba(217, 92, 26, 0.28);
+}
+
+.mp-desc {
+  font-size: 13px;
+  color: var(--text-mid);
+  text-align: center;
+  margin: 0;
+}
+
+.qr-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.qr-svg {
+  width: 200px;
+  height: 200px;
+  border: 8px solid #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.14);
+  display: block;
+}
+
+.qr-expiry {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.mp-scan-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #1a3a6b 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.mp-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.mp-submit-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  background: rgba(26, 58, 107, 0.06);
+  border: 1.5px dashed rgba(26, 58, 107, 0.25);
+  border-radius: 14px;
+  font-size: 13px;
+  color: #1a3a6b;
+  font-weight: 500;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+/* ══════════════════════════════════════════════════════
+   行動支付 Modal（手機畫面模擬）
+══════════════════════════════════════════════════════ */
+
+/* 全螢幕半透明遮罩 */
+.mobile-pay-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  animation: mpOverlayIn 0.25s ease;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+@keyframes mpOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* 手機外框 */
+.mobile-phone-frame {
+  width: 320px;
+  max-width: 100%;
+  background: #1a1a1a;
+  border-radius: 40px;
+  padding: 12px 6px 8px;
+  box-shadow:
+    0 0 0 2px #333,
+    0 24px 64px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  animation: mpPhoneIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes mpPhoneIn {
+  from { transform: scale(0.88) translateY(20px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* 頂部瀏海 */
+.phone-notch {
+  width: 100px;
+  height: 26px;
+  background: #1a1a1a;
+  border-radius: 0 0 18px 18px;
+  margin: 0 auto 4px;
+  position: relative;
+  z-index: 1;
+
+  /* 攝影機小點 */
+  &::after {
+    content: '';
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #2a2a2a;
+    box-shadow: inset 0 0 3px rgba(255,255,255,0.1);
+  }
+}
+
+/* 螢幕內容 */
+.phone-screen {
+  background: #f8f4ef;
+  border-radius: 30px;
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+/* 底部 Home 指示線 */
+.phone-home-bar {
+  width: 100px;
+  height: 4px;
+  background: #555;
+  border-radius: 2px;
+  margin: 8px auto 2px;
+}
+
+/* ── 訂單確認畫面 ── */
+.mp-screen-header {
+  text-align: center;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+
+.mp-screen-brand {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--orange);
+  letter-spacing: 0.02em;
+}
+
+.mp-screen-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.mp-screen-amount {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 0;
+}
+
+.mp-screen-amount-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mp-screen-amount-value {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--orange);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.mp-screen-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.07);
+  margin: 0 -18px;
+}
+
+.mp-screen-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mp-screen-items-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+}
+
+.mp-screen-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-dark);
+}
+
+.mp-screen-item-name {
+  flex: 1;
+  margin-right: 8px;
+}
+
+.mp-screen-item-price {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mp-screen-item-gift .mp-screen-item-price {
+  color: #2e7d32;
+}
+
+.mp-screen-item-discount .mp-screen-item-price {
+  color: #e05454;
+}
+
+.mp-screen-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0 4px;
+  border-top: 1.5px solid rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.mp-screen-total-amt {
+  font-size: 16px;
+  color: var(--orange);
+  font-weight: 800;
+}
+
+/* 確認付款按鈕（手機畫面內） */
+.mp-confirm-pay-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: linear-gradient(135deg, var(--orange), var(--orange-deep));
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 14px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 14px rgba(217, 92, 26, 0.3);
+  transition: opacity 0.15s;
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.mp-cancel-btn {
+  width: 100%;
+  background: transparent;
+  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  border-radius: 14px;
+  padding: 10px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+}
+
+/* ── 付款成功動畫 ── */
+.mp-success-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 20px 0 10px;
+  min-height: 360px;
+  position: relative;
+}
+
+/* 外部擴散漣漪 */
+.mp-success-ripple {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(46, 125, 50, 0.12);
+  animation: mpRipple 1.2s ease-out 0.2s both;
+}
+
+@keyframes mpRipple {
+  from { transform: scale(0); opacity: 0.8; }
+  to   { transform: scale(2.5); opacity: 0; }
+}
+
+/* 綠色成功圓圈 */
+.mp-success-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #388e3c, #2e7d32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 24px rgba(46, 125, 50, 0.35);
+  animation: mpCircleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes mpCircleIn {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* 勾勾 SVG（stroke-dasharray 動畫） */
+.mp-success-check {
+  width: 48px;
+  height: 48px;
+}
+
+.mp-check-stroke {
+  stroke-dasharray: 50;
+  stroke-dashoffset: 50;
+  animation: mpCheckDraw 0.45s ease-out 0.5s forwards;
+}
+
+@keyframes mpCheckDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+.mp-success-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #2e7d32;
+  letter-spacing: 0.02em;
+  margin: 0;
+  animation: mpFadeUp 0.4s ease 0.6s both;
+}
+
+.mp-success-amount {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0;
+  animation: mpFadeUp 0.4s ease 0.7s both;
+}
+
+.mp-success-msg {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+  animation: mpFadeUp 0.4s ease 0.8s both;
+}
+
+@keyframes mpFadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
