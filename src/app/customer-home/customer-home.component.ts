@@ -22,6 +22,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { QRCodeComponent } from 'angularx-qrcode';
 // import { RouterLink } from '@angular/router';
 import { AuthService } from '../shared/auth.service';
 import { LoadingService } from '../shared/loading.service';
@@ -86,7 +87,7 @@ interface NavTab {
 @Component({
   selector: 'app-customer-home',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, QRCodeComponent],
   templateUrl: './customer-home.component.html',
   styleUrls: ['./customer-home.component.scss'],
 })
@@ -245,6 +246,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   onCardCvvFocus(): void  { this.cardFlipped.set(true);  }
   onCardCvvBlur(): void   { this.cardFlipped.set(false); }
+  onCvvInput(value: string): void { this.cardCvv.set(value.replace(/\D/g, '').slice(0, 4)); }
 
   /* ── 行動支付 QR Modal ──────────────────────────────── */
   showMobilePayModal  = signal(false);
@@ -448,6 +450,18 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   /* 折扣省下金額 */
   discountAmount = computed(() => {
     return this.cartTotal() - this.discountedTotal();
+  });
+
+  /* 行動支付 QR Code URL（手機掃碼後開啟的付款確認頁） */
+  mobilePayUrl = computed(() => {
+    const items = this.cartItems().map(i => ({ name: i.name, qty: i.quantity, price: i.price }));
+    const params = new URLSearchParams({
+      store: '懶飽飽 Lazy BaoBao',
+      amount: this.discountedTotal().toString(),
+      items: JSON.stringify(items),
+      'ngrok-skip-browser-warning': 'true',
+    });
+    return `${window.location.origin}/mobile-pay?${params.toString()}`;
   });
 
   /* ── 即時追蹤訂單（從 OrderService 取得最新客戶訂單） ── */

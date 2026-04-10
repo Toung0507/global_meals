@@ -45,6 +45,74 @@ ng serve
 
 ---
 
+## Demo 公開連線設定（ngrok）
+
+本專案的行動支付 QR Code 採用 `window.location.origin` 動態產生網址，**不需修改任何程式碼**，只要透過 ngrok 對外公開即可讓手機掃碼連線。
+
+### 必要工具
+
+- **ngrok**：[下載頁面](https://ngrok.com/download) 或 `winget install ngrok.ngrok`
+- 安裝後執行一次：
+  ```bash
+  ngrok config add-authtoken <TOKEN>
+  ```
+  > Token 請向專案負責人索取
+
+### 每次啟動步驟
+
+**終端機 1 — 啟動前端：**
+```bash
+ng serve
+```
+
+**終端機 2 — 建立公開通道：**
+```bash
+ngrok http 4200
+```
+
+ngrok 啟動後會顯示類似下列的公開網址：
+```
+Forwarding  https://xxxx-xx-xx-xxx.ngrok-free.app → http://localhost:4200
+```
+
+**將該 ngrok 網址（而非 localhost）分享給手機掃碼**，QR Code 就會自動指向正確的公開網址。
+
+### 注意事項
+
+| 情境 | QR Code 指向 | 手機可掃 |
+|------|-------------|---------|
+| 直接用 `localhost:4200` 開啟 | `localhost:4200/mobile-pay` | ❌ 僅本機 |
+| 用 ngrok 網址開啟 | `https://xxxx.ngrok-free.app/mobile-pay` | ✅ 任何人 |
+
+- ngrok 免費版每次重啟網址會更換，重新執行 `ngrok http 4200` 即可，**不需改任何程式碼**
+- `angular.json` 已設定允許所有 ngrok 網域（`allowedHosts`），換網址後免重設
+- 手機掃碼時，電腦的 `ng serve` 與 `ngrok` 都必須保持執行中
+
+### 設定說明（`src/app/shared/demo.config.ts`）
+
+```ts
+// 若需強制指定 QR Code 目標網址（例：在 localhost 操作但 QR 指向 ngrok）
+// 可修改此檔案，否則 QR Code 自動使用當前瀏覽器的 origin
+export const DEMO_BASE_URL = 'https://your-ngrok-url.ngrok-free.app';
+```
+
+> 目前 `mobilePayUrl` 使用 `window.location.origin`，此設定檔**尚未啟用**。
+> 如需切換，請告知開發者啟用 `DEMO_BASE_URL`。
+
+### 掃碼付款實際運作流程
+
+1. 客戶端結帳頁選擇「行動支付」
+2. 系統以 `window.location.origin` 動態產生 QR Code URL，格式如下：
+   ```
+   https://<ngrok-url>/mobile-pay?store=懶飽飽&amount=<金額>&items=<品項JSON>
+   ```
+3. 手機掃描 QR Code → 開啟 `/mobile-pay` 付款確認頁
+4. 手機畫面點擊「確認付款」→ 電腦端觸發成功動畫並完成訂單建立
+
+> **注意**：手機掃碼頁（`/mobile-pay`）會自動在請求標頭帶入 `ngrok-skip-browser-warning: true`，跳過 ngrok 免費版的警告頁面，直接進入付款確認頁。
+
+---
+
 ## 測試帳號
 
 | 角色     | Email                   | 密碼        | 手機號碼       |
@@ -72,6 +140,7 @@ ng serve
 | `/customer-member`   | 客戶會員中心               | customer                |
 | `/manager-dashboard` | 老闆管理後台               | boss                    |
 | `/pos-terminal`      | 分店長 / 員工 POS 終端     | branch_manager、staff   |
+| `/mobile-pay`        | 手機掃碼付款確認頁         | 所有人（由 QR Code 導入） |
 
 ---
 
