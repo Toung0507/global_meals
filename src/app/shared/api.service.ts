@@ -232,7 +232,7 @@ export interface UpdateGlobalAreaReq {
 }
 
 export interface DeleteGlobalAreaReq {
-  id: number;   /* 支援批次時後端可能接受 id 陣列，需確認後端 Req */
+  globalAreaIdList: number[];  /* 後端 @NotEmpty List<Integer> */
 }
 
 export interface GlobalAreaRes extends BasicRes {

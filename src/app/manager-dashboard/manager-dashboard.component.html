@@ -93,8 +93,6 @@
     >
       <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> 帳號管理
     </div>
-    <!-- 稅率設定：台灣展示期間暫時隱藏 -->
-    <!--
     <div
       class="nav-item"
       [class.active]="activeTab() === 'tax'"
@@ -102,7 +100,6 @@
     >
       <span class="nav-icon">🌍</span> 稅率設定
     </div>
-    -->
     <!-- 暫時停用：財務報表 -->
     <!--
     <div
@@ -989,16 +986,22 @@
       </div>
       <div class="modal-bd">
         <div class="mb-3">
-          <label class="modal-label">活動標題 <span class="required">*</span></label>
+          <label class="modal-label">活動名稱 <span class="required">*</span></label>
           <input type="text" class="form-control form-ctrl"
-            [(ngModel)]="promoDraft.title"
-            placeholder="例：🎁 滿 $300 贈招牌滷蛋×2" />
+            [(ngModel)]="promoDraft.name"
+            placeholder="例：滿 $300 贈招牌滷蛋×2" />
         </div>
-        <div class="mb-3">
-          <label class="modal-label">套用範圍 / 期限說明</label>
-          <input type="text" class="form-control form-ctrl"
-            [(ngModel)]="promoDraft.scope"
-            placeholder="例：全部分店 · 期限：2026-12-31" />
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="modal-label">開始日期 <span class="required">*</span></label>
+            <input type="date" class="form-control form-ctrl"
+              [(ngModel)]="promoDraft.startTime" />
+          </div>
+          <div class="col-6">
+            <label class="modal-label">結束日期 <span class="required">*</span></label>
+            <input type="date" class="form-control form-ctrl"
+              [(ngModel)]="promoDraft.endTime" />
+          </div>
         </div>
         <div class="mb-2">
           <label class="modal-label">左側標記色</label>
@@ -1008,6 +1011,9 @@
               style="width:52px;height:38px;padding:3px;cursor:pointer" />
             <div class="promo-preview-bar" [style.background]="promoDraft.color"></div>
           </div>
+        </div>
+        <div style="font-size:0.76rem;color:#8A9AB0;margin-top:4px">
+          ⚠️ 若需同時新增贈品規則，請在建立活動後至後台另行設定。
         </div>
       </div>
       <div class="modal-ft">
@@ -1109,11 +1115,6 @@
             <input type="text" class="form-control form-ctrl"
               [(ngModel)]="taxDraft.country" placeholder="例：韓國" />
           </div>
-        </div>
-        <div class="mb-3">
-          <label class="modal-label">分店名稱（空白則自動生成）</label>
-          <input type="text" class="form-control form-ctrl"
-            [(ngModel)]="taxDraft.branch" placeholder="例：韓國首爾店" />
         </div>
         <div class="mb-2">
           <label class="modal-label">稅率（%）</label>

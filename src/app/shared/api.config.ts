@@ -15,69 +15,61 @@
 // =====================================================
 
 export const API_CONFIG = {
-  BASE_URL: '',  // ⚠ 串接時填入後端 URL，例如 'http://localhost:8080'
+  BASE_URL: 'http://localhost:8080',  // ⚠ 後端 Spring Boot 預設 port
   TIMEOUT: 10000,  // 10 秒逾時
 
   // ── API 端點定義（與後端 Controller 路由完全對應）────
 
   ENDPOINTS: {
 
-    // 購物車（CartController，無 @RequestMapping 前綴）
-    // ⚠ 注意：路徑不含 /api/（舊版錯誤），正確格式為 cart/...
+    // 購物車（CartController，@RequestMapping("lazybaobao/cart")）
     CART: {
-      VIEW:    'cart/:cartId',   // GET    查看購物車（?memberId=X）
-      SYNC:    'cart/sync',      // POST   新增/更新商品
-      REMOVE:  'cart/item',      // DELETE 刪除單品（@RequestBody CartRemoveReq）
-      GIFT:    'cart/gift',      // POST   使用者選擇贈品（★新增）
-      CLEAR:   'cart/clear',     // DELETE 清空購物車（★新增）
-      // ⚠ coupon 端點已不存在，已移除
+      VIEW:    'lazybaobao/cart/:cartId',        // GET    查看購物車（?memberId=X）
+      SYNC:    'lazybaobao/cart/sync_item',      // POST   新增/更新商品
+      REMOVE:  'lazybaobao/cart/remove_item',    // DELETE 刪除單品
+      GIFT:    'lazybaobao/cart/select_gift',    // POST   使用者選擇贈品
+      CLEAR:   'lazybaobao/cart/clear_cart',     // DELETE 清空購物車
     },
 
-    // 訂單（OrdersController，無 @RequestMapping 前綴，注意大寫 O）
+    // 訂單（OrdersController，@RequestMapping("lazybaobao/orders")）
     ORDERS: {
-      CREATE:        'Orders/createOrdersRes',   // POST 成立訂單（UNPAID）
-      PAY:           'Orders/pay',               // POST 結帳（→ COMPLETED）
-      GET_ALL:       'Orders/GetAllOrdersList',  // POST 取得歷史訂單
-      BY_PHONE:      'Orders/getOrderByPhone',   // GET  以電話查詢 UNPAID 訂單
-      UPDATE_STATUS: 'Orders/ordersStatus',      // POST 退款/取消
+      CREATE:        'lazybaobao/orders/create_order',       // POST 成立訂單（UNPAID）
+      PAY:           'lazybaobao/orders/pay',                // POST 結帳（→ COMPLETED）
+      GET_ALL:       'lazybaobao/orders/get_all_orders',     // POST 取得歷史訂單
+      BY_PHONE:      'lazybaobao/orders/get_order_by_phone', // GET  以電話查詢 UNPAID 訂單
+      UPDATE_STATUS: 'lazybaobao/orders/update_status',      // POST 退款/取消
     },
 
-    // 促銷活動（PromotionsManageController，已完成！）
-    // 注意：管理端用 /promotions/...（有斜線前綴）
-    //       舊端點用 Promotions/...（無斜線，大寫 P）
+    // 促銷活動（PromotionsManageController，@RequestMapping("lazybaobao/promotions")）
     PROMOTIONS: {
-      LIST:            '/promotions/list',              // GET  取得全部活動及贈品（管理端）
-      CREATE:          '/promotions/create',            // POST 建立活動（可附贈品規則）
-      TOGGLE:          '/promotions/toggle',            // POST 啟用/停用活動
-      CALCULATE:       '/promotions/calculate',         // POST 結帳時計算促銷（折扣 + 贈品）
-      AVAILABLE_GIFTS: 'Promotions/getAvailableGifts',  // POST 取得可選贈品（QueryParam: ?amount=xxx）
-      // 舊管理端點（保留備用，建議優先使用上方新端點）
-      ADD_PROMOTION:   'Promotions/addPromotion',       // POST 新增活動（舊）
-      ADD_GIFT:        'Promotions/addPromotionGift',   // POST 新增贈品規則至活動（舊）
-      DELETE:          'Promotions/deletePromotion',    // DELETE Promotions/deletePromotion/{id}（舊）
+      LIST:            'lazybaobao/promotions/list',               // GET  取得全部活動及贈品（管理端）
+      CREATE:          'lazybaobao/promotions/create',             // POST 建立活動（可附贈品規則）
+      TOGGLE:          'lazybaobao/promotions/toggle_status',      // POST 啟用/停用活動
+      CALCULATE:       'lazybaobao/promotions/calculate',          // POST 結帳時計算促銷
+      AVAILABLE_GIFTS: 'lazybaobao/promotions/get_available_gifts',// POST 取得可選贈品（?amount=xxx）
+      ADD_GIFT:        'lazybaobao/promotions/add_gift',           // POST 新增贈品規則至活動
     },
 
-    // 分店（GlobalAreaController，無 @RequestMapping 前綴）
+    // 分店（GlobalAreaController，@RequestMapping("lazybaobao/global_area")）
     GLOBAL_AREA: {
-      GET_ALL: 'global_area/get_all_branch',  // GET  取得全部分店
-      CREATE:  'global_area/create',          // POST 新增分店
-      UPDATE:  'global_area/update',          // POST 修改分店
-      DELETE:  'global_area/delete',          // POST 刪除分店（支援批次）
+      GET_ALL: 'lazybaobao/global_area/get_all_branch', // GET  取得全部分店
+      CREATE:  'lazybaobao/global_area/create',         // POST 新增分店
+      UPDATE:  'lazybaobao/global_area/update',         // POST 修改分店
+      DELETE:  'lazybaobao/global_area/delete',         // POST 刪除分店（支援批次）
     },
 
-    // 稅率（RegionsController，@RequestMapping("/lazybaobao")）
-    // ⚠ 前綴是 /lazybaobao，完整路徑：/lazybaobao/regions/...
+    // 稅率（RegionsController，@RequestMapping("lazybaobao/regions")）
     REGIONS: {
-      GET_ALL: '/lazybaobao/regions/get_all_tax',  // GET  取得全部國家稅率
-      CREATE:  '/lazybaobao/regions/create',       // POST 新增國家稅率
-      UPDATE:  '/lazybaobao/regions/update',       // POST 更新國家稅率
+      GET_ALL: 'lazybaobao/regions/get_all_tax', // GET  取得全部國家稅率
+      CREATE:  'lazybaobao/regions/create',      // POST 新增國家稅率
+      UPDATE:  'lazybaobao/regions/update',      // POST 更新國家稅率
     },
 
-    // 匯率（ExchangeRatesController，無 @RequestMapping 前綴）
+    // 匯率（ExchangeRatesController，@RequestMapping("lazybaobao/exchange_rates")）
     // 匯率由後端排程自動更新，前端唯讀即可
     EXCHANGE_RATES: {
-      GET_ALL:      'exchange_rates/get_all_rates',     // GET  全部匯率
-      GET_BY_DATE:  'exchange_rates/get_rates_by_date', // POST 依日期查詢
+      GET_ALL:      'lazybaobao/exchange_rates/get_all_rates',     // GET  全部匯率
+      GET_BY_DATE:  'lazybaobao/exchange_rates/get_rates_by_date', // POST 依日期查詢
     },
 
     // ── 下方為後端尚未建立的 Controller，預留路由 ──────

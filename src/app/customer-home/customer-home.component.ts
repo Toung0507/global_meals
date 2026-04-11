@@ -27,8 +27,7 @@ import { QRCodeComponent } from 'angularx-qrcode';
 import { AuthService } from '../shared/auth.service';
 import { LoadingService } from '../shared/loading.service';
 import { OrderService } from '../shared/order.service';
-// ⚠ TODO [API串接點 - 步驟1]：取消下方 import（含所需型別）
-// import { ApiService, GetOrdersVo } from '../shared/api.service';
+import { ApiService, GetOrdersVo } from '../shared/api.service';
 
 /* ── 購物車品項型別 ─────────────────────────────────── */
 export interface CartItem {
@@ -633,8 +632,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     public authService: AuthService,
     private loadingService: LoadingService,
     public orderService: OrderService,
-    // ⚠ TODO [API串接點 - 步驟2]：取消下方 apiService 參數
-    // private apiService: ApiService,
+    private apiService: ApiService,
   ) {}
 
   ngOnInit(): void {
@@ -680,26 +678,32 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     //   error: (err) => console.error('[Customer] 載入菜單失敗', err)
     // });
 
-    // ⚠ TODO [API串接點 - 載入訂單歷史]
-    // 登入後立即取得真實歷史訂單（僅會員，訪客跳過）：
-    // const user = this.authService.currentUser;
-    // if (!user?.isGuest && user?.id) {
-    //   this.apiService.getAllOrders({ memberId: user.id }).subscribe({
-    //     next: (res) => {
-    //       this.orderHistoryList.set(res.orders.map((o: GetOrdersVo) => ({
-    //         id: o.orderId,
-    //         date: o.completedAt?.slice(0, 10) ?? '',
-    //         items: o.details.map(d => `${d.name} × ${d.quantity}`).join('、'),
-    //         total: o.totalAmount,
-    //         status: o.status === 'COMPLETED' ? 'completed'
-    //               : o.status === 'CANCELLED' ? 'cancelled'
-    //               : o.status === 'REFUNDED'  ? 'refunded'
-    //               : 'completed'
-    //       })));
-    //     },
-    //     error: (err) => console.error('[Customer] 載入訂單歷史失敗', err)
-    //   });
-    // }
+    /* 載入真實歷史訂單（僅會員，訪客跳過）
+     * ⚠ 需後端 MembersController 建立後，memberId 才會對應真實資料庫 ID
+     * 目前 AuthService 的 mock 帳號 id=1 為訪客預設，登入後 id 若有值則嘗試取得 */
+    const userForOrders = this.authService.currentUser;
+    if (!userForOrders?.isGuest && userForOrders?.id && userForOrders.id > 0) {
+      this.apiService.getAllOrders({ memberId: userForOrders.id }).subscribe({
+        next: (res) => {
+          if (res?.getOrderVoList?.length) {
+            this.orderHistoryList.set(res.getOrderVoList.map((o: GetOrdersVo) => ({
+              id: o.id,
+              date: o.completedAt?.slice(0, 10) ?? '',
+              items: (o.getOrdersDetailVoList ?? [])
+                .map(d => `${d.productName} × ${d.quantity}`)
+                .join('、'),
+              total: +o.totalAmount,
+              status: o.status === 'COMPLETED' ? 'completed' as const
+                    : o.status === 'CANCELLED' ? 'cancelled' as const
+                    : o.status === 'REFUNDED'  ? 'refunded'  as const
+                    : 'completed' as const
+            })));
+          }
+          /* 若後端回空清單，保留 mock 歷史訂單供 Demo 使用 */
+        },
+        error: () => console.warn('[Customer] 訂單歷史 API 連線失敗，使用 Demo 資料')
+      });
+    }
   }
 
   ngOnDestroy(): void {
