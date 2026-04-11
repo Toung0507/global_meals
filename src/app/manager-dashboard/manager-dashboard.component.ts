@@ -51,6 +51,9 @@ interface DashPromo {
   isActive: boolean;
   color: string;
   ended: boolean;
+  rawName: string;       /* API 原始名稱，toggle 時帶回後端（@NotBlank 需要）*/
+  rawStartTime: string;  /* YYYY-MM-DD，toggle 時帶回後端（@NotNull 需要）*/
+  rawEndTime: string;    /* YYYY-MM-DD，toggle 時帶回後端（@NotNull 需要）*/
 }
 
 /* ── 庫存型別 ──────────────────────────────────────── */
@@ -149,10 +152,10 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 活動清單（Signal） ─────────────────────────── */
   promos = signal<DashPromo[]>([
-    { id: 1, title: '🎁 滿 $300 贈招牌滷蛋×2', scope: '全部分店 · 期限：無限期',      isActive: true,  color: '#c49756', ended: false },
-    { id: 2, title: '🍱 週一 9 折優惠',          scope: '日本東京店 · 期限：2026-06-30', isActive: true,  color: '#4f8ef7', ended: false },
-    { id: 3, title: '🥤 加購飲品 $29',            scope: '泰國曼谷店 · 期限：2026-05-01', isActive: true,  color: '#3ecf8e', ended: false },
-    { id: 4, title: '🎊 週年慶全館 8 折',         scope: '全部分店 · 已結束',             isActive: false, color: 'rgba(255,255,255,0.15)', ended: true },
+    { id: 1, title: '🎁 滿 $300 贈招牌滷蛋×2', scope: '全部分店 · 期限：無限期',      isActive: true,  color: '#c49756',              ended: false, rawName: '滿 $300 贈招牌滷蛋×2', rawStartTime: '2026-01-01', rawEndTime: '2099-12-31' },
+    { id: 2, title: '🍱 週一 9 折優惠',          scope: '日本東京店 · 期限：2026-06-30', isActive: true,  color: '#4f8ef7',              ended: false, rawName: '週一 9 折優惠',         rawStartTime: '2026-01-01', rawEndTime: '2026-06-30' },
+    { id: 3, title: '🥤 加購飲品 $29',            scope: '泰國曼谷店 · 期限：2026-05-01', isActive: true,  color: '#3ecf8e',              ended: false, rawName: '加購飲品 $29',          rawStartTime: '2026-01-01', rawEndTime: '2026-05-01' },
+    { id: 4, title: '🎊 週年慶全館 8 折',         scope: '全部分店 · 已結束',             isActive: false, color: 'rgba(255,255,255,0.15)', ended: true,  rawName: '週年慶全館 8 折',       rawStartTime: '2025-01-01', rawEndTime: '2025-12-31' },
   ]);
 
   /* ── 庫存清單（Signal） ─────────────────────────── */
@@ -228,7 +231,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   ]);
 
   /* ── Modal 狀態 ─────────────────────────────────────── */
-  activeModal       = signal<'orderDetail' | 'addProduct' | 'addPromo' | 'addAccount' | 'addCountry' | 'addBranch' | 'editBranch' | null>(null);
+  activeModal       = signal<'orderDetail' | 'addProduct' | 'addPromo' | 'addGift' | 'addAccount' | 'addCountry' | 'addBranch' | 'editBranch' | null>(null);
   selectedOrder     = signal<DashOrder | null>(null);
   editingAccountId  = signal<number | null>(null);
   editingProductId  = signal<number | null>(null);
@@ -236,6 +239,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   /* ── 表單草稿（普通屬性，開啟 modal 時重置） ─────────── */
   productDraft = { name: '', category: '台式', price: 165, stock: 0, emoji: '🍜' };
   promoDraft   = { name: '', startTime: '', endTime: '', color: '#c49756' };
+  giftDraft    = { promoId: 0, rawName: '', rawStartTime: '', rawEndTime: '', fullAmount: 300, giftProductId: null as number | null, quantity: -1 };
   accountDraft: { name: string; account: string; branch: string; shift: string; role: 'bm' | 'staff'; isActive: boolean } =
     { name: '', account: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true };
   taxDraft = { flag: '🇹🇼', country: '', branch: '', rate: 5 };
@@ -374,9 +378,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         if (res?.regionsList?.length) {
           this.taxes.set(res.regionsList.map((r: RegionVO) => ({
             id: r.id,
-            flag: this.countryToFlag(r.country),
+            flag:    this.countryToFlag(r.country),
             country: r.country,
-            branch: r.currencyCode,
+            branch:  r.currencyCode,
             rate: +(+r.taxRate * 100).toFixed(2),
             editing: false,
             editValue: +(+r.taxRate * 100).toFixed(2)
@@ -398,7 +402,10 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
             scope: `${p.startTime} ～ ${p.endTime}`,
             isActive: p.active,
             color: p.active ? '#c49756' : 'rgba(255,255,255,0.18)',
-            ended: !!p.endTime && new Date(p.endTime) < new Date()
+            ended: !!p.endTime && new Date(p.endTime) < new Date(),
+            rawName:      p.name,
+            rawStartTime: p.startTime,
+            rawEndTime:   p.endTime,
           })));
         }
       },
@@ -455,7 +462,13 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.promos.update(list =>
       list.map(p => p.id === id ? { ...p, isActive: newActive, color: newActive ? '#c49756' : 'rgba(255,255,255,0.18)' } : p)
     );
-    this.apiService.togglePromotion({ name: '', startTime: '', endTime: '', promotionsId: id, active: newActive }).subscribe({
+    this.apiService.togglePromotion({
+      name:      current.rawName,
+      startTime: current.rawStartTime,
+      endTime:   current.rawEndTime,
+      promotionsId: id,
+      active:    newActive
+    }).subscribe({
       next: () => this.showToast(newActive ? '✅ 活動已啟用' : '⏸️ 活動已暫停'),
       error: () => {
         /* API 失敗時還原 */
@@ -464,6 +477,44 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         );
         this.showToast('❌ 切換失敗，請確認後端連線');
       }
+    });
+  }
+
+  /* ── 活動：新增贈品規則 ─────────────────────────── */
+  openAddGift(promoId: number): void {
+    const promo = this.promos().find(p => p.id === promoId);
+    if (!promo) return;
+    this.giftDraft = {
+      promoId,
+      rawName:      promo.rawName,
+      rawStartTime: promo.rawStartTime,
+      rawEndTime:   promo.rawEndTime,
+      fullAmount:   300,
+      giftProductId: null,
+      quantity:     -1,
+    };
+    this.activeModal.set('addGift');
+  }
+
+  saveGift(): void {
+    if (this.giftDraft.giftProductId == null || this.giftDraft.giftProductId < 1) { this.showToast('⚠️ 請輸入贈品商品 ID（需大於 0）'); return; }
+    if (this.giftDraft.fullAmount <= 0) { this.showToast('⚠️ 滿額門檻需大於 0'); return; }
+    const d = this.giftDraft;
+    this.apiService.addGift({
+      name:         d.rawName,
+      startTime:    d.rawStartTime,
+      endTime:      d.rawEndTime,
+      promotionsId: d.promoId,
+      fullAmount:   d.fullAmount,
+      giftProductId: d.giftProductId!,
+      quantity:     d.quantity,
+    }).subscribe({
+      next: () => {
+        this.loadPromos();
+        this.closeModal();
+        this.showToast('✅ 贈品規則已新增');
+      },
+      error: () => this.showToast('❌ 新增失敗，請確認後端連線'),
     });
   }
 
@@ -667,7 +718,10 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
           scope: `${saved.startTime} ～ ${saved.endTime}`,
           isActive: true,
           color: saved.color,
-          ended: false
+          ended: false,
+          rawName:      saved.name.trim(),
+          rawStartTime: saved.startTime,
+          rawEndTime:   saved.endTime,
         }]);
         this.closeModal();
         this.showToast(`⚠️ 後端暫不可用，僅本地新增活動「${saved.name.trim()}」`);

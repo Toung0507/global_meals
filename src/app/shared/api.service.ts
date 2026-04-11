@@ -492,6 +492,11 @@ export class ApiService {
     return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.TOGGLE}`, req);
   }
 
+  /** 對既有活動新增一條贈品規則 */
+  addGift(req: PromotionsManageReq): Observable<BasicRes> {
+    return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.ADD_GIFT}`, req);
+  }
+
   /* ══════════════════════════════════════════════════
    * GlobalArea API  →  global_area/
    * ══════════════════════════════════════════════════ */

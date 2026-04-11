@@ -70,11 +70,11 @@
 | 方法          | 端點                                        | HTTP | 測試結果    | 備註                                 |
 | ------------- | ------------------------------------------- | ---- | ----------- | ------------------------------------ |
 | 取得促銷列表  | `lazybaobao/promotions/list`                | GET  | ✅ **成功** | 瀏覽器確認回傳 200，前端 UI 正常載入 |
-| 新增活動      | `lazybaobao/promotions/create`              | POST | ⏳ **待測** | 資料庫尚無資料，需透過 UI 新增後驗證 |
-| 啟用/停用切換 | `lazybaobao/promotions/toggle_status`       | POST | ⏳ **待測** | 需先有活動資料才能測試               |
-| 計算促銷金額  | `lazybaobao/promotions/calculate`           | POST | ⏳ **待測** | 結帳流程觸發，與模組 A 訂單串接相關  |
-| 取得可選贈品  | `lazybaobao/promotions/get_available_gifts` | POST | ⏳ **待測** | 需有贈品規則資料                     |
-| 新增贈品規則  | `lazybaobao/promotions/add_gift`            | POST | ⏳ **待測** | 需先有活動 id                        |
+| 新增活動      | `lazybaobao/promotions/create`              | POST | ✅ **成功** | 資料寫入 `promotions` 資料表，UI 正常顯示 |
+| 啟用/停用切換 | `lazybaobao/promotions/toggle_status`       | POST | ✅ **成功** | UI 即時切換，DB `is_active` 同步更新      |
+| 計算促銷金額  | `lazybaobao/promotions/calculate`           | POST | ⏳ **待測** | 結帳流程觸發，與模組 A 訂單串接相關       |
+| 取得可選贈品  | `lazybaobao/promotions/get_available_gifts` | POST | ⏳ **待測** | 需有贈品規則資料                          |
+| 新增贈品規則  | `lazybaobao/promotions/add_gift`            | POST | ✅ **成功** | 資料寫入 `promotions_gifts`，外鍵正確對應 |
 
 ---
 
@@ -127,10 +127,10 @@
 
 | 模組                            | 已串接 | 待測   | 後端未建 |
 | ------------------------------- | ------ | ------ | -------- |
-| 🔴 模組 C（分店 / 稅率 / 促銷） | **7**  | 5      | 0        |
+| 🔴 模組 C（分店 / 稅率 / 促銷） | **10** | 2      | 0        |
 | 🟢 模組 A（購物車 / 訂單）      | 0      | **10** | 0        |
 | 🔵 模組 B（商品 / AI）          | 0      | 0      | **5**    |
 
-> **已成功串接 7 支 API**，全部屬於模組 C 後台管理功能。
+> **已成功串接 10 支 API**，全部屬於模組 C 後台管理功能。
 > 模組 A 後端 Controller 已建立，可進行前後端整合測試。
 > 模組 B 後端尚未建立，前端持續以 mock 資料展示。

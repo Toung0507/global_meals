@@ -98,7 +98,7 @@
       [class.active]="activeTab() === 'tax'"
       (click)="setTab('tax')"
     >
-      <span class="nav-icon">🌍</span> 稅率設定
+      <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> 稅率設定
     </div>
     <!-- 暫時停用：財務報表 -->
     <!--
@@ -499,6 +499,8 @@
                 } @else {
                   <span class="badge-warn">已暫停</span>
                 }
+                <button class="btn btn-sm btn-ghost-gold" style="font-size:0.72rem;padding:2px 8px;"
+                  (click)="openAddGift(promo.id)">+ 贈品規則</button>
                 <div class="form-check form-switch mb-0">
                   <input class="form-check-input" type="checkbox"
                     [checked]="promo.isActive"
@@ -1019,6 +1021,45 @@
       <div class="modal-ft">
         <button class="btn btn-sm btn-ghost-red" (click)="closeModal()">取消</button>
         <button class="btn btn-sm btn-gold" (click)="savePromo()">確認新增</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════
+     Modal：新增贈品規則
+     ════════════════════════════════════════════════════ -->
+@if (activeModal() === 'addGift') {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-hd">
+        <div class="modal-hd-title">🎁 新增贈品規則</div>
+        <button class="modal-close-btn" (click)="closeModal()">✕</button>
+      </div>
+      <div class="modal-bd">
+        <div class="mb-3" style="font-size:0.8rem;color:#8A9AB0;">
+          活動：<span style="color:#c49756;font-weight:600;">{{ giftDraft.rawName }}</span>
+        </div>
+        <div class="mb-3">
+          <label class="modal-label">滿額門檻（元）<span class="required">*</span></label>
+          <input type="number" class="form-control form-ctrl"
+            [(ngModel)]="giftDraft.fullAmount" min="1" placeholder="例：300" />
+        </div>
+        <div class="mb-3">
+          <label class="modal-label">贈品商品 ID <span class="required">*</span></label>
+          <input type="number" class="form-control form-ctrl"
+            [(ngModel)]="giftDraft.giftProductId" min="1" placeholder="輸入商品 ID（後台商品管理取得）" />
+        </div>
+        <div class="mb-2">
+          <label class="modal-label">贈品數量</label>
+          <input type="number" class="form-control form-ctrl"
+            [(ngModel)]="giftDraft.quantity" placeholder="-1 代表無限供應" />
+          <div style="font-size:0.73rem;color:#8A9AB0;margin-top:4px">-1 = 無限供應；輸入正整數 = 限量</div>
+        </div>
+      </div>
+      <div class="modal-ft">
+        <button class="btn btn-sm btn-ghost-red" (click)="closeModal()">取消</button>
+        <button class="btn btn-sm btn-gold" (click)="saveGift()">確認新增</button>
       </div>
     </div>
   </div>
