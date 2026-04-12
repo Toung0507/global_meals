@@ -119,20 +119,20 @@ rate.api.key=demo
 
 ---
 
-### 🟢 模組 A：購物車與訂單（後端 Controller 已建立，待整合）
+### 🟢 模組 A：購物車與訂單
 
 > 進入路徑：`http://localhost:4200`（客戶端點餐流程）
 
 | # | 操作 | 預期結果 | 狀態 |
 |---|------|---------|------|
-| 1 | 新增商品至購物車 | 購物車同步到後端（`cart/sync_item`） | ⏳ |
+| 1 | 新增商品至購物車 | 購物車同步到後端（`cart/sync_item`） | ✅ |
 | 2 | 查看購物車（GET cart） | 從後端讀取，而非本地 | ⏳ |
 | 3 | 刪除購物車單品 | 後端同步刪除（`cart/remove_item`） | ⏳ |
 | 4 | 清空購物車 | 後端同步清空（`cart/clear_cart`） | ⏳ |
-| 5 | 完成結帳（建立訂單） | 訂單寫入 DB（`orders/create_order`） | ⏳ |
-| 6 | 選擇付款方式並完成付款 | 訂單狀態更新為 COMPLETED（`orders/pay`） | ⏳ |
+| 5 | 完成結帳（建立訂單） | 訂單寫入 DB（`orders/create_order`） | ✅ |
+| 6 | 選擇付款方式並完成付款 | 訂單狀態更新為 COMPLETED（`orders/pay`） | ✅ |
 | 7 | 以電話查詢 UNPAID 訂單 | 回傳未付款訂單清單 | ⏳ |
-| 8 | 查看歷史訂單（會員登入後） | 訂單列表從 API 載入（`orders/get_all_orders`） | ⏳ |
+| 8 | 查看歷史訂單（會員登入後） | 訂單列表從 API 載入（`orders/get_all_orders`） | ✅ |
 
 ---
 

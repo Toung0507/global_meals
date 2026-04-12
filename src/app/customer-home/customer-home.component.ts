@@ -27,7 +27,8 @@ import { QRCodeComponent } from 'angularx-qrcode';
 import { AuthService } from '../shared/auth.service';
 import { LoadingService } from '../shared/loading.service';
 import { OrderService } from '../shared/order.service';
-import { ApiService, GetOrdersVo } from '../shared/api.service';
+import { firstValueFrom } from 'rxjs';
+import { ApiService, GetOrdersVo, CartSyncReq, CreateOrdersReq, PayReq, CartRemoveReq, CartClearReq } from '../shared/api.service';
 
 /* ── 購物車品項型別 ─────────────────────────────────── */
 export interface CartItem {
@@ -128,6 +129,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   /* ── 購物車 ─────────────────────────────────────────── */
   cartItems = signal<CartItem[]>([]);
+  currentCartId = signal<number | null>(null);
 
   cartCount = computed(() =>
     this.cartItems().reduce((sum, item) => sum + item.quantity, 0),
@@ -724,6 +726,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   addToCart(item: MenuItem): void {
     const current = this.cartItems();
     const existing = current.find((c) => c.id === item.id);
+    const newQty = existing ? existing.quantity + 1 : 1;
     if (existing) {
       this.cartItems.set(
         current.map((c) =>
@@ -745,6 +748,24 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       ]);
     }
     if (navigator.vibrate) navigator.vibrate(30);
+    this._syncCartItemToBackend(item.id, newQty);
+  }
+
+  private _syncCartItemToBackend(productId: number, quantity: number): void {
+    const user = this.authService.currentUser;
+    const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
+    const req: CartSyncReq = {
+      cartId: this.currentCartId(),
+      globalAreaId: 1,
+      productId,
+      quantity,
+      operationType: 'CUSTOMER',
+      memberId,
+    };
+    this.apiService.syncCart(req).subscribe({
+      next: (res) => this.currentCartId.set(res.cartId),
+      error: (err) => console.warn('[Cart] sync_item 失敗', err),
+    });
   }
 
   /* ── 更新購物車數量 ──────────────────────────────── */
@@ -755,21 +776,53 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     const newQty = item.quantity + delta;
     if (newQty <= 0) {
       this.cartItems.set(current.filter((c) => c.id !== id));
+      const cartId = this.currentCartId();
+      if (cartId !== null) {
+        const user = this.authService.currentUser;
+        const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
+        this.apiService.removeCartItem({ cartId, productId: id, memberId }).subscribe({
+          error: (err) => console.warn('[Cart] remove_item 失敗', err),
+        });
+      }
     } else {
       this.cartItems.set(
         current.map((c) => (c.id === id ? { ...c, quantity: newQty } : c)),
       );
+      this._syncCartItemToBackend(id, newQty);
     }
   }
 
   /* ── 從購物車移除 ─────────────────────────────────── */
   removeFromCart(id: number): void {
+    const cartId = this.currentCartId();
+    if (cartId !== null) {
+      const user = this.authService.currentUser;
+      const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
+      this.apiService.removeCartItem({ cartId, productId: id, memberId }).subscribe({
+        error: (err) => console.warn('[Cart] remove_item 失敗', err),
+      });
+    }
     this.cartItems.set(this.cartItems().filter((c) => c.id !== id));
   }
 
-  /* ── 清空購物車 ──────────────────────────────────── */
+  /* ── 清空購物車（同步後端，用於取消訂單）──────────── */
   clearCart(): void {
+    const cartId = this.currentCartId();
+    if (cartId !== null) {
+      const user = this.authService.currentUser;
+      const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
+      this.apiService.clearCart({ cartId, memberId }).subscribe({
+        error: (err) => console.warn('[Cart] clear_cart 失敗', err),
+      });
+      this.currentCartId.set(null);
+    }
     this.cartItems.set([]);
+  }
+
+  /* ── 訂單成功後重置本地購物車（不刪後端明細，保留訂單歷史）── */
+  private resetLocalCart(): void {
+    this.cartItems.set([]);
+    this.currentCartId.set(null);
   }
 
   /* ── 前往結帳 ─────────────────────────────────────── */
@@ -800,68 +853,96 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   private _doPlaceOrder(): void {
-    // ⚠ TODO [API串接點 - 下單與結帳]
-    // 串接後，此方法整體替換為以下兩步驟流程：
-    //
-    // 步驟 A：先同步購物車至後端（或直接用前端 cartId）
-    // 步驟 B：createOrder → 取得 orderId / orderDateId
-    // 步驟 C：pay → 結帳完成
-    //
-    // const user = this.authService.currentUser;
-    // const cartReq = {
-    //   cartId: 0,                                    // 0 = 新建購物車
-    //   globalAreaId: 1,                              // 需從 branch 選擇取得
-    //   productId: 0,                                 // 逐筆 syncCart 後再 createOrder
-    //   quantity: 1,
-    //   operation: user?.id ?? 0,
-    //   operationType: 'CUSTOMER' as const
-    // };
-    // this.apiService.createOrder({
-    //   cartId: 0,                                    // 使用已同步的購物車 ID
-    //   globalAreaId: 1,
-    //   memberId: user?.isGuest ? 0 : (user?.id ?? 0),
-    //   phone: user?.phone ?? '',
-    //   paymentMethod: this.paymentMethod().toUpperCase()
-    // }).subscribe({
-    //   next: (orderRes) => {
-    //     this.apiService.pay({
-    //       orderId: orderRes.orderId,
-    //       orderDateId: orderRes.orderDateId
-    //     }).subscribe({
-    //       next: () => { /* 清空購物車 + 跳訂單追蹤 */ },
-    //       error: () => console.error('[Customer] 結帳失敗')
-    //     });
-    //   },
-    //   error: () => console.error('[Customer] 建立訂單失敗')
-    // });
+    this._doPlaceOrderAsync().catch(err => {
+      console.error('[Order] 下單失敗', err);
+      this.isPlacingOrder.set(false);
+    });
+  }
 
+  private async _doPlaceOrderAsync(): Promise<void> {
+    const items = this.cartItems();
+    const user  = this.authService.currentUser;
+    const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
+    const phone    = this.phoneNumber();
+
+    /* ── Step 1：取得後端購物車 ID
+     * eager sync 已完成 → 直接用；否則 fallback 逐筆同步 */
+    let cartId = this.currentCartId();
+    if (cartId === null) {
+      for (const item of items) {
+        const syncReq: CartSyncReq = {
+          cartId,
+          globalAreaId: 1,
+          productId: item.id,
+          quantity: item.quantity,
+          operationType: 'CUSTOMER',
+          memberId,
+        };
+        const cartRes = await firstValueFrom(this.apiService.syncCart(syncReq));
+        cartId = cartRes.cartId;
+      }
+      if (!cartId) throw new Error('購物車同步失敗');
+      this.currentCartId.set(cartId);
+    }
+
+    /* ── Step 2：建立訂單（UNPAID） ── */
+    const orderReq: CreateOrdersReq = {
+      orderCartId: String(cartId),
+      globalAreaId: 1,
+      memberId,
+      phone,
+      subtotalBeforeTax: this.cartTotal(),
+      taxAmount: 0,
+      totalAmount: this.cartTotal(),
+      orderCartDetailsList: items.map(i => ({
+        productId: i.id,
+        quantity: i.quantity,
+        isGift: false,
+      })),
+    };
+    const orderRes = await firstValueFrom(this.apiService.createOrder(orderReq));
+
+    /* ── Step 3：付款（→ COMPLETED） ── */
+    const payMethodMap: Record<string, string> = {
+      credit: 'CREDIT_CARD',
+      mobile: 'MOBILE_PAY',
+      cash:   'CASH',
+    };
+    const payReq: PayReq = {
+      id:            orderRes.id,
+      orderDateId:   orderRes.orderDateId,
+      paymentMethod: payMethodMap[this.paymentMethod()] ?? 'CASH',
+      transactionId: this.paymentMethod() === 'cash'
+        ? 'CASH_PAYMENT'
+        : `DEMO_TXN_${Date.now()}`,
+    };
+    await firstValueFrom(this.apiService.pay(payReq));
+
+    /* ── 成功後更新本地狀態 ── */
+    this._afterOrderSuccess(orderRes.id);
+  }
+
+  private _afterOrderSuccess(orderId: string): void {
     const now = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
-    const dateStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
     const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
     const orderNum = this.orderService.generateOrderNumber();
-    const orderId = this.orderService.generateOrderId();
 
     const itemTexts = this.cartItems().map((i) => `${i.name} × ${i.quantity}`);
-
-    /* 若有選擇活動贈品，以「活動名稱 - 贈品」格式加入品項列表 */
     const promoGift = this.selectedPromoGift();
     const promoName = this.selectedPromoName();
     if (promoGift && promoName && promoName !== '不參加活動優惠') {
       itemTexts.push(`${promoName} - ${promoGift}`);
     }
     const totalQty = this.cartItems().reduce((s, i) => s + i.quantity, 0);
-    const estMin = Math.max(5, Math.ceil(totalQty * 2));
+    const estMin   = Math.max(5, Math.ceil(totalQty * 2));
 
-    /* 付款方式標籤 */
     const payLabels: Record<string, string> = {
-      credit: '信用卡',
-      mobile: '行動支付',
-      cash: '現金',
+      credit: '信用卡', mobile: '行動支付', cash: '現金',
     };
     const payLabel = payLabels[this.paymentMethod()] ?? '現金';
 
-    /* 推送至 OrderService → POS 看板即時同步 */
+    /* 推送至 POS 看板 */
     this.orderService.addOrder({
       id: orderId,
       number: orderNum,
@@ -875,7 +956,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       customerName: this.authService.currentUser?.name,
     });
 
-    /* 加入本地歷史訂單（最新在最上方） */
+    /* 加入本地歷史訂單 */
     this.orderHistoryList.set([
       {
         id: orderId,
@@ -887,12 +968,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       ...this.orderHistoryList(),
     ]);
 
-    /* 清空購物車與備註 */
-    this.clearCart();
+    this.resetLocalCart();
     this.orderNote.set('');
 
-    /* 折扣券使用：本次訂單算第 1 次，從 1 重新開始累積
-     * 未使用：+1，但上限 10（已達 10 次的話維持 10，不繼續往上）*/
     if (this.useDiscountCoupon()) {
       this.memberOrderCount.set(1);
       this.useDiscountCoupon.set(false);
@@ -900,12 +978,10 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       this.memberOrderCount.update((c) => Math.min(c + 1, 10));
     }
 
-    /* 重置活動贈品選擇 */
     this.selectedPromoName.set('');
     this.selectedPromoGift.set('');
     this.promoGiftPanelOpen.set(false);
-
-    /* 跳至訂單追蹤頁 */
+    this.isPlacingOrder.set(false);
     this.setTab('tracker');
   }
 

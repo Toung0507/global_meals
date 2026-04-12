@@ -82,18 +82,18 @@
 
 > 負責購物車、訂單、結帳
 
-| 端點                                   | HTTP   | 測試結果    | 備註                                 |
-| -------------------------------------- | ------ | ----------- | ------------------------------------ |
-| `lazybaobao/cart/:cartId`              | GET    | ⏳ **待測** | 後端 Controller 已建立，前端 mock 中 |
-| `lazybaobao/cart/sync_item`            | POST   | ⏳ **待測** | 後端 Controller 已建立               |
-| `lazybaobao/cart/remove_item`          | DELETE | ⏳ **待測** | 後端 Controller 已建立               |
-| `lazybaobao/cart/select_gift`          | POST   | ⏳ **待測** | 後端 Controller 已建立               |
-| `lazybaobao/cart/clear_cart`           | DELETE | ⏳ **待測** | 後端 Controller 已建立               |
-| `lazybaobao/orders/create_order`       | POST   | ⏳ **待測** | 後端 Controller 已建立               |
-| `lazybaobao/orders/pay`                | POST   | ⏳ **待測** | 後端 Controller 已建立               |
-| `lazybaobao/orders/get_all_orders`     | POST   | ⏳ **待測** | 後端 Controller 已建立               |
-| `lazybaobao/orders/get_order_by_phone` | GET    | ⏳ **待測** | 後端 Controller 已建立               |
-| `lazybaobao/orders/update_status`      | POST   | ⏳ **待測** | 後端 Controller 已建立               |
+| 端點                                   | HTTP   | 測試結果    | 備註                                                                 |
+| -------------------------------------- | ------ | ----------- | -------------------------------------------------------------------- |
+| `lazybaobao/cart/:cartId`              | GET    | ⏳ **待測** | 後端 Controller 已建立，前端 mock 中                                 |
+| `lazybaobao/cart/sync_item`            | POST   | ✅ **成功** | 前端逐品項同步，INSERT order_cart + order_cart_details 正常          |
+| `lazybaobao/cart/remove_item`          | DELETE | ⏳ **待測** | 後端 Controller 已建立                                               |
+| `lazybaobao/cart/select_gift`          | POST   | ⏳ **待測** | 後端 Controller 已建立                                               |
+| `lazybaobao/cart/clear_cart`           | DELETE | ⏳ **待測** | 後端 Controller 已建立                                               |
+| `lazybaobao/orders/create_order`       | POST   | ✅ **成功** | INSERT orders 寫入 DB，stock 扣減（樂觀鎖）正常，回傳 orderId + date |
+| `lazybaobao/orders/pay`                | POST   | ✅ **成功** | UPDATE status=COMPLETED、payment_method、transaction_id 正常         |
+| `lazybaobao/orders/get_all_orders`     | POST   | ✅ **成功** | 頁面初始化即呼叫，200 OK                                             |
+| `lazybaobao/orders/get_order_by_phone` | GET    | ⏳ **待測** | 後端 Controller 已建立                                               |
+| `lazybaobao/orders/update_status`      | POST   | ⏳ **待測** | 後端 Controller 已建立                                               |
 
 ---
 
@@ -125,12 +125,25 @@
 
 ## 總覽
 
-| 模組                            | 已串接 | 待測   | 後端未建 |
-| ------------------------------- | ------ | ------ | -------- |
-| 🔴 模組 C（分店 / 稅率 / 促銷） | **10** | 2      | 0        |
-| 🟢 模組 A（購物車 / 訂單）      | 0      | **10** | 0        |
-| 🔵 模組 B（商品 / AI）          | 0      | 0      | **5**    |
+| 模組                            | 已串接 | 待測  | 後端未建 |
+| ------------------------------- | ------ | ----- | -------- |
+| 🔴 模組 C（分店 / 稅率 / 促銷） | **10** | 2     | 0        |
+| 🟢 模組 A（購物車 / 訂單）      | **4**  | **6** | 0        |
+| 🔵 模組 B（商品 / AI）          | 0      | 0     | **5**    |
 
-> **已成功串接 10 支 API**，全部屬於模組 C 後台管理功能。
-> 模組 A 後端 Controller 已建立，可進行前後端整合測試。
+> **已成功串接 14 支 API**（模組 C 全 10 支 + 模組 A 4 支）。
+> 模組 A 已完成：`sync_item`、`create_order`、`pay`、`get_all_orders`。
+> 模組 A 待測：`cart/:cartId`、`remove_item`、`select_gift`、`clear_cart`、`get_order_by_phone`、`update_status`。
 > 模組 B 後端尚未建立，前端持續以 mock 資料展示。
+
+## 後端修正記錄（2026-04-12）
+
+| 檔案 | 問題 | 修正 |
+|------|------|------|
+| `products` DB | 缺少 `max_order_quantity`、`region_country`、`stock_quantity`、`version` 欄位 | ALTER TABLE 補齊 |
+| `CreateOrdersReq.java` | 欄位 `OrderCartDetailsList`（大寫O）Jackson 無法對應前端 `orderCartDetailsList` | 加 `@JsonProperty("orderCartDetailsList")` |
+| `OrdersDao.java` `insert` | VALUES 只有 7 個 `?`，欄位有 9 個 | 補齊 `?8, ?9` |
+| `OrdersDao.java` `updatePay` | 參數型別為 `OrdersStatus`，native query 無法轉字串 | 改為 `String status` |
+| `OrdersService.java` `pay()` | 傳 `OrdersStatus.COMPLETED`（enum object） | 改為 `OrdersStatus.COMPLETED.name()` |
+| `OrdersDao.java` `updateOrderStatus` | `date_id` 欄名錯誤 + `@Param("order_date_id")` 不符 `:orderDateId` | 改為 `order_date_id` + `@Param("orderDateId")` |
+| `OrdersDao.java` `upDateTotalAmount` | SQL 缺少 `orders SET` | 改為 `UPDATE orders SET total_amount = ...` |

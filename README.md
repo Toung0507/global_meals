@@ -171,10 +171,10 @@ export const DEMO_BASE_URL = 'https://your-ngrok-url.ngrok-free.app';
 - **分類篩選**：全部 / 飯食 / 麵食 / 小吃 / 輕食 / 飲品
 - **關鍵字搜尋**：即時模糊比對商品名稱，分類與搜尋可同時作用
 - **商品卡**：真實食物照片（有圖優先，無圖 fallback emoji + 漸層底色），價格統一 Fraunces serif italic 橙色
-- **加入購物車**：點擊商品卡加入，重複點擊累加數量；觸覺回饋（`navigator.vibrate(30ms)`）
+- **加入購物車**：點擊商品卡加入，重複點擊累加數量；觸覺回饋（`navigator.vibrate(30ms)`）；每次加入即同步後端 `cart/sync_item`（eager sync）
 
 #### 結帳頁功能
-- **購物車列表**：品項增減數量（減至 0 自動移除）、單項刪除、清空
+- **購物車列表**：品項增減數量（減至 0 自動移除）、單項刪除（同步 `cart/remove_item`）、清空（同步 `cart/clear_cart`）
 - **滿額贈品下拉**：小計 ≥ $300 顯示贈品選擇下拉（含「不需要滿額免費贈品」選項），已選贈品顯示於品項列（$0）
 - **活動優惠下拉**：小計達活動門檻後出現，先選活動再從該活動專屬贈品清單挑選（兩層下拉）
   - 新會員首單禮（≥$150）、週末滿額禮（≥$300）、消費達人大禮包（≥$500）
@@ -186,11 +186,12 @@ export const DEMO_BASE_URL = 'https://your-ngrok-url.ngrok-free.app';
 - **付款方式**：信用卡 / 行動支付 / 現金（3 種）
 - **送出訂單**：
   1. 按下後顯示 spinner（防重複送出）
-  2. 模擬後端處理延遲 1.2 秒
-  3. 建立 `LiveOrder` 並推送至 `OrderService`（POS 看板即時同步）
-  4. 新增至本地歷史訂單
-  5. 清空購物車
-  6. 自動跳至訂單追蹤頁
+  2. 使用 eager sync 已建立的購物車 ID（若無則 fallback 逐筆 `sync_item`）
+  3. 呼叫 `orders/create_order`（UNPAID）→ `orders/pay`（COMPLETED）
+  4. 建立 `LiveOrder` 並推送至 `OrderService`（POS 看板即時同步）
+  5. 新增至本地歷史訂單
+  6. 清空本地購物車（後端 DB 明細保留供訂單歷史查詢）
+  7. 自動跳至訂單追蹤頁
 
 #### 付款頁功能
 - 唯讀訂單摘要（品項 / 贈品 / 活動贈品 / 折扣 / 總計）
