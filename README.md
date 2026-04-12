@@ -45,6 +45,44 @@ ng serve
 
 ---
 
+## API 模式切換（Mock 離線 ↔ 真實後端）
+
+前端預設為 **離線 Mock 模式**，不需開啟 Eclipse 或資料庫，即可完整操作整個訂單流程。
+
+### 切換方式
+
+只需修改一個檔案的一個數值：
+
+**[`src/app/shared/api.config.ts`](src/app/shared/api.config.ts)**
+
+```ts
+MOCK_MODE: true,   // ← true = 離線 Demo（預設）
+                   // ← false = 串接真實後端（需開 Eclipse + DB）
+```
+
+### 兩種模式對照
+
+| 情境 | `MOCK_MODE` 值 | 需要 Eclipse | 需要 DB |
+|------|:--------------:|:------------:|:-------:|
+| Demo 展示 / 前端開發 | `true` | ❌ | ❌ |
+| 完整 API 串接測試 | `false` | ✅ | ✅ |
+
+### Mock 模式行為說明
+
+Mock 模式下，以下 5 個 API 不發出 HTTP 請求，直接回傳假資料：
+
+| API 端點 | 假回傳內容 |
+|----------|------------|
+| `cart/sync_item` | `{ cartId: 9999, ... }` |
+| `cart/remove_item` | `{ cartId: 9999, ... }` |
+| `cart/clear_cart` | `{ cartId: 9999, ... }` |
+| `orders/create_order` | `{ id: 'DEMO', orderDateId: '今日日期', ... }` |
+| `orders/pay` | `{ code: 200, message: 'ok' }` |
+
+> 其餘狀態（購物車本地清單、訂單追蹤、歷史訂單）完全正常運作，流程與真實串接完全一致。
+
+---
+
 ## Demo 公開連線設定（ngrok）
 
 本專案的行動支付 QR Code 採用 `window.location.origin` 動態產生網址，**不需修改任何程式碼**，只要透過 ngrok 對外公開即可讓手機掃碼連線。
