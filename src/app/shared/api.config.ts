@@ -15,6 +15,10 @@
 // =====================================================
 
 export const API_CONFIG = {
+  /** ⚠ Demo 離線模式：true = 不發 HTTP 請求，直接回傳假資料（不需開 Eclipse / DB）
+   *  切換真實後端時改為 false 即可，其餘程式碼不需異動。 */
+  MOCK_MODE: true,
+
   BASE_URL: 'http://localhost:8080',  // ⚠ 後端 Spring Boot 預設 port
   TIMEOUT: 10000,  // 10 秒逾時
 

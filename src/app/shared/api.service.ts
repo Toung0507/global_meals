@@ -28,7 +28,7 @@
 
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { API_CONFIG } from './api.config';
 
 /* ════════════════════════════════════════════════════
@@ -379,6 +379,15 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
+  /* ── Mock helpers（MOCK_MODE = true 時使用，不發送 HTTP 請求）── */
+  private get isMock(): boolean { return API_CONFIG.MOCK_MODE; }
+
+  private mockCartRes(cartId = 9999): CartViewRes {
+    return { code: 200, message: 'ok', cartId, globalAreaId: 1,
+      operationType: 'CUSTOMER', items: [], subtotal: 0,
+      availablePromotions: [], taxInfo: null, totalAmount: 0, warningMessages: [] };
+  }
+
   /* ══════════════════════════════════════════════════
    * Cart API  →  cart/（無 /api/ 前綴）
    * ══════════════════════════════════════════════════ */
@@ -394,11 +403,13 @@ export class ApiService {
 
   /** 新增/更新購物車商品（quantity=0 不合法，減少數量請用 removeCartItem） */
   syncCart(req: CartSyncReq): Observable<CartViewRes> {
+    if (this.isMock) return of(this.mockCartRes(req.cartId ?? 9999));
     return this.http.post<CartViewRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.CART.SYNC}`, req);
   }
 
   /** 從購物車刪除整個品項 */
   removeCartItem(req: CartRemoveReq): Observable<CartViewRes> {
+    if (this.isMock) return of(this.mockCartRes(req.cartId));
     return this.http.delete<CartViewRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.CART.REMOVE}`,
       { body: req }
@@ -412,6 +423,7 @@ export class ApiService {
 
   /** 清空購物車所有商品 */
   clearCart(req: CartClearReq): Observable<CartViewRes> {
+    if (this.isMock) return of(this.mockCartRes(req.cartId));
     return this.http.delete<CartViewRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.CART.CLEAR}`,
       { body: req }
@@ -426,6 +438,12 @@ export class ApiService {
    * 回傳 id 和 orderDateId，下一步 pay() 需要這兩個值
    */
   createOrder(req: CreateOrdersReq): Observable<CreateOrdersRes> {
+    if (this.isMock) {
+      const d = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const dateId = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+      return of({ code: 200, message: 'ok', id: 'DEMO', orderDateId: dateId, totalAmount: req.totalAmount });
+    }
     return this.http.post<CreateOrdersRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.CREATE}`, req);
   }
 
@@ -433,6 +451,7 @@ export class ApiService {
    * ⚠ paymentMethod 和 transactionId 皆為必填
    */
   pay(req: PayReq): Observable<BasicRes> {
+    if (this.isMock) return of({ code: 200, message: 'ok' });
     return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.PAY}`, req);
   }
 
