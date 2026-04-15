@@ -23,9 +23,8 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
 import { AuthService } from '../shared/auth.service';
-import { OrderService } from '../shared/order.service';
-// ⚠ TODO [API串接點 - 步驟1]：取消下方 import
-// import { ApiService } from '../shared/api.service';
+import { OrderService, LiveOrder } from '../shared/order.service';
+import { ApiService } from '../shared/api.service';
 
 /* ── 頁籤型別 ──────────────────────────────────────── */
 export type PosTab = 'pos' | 'board' | 'stock' | 'promo' | 'staff' | 'report';
@@ -357,13 +356,14 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
 
   /* 計時器 ID */
   private clockInterval: ReturnType<typeof setInterval> | null = null;
+  /* POS 看板輪詢計時器 */
+  private boardPollInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private router: Router,
     public authService: AuthService,
     public orderService: OrderService,
-    // ⚠ TODO [API串接點 - 步驟2]：取消下方 apiService 參數
-    // private apiService: ApiService,
+    private apiService: ApiService,
   ) {}
 
   ngOnInit(): void {
@@ -374,6 +374,10 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
     }
     this.updateClock();
     this.clockInterval = setInterval(() => this.updateClock(), 1000);
+
+    /* 立即拉一次今日訂單，之後每 5 秒輪詢 */
+    this._fetchTodayOrders();
+    this.boardPollInterval = setInterval(() => this._fetchTodayOrders(), 5000);
 
     // ⚠ TODO [API串接點 - 載入商品清單]
     // 後端 ProductsController 建立後，取消下方區塊，
@@ -397,9 +401,50 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.clockInterval !== null) {
-      clearInterval(this.clockInterval);
-    }
+    if (this.clockInterval !== null) clearInterval(this.clockInterval);
+    if (this.boardPollInterval !== null) clearInterval(this.boardPollInterval);
+  }
+
+  /* 從後端拉今日訂單，同步至 OrderService */
+  private _fetchTodayOrders(): void {
+    this.apiService.getTodayOrders().subscribe({
+      next: (res) => {
+        if (!res?.orders) return;
+        const pad = (n: number) => String(n).padStart(2, '0');
+        res.orders.forEach(o => {
+          const existingId = `DB-${o.orderDateId}-${o.id}`;
+          const existing = this.orderService.orders().find(x => x.id === existingId);
+          /* 狀態對應：WAITING→waiting, COOKING→cooking, READY→done */
+          const statusMap: Record<string, 'waiting' | 'cooking' | 'ready' | 'done'> = {
+            WAITING: 'waiting', COOKING: 'cooking', READY: 'done'
+          };
+          const status = statusMap[o.kitchenStatus] ?? 'waiting';
+          const itemTexts = (o.items ?? [])
+            .filter(i => !i.gift)
+            .map(i => `${i.productName} × ${i.quantity}`);
+          if (!existing) {
+            /* 新訂單：加入看板 */
+            const now = new Date();
+            this.orderService.addOrder({
+              id: existingId,
+              number: `A-${o.id}`,
+              status,
+              estimatedMinutes: 10,
+              items: itemTexts,
+              total: Number(o.totalAmount),
+              createdAt: `${pad(now.getHours())}:${pad(now.getMinutes())}`,
+              payMethod: '線上付款',
+              source: 'customer',
+              customerName: o.phone,
+            } as LiveOrder);
+          } else if (existing.status !== status) {
+            /* 已存在但狀態有變 → 同步更新 */
+            this.orderService.updateStatus(existingId, status);
+          }
+        });
+      },
+      error: () => { /* 靜默失敗，下次再重試 */ }
+    });
   }
 
   /* 判斷是否為分店長 */
@@ -636,10 +681,24 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
   /* ── 訂單看板：狀態流轉 ───────────────────────────── */
   startCooking(id: string): void {
     this.orderService.updateStatus(id, 'cooking');
+    this._pushKitchenStatus(id, 'COOKING');
   }
 
   finishOrder(id: string): void {
     this.orderService.updateStatus(id, 'done');
+    this._pushKitchenStatus(id, 'READY');
+  }
+
+  /** 將廚房狀態推送至後端（id 格式為 DB-YYYYMMDD-XXXX） */
+  private _pushKitchenStatus(orderId: string, kitchenStatus: 'COOKING' | 'READY'): void {
+    /* DB 訂單 id 格式：DB-{orderDateId}-{id}，例如 DB-20260413-0001 */
+    const match = orderId.match(/^DB-(\d{8})-(\d+)$/);
+    if (!match) return; /* mock 訂單不推送 */
+    this.apiService.updateKitchenStatus({
+      id: match[2],
+      orderDateId: match[1],
+      kitchenStatus,
+    }).subscribe({ error: () => console.warn('[POS] kitchen_status 更新失敗') });
   }
 
   /* ── 庫存調整 ─────────────────────────────────────── */

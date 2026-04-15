@@ -29,6 +29,7 @@ import { LoadingService } from '../shared/loading.service';
 import { OrderService } from '../shared/order.service';
 import { firstValueFrom } from 'rxjs';
 import { ApiService, GetOrdersVo, CartSyncReq, CreateOrdersReq, PayReq, CartRemoveReq, CartClearReq } from '../shared/api.service';
+import { DEMO_BASE_URL } from '../shared/demo.config';
 
 /* ── 購物車品項型別 ─────────────────────────────────── */
 export interface CartItem {
@@ -462,7 +463,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       items: JSON.stringify(items),
       'ngrok-skip-browser-warning': 'true',
     });
-    return `${window.location.origin}/mobile-pay?${params.toString()}`;
+    return `${DEMO_BASE_URL}/mobile-pay?${params.toString()}`;
   });
 
   /* ── 即時追蹤訂單（從 OrderService 取得最新客戶訂單） ── */
@@ -639,8 +640,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     if (!this.authService.currentUser) {
-      this.router.navigate(['/customer-login']);
-      return;
+      this.authService.loginAsGuest('');
     }
     /* 啟動首頁輪播自動播放（5 秒換一張） */
     this.heroTimer = setInterval(() => {
@@ -708,10 +708,16 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     }
   }
 
+  /* 客戶端廚房狀態輪詢計時器 */
+  private statusPollInterval: ReturnType<typeof setInterval> | null = null;
+  /* 目前追蹤中訂單的 DB 識別碼 */
+  private _activeOrderDbId: { id: string; orderDateId: string } | null = null;
+
   ngOnDestroy(): void {
     if (this.heroTimer) clearInterval(this.heroTimer);
     if (this.promoBannerTimer) clearInterval(this.promoBannerTimer);
     if (this.mobilePayTimer) clearTimeout(this.mobilePayTimer);
+    if (this.statusPollInterval) clearInterval(this.statusPollInterval);
   }
 
   /* ── 切換頁籤 ─────────────────────────────────────── */
@@ -919,10 +925,10 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     await firstValueFrom(this.apiService.pay(payReq));
 
     /* ── 成功後更新本地狀態 ── */
-    this._afterOrderSuccess(orderRes.id);
+    this._afterOrderSuccess(orderRes.id, orderRes.orderDateId);
   }
 
-  private _afterOrderSuccess(orderId: string): void {
+  private _afterOrderSuccess(orderId: string, orderDateId: string = ''): void {
     const now = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
     const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
@@ -942,7 +948,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     };
     const payLabel = payLabels[this.paymentMethod()] ?? '現金';
 
-    /* 推送至 POS 看板 */
+    /* 推送至 POS 看板（本機 in-memory，同視窗時即時同步） */
     this.orderService.addOrder({
       id: orderId,
       number: orderNum,
@@ -955,6 +961,37 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       source: 'customer',
       customerName: this.authService.currentUser?.name,
     });
+
+    /* 儲存 DB 訂單識別碼，啟動廚房狀態輪詢（跨裝置同步） */
+    if (orderDateId) {
+      this._activeOrderDbId = { id: orderId, orderDateId };
+      if (this.statusPollInterval) clearInterval(this.statusPollInterval);
+      this.statusPollInterval = setInterval(() => {
+        if (!this._activeOrderDbId) return;
+        this.apiService.getOrderStatus(
+          this._activeOrderDbId.id,
+          this._activeOrderDbId.orderDateId
+        ).subscribe({
+          next: (res) => {
+            if (res?.code !== 200) return;
+            const statusMap: Record<string, 'waiting' | 'cooking' | 'ready' | 'done'> = {
+              WAITING: 'waiting', COOKING: 'cooking', READY: 'done',
+            };
+            const newStatus = statusMap[res.message] ?? 'waiting';
+            const current = this.orderService.orders().find(o => o.id === orderId);
+            if (current && current.status !== newStatus) {
+              this.orderService.updateStatus(orderId, newStatus);
+            }
+            /* 已完成則停止輪詢 */
+            if (newStatus === 'done') {
+              if (this.statusPollInterval) clearInterval(this.statusPollInterval);
+              this.statusPollInterval = null;
+            }
+          },
+          error: () => { /* 靜默失敗 */ }
+        });
+      }, 5000);
+    }
 
     /* 加入本地歷史訂單 */
     this.orderHistoryList.set([

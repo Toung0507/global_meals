@@ -499,8 +499,11 @@
                 } @else {
                   <span class="badge-warn">已暫停</span>
                 }
+                <!-- +贈品規則 暫時隱藏
                 <button class="btn btn-sm btn-ghost-gold" style="font-size:0.72rem;padding:2px 8px;"
                   (click)="openAddGift(promo.id)">+ 贈品規則</button>
+                -->
+                <button class="btn btn-sm btn-ghost-red" style="font-size:0.72rem;padding:2px 8px;">刪除</button>
                 <div class="form-check form-switch mb-0">
                   <input class="form-check-input" type="checkbox"
                     [checked]="promo.isActive"
@@ -587,11 +590,13 @@
             [style.color]="userSubTab()==='bm' ? '#c084fc' : '#8892b0'"
             [style.border]="userSubTab()==='bm' ? '1px solid rgba(192,132,252,0.3)' : '1px solid rgba(255,255,255,0.1)'"
             (click)="setUserSubTab('bm')">分店長帳號</button>
+          <!-- 員工帳號頁籤暫時隱藏
           <button class="btn btn-sm"
             [style.background]="userSubTab()==='staff' ? 'rgba(79,142,247,0.15)' : 'rgba(255,255,255,0.05)'"
             [style.color]="userSubTab()==='staff' ? '#4f8ef7' : '#8892b0'"
             [style.border]="userSubTab()==='staff' ? '1px solid rgba(79,142,247,0.3)' : '1px solid rgba(255,255,255,0.1)'"
             (click)="setUserSubTab('staff')">員工帳號</button>
+          -->
           <button class="btn btn-sm btn-gold ms-auto" (click)="openAddAccount()">+ 新增帳號</button>
         </div>
 
@@ -630,8 +635,8 @@
           </div>
         }
 
-        <!-- 員工列表 -->
-        @if (userSubTab() === "staff") {
+        <!-- 員工列表暫時隱藏 -->
+        @if (false) { <!-- userSubTab() === "staff" -->
           <div class="content-card">
             <div class="table-wrapper">
               <table class="table table-borderless table-dark-custom mb-0">

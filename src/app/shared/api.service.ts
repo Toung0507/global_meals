@@ -136,6 +136,33 @@ export interface TaxInfoVO {
   taxAmount: number;
 }
 
+/* ── Kitchen（廚房狀態）──────────────────────────── */
+
+export interface UpdateKitchenStatusReq {
+  id: string;
+  orderDateId: string;
+  kitchenStatus: 'COOKING' | 'READY';
+}
+
+export interface TodayOrderDetailVo {
+  productName: string;
+  quantity: number;
+  gift: boolean;
+}
+
+export interface TodayOrderVo {
+  id: string;
+  orderDateId: string;
+  totalAmount: number;
+  kitchenStatus: string; // WAITING / COOKING / READY
+  phone: string;
+  items: TodayOrderDetailVo[];
+}
+
+export interface GetTodayOrdersRes extends BasicRes {
+  orders: TodayOrderVo[];
+}
+
 /* ── Orders（訂單）────────────────────────────────── */
 
 /* POST Orders/createOrdersRes
@@ -470,6 +497,23 @@ export class ApiService {
   /** 更改訂單狀態（取消 CANCELLED 或退款 REFUNDED）*/
   updateOrderStatus(req: RefundedReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.UPDATE_STATUS}`, req);
+  }
+
+  /** POS 看板：取得今日所有已付款訂單（含品項、廚房狀態） */
+  getTodayOrders(): Observable<GetTodayOrdersRes> {
+    return this.http.get<GetTodayOrdersRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.TODAY_ORDERS}`);
+  }
+
+  /** POS 看板：更新廚房狀態（COOKING / READY） */
+  updateKitchenStatus(req: UpdateKitchenStatusReq): Observable<BasicRes> {
+    return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.KITCHEN_STATUS}`, req);
+  }
+
+  /** 客戶端：查詢自己訂單的廚房狀態（每 5 秒輪詢） */
+  getOrderStatus(id: string, orderDateId: string): Observable<BasicRes> {
+    return this.http.get<BasicRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.ORDER_STATUS}?id=${id}&orderDateId=${orderDateId}`
+    );
   }
 
   /* ══════════════════════════════════════════════════

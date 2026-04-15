@@ -980,6 +980,20 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 .badge-err  { background-color: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.32); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
 .badge-blue { background-color: rgba(129,140,248,0.15); color: #a5b4fc; border: 1px solid rgba(129,140,248,0.32); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
 
+/* 金色實心按鈕 */
+.btn-gold {
+    background: linear-gradient(135deg, #c49756 0%, #e0ab6a 100%);
+    border-color: #c49756;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.4px;
+    box-shadow: 0 3px 10px rgba(196,151,86,0.30);
+    transition: background $transition-base, transform $transition-fast, box-shadow $transition-base;
+}
+.btn-gold:hover  { background: linear-gradient(135deg, #b08540 0%, #c49756 100%); color: #fff; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(196,151,86,0.40); }
+.btn-gold:active { transform: scale(0.97); opacity: 0.9; }
+
 /* 按鈕：幽靈系列，對比提升 */
 .btn-ghost-gold  {
     background-color: rgba(196,151,86,0.12);
