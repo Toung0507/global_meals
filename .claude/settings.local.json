@@ -91,7 +91,20 @@
       "Skill(browse)",
       "Skill(browse:*)",
       "Skill(stitch-design)",
-      "Skill(stitch-design:*)"
+      "Skill(stitch-design:*)",
+      "Bash(cp C:/Users/齊/Desktop/第一次Demo結束/global_meals_gradle_fresh/src/main/java/com/example/global_meals_gradle/controller/MembersController.java C:/Users/齊/Desktop/第一次Demo結束/global_meals_gradle/src/main/java/com/example/global_meals_gradle/controller/)",
+      "Bash(cp C:/Users/齊/Desktop/第一次Demo結束/global_meals_gradle_fresh/src/main/java/com/example/global_meals_gradle/controller/StaffController.java C:/Users/齊/Desktop/第一次Demo結束/global_meals_gradle/src/main/java/com/example/global_meals_gradle/controller/)",
+      "Bash(cp C:/Users/齊/Desktop/第一次Demo結束/global_meals_gradle_fresh/src/main/java/com/example/global_meals_gradle/dao/BranchInventoryDao.java C:/Users/齊/Desktop/第一次Demo結束/global_meals_gradle/src/main/java/com/example/global_meals_gradle/dao/)",
+      "Bash(cp C:/Users/齊/Desktop/第一次Demo結束/global_meals_gradle_fresh/src/main/java/com/example/global_meals_gradle/entity/BranchInventory.java C:/Users/齊/Desktop/第一次Demo結束/global_meals_gradle/src/main/java/com/example/global_meals_gradle/entity/)",
+      "Bash(cp C:/Users/齊/Desktop/第一次Demo結束/global_meals_gradle_fresh/src/main/java/com/example/global_meals_gradle/req/ChangePasswordReq.java C:/Users/齊/Desktop/第一次Demo結束/global_meals_gradle/src/main/java/com/example/global_meals_gradle/req/)",
+      "Skill(office-hours)",
+      "Skill(office-hours:*)",
+      "Bash(ls \"c:/Users/齊/Desktop/第一次Demo結束/global_meals/\"*.md)",
+      "Skill(enhance-prompt)",
+      "Skill(enhance-prompt:*)",
+      "Skill(design-md)",
+      "Skill(design-md:*)",
+      "mcp__stitch__list_projects"
     ],
     "additionalDirectories": [
       "c:\\Users\\joker\\OneDrive\\桌面\\global_meals_gradle\\src\\main\\java\\com\\example\\global_meals_gradle\\config",

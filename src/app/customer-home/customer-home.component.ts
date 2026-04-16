@@ -76,7 +76,8 @@ export type TabId =
   | 'checkout'
   | 'payment'
   | 'tracker'
-  | 'orders';
+  | 'orders'
+  | 'promotions';
 
 /* ── 頁籤定義型別 ──────────────────────────────────────── */
 interface NavTab {
@@ -487,7 +488,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     { id: 'menu', label: '菜單', icon: 'menu' },
     { id: 'checkout', label: '購物車', icon: 'checkout' },
     { id: 'tracker', label: '訂單追蹤', icon: 'tracker' },
-    { id: 'orders', label: '訂單管理', icon: 'orders' },
+    { id: 'orders', label: '我的訂單', icon: 'orders' },
+    { id: 'promotions', label: '活動專區', icon: 'promotions' },
   ];
 
   navTabs = computed<NavTab[]>(() =>

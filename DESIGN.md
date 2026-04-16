@@ -191,61 +191,93 @@
 
 ## 6. Motion & Interaction
 
-### Customer 動效
-- 頁面轉場：fade + slide-up，250ms ease
-- 按鈕回饋：按壓 scale(0.97) + -1px translate，150ms
-- 卡片懸停：subtle shadow 加深，200ms ease
-- 購物車抽屜：slide-in 400ms ease-out（彈入感）
-- 數量增減按鈕：ripple 效果（可選）
+### CSS 動效時序參考值（全主題共用 CSS Custom Properties）
 
-### POS Terminal 動效
-- 最小化動效，不分散員工注意力
-- 訂單新增：輕微 flash（#C49756 短暫高亮）
-- 狀態變更：顏色漸變過渡，150ms
-- 禁止所有裝飾性動畫
+```css
+--dur-instant:   80ms;   /* 微回饋（按鍵按下）*/
+--dur-fast:     150ms;   /* 狀態切換、badge 變色 */
+--dur-base:     250ms;   /* 頁面轉場、面板展開 */
+--dur-slow:     400ms;   /* 抽屜滑入、大型模態 */
+--ease-out:     cubic-bezier(0.22, 1, 0.36, 1);   /* 滑入結束感 */
+--ease-in-out:  cubic-bezier(0.4, 0, 0.2, 1);     /* 狀態過渡 */
+--spring:       cubic-bezier(0.34, 1.56, 0.64, 1); /* 彈入（Customer 限定）*/
+```
 
-### Manager Dashboard 動效
-- 幾乎靜態，只有 hover 狀態的極輕微變化
-- 圖表動效：數值增長動畫（bar chart 從下向上，line chart 從左向右），只在初次載入時執行一次
+### Customer 動效（Density 5，彈性優先）
+- **頁面轉場：** `opacity 0→1` + `translateY(12px→0)`，250ms `--ease-out`
+- **按鈕主要回饋：** 按下 `scale(0.97)` + `translateY(-1px)`，150ms；放開 `--spring` 回彈
+- **卡片懸停：** `box-shadow` 加深 + `translateY(-2px)`，200ms `--ease-in-out`
+- **購物車抽屜：** `translateX(100%→0)`，400ms `--ease-out`
+- **數量 +/- 按鈕：** `scale(1.15)` 短暫彈跳，80ms `--spring`
+- **Perpetual 常駐動效：**
+  - Skeleton loader：`opacity 0.4→1→0.4`，1.4s linear infinite（shimmer）
+  - 購物車 badge 有新品時：`scale(1→1.2→1)` pulse，400ms，執行 2 次後停止
+
+### POS Terminal 動效（Density 8，效率優先，零裝飾）
+- **訂單卡片進場：** `translateY(8px→0)` + `opacity 0→1`，280ms `--ease-out`
+- **狀態色條切換：** `background-color` + `border-color`，150ms linear（**僅這兩個屬性**）
+- **新訂單提示閃爍：** Antique Gold (#C49756) `opacity 1→0.3→1`，600ms，執行 **2 次後停止**
+- **按鈕按下：** `scale(0.98)` + `opacity 0.85`，80ms
+- **禁止：** 所有 `--spring` 彈跳、3D 旋轉、任何 `animation-iteration-count: infinite`
+
+### Manager Dashboard 動效（Density 7，近靜態）
+- **側欄 hover：** 背景 `opacity 0→0.08`，150ms — 極輕微，不搶注意力
+- **圖表初次載入：** Bar chart 從 `height 0` 向上填充，500ms `--ease-out`（**僅初次，不重播**）
+- **Slide-in 面板：** `translateX(100%→0)`，250ms `--ease-out`；關閉反向
+- **Table row hover：** `background-color` 淡入，100ms
+- **禁止：** 任何 keyframe loop、floating 動畫
 
 ### 全局動效規則
-- **Spring Physics:** `stiffness: 100, damping: 20` — 適用於 Customer 互動
-- 只對 `transform` 和 `opacity` 做動畫，**嚴禁** 動畫 `top`、`left`、`width`、`height`
-- 串聯清單項目使用 staggered 瀑布延遲（每項 40ms 差）
-- 硬體加速：加 `will-change: transform` 於重度動畫元件
+- **Spring Physics:** `stiffness: 100, damping: 20`（Customer 彈入感限定，其他主題禁用）
+- **只動畫 `transform` 和 `opacity`**，嚴禁動畫 `top`、`left`、`width`、`height`
+- **Staggered 瀑布規則：** 清單最多前 6 項做 stagger（每項 40ms 差），第 7 項起全部同時出現
+- **硬體加速：** `will-change: transform` 僅加在觸發頻率 > 1次/秒的元件
+- **Perpetual loop 嚴格限制：** 僅 skeleton shimmer 允許 `infinite`；通知 pulse 最多執行 3 次後停止
 
 ---
 
 ## 7. Anti-Patterns — 明確禁止清單
 
+### 字體禁止
+- **禁止任何主題使用 Inter 字體**（過度泛用，喪失品牌個性）
+- 禁止通用系統 Serif：`Times New Roman`、`Georgia`、`Garamond`、`Palatino`
+- 禁止在 POS / Manager Dashboard 使用任何 Serif 字體（儀表板永遠只用 Sans-Serif）
+- 如需 Serif（限 Customer 品牌標語），只允許：`Fraunces`、`Instrument Serif`
+- 禁止超過 3 種字體同時出現在同一個頁面
+
 ### 設計禁止
-- **禁止任何主題使用 Inter 字體**
-- 禁止 pure black (#000000) — 使用 #18181B 或 #1A1A1A 或 #3D2010
-- 禁止霓虹外發光效果（no neon/outer glow box-shadow）
-- 禁止紫藍色漸層（AI Purple aesthetic）—— 僅 Manager 側欄允許少量 #C084FC
+- 禁止 pure black (#000000) — 使用 #0D1117、#1A2840 或 #3D2010（依主題）
+- 禁止霓虹外發光效果（`box-shadow` 帶鮮豔顏色）
+- 禁止紫藍色漸層背景（AI Purple aesthetic）— 僅 Manager 側欄輔助標題允許少量 #C084FC
 - 禁止超飽和強調色（accent saturation > 80%）
-- 禁止大標題漸層文字（gradient text on headlines）
-- 禁止三欄等寬卡片格局 — 使用 2 欄 zig-zag 或不對稱格局
-- Customer Hero 禁止置中對稱版型（variance > 4）
-- 禁止「Scroll to explore」/ 「向下滑動」/ 跳動箭頭等 filler UI
+- 禁止大標題漸層文字（`background-clip: text` 在 headline 上）
+- 禁止三欄等寬卡片格局 — 使用 2 欄 zig-zag、不對稱格局或水平捲動
+- Customer Hero 禁止置中對稱版型
+- 禁止「Scroll to explore」/「向下滑動」/ 跳動箭頭等 filler UI
 - 禁止自訂滑鼠游標
+- **禁止元素重疊：** 任何文字/卡片/圖片不得覆蓋其他內容，每個元件佔有獨立空間
+- 禁止 `backdrop-filter: blur()` 在深色主題（POS / Manager）的常態 UI — 允許一次性 Modal overlay
 
 ### 內容禁止
-- 禁止 emoji 出現在任何 UI 文字中
-- 禁止 AI 套話文案：「無縫」、「賦能」、「下一代」、「重新定義」、「革命性」
+- 禁止 emoji 出現在任何 UI 文字中（按鈕、標籤、標題均禁）
+- 禁止 AI 套話文案：「無縫」、「賦能」、「下一代」、「重新定義」、「革命性」、「生態系」
 - 禁止假數據：「99.98% 可用性」、「18,500 次部署」等系統性能假指標
-- 禁止假統計區塊：「系統效能儀表板」裡放虛構數字
-- 禁止 `LABEL // YEAR` 格式標題（AI 懶人排版慣例）
+- 禁止假統計區塊：任何「BY THE NUMBERS」/「系統效能」卡填入虛構數字
+- 禁止 `LABEL // YEAR` 格式標題（AI 懶人排版慣例：「SYSTEM // 2025」）
 - 禁止通用佔位符名稱：「John Doe」、「王大明」、「範例餐廳」、「Acme Corp」
-- 禁止圓整假數字：「50%」「99.99%」「100 筆訂單」等明顯虛構
-- 禁止損壞的 Unsplash 圖片 URL — 使用 `picsum.photos` 或 SVG placeholder
+- 禁止圓整假數字：「50%」「99.99%」「100 筆訂單」
+- 禁止損壞的外部圖片 URL — 使用 `picsum.photos/{id}/{w}/{h}` 或 SVG placeholder
 
 ### 技術禁止
-- 禁止 `h-screen`（iOS Safari 問題）— 使用 `min-h-[100dvh]`
+- 禁止 `h-screen`（iOS Safari viewport 跳動）— 使用 `min-h-[100dvh]`
 - 禁止 `calc()` flexbox 百分比 hack — 使用 CSS Grid
 - 禁止動畫 `top`/`left`/`width`/`height` — 只動畫 `transform`/`opacity`
-- POS 主題禁止任何裝飾性常駐動畫（會分散員工注意力）
+- 禁止通用圓形 loading spinner（`border-radius: 50%` 旋轉）— 使用 Skeleton Loader
 - 禁止 floating label（標籤永遠在 input 上方）
+- POS 主題禁止任何 `animation-iteration-count: infinite` 的裝飾動畫
+- 禁止 `position: absolute` 元素堆疊（`z-index` 戰爭的根源）
+- 禁止 CSS `filter: blur()` 作為常態背景效果（會在 GPU 上持續消耗效能）
+- 禁止使用 `!important` 超過 3 個（代表結構設計問題，應修改 specificity）
 
 ---
 
@@ -267,6 +299,86 @@
 提示 Stitch：左側深色固定側欄 (240px)，主內容淺灰白背景，
 頂部頁面標題使用深海軍藍大字，資料卡片白色背景，
 KPI 數字使用 DM Mono 等寬字體，金黃按鈕作為主要 CTA。
+
+---
+
+### 員工登入畫面（Staff Login — Demo v2）
+**主題：** POS Terminal 深金觸控
+```
+員工後台登入頁面，左右分欄佈局（40/60），深色品牌欄 + 表單欄。
+左欄：Sidebar Dark (#111927) 背景，Logo 置頂，三種角色 badge 垂直排列。
+  - 經理 badge：Manager Indigo (#818CF8) 邊框，文字「👑 經理 / Boss」+ 說明「管理後台系統」
+  - 分店長 badge：Manager Indigo (#818CF8) 淡版，文字「🏪 分店長 / Branch Manager」
+  - 收銀員 badge：Staff Blue (#4F8EF7) 邊框，文字「👤 收銀員 / Staff」
+右欄：Card Dark (#1C2130) 背景，帳號 input（DM Mono 字體），
+  密碼 input（固定 type=password，無 eye icon），
+  全寬 Antique Gold (#C49756) 登入按鈕。
+副標題：「系統自動識別角色，無需手動選擇。」Silver Gray 小字。
+禁止顯示員工姓名。禁止任何密碼顯示切換功能。
+```
+
+### POS 訂單看板 — 狀態顏色卡片（Demo v2）
+**主題：** POS Terminal 深金觸控
+```
+全螢幕訂單看板，卡片依狀態顯示左側 4px 色條 + 背景暖光：
+  - 待製作：Steel Gray (#6B7280) 左邊條，Card Dark 底，無背景暖光
+  - 製作中：Amber Warning (#F39C12) 左邊條，rgba(243,156,18,0.08) 背景暖光
+  - 已完成：Emerald OK (#27AE60) 左邊條，rgba(39,174,96,0.06) 背景淡綠光
+頂部 Header：時鐘 (DM Mono) + 分店名稱下拉選單（右側）
+狀態篩選 Tab：「全部 / 待製作 / 製作中 / 已完成」各帶數量 badge
+卡片網格：3-4 欄，間距 12px，每卡最小觸控目標 44px。
+操作按鈕：「開始製作」→「完成出餐」依狀態切換，全寬，圓角 8px。
+```
+
+### 活動管理頁（Promotions — Demo v2）
+**主題：** Manager Dashboard 海軍藍行政
+```
+左側欄已存在（不需重建）。主內容區 Admin Canvas (#F4F6FA)。
+頁面標題列：「活動管理」Navy Ink 大字 + 右側「＋ 新增活動」Gold Action 按鈕。
+類型篩選 Tab：「全部 / 活動 / 公告」帶數量 badge。
+活動卡片（垂直列表）：
+  - 左側 8px 色條：badge_color 欄位決定，預設 Ocean Deep (#1E3A5F)
+  - 卡片頂部：16:9 封面圖（無圖時顯示 Border Line 填充佔位符）
+  - 右上角類型 badge：活動 → Ocean Deep 深藍底，公告 → Iris Accent (#C084FC) 淡紫底
+  - 活動標題（Navy Ink 18px）、描述（Steel Mid 14px，2行截斷）
+  - 資訊列：開始～結束日期 | 滿額門檻（DM Mono）
+  - 右側 toggle 開關（啟用/停用）
+新增活動：右側 slide-in panel（寬 480px），不跳頁。
+  面板欄位：類型 radio、名稱、描述 textarea、圖片上傳拖曳區、
+  左側色條選色器（6色塊）、開始日期、結束日期（disabled 直到開始日期已選）、
+  滿額門檻金額（NT$ 前綴 input）。
+```
+
+### 分店管理 — 桌邊 QR Code（Demo v2）
+**主題：** Manager Dashboard 海軍藍行政
+```
+現有分店卡片下方新增「桌邊點餐」可折疊區塊。
+區塊標題：「桌邊 QR Code」+ 展開箭頭（Border Line 分隔線上方）。
+桌號管理列：單行 input「新增桌號」+ Gold Action 「新增」小按鈕。
+桌號卡片水平捲動列（每張 200px 寬）：
+  - 白色卡片，Border Line 邊框，12px 圓角
+  - 桌號名稱（Navy Ink 14px Bold）
+  - QR Code 圖片 180×180px（angularx-qrcode 渲染，白底黑碼）
+  - QR Code 連結（DM Mono 10px，Steel Mid，超長截斷）
+  - 操作列：「下載 PNG」Ghost 按鈕 + 「複製連結」Ghost 按鈕
+QR Code 內容格式：https://[domain]/order?table=[tableId]
+```
+
+### 折扣券狀態面板（Coupon Panel — Demo v2）
+**主題：** POS Terminal 深金觸控
+```
+嵌入 POS 終端的折扣券面板，Card Dark (#1C2130) 背景。
+標題列：「折扣券使用紀錄」+ 目前進度數字「6 / 10」(DM Mono，Antique Gold)。
+進度條：全寬圓角，Table Layer (#161B22) 底色，Antique Gold (#C49756) 填充。
+  達 10/10 時：填充改 Emerald OK (#27AE60)，右側顯示「✓ 已達標」綠色 badge。
+  動畫：CSS transition width 300ms ease，不使用其他動效。
+規則說明卡（Sidebar Dark #111927 背景，12px 圓角）：
+  - 折扣：消費金額 × 9折
+  - 最高折抵：NT$ 200（Gold Shimmer #F0C68C 數字）
+  - 最低消費：NT$ 500（未達門檻時折扣按鈕 disabled + tooltip）
+最近使用紀錄：5 筆，每筆顯示日期、折抵金額(Gold Shimmer)、訂單號(DM Mono)。
+歸零後：進度條回 0/10，上方小字「上次達標：YYYY-MM-DD 已重置」(Silver Gray)。
+```
 
 ---
 
@@ -401,4 +513,227 @@ branch_managers 表 新增欄位：
 financial 表（新增）：
   - id, branch_id, order_date, original_amount,
     currency, exchange_rate, twd_amount, created_at
+```
+
+---
+
+## 10. New Component Patterns — Demo v2
+
+> 此章節記錄 Demo v2 新增的元件設計模式，供 Stitch 生成與前端實作參考。
+> 每個模式標明所屬主題、視覺規格、互動行為。
+
+---
+
+### 10A. 角色識別 Badge（Role Identity Badge）
+**所屬主題：** POS Terminal / Staff Login
+
+三種角色各有對應的視覺識別，使用左側 3px 邊條 + 背景暈染區分：
+
+| 角色 | 邊條色 | 背景 | 文字色 | 說明文字 |
+|------|--------|------|--------|----------|
+| 經理 (Boss) | Manager Indigo (#818CF8) | rgba(129,140,248,0.10) | Ghost White | 管理後台系統 |
+| 分店長 (Branch Manager) | Manager Indigo (#818CF8) | rgba(129,140,248,0.06) | Silver Gray | POS 終端 + 後台 |
+| 收銀員 (Staff) | Staff Blue (#4F8EF7) | rgba(79,142,247,0.08) | Silver Gray | POS 終端操作 |
+
+- 圓角：6px
+- 內邊距：10px 12px
+- 角色中文名稱（16px，Ghost White）+ 英文名稱（12px，Silver Gray）並排
+- 各 badge 之間垂直間距 8px
+
+---
+
+### 10B. 訂單狀態左邊條卡片（Status Left-Border Card）
+**所屬主題：** POS Terminal
+
+訂單卡片以左側 4px 色條 + 背景微暈傳達製作狀態，不使用大面積顏色覆蓋（避免閱讀疲勞）：
+
+| 狀態 | 左邊條 | 背景暈染 | 狀態 Badge |
+|------|--------|----------|------------|
+| 待製作 (waiting) | Steel Gray (#6B7280) | 無 | 灰底白字 |
+| 製作中 (cooking) | Amber Warning (#F39C12) | rgba(243,156,18,0.08) | 橘底深字 |
+| 已完成 (done) | Emerald OK (#27AE60) | rgba(39,174,96,0.06) | 綠底白字 |
+
+- 卡片整體：Card Dark (#1C2130)，8px 圓角
+- 左邊條寬度：4px，與卡片等高，左側圓角吃掉
+- 狀態 Badge：12px，圓角 4px，內邊距 2px 8px
+- 狀態轉換動畫：`transition: background-color 150ms, border-color 150ms`（僅這兩個屬性）
+
+---
+
+### 10C. 右側滑入面板（Slide-in Detail Panel）
+**所屬主題：** Manager Dashboard
+
+新增/編輯操作使用右側滑入面板（不跳頁，維持 SPA 結構）：
+
+- 面板寬度：480px（固定），右側邊緣貼齊視窗
+- 背景：Card Surface (#FFFFFF)，左側 `box-shadow: -4px 0 24px rgba(0,0,0,0.12)`
+- 頂部標題列：高 56px，Navy Ink 18px Bold 標題 + 右側 × 關閉按鈕
+- 內容區：padding 24px，垂直捲動
+- 底部操作列：固定於面板底部，高 64px，Border Line 上邊框
+  - 右側：「儲存」Gold Action 按鈕 + 「取消」Ghost 按鈕
+- 開啟動畫：`translateX(100%) → translateX(0)`，250ms ease-out
+- 背景遮罩：`rgba(0,0,0,0.3)`，與面板同時淡入
+
+---
+
+### 10D. 活動封面圖片上傳區（Promotion Cover Upload）
+**所屬主題：** Manager Dashboard
+
+圖片上傳使用拖曳放置區（Drop Zone），有圖/無圖兩種狀態：
+
+**無圖（初始）：**
+- 容器：Border Line (#D4DCE8) 1px 虛線邊框，8px 圓角，16:9 比例
+- 背景：Admin Canvas (#F4F6FA)
+- 中央：上傳 icon（24px，Steel Mid）+ 「拖曳圖片或點擊上傳」（14px，Steel Mid）
+- 副說明：「支援 JPG、PNG，建議 1200×675px」（12px，Ash Muted）
+
+**有圖（預覽）：**
+- 封面圖 `object-fit: cover` 填滿容器
+- 右上角浮動「更換圖片」按鈕（白底，Navy Ink 文字，8px 圓角，hover 顯示）
+
+---
+
+### 10E. 集點進度條（Stamp Progress Bar）
+**所屬主題：** POS Terminal
+
+- 容器高度：12px，全寬，`border-radius: 6px`（膠囊形）
+- 軌道底色：Table Layer (#161B22)
+- 填充色：Antique Gold (#C49756)，`transition: width 300ms ease`
+- 達標（10/10）時：填充改 Emerald OK (#27AE60)，右側顯示「✓ 已達標」badge
+- 「已達標」badge：Emerald OK 文字，透明背景，12px，圓角 4px
+- 進度數字：右對齊，DM Mono，Antique Gold，14px（達標後改 Emerald）
+- 歸零後：寬度動畫回 0，出現「上次達標：[日期] 已重置」Silver Gray 小字（12px）
+
+---
+
+### 10F. QR Code 展示卡片（QR Code Display Card）
+**所屬主題：** Manager Dashboard
+
+- 卡片尺寸：200px 寬，固定比例
+- 背景：Card Surface (#FFFFFF)，Border Line 邊框，12px 圓角
+- 頂部：桌號名稱（Navy Ink，14px Bold）
+- 中央：QR Code 圖片 180×180px（白底黑碼，padding 8px）
+- 底部：QR Code 連結文字（DM Mono，10px，Steel Mid，超長省略號截斷）
+- 操作列：「下載 PNG」+「複製連結」並排，Ghost 樣式按鈕，各 50% 寬
+- 水平捲動時卡片間距 12px，`scroll-snap-type: x mandatory`
+
+---
+
+### 10G. 日期範圍選擇器邏輯（Date Range Picker UX）
+**所屬主題：** Manager Dashboard（通用）
+
+- 開始日期 input：預設今日，`min` 為今日（不可選過去）
+- 結束日期 input：預設 `disabled`，開始日期有值後才 `enable`
+- 結束日期 `min` 值動態等於開始日期選擇後的值
+- Focus 狀態：Ocean Deep (#1E3A5F) 1px 邊框 + 輕微陰影
+- Disabled 狀態：Admin Canvas (#F4F6FA) 背景 + Border Line 邊框 + Steel Mid 文字
+- 日期格式顯示：YYYY-MM-DD（DM Mono 字體）
+
+---
+
+## 11. Stitch Prompt Architecture — 快速生成參考
+
+> 使用 Stitch 生成新畫面時，從本節複製對應 Prompt Block，  
+> 貼入 Stitch 提示框並補充頁面專屬內容。  
+> **必須包含** Design Token Block，否則 Stitch 會使用預設樣式。
+
+---
+
+### 11A. Customer（暖橘奶油）— Prompt Block
+
+```
+THEME: Customer — Warm Amber Cream
+DEVICE: Mobile (375–430px)
+FONT: LXGW WenKai TC for brand/headlines, Noto Sans TC for body, DM Mono for prices/IDs
+
+COLOR TOKENS:
+- Background: #FFFAF3 (cream canvas)
+- Card: #FFFFFF
+- Primary CTA: #D95C1A (burnt orange), hover #A84210
+- Text Primary: #3D2010 (espresso), Secondary: #6A4830 (chestnut)
+- Border: #F0D8B8 (cream border)
+- Success: #2E7D32 | Error: #E74C3C
+
+RULES:
+- Left-aligned layouts only (no centered hero)
+- Bottom fixed nav 68px, top toolbar 48px
+- 2-column food card grid (1-col on narrow)
+- No h-screen — use min-h-[100dvh]
+- No emoji in UI text
+- No Inter font
+- Card shadow: 0 2px 8px rgba(61,32,16,0.06)
+```
+
+---
+
+### 11B. POS Terminal（深金觸控）— Prompt Block
+
+```
+THEME: POS Terminal — Deep Gold Touch
+DEVICE: Desktop fullscreen (100dvh, no scroll)
+FONT: Noto Sans TC for labels, DM Mono for all numbers/amounts/order IDs
+
+COLOR TOKENS:
+- Background: #0D1117 (abyss black)
+- Sidebar/Header: #111927
+- Card: #1C2130
+- Accent Gold: #C49756 (antique gold), shimmer #F0C68C
+- Text: #E2E8F8 (ghost white), Secondary: #A0AEC0 (silver gray)
+- Role Boss/BM: #818CF8 | Role Staff: #4F8EF7
+- Status Waiting: #9CA3AF | Cooking: #F59E0B | Done: #34D399
+
+RULES:
+- All touch targets minimum 44×44px
+- Zero decorative animations (no infinite loops)
+- Left 5px status border on order cards
+- Status transition: background-color + border-color 150ms only
+- No backdrop-filter blur
+- No spring physics
+```
+
+---
+
+### 11C. Manager Dashboard（海軍藍行政）— Prompt Block
+
+```
+THEME: Manager Dashboard — Navy Administrative
+DEVICE: Desktop (left sidebar 240px fixed + fluid content)
+FONT: Noto Sans TC for all text, DM Mono for all KPI numbers/amounts
+
+COLOR TOKENS:
+- Content BG: #F4F6FA (admin canvas)
+- Card: #FFFFFF
+- Sidebar: #111927
+- Primary Text: #1A2840 (navy ink), Secondary: #4A5A70 (steel mid)
+- Headline/Numbers: #1E3A5F (ocean deep)
+- CTA Button: #C49756 (gold action)
+- Border: #D4DCE8
+
+RULES:
+- White cards with border #D4DCE8, shadow 0 1px 3px rgba(0,0,0,0.08)
+- Slide-in panels 480px wide, translateX animation 250ms
+- End date input disabled until start date selected
+- No circular spinners — skeleton loaders only
+- Max content width 1400px centered
+- Sidebar collapses to hamburger below 1024px
+```
+
+---
+
+### 11D. 通用 Prompt 補充片段（任何主題可附加）
+
+```
+ANTI-PATTERNS (NEVER DO):
+- No Inter font anywhere
+- No pure black (#000000)
+- No neon outer glow shadows
+- No gradient text on headlines
+- No 3-equal-column card grids
+- No emoji in UI text
+- No floating labels (label always above input)
+- No h-screen (use min-h-[100dvh])
+- No overlapping elements — each element in its own spatial zone
+- No generic placeholder names (John Doe, Acme Corp)
+- No fabricated statistics or metrics
+- No circular loading spinners
 ```

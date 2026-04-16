@@ -30,9 +30,6 @@ import { AuthService } from '../../shared/auth.service';
 })
 export class StaffLoginComponent {
 
-  /* 密碼是否明文顯示 */
-  showPassword: boolean = false;
-
   /* 表單欄位 */
   email: string = '';
   password: string = '';
@@ -45,11 +42,6 @@ export class StaffLoginComponent {
     private loadingService: LoadingService,
     public authService: AuthService
   ) {}
-
-  /* 切換密碼顯示 / 隱藏 */
-  togglePassword(): void {
-    this.showPassword = !this.showPassword;
-  }
 
   /*
    * 管理人員登入

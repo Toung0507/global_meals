@@ -386,6 +386,18 @@
                 <polyline points="10 9 9 9 8 9"></polyline>
               </svg>
             }
+            <!-- 活動專區 -->
+            @if (tab.icon === "promotions") {
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                <line x1="7" y1="7" x2="7.01" y2="7" />
+              </svg>
+            }
           </div>
           <span class="sidebar-label">{{ tab.label }}</span>
           @if (activeTab() === tab.id) {
@@ -396,23 +408,6 @@
     </nav>
 
     <div class="sidebar-footer">
-      <!-- 獨家 promo 卡片 (填補空白並提升高級感) -->
-      @if (!isGuest()) {
-        <div class="sidebar-promo-card">
-          <div class="spc-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4" />
-              <rect x="2" y="6" width="20" height="6" rx="1" />
-              <path d="M12 12v9" />
-              <path d="M12 6L11.5 1.5l-2.5 2L12 6z" />
-            </svg>
-          </div>
-          <div class="spc-text">
-            <span class="spc-title">探索絕妙風味</span>
-            <span class="spc-subtitle">加入老饕行列享優惠</span>
-          </div>
-        </div>
-      }
 
       <div class="sidebar-footer-info">
         <span class="footer-tip">✦ 懶懶吃，飽飽樂 ✦</span>
@@ -1467,7 +1462,6 @@
                 [hidden]="!isMenuItemShown('仙草奶茶', '飲品')"
               >
                 <div class="menu-item-img mi-grass-jelly">
-                  <span class="menu-item-badge-overlay badge-new">新品</span>
                 </div>
                 <div class="menu-item-body">
                   <div>
@@ -2730,6 +2724,27 @@
           <div style="height: 88px"></div>
         </section>
       }
+
+      <!-- ════════════════════════════════════════════════
+           頁籤：活動專區（預留版位）
+      ════════════════════════════════════════════════ -->
+      @if (activeTab() === "promotions") {
+        <section class="ch-section" style="padding: 24px 16px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <div style="width:4px;height:22px;background:#c49756;border-radius:2px;flex-shrink:0;"></div>
+            <h2 style="margin:0;font-size:1.15rem;font-weight:700;color:#1a1a1a;">活動專區</h2>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:60px 0;color:#9ca3af;text-align:center;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;opacity:0.4;">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+              <line x1="7" y1="7" x2="7.01" y2="7" />
+            </svg>
+            <p style="margin:0;font-size:0.95rem;">目前尚無進行中的活動</p>
+            <p style="margin:0;font-size:0.82rem;color:#c4b49a;">敬請期待最新優惠資訊</p>
+          </div>
+          <div style="height:88px;"></div>
+        </section>
+      }
     </main>
 
     <!-- ═══════════════════════════════════════════════
@@ -2814,6 +2829,17 @@
               <line x1="16" y1="13" x2="8" y2="13"></line>
               <line x1="16" y1="17" x2="8" y2="17"></line>
               <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+          }
+          @if (tab.icon === "promotions") {
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+              <line x1="7" y1="7" x2="7.01" y2="7" />
             </svg>
           }
 

@@ -54,6 +54,11 @@ interface DashPromo {
   rawName: string;       /* API 原始名稱，toggle 時帶回後端（@NotBlank 需要）*/
   rawStartTime: string;  /* YYYY-MM-DD，toggle 時帶回後端（@NotNull 需要）*/
   rawEndTime: string;    /* YYYY-MM-DD，toggle 時帶回後端（@NotNull 需要）*/
+  type: 'promotion' | 'announcement';
+  description?: string;
+  image?: string;
+  badgeColor?: string;
+  minAmount?: number;
 }
 
 /* ── 庫存型別 ──────────────────────────────────────── */
@@ -130,7 +135,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   /* ── 頁籤標題 ──────────────────────────────────── */
   readonly TAB_TITLES: Record<DashTab, string> = {
     dashboard:  '📊 綜合總覽',
-    orders:     '📋 訂單管理',
+    orders:     '📋 我的訂單',
     products:   '🛍️ 商品管理',
     promotions: '🎯 活動管理',
     inventory:  '📦 庫存管理',
@@ -152,11 +157,23 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 活動清單（Signal） ─────────────────────────── */
   promos = signal<DashPromo[]>([
-    { id: 1, title: '🎁 滿 $300 贈招牌滷蛋×2', scope: '全部分店 · 期限：無限期',      isActive: true,  color: '#c49756',              ended: false, rawName: '滿 $300 贈招牌滷蛋×2', rawStartTime: '2026-01-01', rawEndTime: '2099-12-31' },
-    { id: 2, title: '🍱 週一 9 折優惠',          scope: '日本東京店 · 期限：2026-06-30', isActive: true,  color: '#4f8ef7',              ended: false, rawName: '週一 9 折優惠',         rawStartTime: '2026-01-01', rawEndTime: '2026-06-30' },
-    { id: 3, title: '🥤 加購飲品 $29',            scope: '泰國曼谷店 · 期限：2026-05-01', isActive: true,  color: '#3ecf8e',              ended: false, rawName: '加購飲品 $29',          rawStartTime: '2026-01-01', rawEndTime: '2026-05-01' },
-    { id: 4, title: '🎊 週年慶全館 8 折',         scope: '全部分店 · 已結束',             isActive: false, color: 'rgba(255,255,255,0.15)', ended: true,  rawName: '週年慶全館 8 折',       rawStartTime: '2025-01-01', rawEndTime: '2025-12-31' },
+    { id: 1, title: '滿 $300 贈招牌滷蛋×2',  scope: '全部分店',    isActive: true,  color: '#c49756', ended: false, rawName: '滿 $300 贈招牌滷蛋×2',  rawStartTime: '2026-01-01', rawEndTime: '2099-12-31', type: 'promotion',    description: '消費滿 $300 即贈招牌滷蛋兩顆，無使用期限。', badgeColor: '#c49756', minAmount: 300 },
+    { id: 2, title: '週一 9 折優惠',          scope: '日本東京店',  isActive: true,  color: '#4f8ef7', ended: false, rawName: '週一 9 折優惠',          rawStartTime: '2026-01-01', rawEndTime: '2026-06-30', type: 'promotion',    description: '每週一全品項享 9 折優惠，適用於東京店。',     badgeColor: '#4f8ef7', minAmount: undefined },
+    { id: 3, title: '夏季新菜單上線公告',      scope: '全部分店',    isActive: true,  color: '#c084fc', ended: false, rawName: '夏季新菜單上線公告',      rawStartTime: '2026-04-01', rawEndTime: '2026-06-30', type: 'announcement', description: '2026 夏季菜單已正式上線，新增 6 款季節限定料理。', badgeColor: '#c084fc', minAmount: undefined },
+    { id: 4, title: '週年慶全館 8 折',         scope: '全部分店',    isActive: false, color: '#6b7280', ended: true,  rawName: '週年慶全館 8 折',         rawStartTime: '2025-01-01', rawEndTime: '2025-12-31', type: 'promotion',    description: '週年慶期間全館商品享 8 折，活動已結束。',     badgeColor: '#6b7280', minAmount: undefined },
   ]);
+
+  /* ── 活動分類篩選 Tab ────────────────────────────── */
+  promoTypeTab = signal<'all' | 'promotion' | 'announcement'>('all');
+
+  filteredPromos = computed(() => {
+    const tab = this.promoTypeTab();
+    if (tab === 'all') return this.promos();
+    return this.promos().filter(p => p.type === tab);
+  });
+
+  promoPromotionCount = computed(() => this.promos().filter(p => p.type === 'promotion').length);
+  promoAnnouncementCount = computed(() => this.promos().filter(p => p.type === 'announcement').length);
 
   /* ── 庫存清單（Signal） ─────────────────────────── */
   inventory = signal<DashInventory[]>([
@@ -238,7 +255,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 表單草稿（普通屬性，開啟 modal 時重置） ─────────── */
   productDraft = { name: '', category: '台式', price: 165, stock: 0, emoji: '🍜' };
-  promoDraft   = { name: '', startTime: '', endTime: '', color: '#c49756' };
+  promoDraft   = { name: '', type: 'promotion' as 'promotion' | 'announcement', description: '', startTime: '', endTime: '', color: '#c49756', badgeColor: '#c49756', minAmount: null as number | null, image: '' };
+  showPromoPanel = signal(false);
   giftDraft    = { promoId: 0, rawName: '', rawStartTime: '', rawEndTime: '', fullAmount: 300, giftProductId: null as number | null, quantity: -1 };
   accountDraft: { name: string; account: string; branch: string; shift: string; role: 'bm' | 'staff'; isActive: boolean } =
     { name: '', account: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true };
@@ -406,6 +424,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
             rawName:      p.name,
             rawStartTime: p.startTime,
             rawEndTime:   p.endTime,
+            type:         'promotion' as const,
           })));
         }
       },
@@ -686,16 +705,33 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  /* ── 新增活動 Modal ─────────────────────────────────── */
+  /* ── 新增活動 Slide-in Panel ───────────────────────── */
   openAddPromo(): void {
-    this.promoDraft = { name: '', startTime: '', endTime: '', color: '#c49756' };
-    this.activeModal.set('addPromo');
+    this.promoDraft = { name: '', type: 'promotion', description: '', startTime: '', endTime: '', color: '#c49756', badgeColor: '#c49756', minAmount: null, image: '' };
+    this.showPromoPanel.set(true);
+  }
+
+  closePromoPanel(): void {
+    this.showPromoPanel.set(false);
+  }
+
+  onPromoBadgeColorPick(color: string): void {
+    this.promoDraft.badgeColor = color;
+    this.promoDraft.color = color;
+  }
+
+  onPromoImageChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    const reader = new FileReader();
+    reader.onload = (e) => { this.promoDraft.image = e.target?.result as string; };
+    reader.readAsDataURL(input.files[0]);
   }
 
   savePromo(): void {
-    if (!this.promoDraft.name.trim()) { this.showToast('⚠️ 請輸入活動名稱'); return; }
+    if (!this.promoDraft.name.trim()) { this.showToast('請輸入活動名稱'); return; }
     if (!this.promoDraft.startTime || !this.promoDraft.endTime) {
-      this.showToast('⚠️ 請填寫活動開始與結束日期'); return;
+      this.showToast('請填寫活動開始與結束日期'); return;
     }
     const saved = { ...this.promoDraft };
     this.apiService.createPromotion({
@@ -705,26 +741,30 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: () => {
         this.loadPromos();
-        this.closeModal();
-        this.showToast(`✅ 活動「${saved.name.trim()}」已新增`);
+        this.closePromoPanel();
+        this.showToast(`活動「${saved.name.trim()}」已新增`);
       },
       error: () => {
-        /* API 失敗時降級為本地更新 */
         const ids = this.promos().map(p => p.id);
         const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
         this.promos.update(list => [...list, {
           id: newId,
-          title: saved.name,
+          title: saved.name.trim(),
           scope: `${saved.startTime} ～ ${saved.endTime}`,
           isActive: true,
-          color: saved.color,
+          color: saved.badgeColor || '#c49756',
           ended: false,
           rawName:      saved.name.trim(),
           rawStartTime: saved.startTime,
           rawEndTime:   saved.endTime,
+          type:         saved.type,
+          description:  saved.description,
+          image:        saved.image,
+          badgeColor:   saved.badgeColor,
+          minAmount:    saved.minAmount ?? undefined,
         }]);
-        this.closeModal();
-        this.showToast(`⚠️ 後端暫不可用，僅本地新增活動「${saved.name.trim()}」`);
+        this.closePromoPanel();
+        this.showToast(`後端暫不可用，已本地新增「${saved.name.trim()}」`);
       }
     });
   }

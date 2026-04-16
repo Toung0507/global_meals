@@ -44,25 +44,24 @@
         <div class="s-brand-tag">POS Management System</div>
       </div>
 
-      <!-- 第三區塊：系統資訊列（佔左欄 1/3 高度） -->
-      <div class="s-stats">
-        <div class="s-stat-row">
-          <span class="s-stat-icon">🖥</span>
-          <span class="s-stat-text">系統版本</span>
-          <span class="s-stat-val">v2.4.1</span>
+      <!-- 第三區塊：角色識別 Badge（說明登入後會進入的系統） -->
+      <div class="s-roles">
+        <div class="s-role-badge s-role-boss">
+          <div class="s-role-name">經理</div>
+          <div class="s-role-en">Boss</div>
+          <div class="s-role-desc">管理後台系統</div>
         </div>
-
-        <div class="s-stat-row">
-          <span class="s-stat-icon">🔒</span>
-          <span class="s-stat-text">安全連線</span>
-          <span class="s-stat-val">TLS 1.3</span>
+        <div class="s-role-badge s-role-bm">
+          <div class="s-role-name">分店長</div>
+          <div class="s-role-en">Branch Manager</div>
+          <div class="s-role-desc">POS 終端 + 後台</div>
         </div>
-
-        <div class="s-stat-row">
-          <span class="s-stat-icon">📍</span>
-          <span class="s-stat-text">分店節點</span>
-          <span class="s-stat-val">台灣 主機</span>
+        <div class="s-role-badge s-role-staff">
+          <div class="s-role-name">收銀員</div>
+          <div class="s-role-en">Staff</div>
+          <div class="s-role-desc">POS 終端操作</div>
         </div>
+        <p class="s-role-hint">系統自動識別角色，無需手動選擇</p>
       </div>
     </aside>
     <!-- 左側品牌欄結束 -->
@@ -93,75 +92,19 @@
         />
       </div>
 
-      <!-- 密碼輸入欄位（含顯示 / 隱藏眼睛切換按鈕） -->
+      <!-- 密碼輸入欄位（固定 type=password，無眼睛切換） -->
       <div class="s-field">
         <label>
           <span class="dot"></span>
           安全密碼
         </label>
-
-        <!-- s-password-wrap：相對定位容器，讓眼睛按鈕可以絕對定位在輸入框右側 -->
-        <div class="s-password-wrap">
-          <!-- [(ngModel)] 雙向綁定到 TypeScript 的 password 屬性 -->
-          <input
-            [type]="showPassword ? 'text' : 'password'"
-            [(ngModel)]="password"
-            name="password"
-            placeholder="請輸入登入密碼"
-            autocomplete="current-password"
-          />
-
-          <!-- 眼睛切換按鈕
-               [class.is-visible]  當密碼顯示中時加上 is-visible class（金黃色高亮）
-               type="button"       防止觸發表單送出
-               aria-label          無障礙標籤，讓螢幕閱讀器說出按鈕功能 -->
-          <button
-            type="button"
-            class="s-eye-btn"
-            [class.is-visible]="showPassword"
-            (click)="togglePassword()"
-            [attr.aria-label]="showPassword ? '隱藏密碼' : '顯示密碼'"
-          >
-            <!-- 眼睛「睜開」圖示：密碼隱藏中時顯示
-                 @if 是 Angular 17+ 的內建控制流，不需要 import NgIf -->
-            @if (!showPassword) {
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            }
-
-            <!-- 眼睛「閉上」圖示：密碼顯示中時顯示（有一條斜線穿過） -->
-            @if (showPassword) {
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path
-                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
-                />
-                <path
-                  d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
-                />
-                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
-                <line x1="1" y1="1" x2="23" y2="23" />
-              </svg>
-            }
-          </button>
-        </div>
+        <input
+          type="password"
+          [(ngModel)]="password"
+          name="password"
+          placeholder="請輸入登入密碼"
+          autocomplete="current-password"
+        />
       </div>
 
       <!-- 錯誤訊息（loginError 不為 null 時顯示） -->

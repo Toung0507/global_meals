@@ -56,7 +56,7 @@
       [class.active]="activeTab() === 'orders'"
       (click)="setTab('orders')"
     >
-      <span class="nav-icon">📋</span> 訂單管理
+      <span class="nav-icon">📋</span> 我的訂單
     </div>
     -->
     <!-- 暫時停用：商品管理 -->
@@ -476,22 +476,64 @@
          ════════════════════════════════════════ -->
     @if (activeTab() === "promotions") {
       <div>
-        <div class="page-title">活動管理</div>
-        <div class="page-sub">設定滿額優惠、折扣活動，切換開關即時啟用/停用</div>
-
-        <div class="d-flex justify-content-end mb-3">
+        <!-- 頁面標題列 -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <div class="page-title" style="margin-bottom:2px">活動管理</div>
+            <div class="page-sub" style="margin:0">設定滿額優惠、折扣活動與公告，切換開關即時啟用/停用</div>
+          </div>
           <button class="btn btn-sm btn-gold" (click)="openAddPromo()">+ 新增活動</button>
         </div>
 
-        @for (promo of promos(); track promo.id) {
-          <div class="promo-row" [style.border-left-color]="promo.color"
+        <!-- 分類篩選 Tab -->
+        <div class="promo-tab-bar mb-3">
+          <button class="promo-tab" [class.active]="promoTypeTab() === 'all'"
+            (click)="promoTypeTab.set('all')">
+            全部
+            <span class="promo-tab-count">{{ promos().length }}</span>
+          </button>
+          <button class="promo-tab" [class.active]="promoTypeTab() === 'promotion'"
+            (click)="promoTypeTab.set('promotion')">
+            活動
+            <span class="promo-tab-count">{{ promoPromotionCount() }}</span>
+          </button>
+          <button class="promo-tab" [class.active]="promoTypeTab() === 'announcement'"
+            (click)="promoTypeTab.set('announcement')">
+            公告
+            <span class="promo-tab-count">{{ promoAnnouncementCount() }}</span>
+          </button>
+        </div>
+
+        <!-- 活動卡片列表 -->
+        @for (promo of filteredPromos(); track promo.id) {
+          <div class="promo-row" [style.border-left-color]="promo.badgeColor || promo.color"
             [style.opacity]="promo.ended ? '0.55' : '1'">
-            <div class="d-flex justify-content-between align-items-start">
-              <div>
-                <div style="font-size:0.92rem;font-weight:600;color:#1A2840">{{ promo.title }}</div>
-                <div style="font-size:0.76rem;color:#4A5A70;margin-top:3px">套用：{{ promo.scope }}</div>
+            <div class="d-flex justify-content-between align-items-start gap-2">
+              <div style="flex:1;min-width:0">
+                <!-- 標題列：名稱 + 類型 badge -->
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <span class="promo-title">{{ promo.title }}</span>
+                  @if (promo.type === 'announcement') {
+                    <span class="promo-type-badge promo-type-announce">公告</span>
+                  } @else {
+                    <span class="promo-type-badge promo-type-promo">活動</span>
+                  }
+                </div>
+                <!-- 描述 -->
+                @if (promo.description) {
+                  <div class="promo-desc">{{ promo.description }}</div>
+                }
+                <!-- 日期 + 低消 -->
+                <div class="promo-meta">
+                  <span>{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span>
+                  @if (promo.minAmount) {
+                    <span class="promo-meta-sep">·</span>
+                    <span>滿 NT${{ promo.minAmount }}</span>
+                  }
+                </div>
               </div>
-              <div class="d-flex gap-2 align-items-center">
+              <!-- 操作區 -->
+              <div class="d-flex gap-2 align-items-center flex-shrink-0">
                 @if (promo.ended) {
                   <span class="badge-err">已結束</span>
                 } @else if (promo.isActive) {
@@ -499,11 +541,6 @@
                 } @else {
                   <span class="badge-warn">已暫停</span>
                 }
-                <!-- +贈品規則 暫時隱藏
-                <button class="btn btn-sm btn-ghost-gold" style="font-size:0.72rem;padding:2px 8px;"
-                  (click)="openAddGift(promo.id)">+ 贈品規則</button>
-                -->
-                <button class="btn btn-sm btn-ghost-red" style="font-size:0.72rem;padding:2px 8px;">刪除</button>
                 <div class="form-check form-switch mb-0">
                   <input class="form-check-input" type="checkbox"
                     [checked]="promo.isActive"
@@ -531,7 +568,7 @@
               <thead>
                 <tr>
                   <th>商品名稱</th><th>分類</th><th>分店</th>
-                  <th>庫存量</th><th>安全庫存</th><th>狀態</th><th>操作</th>
+                  <th>庫存量</th><th>狀態</th><th>操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -541,13 +578,11 @@
                     <td>{{ item.category }}</td>
                     <td>{{ item.branch }}</td>
                     <td class="mono"
-                      [style.color]="item.stock <= 0 ? '#dc2626' : item.stock <= item.safeStock ? '#b45309' : ''">
+                      [style.color]="item.stock <= 0 ? '#dc2626' : ''">
                       {{ item.stock }}
                     </td>
-                    <td class="mono" style="color:#4A5A70">{{ item.safeStock }}</td>
                     <td>
                       @if (item.stock <= 0) { <span class="badge-err">缺貨</span> }
-                      @else if (item.stock <= item.safeStock) { <span class="badge-warn">偏低</span> }
                       @else { <span class="badge-ok">充足</span> }
                     </td>
                     <td>
@@ -982,51 +1017,125 @@
 }
 
 <!-- ════════════════════════════════════════════════════
-     Modal：新增活動
+     Slide-in Panel：新增活動（#11 DESIGN.md 10C）
      ════════════════════════════════════════════════════ -->
-@if (activeModal() === 'addPromo') {
-  <div class="modal-overlay" (click)="closeModal()">
-    <div class="modal-box" (click)="$event.stopPropagation()">
-      <div class="modal-hd">
-        <div class="modal-hd-title">🎯 新增活動</div>
-        <button class="modal-close-btn" (click)="closeModal()">✕</button>
-      </div>
-      <div class="modal-bd">
-        <div class="mb-3">
-          <label class="modal-label">活動名稱 <span class="required">*</span></label>
-          <input type="text" class="form-control form-ctrl"
-            [(ngModel)]="promoDraft.name"
-            placeholder="例：滿 $300 贈招牌滷蛋×2" />
-        </div>
-        <div class="row g-2 mb-3">
-          <div class="col-6">
-            <label class="modal-label">開始日期 <span class="required">*</span></label>
-            <input type="date" class="form-control form-ctrl"
-              [(ngModel)]="promoDraft.startTime" />
-          </div>
-          <div class="col-6">
-            <label class="modal-label">結束日期 <span class="required">*</span></label>
-            <input type="date" class="form-control form-ctrl"
-              [(ngModel)]="promoDraft.endTime" />
-          </div>
-        </div>
-        <div class="mb-2">
-          <label class="modal-label">左側標記色</label>
-          <div class="d-flex align-items-center gap-3">
-            <input type="color" class="form-control form-ctrl"
-              [(ngModel)]="promoDraft.color"
-              style="width:52px;height:38px;padding:3px;cursor:pointer" />
-            <div class="promo-preview-bar" [style.background]="promoDraft.color"></div>
-          </div>
-        </div>
-        <div style="font-size:0.76rem;color:#8A9AB0;margin-top:4px">
-          ⚠️ 若需同時新增贈品規則，請在建立活動後至後台另行設定。
+@if (showPromoPanel()) {
+  <!-- 背景遮罩 -->
+  <div class="promo-panel-backdrop" (click)="closePromoPanel()"></div>
+  <!-- 右側滑入面板 -->
+  <div class="promo-panel">
+    <!-- 頂部標題列 -->
+    <div class="promo-panel-hd">
+      <span class="promo-panel-title">新增活動</span>
+      <button class="promo-panel-close" (click)="closePromoPanel()">✕</button>
+    </div>
+    <!-- 捲動內容區 -->
+    <div class="promo-panel-body">
+      <!-- 類型 radio (#08) -->
+      <div class="pp-field">
+        <label class="pp-label">類型</label>
+        <div class="pp-type-group">
+          <label class="pp-type-option" [class.selected]="promoDraft.type === 'promotion'">
+            <input type="radio" name="promoType" value="promotion"
+              [(ngModel)]="promoDraft.type" />
+            活動
+          </label>
+          <label class="pp-type-option" [class.selected]="promoDraft.type === 'announcement'">
+            <input type="radio" name="promoType" value="announcement"
+              [(ngModel)]="promoDraft.type" />
+            公告
+          </label>
         </div>
       </div>
-      <div class="modal-ft">
-        <button class="btn btn-sm btn-ghost-red" (click)="closeModal()">取消</button>
-        <button class="btn btn-sm btn-gold" (click)="savePromo()">確認新增</button>
+
+      <!-- 活動名稱 -->
+      <div class="pp-field">
+        <label class="pp-label">名稱 <span class="required">*</span></label>
+        <input type="text" class="form-control form-ctrl"
+          [(ngModel)]="promoDraft.name"
+          placeholder="例：滿額優惠、夏季上新公告" />
       </div>
+
+      <!-- 描述 -->
+      <div class="pp-field">
+        <label class="pp-label">描述</label>
+        <textarea class="form-control form-ctrl pp-textarea"
+          [(ngModel)]="promoDraft.description"
+          rows="3"
+          placeholder="詳細說明活動內容或公告事項"></textarea>
+      </div>
+
+      <!-- 封面圖片上傳 (#09) -->
+      <div class="pp-field">
+        <label class="pp-label">封面圖片</label>
+        @if (promoDraft.image) {
+          <!-- 有圖：預覽狀態 -->
+          <div class="pp-img-preview">
+            <img [src]="promoDraft.image" alt="封面預覽" />
+            <button class="pp-img-replace" (click)="promoFileInput.click()">更換圖片</button>
+          </div>
+        } @else {
+          <!-- 無圖：Drop Zone -->
+          <div class="pp-dropzone" (click)="promoFileInput.click()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span class="pp-dropzone-label">拖曳圖片或點擊上傳</span>
+            <span class="pp-dropzone-hint">支援 JPG、PNG，建議 1200×675px</span>
+          </div>
+        }
+        <input type="file" accept="image/*" style="display:none"
+          #promoFileInput (change)="onPromoImageChange($event)" />
+      </div>
+
+      <!-- 左側色條顏色選擇 (#09) -->
+      <div class="pp-field">
+        <label class="pp-label">左側色條</label>
+        <div class="pp-color-swatches">
+          @for (c of ['#1E3A5F','#C49756','#27AE60','#E74C3C','#C084FC','#F59E0B']; track c) {
+            <button class="pp-swatch"
+              [style.background]="c"
+              [class.selected]="promoDraft.badgeColor === c"
+              (click)="onPromoBadgeColorPick(c)"></button>
+          }
+        </div>
+      </div>
+
+      <!-- 日期範圍 (#10) -->
+      <div class="pp-field">
+        <label class="pp-label">開始日期 <span class="required">*</span></label>
+        <input type="date" class="form-control form-ctrl pp-date"
+          [(ngModel)]="promoDraft.startTime" />
+      </div>
+      <div class="pp-field">
+        <label class="pp-label">結束日期 <span class="required">*</span></label>
+        <input type="date" class="form-control form-ctrl pp-date"
+          [(ngModel)]="promoDraft.endTime"
+          [disabled]="!promoDraft.startTime"
+          [min]="promoDraft.startTime" />
+        @if (!promoDraft.startTime) {
+          <span class="pp-hint">請先選擇開始日期</span>
+        }
+      </div>
+
+      <!-- 滿額門檻 (#12) -->
+      <div class="pp-field">
+        <label class="pp-label">滿額門檻</label>
+        <div class="pp-amount-wrap">
+          <span class="pp-amount-prefix">NT$</span>
+          <input type="number" class="form-control form-ctrl pp-amount-input"
+            [(ngModel)]="promoDraft.minAmount"
+            min="1" placeholder="選填，例：300" />
+        </div>
+      </div>
+    </div>
+    <!-- 底部操作列（固定） -->
+    <div class="promo-panel-ft">
+      <button class="btn btn-sm btn-ghost-red" (click)="closePromoPanel()">取消</button>
+      <button class="btn btn-sm btn-gold" (click)="savePromo()">儲存</button>
     </div>
   </div>
 }

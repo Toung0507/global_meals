@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.7.0] - 2026-04-16
+
+### Added
+- **活動管理全面升級（管理後台）**：新增活動 / 公告分類篩選 Tab（含各類計數 badge）；右側滑入新增面板含類型選擇、描述文字、16:9 圖片上傳預覽、6 色 badge 選色器、日期區間（終止日依起始日啟用並設 min）、NT$ 最低消費欄位
+- **客戶端活動專區頁籤**：底部導覽列新增第 6 個「活動專區」頁籤（標籤 icon + 佔位頁面），預留未來串接促銷 API
+
+### Changed
+- **POS 訂單看板色條**：三欄狀態各有明確色條，等待備餐（灰）/ 備餐中（琥珀）/ 已完成（翠綠），border 加粗至 5px，背景色調提升
+- **登入頁角色識別**：移除系統資訊列，改為「經理 / 分店長 / 員工」三欄角色 badge，附說明文字
+- **導覽重命名**：客戶端「訂單管理」統一改為「我的訂單」
+
+### Removed
+- **側邊欄無作用 promo card**：「探索絕妙風味」區塊移除
+- **菜單新品標籤**：仙草奶茶圖片上的「新品」overlay badge 移除
+- **密碼眼睛切換按鈕**：staff-login 與 customer-member 密碼欄位改為固定 `type="password"`
+
+### Fixed
+- **NG5002 編譯錯誤**：活動 Tab 計數改用 computed signals，解決模板內不允許箭頭函式的問題
+- **TS2345 型別錯誤**：`loadPromos()` 對應物件補上 `type: 'promotion' as const`
+
 ## [0.2.1.0] - 2026-04-10
 
 ### Added
