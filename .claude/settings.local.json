@@ -87,7 +87,11 @@
       "Bash(stitch-mcp --version)",
       "Bash(npx @_davideast/stitch-mcp --version)",
       "Bash(claude mcp *)",
-      "Bash(npx skills *)"
+      "Bash(npx skills *)",
+      "Skill(browse)",
+      "Skill(browse:*)",
+      "Skill(stitch-design)",
+      "Skill(stitch-design:*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\joker\\OneDrive\\桌面\\global_meals_gradle\\src\\main\\java\\com\\example\\global_meals_gradle\\config",

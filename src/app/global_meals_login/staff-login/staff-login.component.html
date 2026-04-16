@@ -40,7 +40,6 @@
 
       <!-- 第二區塊：品牌名稱文字（佔左欄 1/3 高度） -->
       <div class="s-brand">
-        <div class="s-brand-en">LazyBaoBao</div>
         <div class="s-brand-zh">登入系統</div>
         <div class="s-brand-tag">POS Management System</div>
       </div>
@@ -76,19 +75,6 @@
       <div class="s-form-header">
         <h3>管理人員登入</h3>
         <p>請輸入您的管理帳號以開始後台操作</p>
-      </div>
-
-      <!-- 角色切換分頁：經理 / 分店長 / 現場收銀員 -->
-      <div class="s-role-tabs">
-        <button [class.active]="activeRole === 'M'" (click)="setRole('M')">
-          經理
-        </button>
-        <button [class.active]="activeRole === 'B'" (click)="setRole('B')">
-          分店長
-        </button>
-        <button [class.active]="activeRole === 'S'" (click)="setRole('S')">
-          現場收銀員
-        </button>
       </div>
 
       <!-- 帳號輸入欄位 -->
