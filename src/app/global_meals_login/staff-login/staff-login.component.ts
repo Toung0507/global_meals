@@ -73,7 +73,7 @@ export class StaffLoginComponent {
         });
       }, 1400);
     } else {
-      /* branch_manager / staff 都進 POS 終端機 */
+      /* branch_manager / deputy_manager / staff 都進 POS 終端機 */
       this.loadingService.showPosLoading();
       setTimeout(() => {
         this.router.navigate(['/pos-terminal']).then(() => {

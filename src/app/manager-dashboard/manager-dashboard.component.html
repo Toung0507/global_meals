@@ -716,30 +716,47 @@
         <div class="page-title">稅率設定</div>
         <div class="page-sub">依各國設定稅率，系統於結帳時自動套用，儲存後立即生效</div>
 
-        <div class="content-card" style="max-width:600px">
+        <div class="content-card" style="max-width:640px">
           <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="card-title mb-0">各國稅率一覽</div>
-            <button class="btn btn-sm btn-gold" (click)="openAddCountry()">+ 新增國家</button>
+            <div>
+              <div class="card-title mb-0">各國稅率一覽</div>
+              <div style="font-size:0.72rem;color:#8892b0;margin-top:2px">共 {{ taxes().length }} 個國家／地區</div>
+            </div>
+            <button class="btn btn-sm btn-gold" (click)="openAddCountry()">
+              <span style="font-size:1rem;line-height:1">＋</span> 新增國家
+            </button>
           </div>
 
           @for (tax of taxes(); track tax.id) {
             <div class="tax-row">
-              <div>
-                <div style="font-size:0.9rem;color:#1A2840">{{ tax.flag }} {{ tax.country }}</div>
-                <div style="font-size:0.72rem;color:#8892b0">{{ tax.branch }}</div>
+              <!-- 左側：地區碼徽章 + 國名 + 幣別 -->
+              <div class="tax-row-info">
+                <div class="tax-region-code">{{ tax.currency.slice(0, 2) }}</div>
+                <div>
+                  <div class="tax-country-name">{{ tax.country }}</div>
+                  <div class="tax-meta-row">
+                    <span class="tax-currency-badge">{{ tax.currency }}</span>
+                    <span class="tax-type-badge" [class.inclusive]="tax.taxType === 'INCLUSIVE'" [class.exclusive]="tax.taxType === 'EXCLUSIVE'">
+                      {{ tax.taxType === 'INCLUSIVE' ? '內含稅' : '外加稅' }}
+                    </span>
+                  </div>
+                </div>
               </div>
+              <!-- 右側：稅率顯示或編輯 -->
               <div class="d-flex align-items-center gap-2">
                 @if (tax.editing) {
-                  <input type="number" class="form-control form-control-sm form-ctrl"
+                  <input type="number" class="form-control form-control-sm form-ctrl mono"
                     [value]="tax.editValue"
                     (input)="onTaxInput(tax.id, $event)"
                     min="0" max="100" style="width:80px;text-align:right" />
-                  <span style="color:#4A5A70">%</span>
-                  <button class="btn btn-sm btn-gold" (click)="saveTax(tax.id)">儲存</button>
-                  <button class="btn btn-sm btn-ghost-red" style="font-size:0.72rem;" (click)="cancelEditTax(tax.id)">✕</button>
+                  <span style="color:#4A5A70;font-size:0.85rem">%</span>
+                  <button class="btn btn-sm btn-gold" (click)="saveTax(tax.id)">✓ 儲存</button>
+                  <button class="btn btn-sm btn-ghost-red" (click)="cancelEditTax(tax.id)">✕</button>
                 } @else {
-                  <span class="mono" style="font-size:1rem;color:#1A2840;min-width:36px;text-align:right">{{ tax.rate }}</span>
-                  <span style="color:#4A5A70">%</span>
+                  <div class="tax-rate-badge">
+                    <span class="tax-rate-num mono">{{ tax.rate }}</span>
+                    <span class="tax-rate-unit">%</span>
+                  </div>
                   <button class="btn btn-sm btn-ghost-gold" (click)="startEditTax(tax.id)">修改</button>
                 }
               </div>
@@ -1253,37 +1270,78 @@
      ════════════════════════════════════════════════════ -->
 @if (activeModal() === 'addCountry') {
   <div class="modal-overlay" (click)="closeModal()">
-    <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="modal-box modal-tax" (click)="$event.stopPropagation()">
+
+      <!-- 標題列 -->
       <div class="modal-hd">
-        <div class="modal-hd-title">🌍 新增國家稅率</div>
+        <div class="modal-hd-title">新增國家／地區稅率</div>
         <button class="modal-close-btn" (click)="closeModal()">✕</button>
       </div>
+
       <div class="modal-bd">
-        <div class="row g-2 mb-3">
-          <div class="col-3">
-            <label class="modal-label">國旗 Emoji</label>
-            <input type="text" class="form-control form-ctrl text-center"
-              [(ngModel)]="taxDraft.flag" maxlength="4" placeholder="🏳️" />
+
+        <!-- 第一列：國家名稱（全寬） -->
+        <div class="mb-3">
+          <label class="modal-label">國家／地區名稱 <span class="required">*</span></label>
+          <input type="text" class="form-control form-ctrl"
+            [(ngModel)]="taxDraft.country"
+            placeholder="例：韓國、新加坡、馬來西亞" />
+        </div>
+
+        <!-- 第二列：稅率類型 + 幣別代碼 -->
+        <div class="row g-3 mb-3">
+          <div class="col-7">
+            <label class="modal-label">稅率類型 <span class="required">*</span></label>
+            <select class="form-control form-ctrl form-select-ctrl"
+              [(ngModel)]="taxDraft.taxType">
+              <option value="INCLUSIVE">內含稅（稅已含於售價中）</option>
+              <option value="EXCLUSIVE">外加稅（結帳時另行加收）</option>
+            </select>
+            <div class="modal-helper-text">
+              @if (taxDraft.taxType === 'INCLUSIVE') { 顧客支付的金額已包含稅款，無需額外顯示 }
+              @else { 系統將於結帳時在小計金額上加計稅率 }
+            </div>
           </div>
-          <div class="col-9">
-            <label class="modal-label">國家名稱 <span class="required">*</span></label>
-            <input type="text" class="form-control form-ctrl"
-              [(ngModel)]="taxDraft.country" placeholder="例：韓國" />
+          <div class="col-5">
+            <label class="modal-label">幣別代碼</label>
+            <input type="text" class="form-control form-ctrl mono"
+              [(ngModel)]="taxDraft.currency"
+              placeholder="例：KRW、SGD"
+              maxlength="5"
+              style="text-transform:uppercase;letter-spacing:1px" />
+            <div class="modal-helper-text">留空則依國家自動對應</div>
           </div>
         </div>
-        <div class="mb-2">
-          <label class="modal-label">稅率（%）</label>
-          <div class="d-flex align-items-center gap-2">
-            <input type="number" class="form-control form-ctrl"
-              [(ngModel)]="taxDraft.rate" min="0" max="100" style="max-width:100px" />
-            <span style="color:#4A5A70">%</span>
+
+        <!-- 第三列：稅率 + 生效日期 -->
+        <div class="row g-3">
+          <div class="col-5">
+            <label class="modal-label">稅率（%）<span class="required">*</span></label>
+            <div class="tax-input-wrap">
+              <input type="number" class="form-control form-ctrl mono tax-rate-input"
+                [(ngModel)]="taxDraft.rate" min="0" max="100" placeholder="0" />
+              <span class="tax-input-unit">%</span>
+            </div>
+            <div class="modal-helper-text">輸入 0 – 100 整數</div>
+          </div>
+          <div class="col-7">
+            <label class="modal-label">生效日期</label>
+            <input type="date" class="form-control form-ctrl mono"
+              [(ngModel)]="taxDraft.effectiveDate" />
+            <div class="modal-helper-text">留空表示立即生效</div>
           </div>
         </div>
+
       </div>
+
+      <!-- 底部操作列 -->
       <div class="modal-ft">
-        <button class="btn btn-sm btn-ghost-red" (click)="closeModal()">取消</button>
-        <button class="btn btn-sm btn-gold" (click)="saveCountry()">確認新增</button>
+        <button class="btn btn-ghost-navy" (click)="closeModal()">取消</button>
+        <button class="btn btn-gold" (click)="saveCountry()">
+          <span style="font-size:0.85rem;font-weight:700">✓</span> 確認新增
+        </button>
       </div>
+
     </div>
   </div>
 }

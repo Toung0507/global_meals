@@ -400,17 +400,28 @@
     <div class="pos-right">
       <!-- 訂單頭部 -->
       <div class="cart-header">
-        <div>
+        <div class="cart-header-left">
           <div class="cart-title">目前訂單</div>
           <div class="cart-order-id">#TW-2061</div>
         </div>
+        <!-- 訂單類型切換：內用 / 外帶 -->
+        <div class="order-type-toggle">
+          <button
+            class="order-type-btn"
+            [class.active]="orderType() === 'dine-in'"
+            (click)="orderType.set('dine-in')"
+          >內用</button>
+          <button
+            class="order-type-btn"
+            [class.active]="orderType() === 'takeout'"
+            (click)="orderType.set('takeout')"
+          >外帶</button>
+        </div>
         <button
-          class="btn btn-sm btn-ghost-red"
-          style="font-size: 0.75rem"
+          class="cart-clear-btn"
           (click)="clearCart()"
-        >
-          清空
-        </button>
+          title="清空訂單"
+        >✕</button>
       </div>
 
       <!-- ── 會員 / 訪客 選擇區塊 ── -->
@@ -675,6 +686,7 @@
               <div class="qty-btn" (click)="updateQty(item.id, +1)">+</div>
             </div>
             <div class="cart-item-price">${{ item.price * item.qty }}</div>
+            <div class="cart-item-remove" (click)="removeItem(item.id)" title="移除此品項">×</div>
           </div>
         }
 
@@ -693,6 +705,18 @@
             <div class="cart-item-price cart-item-price-free">$0</div>
           </div>
         }
+      </div>
+
+      <!-- 備註欄 -->
+      <div class="cart-note-wrap">
+        <input
+          class="cart-note-input"
+          type="text"
+          placeholder="備註（例：少辣、不加蔥）"
+          [value]="orderNote()"
+          (input)="orderNote.set($any($event.target).value)"
+          maxlength="60"
+        />
       </div>
 
       <!-- 小計區域 -->

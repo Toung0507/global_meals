@@ -745,10 +745,112 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 13px 0;
-    border-bottom: 1px solid #D4DCE8;
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    background: #F9FAFB;
+    border: 1px solid #D4DCE8;
+    transition: background 0.15s, box-shadow 0.15s;
 }
-.tax-row:last-child { border-bottom: none; }
+.tax-row:hover {
+    background: #F0F4FA;
+    box-shadow: 0 2px 8px rgba(30,58,95,0.07);
+}
+.tax-row:last-child { margin-bottom: 0; }
+
+.tax-row-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* 地區碼方形徽章（取代無意義的 emoji 旗幟） */
+.tax-region-code {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #1E3A5F 0%, #2A4F7C 100%);
+    color: #F0C68C;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+
+.tax-country-name {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #1A2840;
+    letter-spacing: 0.2px;
+}
+
+/* 幣別 + 稅率類型 meta 行 */
+.tax-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 3px;
+}
+
+/* 幣別代碼徽章 */
+.tax-currency-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #4A5A70;
+    background: #EEF2F8;
+    border: 1px solid #D4DCE8;
+    border-radius: 4px;
+    padding: 1px 6px;
+    letter-spacing: 0.5px;
+}
+
+/* 稅率類型徽章 */
+.tax-type-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    border-radius: 4px;
+    padding: 1px 6px;
+    letter-spacing: 0.3px;
+}
+.tax-type-badge.inclusive {
+    color: #1E6B3A;
+    background: rgba(34,139,74,0.10);
+    border: 1px solid rgba(34,139,74,0.25);
+}
+.tax-type-badge.exclusive {
+    color: #7A4A00;
+    background: rgba(196,151,86,0.12);
+    border: 1px solid rgba(196,151,86,0.30);
+}
+
+/* 稅率數字 Badge */
+.tax-rate-badge {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+    background: rgba(196,151,86,0.10);
+    border: 1px solid rgba(196,151,86,0.30);
+    border-radius: 6px;
+    padding: 3px 10px;
+    min-width: 64px;
+    justify-content: center;
+}
+.tax-rate-num {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1A2840;
+}
+.tax-rate-unit {
+    font-size: 0.75rem;
+    color: #4A5A70;
+    font-weight: 500;
+}
 
 
 /* ── 財報大數字 ───────────────────────────────────────── */
@@ -940,6 +1042,70 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
 }
 
 .required { color: #dc2626; }
+
+/* ── 新增國家稅率 Modal 專屬 ─────────────────────────── */
+/* 加寬版 Modal */
+.modal-tax { max-width: 560px; }
+
+/* Select 下拉選單樣式（與 form-ctrl 保持一致） */
+.form-select-ctrl {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A5A70' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+.form-select-ctrl:focus {
+  border-color: #1E3A5F;
+  box-shadow: 0 0 0 3px rgba(30,58,95,0.08);
+}
+
+/* 稅率輸入列：輸入框 + % 單位並排 */
+.tax-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 160px;
+}
+.tax-rate-input {
+  font-family: 'DM Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: right;
+  color: #1A2840;
+  letter-spacing: 1px;
+}
+.tax-input-unit {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #4A5A70;
+  flex-shrink: 0;
+}
+
+/* 輸入框下方說明文字 */
+.modal-helper-text {
+  font-size: 0.7rem;
+  color: #8892b0;
+  margin-top: 5px;
+  letter-spacing: 0.2px;
+}
+
+/* 取消按鈕：深海軍藍幽靈樣式 */
+.btn-ghost-navy {
+  background-color: transparent;
+  color: #1E3A5F;
+  border: 1px solid rgba(30,58,95,0.35);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 8px;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.btn-ghost-navy:hover {
+  background-color: rgba(30,58,95,0.07);
+  border-color: #1E3A5F;
+}
 
 
 /* ── 訂單詳情 Modal 專屬 ─────────────────────────────── */

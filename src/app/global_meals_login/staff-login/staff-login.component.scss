@@ -240,16 +240,16 @@
 
 
 /* =====================================================
-   第三區塊：角色識別 Badge 列表
+   第三區塊：系統資訊列表
    flex: 0 讓此區塊緊貼 brand 下方，不搶 logo 空間
    border-top 細線作為與品牌名稱區塊的視覺分界
    ===================================================== */
-.s-roles {
+.s-sysinfo {
     flex: 0;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 0;
     width: 100%;
     z-index: 2;
     padding-top: clamp(8px, 1.5vh, 14px);
@@ -260,70 +260,54 @@
     border-top: 1px solid rgba(255, 255, 255, 0.10);
 }
 
-/* 角色 Badge 共用樣式 */
-.s-role-badge {
+/* 每一行系統資訊 */
+.s-sysinfo-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
+    justify-content: space-between;
+    padding: 8px 12px;
     border-radius: 6px;
-    border-left: 3px solid transparent;
     box-sizing: border-box;
+    background-color: rgba(255, 255, 255, 0.07);
+    margin-bottom: 4px;
 }
 
-/* 經理（Boss）— Manager Indigo 邊條 */
-.s-role-boss {
-    border-left-color: #818CF8;
-    background-color: rgba(129, 140, 248, 0.10);
-}
-
-/* 分店長（Branch Manager）— Manager Indigo 淡版 */
-.s-role-bm {
-    border-left-color: #818CF8;
-    background-color: rgba(129, 140, 248, 0.06);
-}
-
-/* 收銀員（Staff）— Staff Blue 邊條 */
-.s-role-staff {
-    border-left-color: #4F8EF7;
-    background-color: rgba(79, 142, 247, 0.08);
-}
-
-/* 角色中文名稱 */
-.s-role-name {
+/* 左側標籤 */
+.s-sysinfo-label {
     font-family: 'Noto Sans TC', sans-serif;
-    font-size: clamp(13px, 1.6vh, 15px);
-    font-weight: 600;
-    color: #E2E8F8;
-    line-height: 1.3;
-    flex-shrink: 0;
-    min-width: 48px;
-}
-
-/* 角色英文名稱 */
-.s-role-en {
-    font-family: 'DM Mono', monospace;
-    font-size: clamp(10px, 1.2vh, 12px);
-    color: #94A3B8;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-/* 角色說明文字（靠右，縮小自動推到最右） */
-.s-role-desc {
-    margin-left: auto;
-    font-size: clamp(10px, 1.2vh, 12px);
+    font-size: clamp(12px, 1.5vh, 14px);
     color: #CBD5E1;
-    white-space: nowrap;
-    text-align: right;
+    letter-spacing: 0.5px;
+    font-weight: 500;
 }
 
-/* 底部提示小字 */
-.s-role-hint {
-    font-size: clamp(10px, 1.2vh, 12px);
-    color: rgba(203, 213, 225, 0.65);
+/* 右側數值 */
+.s-sysinfo-value {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(12px, 1.5vh, 14px);
+    color: #F1F5FF;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+/* 伺服器狀態：正常運作 — 綠色 */
+.s-sysinfo-online {
+    color: #4ADE80;
+}
+
+/* 分隔線 */
+.s-sysinfo-divider {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.12);
+    margin: 8px 0 6px;
+}
+
+/* 底部版權提示小字 */
+.s-sysinfo-hint {
+    font-size: clamp(10px, 1.2vh, 11px);
+    color: rgba(203, 213, 225, 0.55);
     text-align: center;
-    margin: 2px 0 0;
+    margin: 0;
     letter-spacing: 0.3px;
 }
 
@@ -584,19 +568,18 @@
         margin-top: 4px;
     }
 
-    .s-roles {
-        gap: 5px;
+    .s-sysinfo {
+        gap: 0;
         padding-top: 8px;
         padding-bottom: 8px;
     }
 
-    .s-role-badge {
-        padding: 7px 10px;
+    .s-sysinfo-row {
+        padding: 5px 8px;
     }
 
-    .s-role-name { font-size: 12px; }
-    .s-role-en   { font-size: 9px; }
-    .s-role-desc { font-size: 9px; }
+    .s-sysinfo-label { font-size: 10px; }
+    .s-sysinfo-value { font-size: 10px; }
 
     .s-right {
         padding-top: 10px;

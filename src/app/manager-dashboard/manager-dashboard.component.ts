@@ -96,9 +96,9 @@ interface DashBranch {
 /* ── 稅率型別 ──────────────────────────────────────── */
 interface DashTax {
   id: number;
-  flag: string;
   country: string;
-  branch: string;
+  currency: string;   /* 幣別代碼，例 TWD / JPY / KRW */
+  taxType: string;    /* 'INCLUSIVE'（內含稅）| 'EXCLUSIVE'（外加稅） */
   rate: number;
   editing: boolean;
   editValue: number;
@@ -204,9 +204,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 稅率清單（Signal） ─────────────────────────── */
   taxes = signal<DashTax[]>([
-    { id: 1, flag: '🇹🇼', country: '台灣', branch: '台灣台北店', rate: 5,  editing: false, editValue: 5  },
-    { id: 2, flag: '🇯🇵', country: '日本', branch: '日本東京店', rate: 10, editing: false, editValue: 10 },
-    { id: 3, flag: '🇹🇭', country: '泰國', branch: '泰國曼谷店', rate: 7,  editing: false, editValue: 7  },
+    { id: 1, country: '台灣', currency: 'TWD', taxType: 'INCLUSIVE', rate: 5,  editing: false, editValue: 5  },
+    { id: 2, country: '日本', currency: 'JPY', taxType: 'INCLUSIVE', rate: 10, editing: false, editValue: 10 },
+    { id: 3, country: '泰國', currency: 'THB', taxType: 'EXCLUSIVE', rate: 7,  editing: false, editValue: 7  },
   ]);
 
   /* ── 商品篩選 ─────────────────────────────────── */
@@ -260,7 +260,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   giftDraft    = { promoId: 0, rawName: '', rawStartTime: '', rawEndTime: '', fullAmount: 300, giftProductId: null as number | null, quantity: -1 };
   accountDraft: { name: string; account: string; branch: string; shift: string; role: 'bm' | 'staff'; isActive: boolean } =
     { name: '', account: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true };
-  taxDraft = { flag: '🇹🇼', country: '', branch: '', rate: 5 };
+  taxDraft: { country: string; currency: string; taxType: 'INCLUSIVE' | 'EXCLUSIVE'; rate: number; effectiveDate: string } =
+    { country: '', currency: '', taxType: 'INCLUSIVE', rate: 5, effectiveDate: '' };
   branchDraft     = { name: '', city: '', country: '', address: '', phone: '' };
   editBranchDraft = { id: 0, name: '', city: '', country: '', address: '', phone: '' };
 
@@ -395,12 +396,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       next: (res) => {
         if (res?.regionsList?.length) {
           this.taxes.set(res.regionsList.map((r: RegionVO) => ({
-            id: r.id,
-            flag:    this.countryToFlag(r.country),
-            country: r.country,
-            branch:  r.currencyCode,
-            rate: +(+r.taxRate * 100).toFixed(2),
-            editing: false,
+            id:       r.id,
+            country:  r.country,
+            currency: r.currencyCode,
+            taxType:  r.taxType ?? 'INCLUSIVE',
+            rate:     +(+r.taxRate * 100).toFixed(2),
+            editing:  false,
             editValue: +(+r.taxRate * 100).toFixed(2)
           })));
         }
@@ -605,12 +606,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.apiService.updateRegion({
       id: target.id,
       country: target.country,
-      currencyCode: currencyMap[target.country] ?? 'USD',
+      currencyCode: target.currency || currencyMap[target.country] || 'USD',
       taxRate: target.editValue / 100,
-      taxType: 'INCLUSIVE'
+      taxType: target.taxType as 'INCLUSIVE' | 'EXCLUSIVE'
     }).subscribe({
-      next: () => this.showToast('✅ 稅率已同步至後端'),
-      error: () => this.showToast('⚠️ 稅率 UI 已更新，後端同步失敗（請確認連線）')
+      next: () => this.showToast('稅率已同步至後端'),
+      error: () => this.showToast('稅率已更新，後端同步失敗（請確認連線）')
     });
   }
 
@@ -829,41 +830,44 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 新增國家稅率 Modal ─────────────────────────────── */
   openAddCountry(): void {
-    this.taxDraft = { flag: '🏳️', country: '', branch: '', rate: 5 };
+    this.taxDraft = { country: '', currency: '', taxType: 'INCLUSIVE', rate: 5, effectiveDate: '' };
     this.activeModal.set('addCountry');
   }
 
   saveCountry(): void {
-    if (!this.taxDraft.country.trim()) { this.showToast('⚠️ 請輸入國家名稱'); return; }
+    if (!this.taxDraft.country.trim()) { this.showToast('請輸入國家／地區名稱'); return; }
     const saved = { ...this.taxDraft };
     const currencyMap: Record<string, string> = {
       '台灣': 'TWD', '日本': 'JPY', '泰國': 'THB', '韓國': 'KRW',
       '美國': 'USD', '英國': 'GBP', '法國': 'EUR', '德國': 'EUR',
       '新加坡': 'SGD', '馬來西亞': 'MYR', '印尼': 'IDR', '越南': 'VND',
     };
+    const resolvedCurrency = saved.currency.trim() || currencyMap[saved.country.trim()] || 'USD';
+    const taxTypeLabel = saved.taxType === 'INCLUSIVE' ? '內含稅' : '外加稅';
     this.apiService.createRegion({
       country: saved.country.trim(),
-      currencyCode: currencyMap[saved.country.trim()] ?? 'USD',
+      currencyCode: resolvedCurrency,
       taxRate: saved.rate / 100,
-      taxType: 'INCLUSIVE'
+      taxType: saved.taxType as 'INCLUSIVE' | 'EXCLUSIVE'
     }).subscribe({
       next: () => {
         this.loadTaxes();
         this.closeModal();
-        this.showToast(`✅ 已新增 ${saved.flag} ${saved.country} 稅率 ${saved.rate}%`);
+        this.showToast(`已新增 ${saved.country}（${resolvedCurrency}）${taxTypeLabel} ${saved.rate}%`);
       },
       error: () => {
         /* API 失敗時降級為本地更新 */
         const ids = this.taxes().map(t => t.id);
         const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
         this.taxes.update(list => [...list, {
-          id: newId, flag: saved.flag,
+          id: newId,
           country: saved.country,
-          branch: saved.branch || `${saved.country}分店`,
+          currency: resolvedCurrency,
+          taxType: saved.taxType,
           rate: saved.rate, editing: false, editValue: saved.rate
         }]);
         this.closeModal();
-        this.showToast(`⚠️ 後端暫不可用，僅本地新增 ${saved.flag} ${saved.country}`);
+        this.showToast(`後端暫不可用，已本地新增 ${saved.country}（${resolvedCurrency}）`);
       }
     });
   }

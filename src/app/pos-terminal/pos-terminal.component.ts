@@ -80,6 +80,12 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
   /* ── 付款方式 ─────────────────────────────────────── */
   payMethod = signal<'cash' | 'card' | 'mobile'>('cash');
 
+  /* ── 訂單類型（內用 / 外帶）────────────────────────── */
+  orderType = signal<'dine-in' | 'takeout'>('dine-in');
+
+  /* ── 備註（收銀員輸入）──────────────────────────────── */
+  orderNote = signal('');
+
   /* ── 分類篩選 ─────────────────────────────────────── */
   activeCategory = signal<string>('all');
 
@@ -510,6 +516,12 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
   /* 清空購物車 */
   clearCart(): void {
     this.cartItems.set([]);
+    this.orderNote.set('');
+  }
+
+  /* 直接移除單一品項 */
+  removeItem(id: number): void {
+    this.cartItems.update(list => list.filter(c => c.id !== id));
   }
 
   /* ── 現金計算器狀態 ───────────────────────────────── */
@@ -638,7 +650,9 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
       createdAt:        timeStr,
       payMethod:        payLabels[this.payMethod()],
       source:           'pos',
-      customerName:     this.authService.currentUser?.name
+      customerName:     this.authService.currentUser?.name,
+      orderType:        this.orderType() === 'dine-in' ? '內用' : '外帶',
+      note:             this.orderNote().trim() || undefined
     });
 
     this.lastOrderNum.set(orderNum);

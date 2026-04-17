@@ -29,7 +29,7 @@ import { Injectable } from '@angular/core';
 ──────────────────────────────────────────────────── */
 export interface MockUser {
   id: number;
-  role: string;       /* 身分類型：'customer' | 'staff' | 'branch_manager' | 'boss' | 'guest' */
+  role: string;       /* 身分類型：'customer' | 'staff' | 'branch_manager' | 'deputy_manager' | 'boss' | 'guest' */
   name: string;       /* 顯示名稱 */
   phone: string;      /* 手機號碼 */
   email: string;      /* 電子郵件 */
@@ -77,9 +77,10 @@ const MOCK_USERS: MockUser[] = [
   },
   /*
    * ── 管理系統測試帳號（未來串接後端後全部移除）──
-   *   老闆：admin@lazybao.com   / admin1234
-   *   分店長：manager@lazybao.com / mgr1234
-   *   員工：staff@lazybao.com  / staff1234
+   *   老闆：   admin@lazybao.com   / admin1234
+   *   分店長： manager@lazybao.com / mgr1234
+   *   副店長： deputy@lazybao.com  / deputy1234
+   *   員工：   staff@lazybao.com  / staff1234
    */
   {
     id: 2,
@@ -96,6 +97,14 @@ const MOCK_USERS: MockUser[] = [
     phone: '0900-000-002',
     email: 'manager@lazybao.com',
     password: 'mgr1234'
+  },
+  {
+    id: 5,
+    role: 'deputy_manager',
+    name: '李副店長',
+    phone: '0900-000-004',
+    email: 'deputy@lazybao.com',
+    password: 'deputy1234'
   },
   {
     id: 4,
@@ -268,7 +277,7 @@ export class AuthService {
     const found = MOCK_USERS.find(function(user) {
       return user.email === email
           && user.password === password
-          && (user.role === 'boss' || user.role === 'branch_manager' || user.role === 'staff');
+          && (user.role === 'boss' || user.role === 'branch_manager' || user.role === 'deputy_manager' || user.role === 'staff');
     });
 
     if (found) {
