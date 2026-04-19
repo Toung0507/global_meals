@@ -7468,7 +7468,7 @@
   &:active { transform: scale(0.985); }
 }
 
-/* 背景色 per tagType（對應輪播漸層） */
+/* 背景色 per tagType */
 .pz-bg-new     { background: linear-gradient(130deg, #b84a14 0%, #3d1204 100%); }
 .pz-bg-promo   { background: linear-gradient(130deg, #fff3d4 0%, #ffe4a0 100%); }
 .pz-bg-premium { background: linear-gradient(130deg, #3d2010 0%, #7a3a00 100%); }
@@ -7498,7 +7498,6 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  /* 左側淡出，融入卡片背景 */
   mask-image: linear-gradient(to right, transparent 0%, black 28%);
   -webkit-mask-image: linear-gradient(to right, transparent 0%, black 28%);
 }
@@ -7564,84 +7563,132 @@
 .pz-bg-promo   .pz-card-more { color: #D95C1A; }
 .pz-bg-premium .pz-card-more { color: #F0A500; }
 
-/* Detail Bottom Sheet */
+/* Detail Modal (centered) */
 .pz-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.5);
   z-index: 500;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  padding: 20px;
   animation: pzOverlayIn 0.22s ease;
 }
 
 .pz-sheet {
   width: 100%;
-  max-width: 600px;
-  max-height: 90dvh;
+  max-width: 560px;
+  max-height: 88dvh;
   background: #FFFAF3;
-  border-radius: 20px 20px 0 0;
+  border-radius: 20px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  animation: pzSheetUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  animation: pzSheetScale 0.28s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-.pz-sheet-img-wrap {
+/* Modal Header: 全寬圖片 + 左→右漸層疊加 */
+.pz-sheet-header {
   position: relative;
-  width: 100%;
   height: 200px;
   flex-shrink: 0;
   overflow: hidden;
 }
 
+/* 全寬底層圖片 */
 .pz-sheet-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  z-index: 0;
+}
+
+/* 漸層遮罩：per tagType */
+.pzst-new .pz-sheet-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, #7a2806 0%, #9b3610 30%, rgba(139,46,10,0.55) 56%, transparent 80%);
+  z-index: 1;
+}
+.pzst-promo .pz-sheet-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, #f0c84a 0%, #f5d870 30%, rgba(245,216,96,0.55) 56%, transparent 80%);
+  z-index: 1;
+}
+.pzst-premium .pz-sheet-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, #1e0c04 0%, #32150a 30%, rgba(50,21,10,0.55) 56%, transparent 80%);
+  z-index: 1;
+}
+
+/* 文字區：疊在漸層上方 */
+.pz-sheet-header-body {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 60%;
+  padding: 20px 8px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 8px;
+  z-index: 2;
+}
+
+.pz-sheet-header-name {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-family: 'Noto Sans TC', sans-serif;
+  line-height: 1.3;
+}
+
+.pzst-new    .pz-sheet-header-name { color: #fff; }
+.pzst-promo  .pz-sheet-header-name { color: #5c2e00; }
+.pzst-premium .pz-sheet-header-name { color: #F0C68C; }
+
+.pz-sheet-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  width: fit-content;
 }
 
 .pz-sheet-close {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 32px;
-  height: 32px;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.92);
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #3D2010;
+  z-index: 2;
 
-  svg { width: 16px; height: 16px; }
-}
-
-.pz-sheet-tag {
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  padding: 4px 12px;
-  border-radius: 100px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  svg { width: 14px; height: 14px; }
 }
 
 .pz-sheet-content {
   overflow-y: auto;
-  padding: 20px 20px 32px;
+  padding: 20px 20px 28px;
   flex: 1;
-}
-
-.pz-sheet-title {
-  margin: 0 0 10px;
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #3D2010;
 }
 
 .pz-sheet-date {
@@ -7766,7 +7813,7 @@
   to   { opacity: 1; }
 }
 
-@keyframes pzSheetUp {
-  from { transform: translateY(100%); }
-  to   { transform: translateY(0); }
+@keyframes pzSheetScale {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
 }

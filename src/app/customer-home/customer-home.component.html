@@ -2795,32 +2795,33 @@
           <div style="height:88px;"></div>
         </section>
 
-        <!-- Detail Bottom Sheet Modal -->
+        <!-- Detail Modal (centered) -->
         @if (selectedPromoDetail) {
           <div class="pz-overlay" (click)="closePromoDetail()">
-            <div class="pz-sheet" (click)="$event.stopPropagation()">
-              <!-- Image + close btn -->
-              <div class="pz-sheet-img-wrap">
+            <div class="pz-sheet" [ngClass]="'pzst-' + selectedPromoDetail.tagType" (click)="$event.stopPropagation()">
+              <!-- Header: 全寬圖片 + 漸層疊加 -->
+              <div class="pz-sheet-header">
                 <img
                   [src]="selectedPromoDetail.image"
                   [alt]="selectedPromoDetail.name"
                   class="pz-sheet-img"
-                  width="600"
-                  height="280"
+                  width="560"
+                  height="200"
                 />
+                <div class="pz-sheet-header-body">
+                  <span class="pz-sheet-tag" [ngClass]="'pzt-' + selectedPromoDetail.tagType">{{ selectedPromoDetail.tag }}</span>
+                  <h2 class="pz-sheet-header-name">{{ selectedPromoDetail.name }}</h2>
+                </div>
                 <button class="pz-sheet-close" (click)="closePromoDetail()" aria-label="關閉">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
                 </button>
-                <span class="pz-sheet-tag" [class]="'pzt-' + selectedPromoDetail.tagType">{{ selectedPromoDetail.tag }}</span>
               </div>
 
               <!-- Scrollable content -->
               <div class="pz-sheet-content">
-                <h2 class="pz-sheet-title">{{ selectedPromoDetail.name }}</h2>
-
                 <!-- Date row -->
                 <div class="pz-sheet-date">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;">
