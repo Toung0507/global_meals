@@ -226,10 +226,8 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     },
   ];
 
-  selectedPromoName     = signal<string>('');
-  selectedPromoGift     = signal<string>('');
-  promoDropdownOpen     = signal(false);
-  promoGiftDropdownOpen = signal(false);
+  selectedPromoName = signal<string>('');
+  promoDropdownOpen = signal(false);
 
   unlockedPromos = computed(() =>
     this.PROMO_ACTIVITIES.filter(p => this.subtotal() >= p.minSpend)
@@ -239,19 +237,34 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.PROMO_ACTIVITIES.find(p => p.name === this.selectedPromoName()) ?? null;
   }
 
+  /* 統一贈品面板：顯示條件 */
+  get showGiftPanel(): boolean {
+    if (this.selectedPromoName() === '不參加活動優惠') return false;
+    if (this.selectedPromoActivity) return true;
+    return this.subtotal() >= 300;
+  }
+
+  /* 統一贈品面板：選項清單（依選中活動切換） */
+  get currentGiftOptions(): string[] {
+    const act = this.selectedPromoActivity;
+    if (act) return act.gifts;
+    return this.giftOptions;
+  }
+
+  /* 統一贈品面板：副標題文字 */
+  get giftPanelHint(): string {
+    const act = this.selectedPromoActivity;
+    if (act) return `選擇「${act.name}」贈品`;
+    return '消費滿 $300 可選一項';
+  }
+
   togglePromoDropdown(): void { this.promoDropdownOpen.update(v => !v); }
-  togglePromoGiftDropdown(): void { this.promoGiftDropdownOpen.update(v => !v); }
 
   selectPromo(name: string): void {
     this.selectedPromoName.set(name);
-    this.selectedPromoGift.set('');
+    this.selectedGift.set('');      // 切換活動時重置贈品選擇
+    this.giftDropdownOpen.set(false);
     this.promoDropdownOpen.set(false);
-    this.promoGiftDropdownOpen.set(false);
-  }
-
-  selectPromoGift(gift: string): void {
-    this.selectedPromoGift.set(gift);
-    this.promoGiftDropdownOpen.set(false);
   }
 
   /* ── 折扣兌換券（與客戶端相同邏輯）────────────────── */
@@ -297,9 +310,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedGift.set('');
     this.giftDropdownOpen.set(false);
     this.selectedPromoName.set('');
-    this.selectedPromoGift.set('');
     this.promoDropdownOpen.set(false);
-    this.promoGiftDropdownOpen.set(false);
   }
 
   /* 查詢會員（比對時去除所有 dash，讓使用者輸入 0912345678 也能找到） */
@@ -698,12 +709,6 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
       itemTexts.push(`${gift}（滿額贈品）`);
     }
 
-    /* 若有選擇活動贈品，加入品項列表 */
-    const promoGift = this.selectedPromoGift();
-    if (promoGift) {
-      itemTexts.push(`${promoGift}（活動贈品）`);
-    }
-
     const totalQty  = this.cartItems().reduce((s, i) => s + i.qty, 0);
     const estMin    = Math.max(5, Math.ceil(totalQty * 2));
     const payLabels: Record<string, string> = { cash: '現金', card: '信用卡', mobile: '行動支付' };
@@ -742,9 +747,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     this.selectedGift.set('');
     this.giftDropdownOpen.set(false);
     this.selectedPromoName.set('');
-    this.selectedPromoGift.set('');
     this.promoDropdownOpen.set(false);
-    this.promoGiftDropdownOpen.set(false);
 
     this.checkoutSuccess.set(true);
     setTimeout(() => this.checkoutSuccess.set(false), 3000);

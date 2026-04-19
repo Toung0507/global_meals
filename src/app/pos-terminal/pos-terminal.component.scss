@@ -371,10 +371,10 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 }
 
 
-/* ── 右側：購物車 / 訂單確認面板 (35% 寬) ──────── */
+/* ── 右側：購物車 / 訂單確認面板 ──────────────── */
 .pos-right {
-    flex: 0 0 clamp(280px, 34%, 400px);
-    min-width: 0;
+    flex: 1;
+    min-width: 280px;
     display: flex;
     flex-direction: column;
     background-color: #111927;

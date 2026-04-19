@@ -737,7 +737,7 @@
           </div>
         }
 
-        @if (subtotal() >= 300) {
+        @if (showGiftPanel) {
           <div class="pos-pgp-panel" [class.pos-pgp-done]="!!selectedGift() && selectedGift() !== '不需要滿額免費贈品'">
             <button class="pos-pgp-header" (click)="toggleGiftDropdown()" type="button">
               <div class="pos-pgp-icon" [class.pos-pgp-icon-done]="!!selectedGift() && selectedGift() !== '不需要滿額免費贈品'">
@@ -749,7 +749,7 @@
                   <span class="pos-pgp-hint-txt">點此更換</span>
                 } @else {
                   <span class="pos-pgp-label">選擇免費贈品</span>
-                  <span class="pos-pgp-hint-txt">消費滿 $300 可選一項</span>
+                  <span class="pos-pgp-hint-txt">{{ giftPanelHint }}</span>
                 }
               </div>
               @if (selectedGift() && selectedGift() !== '不需要滿額免費贈品') {
@@ -759,7 +759,7 @@
             </button>
             @if (giftDropdownOpen()) {
               <div class="pos-pgp-options">
-                @for (opt of giftOptions; track opt) {
+                @for (opt of currentGiftOptions; track opt) {
                   <button class="pos-pgp-gift-opt" [class.selected]="selectedGift() === opt" [class.skip]="opt === '不需要滿額免費贈品'" (click)="selectGift(opt)" type="button">
                     <span>{{ opt }}</span>
                     @if (selectedGift() === opt) {
@@ -799,40 +799,6 @@
               </button>
             }
           </div>
-          @if (selectedPromoName() && selectedPromoName() !== '不參加活動優惠' && selectedPromoActivity) {
-            <div class="pos-pgp-panel" [class.pos-pgp-done]="!!selectedPromoGift()">
-              <button class="pos-pgp-header" (click)="togglePromoGiftDropdown()" type="button">
-                <div class="pos-pgp-icon" [class.pos-pgp-icon-done]="!!selectedPromoGift()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/><rect x="2" y="6" width="20" height="6" rx="1"/><path d="M12 12v9"/><path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/><path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/></svg>
-                </div>
-                <div class="pos-pgp-text">
-                  @if (selectedPromoGift()) {
-                    <span class="pos-pgp-label pos-pgp-label-done">已選：{{ selectedPromoGift() }}</span>
-                    <span class="pos-pgp-hint-txt">點此更換</span>
-                  } @else {
-                    <span class="pos-pgp-label">選擇「{{ selectedPromoName() }}」贈品</span>
-                    <span class="pos-pgp-hint-txt">請選取免費贈品</span>
-                  }
-                </div>
-                @if (selectedPromoGift()) {
-                  <span class="pos-pgp-free-tag">免費</span>
-                }
-                <svg class="pos-pgp-chevron" [class.open]="promoGiftDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              @if (promoGiftDropdownOpen()) {
-                <div class="pos-pgp-options">
-                  @for (g of selectedPromoActivity.gifts; track g) {
-                    <button class="pos-pgp-gift-opt" [class.selected]="selectedPromoGift() === g" (click)="selectPromoGift(g)" type="button">
-                      <span>{{ g }}</span>
-                      @if (selectedPromoGift() === g) {
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;flex-shrink:0;margin-left:auto;"><polyline points="20 6 9 17 4 12"/></svg>
-                      }
-                    </button>
-                  }
-                </div>
-              }
-            </div>
-          }
         }
 
       </div><!-- /.cart-summary -->
