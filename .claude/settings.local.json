@@ -104,7 +104,22 @@
       "Skill(enhance-prompt:*)",
       "Skill(design-md)",
       "Skill(design-md:*)",
-      "mcp__stitch__list_projects"
+      "mcp__stitch__list_projects",
+      "Bash(grep -v \"^$\")",
+      "Bash(grep -A 30 \"CREATE TABLE \\\\`products\\\\`\" \"C:/Users/齊/Desktop/Dump20260417\\(本\\).sql\")",
+      "Bash(grep -A 30 \"CREATE TABLE \\\\`staff\\\\`\" \"C:/Users/齊/Desktop/Dump20260417\\(本\\).sql\")",
+      "Bash(grep -A 25 \"CREATE TABLE \\\\`members\\\\`\" \"C:/Users/齊/Desktop/Dump20260417\\(本\\).sql\")",
+      "Bash(grep -A 25 \"CREATE TABLE \\\\`orders\\\\`\" \"C:/Users/齊/Desktop/Dump20260417\\(本\\).sql\")",
+      "Bash(grep -A 25 \"CREATE TABLE \\\\`order_cart\\\\`\" \"C:/Users/齊/Desktop/Dump20260417\\(本\\).sql\")",
+      "Bash(grep -A 20 \"CREATE TABLE \\\\`promotions\\\\`\" \"C:/Users/齊/Desktop/Dump20260417\\(本\\).sql\")",
+      "Skill(taste-design)",
+      "Skill(taste-design:*)",
+      "Bash(sed -n '1,50p' \"c:/Users/齊/Desktop/global_meals/src/app/global_meals_login/customer-login/customer-login.component.scss\")",
+      "Bash(sed -n '60,200p' \"c:/Users/齊/Desktop/global_meals/src/app/global_meals_login/customer-login/customer-login.component.scss\")",
+      "Skill(stitch-loop)",
+      "Skill(stitch-loop:*)",
+      "Bash(node -e ' *)",
+      "Bash(python3 -c ' *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\joker\\OneDrive\\桌面\\global_meals_gradle\\src\\main\\java\\com\\example\\global_meals_gradle\\config",
