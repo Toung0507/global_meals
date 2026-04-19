@@ -343,6 +343,62 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     },
   ];
 
+  /* 活動專區展示資料（含完整圖片、日期、文案） */
+  readonly PROMO_DISPLAY = [
+    {
+      name: '新會員首單禮',
+      tag: '新會員限定',
+      tagType: 'new',
+      image: '/assets/主頁輪播圖1.jpg',
+      startDate: '2026-04-01',
+      endDate: '2026-06-30',
+      minSpend: 150,
+      gifts: ['招牌豆漿 × 1', '仙草奶茶 × 1'],
+      description: '首次在懶飽飽下單的新會員，單筆消費滿 NT$150 即可獲得精選贈品一份！不論您喜歡台灣在地風味還是跨國美食，這份專屬歡迎禮都是我們對您最誠摯的招待，讓您第一口就愛上懶飽飽。',
+      highlights: ['首次消費即享', '任選一項贈品', '限首筆訂單使用', '可與菜單折扣並用'],
+    },
+    {
+      name: '週末滿額禮',
+      tag: '期間限定',
+      tagType: 'promo',
+      image: '/assets/主頁輪播圖2.jpg',
+      startDate: '2026-04-05',
+      endDate: '2026-05-31',
+      minSpend: 300,
+      gifts: ['古早味豆干 × 2', '特製泡菜 × 1', '招牌滷蛋 × 2'],
+      description: '每逢週末，單筆消費滿 NT$300 即可選一份豐盛贈品！不論是和家人一起享用還是獨自犒賞自己，懶飽飽都準備了最道地的台灣小吃作為感謝禮，讓每個週末都過得更加美味。',
+      highlights: ['僅限週六、日適用', '消費滿 NT$300', '三款贈品任選一', '每筆訂單限贈一次'],
+    },
+    {
+      name: '消費達人大禮包',
+      tag: '限時豪禮',
+      tagType: 'premium',
+      image: '/assets/主頁輪播圖3.jpg',
+      startDate: '2026-04-01',
+      endDate: '2026-04-30',
+      minSpend: 500,
+      gifts: ['仙草奶茶 × 1 + 招牌滷蛋 × 2', '特製泡菜 × 1 + 古早味豆干 × 2'],
+      description: '單筆消費滿 NT$500，立享雙重組合贈品！這是懶飽飽為美食達人精心準備的超值回饋，豐盛組合讓您一次享受多種在地好味道，越吃越過癮，本月限定不容錯過。',
+      highlights: ['本月限定活動', '消費滿 NT$500', '兩款組合禮任選一', '可搭配折扣券使用'],
+    },
+  ];
+
+  /* 活動專區詳情 Modal */
+  promoDetailIndex = signal<number | null>(null);
+
+  openPromoDetail(index: number): void {
+    this.promoDetailIndex.set(index);
+  }
+
+  closePromoDetail(): void {
+    this.promoDetailIndex.set(null);
+  }
+
+  get selectedPromoDetail() {
+    const i = this.promoDetailIndex();
+    return i !== null ? this.PROMO_DISPLAY[i] : null;
+  }
+
   /* 已選活動名稱（'' = 未選, '不參加活動優惠' = 放棄） */
   selectedPromoName  = signal<string>('');
   /* 已選活動內的贈品 */
