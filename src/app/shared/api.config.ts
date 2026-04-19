@@ -17,7 +17,7 @@
 export const API_CONFIG = {
   /** ⚠ Demo 離線模式：true = 不發 HTTP 請求，直接回傳假資料（不需開 Eclipse / DB）
    *  切換真實後端時改為 false 即可，其餘程式碼不需異動。 */
-  MOCK_MODE: false,
+  MOCK_MODE: true,
 
   BASE_URL: '', // ⚠ 透過 Angular proxy 轉發，相對路徑即可（proxy.conf.json → localhost:8080）
   TIMEOUT: 10000, // 10 秒逾時
@@ -78,21 +78,23 @@ export const API_CONFIG = {
       GET_BY_DATE: 'lazybaobao/exchange_rates/get_rates_by_date', // POST 依日期查詢
     },
 
-    // ── 下方為後端尚未建立的 Controller，預留路由 ──────
-
-    // 會員（MembersController，後端待建立）
+    // ── 會員（MembersController）── 後端已建立，路徑不含 lazybaobao 前綴
     MEMBERS: {
-      REGISTER: '/members/register', // POST 會員註冊
-      LOGIN: '/members/login', // POST 會員登入（回傳 memberId + name）
-      PROFILE: '/members/profile', // GET  取得個人資料（含 order_count, is_discount）
-      UPDATE: '/members/update', // POST 更新個人資料
+      REGISTER_GUEST: 'members/register_guest', // POST 訪客快速建立（不需密碼）
+      REGISTER_MEMBER: 'members/register_member', // POST 正式會員註冊（需密碼）
+      LOGIN: 'members/login', // POST 會員登入（phone + password）
+      LOGOUT: 'members/logout', // GET  會員登出
+      UPDATE_PASSWORD: 'members/update_password', // POST 修改密碼
     },
 
-    // 員工（StaffController，後端待建立）
+    // ── 員工（StaffController）── 後端已建立，路徑不含 lazybaobao 前綴
     STAFF: {
-      LOGIN: '/staff/login', // POST 員工登入（account + password）
-      GET_ALL: '/staff/get_all', // GET  取得全部員工清單
-      TOGGLE: '/staff/toggle', // POST 停/復權（is_status）
+      LOGIN: 'api/auth/login', // POST 員工登入（account + password）
+      LOGOUT: 'api/auth/logout', // GET  員工登出
+      GET_ALL: 'api/admin/staff', // GET  取得員工清單（ADMIN 看全部 RM；RM 看自己分店）
+      CREATE: 'api/admin/staff', // POST 新增員工（RM 或 ST）
+      UPDATE_STATUS: 'api/admin/staff/:id/status', // PATCH 停權 / 復權
+      CHANGE_PASSWORD: 'api/admin/staff/:id/password', // PATCH 修改密碼
     },
 
     // 商品（ProductsController，後端待建立）

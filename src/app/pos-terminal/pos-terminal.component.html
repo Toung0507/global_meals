@@ -377,7 +377,7 @@
           <div
             class="prod-card"
             [style.background]="product.bg"
-            (click)="addToCart(product)"
+            (click)="addToCart(product, $event)"
           >
             <!-- 品名 -->
             <div class="prod-name">{{ product.name }}</div>
@@ -403,19 +403,6 @@
         <div class="cart-header-left">
           <div class="cart-title">目前訂單</div>
           <div class="cart-order-id">#TW-2061</div>
-        </div>
-        <!-- 訂單類型切換：內用 / 外帶 -->
-        <div class="order-type-toggle">
-          <button
-            class="order-type-btn"
-            [class.active]="orderType() === 'dine-in'"
-            (click)="orderType.set('dine-in')"
-          >內用</button>
-          <button
-            class="order-type-btn"
-            [class.active]="orderType() === 'takeout'"
-            (click)="orderType.set('takeout')"
-          >外帶</button>
         </div>
         <button
           class="cart-clear-btn"
@@ -648,8 +635,11 @@
         </div>
       }
 
+      <!-- ══ Zone 2：捲動內容區 ══ -->
+      <div class="cart-zone-scroll">
+
       <!-- 品項列表 -->
-      <div class="cart-items">
+      <div class="cart-items" #cartListEl>
         <!-- 空購物車提示 -->
         @if (cartItems().length === 0 && !checkoutSuccess()) {
           <div class="cart-empty">
@@ -737,234 +727,117 @@
 
         <div class="summary-total-row">
           <span class="summary-total-label">合計</span>
-          <span class="summary-total-val">${{ discountedTotal }}</span>
+          <span class="summary-total-val" #totalEl>${{ discountedTotal }}</span>
         </div>
 
-        <!-- 滿額贈品選擇（小計 >= $300 顯示下拉；未達顯示提示） -->
-        @if (subtotal() >= 300) {
-          <div class="cart-gift-section">
-            <div class="cart-gift-header" (click)="toggleGiftDropdown()">
-              <span class="cart-gift-label">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  style="width: 13px; height: 13px; flex-shrink: 0"
-                >
-                  <polyline points="20 12 20 22 4 22 4 12" />
-                  <rect x="2" y="7" width="20" height="5" />
-                  <line x1="12" y1="22" x2="12" y2="7" />
-                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
-                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
-                </svg>
-                @if (selectedGift()) {
-                  {{ selectedGift() }}
-                } @else {
-                  選擇滿額贈品
-                }
-              </span>
-              @if (selectedGift() !== "不需要滿額免費贈品") {
-                <span class="cart-gift-free">免費</span>
-              }
-            </div>
-            @if (giftDropdownOpen()) {
-              <div class="cart-gift-dropdown">
-                @for (opt of giftOptions; track opt) {
-                  <div
-                    class="cart-gift-option"
-                    [class.selected]="selectedGift() === opt"
-                    [class.no-gift]="opt === '不需要滿額免費贈品'"
-                    (click)="selectGift(opt)"
-                  >
-                    {{ opt }}
-                    @if (selectedGift() === opt) {
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#3ecf8e"
-                        stroke-width="2.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        style="
-                          width: 13px;
-                          height: 13px;
-                          margin-left: auto;
-                          flex-shrink: 0;
-                        "
-                      >
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    }
-                  </div>
-                }
-              </div>
-            }
-          </div>
-        } @else if (showPromoHint()) {
-          <div class="promo-hint">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              style="
-                width: 14px;
-                height: 14px;
-                display: inline-block;
-                vertical-align: middle;
-                margin-right: 5px;
-                flex-shrink: 0;
-              "
-            >
-              <polyline points="20 12 20 22 4 22 4 12" />
-              <rect x="2" y="7" width="20" height="5" />
-              <line x1="12" y1="22" x2="12" y2="7" />
-              <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
-              <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
-            </svg>
-            再加 <strong>${{ promoRemain() }}</strong> 即可獲得 招牌滷蛋×2
-            免費贈品！
+        <!-- ── 活動區塊（統一深色設計）── -->
+        @if (showPromoHint() && unlockedPromos().length === 0) {
+          <div class="pos-promo-hint">
+            再加 <strong>${{ promoRemain() }}</strong> 即可解鎖滿額贈品
           </div>
         }
 
-        <!-- 活動優惠選擇（達門檻時顯示）：第一層選活動，第二層選贈品 -->
-        @if (unlockedPromos().length > 0) {
-          <div class="cart-promo-section">
-            <!-- 第一層：選擇活動 -->
-            <div class="cart-promo-header" (click)="togglePromoDropdown()">
-              <span class="cart-promo-label">
-                🎉
-                @if (selectedPromoName() === "不參加活動優惠") {
-                  不參加活動優惠
-                } @else if (selectedPromoName()) {
-                  {{ selectedPromoName() }}
+        @if (subtotal() >= 300) {
+          <div class="pos-pgp-panel" [class.pos-pgp-done]="!!selectedGift() && selectedGift() !== '不需要滿額免費贈品'">
+            <button class="pos-pgp-header" (click)="toggleGiftDropdown()" type="button">
+              <div class="pos-pgp-icon" [class.pos-pgp-icon-done]="!!selectedGift() && selectedGift() !== '不需要滿額免費贈品'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/><rect x="2" y="6" width="20" height="6" rx="1"/><path d="M12 12v9"/><path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/><path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/></svg>
+              </div>
+              <div class="pos-pgp-text">
+                @if (selectedGift() && selectedGift() !== '不需要滿額免費贈品') {
+                  <span class="pos-pgp-label pos-pgp-label-done">已選：{{ selectedGift() }}</span>
+                  <span class="pos-pgp-hint-txt">點此更換</span>
                 } @else {
-                  （達成 {{ unlockedPromos().length }} 項）選擇活動
-                }
-              </span>
-            </div>
-            @if (promoDropdownOpen()) {
-              <div class="cart-promo-dropdown">
-                <div
-                  class="cart-promo-option no-promo"
-                  [class.selected]="selectedPromoName() === '不參加活動優惠'"
-                  (click)="selectPromo('不參加活動優惠')"
-                >
-                  不參加活動優惠
-                  @if (selectedPromoName() === "不參加活動優惠") {
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#a0aec0"
-                      stroke-width="2.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      style="
-                        width: 13px;
-                        height: 13px;
-                        margin-left: auto;
-                        flex-shrink: 0;
-                      "
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  }
-                </div>
-                @for (act of unlockedPromos(); track act.name) {
-                  <div
-                    class="cart-promo-option"
-                    [class.selected]="selectedPromoName() === act.name"
-                    (click)="selectPromo(act.name)"
-                  >
-                    {{ act.name }}
-                    @if (selectedPromoName() === act.name) {
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#f5a623"
-                        stroke-width="2.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        style="
-                          width: 13px;
-                          height: 13px;
-                          margin-left: auto;
-                          flex-shrink: 0;
-                        "
-                      >
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    }
-                  </div>
+                  <span class="pos-pgp-label">選擇免費贈品</span>
+                  <span class="pos-pgp-hint-txt">消費滿 $300 可選一項</span>
                 }
               </div>
-            }
-            <!-- 第二層：選擇該活動的贈品 -->
-            @if (
-              selectedPromoName() && selectedPromoName() !== "不參加活動優惠"
-            ) {
-              <div
-                class="cart-promo-gift-header"
-                (click)="togglePromoGiftDropdown()"
-              >
-                <span class="cart-promo-label" style="gap: 6px">
-                  🎁
-                  @if (selectedPromoGift()) {
-                    {{ selectedPromoGift() }}
-                  } @else {
-                    選擇「{{ selectedPromoName() }}」贈品
-                  }
-                </span>
-                @if (selectedPromoGift()) {
-                  <span class="cart-promo-free">免費</span>
-                }
-              </div>
-              @if (promoGiftDropdownOpen()) {
-                <div class="cart-promo-dropdown">
-                  @for (g of selectedPromoActivity!.gifts; track g) {
-                    <div
-                      class="cart-promo-option"
-                      [class.selected]="selectedPromoGift() === g"
-                      (click)="selectPromoGift(g)"
-                    >
-                      {{ g }}
-                      @if (selectedPromoGift() === g) {
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="#f5a623"
-                          stroke-width="2.5"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          style="
-                            width: 13px;
-                            height: 13px;
-                            margin-left: auto;
-                            flex-shrink: 0;
-                          "
-                        >
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      }
-                    </div>
-                  }
-                </div>
+              @if (selectedGift() && selectedGift() !== '不需要滿額免費贈品') {
+                <span class="pos-pgp-free-tag">免費</span>
               }
+              <svg class="pos-pgp-chevron" [class.open]="giftDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            @if (giftDropdownOpen()) {
+              <div class="pos-pgp-options">
+                @for (opt of giftOptions; track opt) {
+                  <button class="pos-pgp-gift-opt" [class.selected]="selectedGift() === opt" [class.skip]="opt === '不需要滿額免費贈品'" (click)="selectGift(opt)" type="button">
+                    <span>{{ opt }}</span>
+                    @if (selectedGift() === opt) {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;flex-shrink:0;margin-left:auto;"><polyline points="20 6 9 17 4 12"/></svg>
+                    }
+                  </button>
+                }
+              </div>
             }
           </div>
         }
-      </div>
+
+        @if (unlockedPromos().length > 0) {
+          <div class="pos-promo-act-list">
+            <button class="pos-promo-act-row pos-promo-act-skip"
+              [class.selected]="selectedPromoName() === '不參加活動優惠'"
+              (click)="selectPromo('不參加活動優惠')" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:15px;height:15px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              <span>不參加活動優惠</span>
+              @if (selectedPromoName() === '不參加活動優惠') {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;margin-left:auto;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+              }
+            </button>
+            @for (act of unlockedPromos(); track act.name) {
+              <button class="pos-promo-act-row"
+                [class.selected]="selectedPromoName() === act.name"
+                (click)="selectPromo(act.name)" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:15px;height:15px;flex-shrink:0;"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+                <div class="pos-par-text">
+                  <span class="pos-par-name">{{ act.name }}</span>
+                  <span class="pos-par-hint">點此選擇活動</span>
+                </div>
+                <span class="pos-par-min-tag">滿 NT${{ act.minSpend }}</span>
+                @if (selectedPromoName() === act.name) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+                }
+              </button>
+            }
+          </div>
+          @if (selectedPromoName() && selectedPromoName() !== '不參加活動優惠' && selectedPromoActivity) {
+            <div class="pos-pgp-panel" [class.pos-pgp-done]="!!selectedPromoGift()">
+              <button class="pos-pgp-header" (click)="togglePromoGiftDropdown()" type="button">
+                <div class="pos-pgp-icon" [class.pos-pgp-icon-done]="!!selectedPromoGift()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/><rect x="2" y="6" width="20" height="6" rx="1"/><path d="M12 12v9"/><path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/><path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/></svg>
+                </div>
+                <div class="pos-pgp-text">
+                  @if (selectedPromoGift()) {
+                    <span class="pos-pgp-label pos-pgp-label-done">已選：{{ selectedPromoGift() }}</span>
+                    <span class="pos-pgp-hint-txt">點此更換</span>
+                  } @else {
+                    <span class="pos-pgp-label">選擇「{{ selectedPromoName() }}」贈品</span>
+                    <span class="pos-pgp-hint-txt">請選取免費贈品</span>
+                  }
+                </div>
+                @if (selectedPromoGift()) {
+                  <span class="pos-pgp-free-tag">免費</span>
+                }
+                <svg class="pos-pgp-chevron" [class.open]="promoGiftDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              @if (promoGiftDropdownOpen()) {
+                <div class="pos-pgp-options">
+                  @for (g of selectedPromoActivity.gifts; track g) {
+                    <button class="pos-pgp-gift-opt" [class.selected]="selectedPromoGift() === g" (click)="selectPromoGift(g)" type="button">
+                      <span>{{ g }}</span>
+                      @if (selectedPromoGift() === g) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;flex-shrink:0;margin-left:auto;"><polyline points="20 6 9 17 4 12"/></svg>
+                      }
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          }
+        }
+
+      </div><!-- /.cart-summary -->
+
+      </div><!-- /.cart-zone-scroll -->
 
       <!-- 付款方式 + 結帳 -->
       <div class="cart-payment">
@@ -1035,7 +908,7 @@
             行動支付
           </div>
         </div>
-        <button class="checkout-btn" (click)="onCheckoutClick()">結帳 ✓</button>
+        <button class="checkout-btn" #checkoutBtnEl (click)="onCheckoutClick()">結帳 ✓</button>
       </div>
 
       <!-- ── 現金收款計算器覆蓋層 ── -->
@@ -1387,7 +1260,6 @@
             <tr>
               <th>商品名稱</th>
               <th>庫存量</th>
-              <th>安全庫存</th>
               <th>狀態</th>
               @if (isBM) {
                 <th>操作</th>
@@ -1406,7 +1278,6 @@
                 >
                   {{ p.stock }}
                 </td>
-                <td class="mono" style="color: #a0aec0">10</td>
                 <td>
                   @if (p.stock <= 0) {
                     <span class="badge-err">缺貨</span>
@@ -1470,95 +1341,185 @@
      頁籤 4：活動管理
      ════════════════════════════════════════ -->
 @if (activeTab() === "promo") {
-  <div class="page-panel" style="display: block">
-    <div class="panel-title">活動管理</div>
-    <div class="panel-sub">
-      本分店目前套用的促銷活動（老闆可另設定全店活動）
-    </div>
+  <div class="page-panel" style="display: block; position: relative;">
 
-    <div class="promo-row">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <div
-            style="
-              font-size: 0.9rem;
-              font-weight: 600;
-              color: #e2e8f8;
-              display: flex;
-              align-items: center;
-              gap: 6px;
-            "
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#f0c68c"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              style="width: 16px; height: 16px; flex-shrink: 0"
-            >
-              <polyline points="20 12 20 22 4 22 4 12" />
-              <rect x="2" y="7" width="20" height="5" />
-              <line x1="12" y1="22" x2="12" y2="7" />
-              <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
-              <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
-            </svg>
-            滿 $300 贈招牌滷蛋×2
-          </div>
-          <div style="font-size: 0.75rem; color: #8892b0; margin-top: 3px">
-            由老闆設定 · 全部分店 · 無限期
-          </div>
-        </div>
-        <span class="badge-ok">進行中</span>
+    <!-- Toast 提示 -->
+    @if (posToastMsg()) {
+      <div class="pos-promo-toast">{{ posToastMsg() }}</div>
+    }
+
+    <div class="d-flex justify-content-between align-items-start mb-4">
+      <div>
+        <div class="panel-title" style="margin-bottom:2px">活動管理</div>
+        <div class="panel-sub" style="margin:0">設定促銷活動與公告，切換開關即時啟用／停用</div>
       </div>
+      @if (isBM) {
+        <button class="btn btn-sm" style="background:#c49756;color:#0d1117;font-weight:600;white-space:nowrap;"
+          (click)="openAddPromo()">＋ 新增活動</button>
+      }
     </div>
 
-    <!-- <div class="promo-row" style="border-left-color: #4f8ef7">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <div
-            style="
-              font-size: 0.9rem;
-              font-weight: 600;
-              color: #e2e8f8;
-              display: flex;
-              align-items: center;
-              gap: 6px;
-            "
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#4f8ef7"
-              stroke-width="1.8"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              style="width: 16px; height: 16px; flex-shrink: 0"
-            >
-              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <path d="M16 10a4 4 0 0 1-8 0" />
-            </svg>
-            本月新品嚐鮮 95 折
+    <!-- 活動卡片列表 -->
+    @for (promo of posPromos(); track promo.id) {
+      <div class="pos-promo-card" [style.border-left-color]="promo.badgeColor || promo.color"
+        [style.opacity]="promo.ended ? '0.72' : '1'">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <div style="flex:1;min-width:0">
+            <div class="pos-promo-title">{{ promo.title }}</div>
+            @if (promo.description) {
+              <div class="pos-promo-desc">{{ promo.description }}</div>
+            }
+            <div class="pos-promo-meta">
+              <span>{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span>
+              @if (promo.minAmount) {
+                <span style="color:#6b7280">·</span>
+                <span>滿 NT${{ promo.minAmount }}</span>
+              }
+            </div>
           </div>
-          <div
-            style="font-size: 0.75rem; color: #8892b0; margin-top: 3px"
-          ></div>
+          <div class="d-flex gap-2 align-items-center flex-shrink-0">
+            @if (promo.ended) {
+              <span class="badge-err">已結束</span>
+            } @else if (promo.isActive) {
+              <span class="badge-ok">進行中</span>
+            } @else {
+              <span class="badge-warn">已暫停</span>
+            }
+            @if (isBM && !promo.ended) {
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox"
+                  [checked]="promo.isActive"
+                  (change)="togglePromo(promo.id)" />
+              </div>
+            }
+          </div>
         </div>
-        <div class="d-flex gap-2 align-items-center">
-          <span class="badge-ok">進行中</span>
-          @if (isBM) {
-            <div class="form-check form-switch mb-0">
-              <input class="form-check-input" type="checkbox" checked />
+        <!-- 底部刪除列（分店長限定） -->
+        @if (isBM) {
+          <div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:10px;margin-top:10px;display:flex;justify-content:flex-end;">
+            <button class="btn btn-sm btn-ghost-red" style="font-size:0.72rem;"
+              [class.promo-delete-pulse]="promo.ended"
+              (click)="deletePromo(promo.id)">刪除</button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- 新增活動 Slide-in Panel -->
+  @if (showPosPromoPanel()) {
+    <div class="pos-promo-overlay" (click)="closePromoPanel()"></div>
+    <div class="pos-promo-panel">
+      <div class="pos-pp-hd">
+        <span class="pos-pp-title">新增活動</span>
+        <button class="pos-pp-close" (click)="closePromoPanel()">✕</button>
+      </div>
+      <div class="pos-pp-body">
+
+        <!-- 封面圖片 -->
+        <div class="pos-pp-field">
+          <label class="pos-pp-label">封面圖片</label>
+          @if (posPromoDraft.image) {
+            <div class="pos-pp-img-preview">
+              <img [src]="posPromoDraft.image" alt="封面預覽" />
+              <button class="pos-pp-img-replace" (click)="posPromoFileInput.click()">更換圖片</button>
+            </div>
+          } @else {
+            <div class="pos-pp-dropzone" (click)="posPromoFileInput.click()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <span class="pos-pp-dropzone-label">拖曳圖片或點擊上傳</span>
+              <span class="pos-pp-dropzone-hint">支援 JPG、PNG，建議 1200×675px</span>
             </div>
           }
+          <input type="file" accept="image/*" style="display:none"
+            #posPromoFileInput (change)="onPromoImageChange($event)" />
+        </div>
+
+        <!-- 活動名稱 -->
+        <div class="pos-pp-field">
+          <label class="pos-pp-label">名稱 <span style="color:#f87171">*</span></label>
+          <input type="text" class="modal-input"
+            [value]="posPromoDraft.name"
+            (input)="posPromoDraft.name = $any($event.target).value"
+            placeholder="例：滿額優惠、夏季上新公告" />
+        </div>
+
+        <!-- 描述 -->
+        <div class="pos-pp-field">
+          <label class="pos-pp-label">描述</label>
+          <textarea class="modal-input pos-pp-textarea"
+            [value]="posPromoDraft.description"
+            (input)="posPromoDraft.description = $any($event.target).value"
+            rows="3"
+            placeholder="詳細說明活動內容或公告事項"></textarea>
+        </div>
+
+        <!-- 左側色條 -->
+        <div class="pos-pp-field">
+          <label class="pos-pp-label">左側色條</label>
+          <div class="pos-pp-swatches">
+            @for (c of ['#1E3A5F','#C49756','#27AE60','#E74C3C','#C084FC','#F59E0B']; track c) {
+              <button class="pos-pp-swatch"
+                [style.background]="c"
+                [style.outline]="posPromoDraft.badgeColor === c ? '2px solid #fff' : 'none'"
+                [style.outline-offset]="'2px'"
+                (click)="onPromoBadgeColorPick(c)"></button>
+            }
+          </div>
+        </div>
+
+        <!-- 開始日期 -->
+        <div class="pos-pp-field">
+          <label class="pos-pp-label">開始日期 <span style="color:#f87171">*</span></label>
+          <input type="date" class="modal-input"
+            [value]="posPromoDraft.startTime"
+            (input)="posPromoDraft.startTime = $any($event.target).value"
+            [min]="today()" />
+        </div>
+
+        <!-- 結束日期 -->
+        <div class="pos-pp-field">
+          <label class="pos-pp-label">結束日期 <span style="color:#f87171">*</span></label>
+          <input type="date" class="modal-input"
+            [value]="posPromoDraft.endTime"
+            (input)="posPromoDraft.endTime = $any($event.target).value"
+            [disabled]="!posPromoDraft.startTime"
+            [min]="posPromoDraft.startTime" />
+          @if (!posPromoDraft.startTime) {
+            <span class="pos-pp-hint">請先選擇開始日期</span>
+          }
+        </div>
+
+        <!-- 滿額門檻 -->
+        <div class="pos-pp-field">
+          <label class="pos-pp-label">滿額門檻</label>
+          <div class="pos-pp-amount-wrap">
+            <select class="pos-pp-currency-select"
+              [value]="posPromoDraft.currency"
+              (change)="posPromoDraft.currency = $any($event.target).value">
+              <option value="NT$">NT$（台幣）</option>
+              <option value="¥">¥（日圓）</option>
+              <option value="₩">₩（韓元）</option>
+            </select>
+            <input type="number" class="modal-input pos-pp-amount-input"
+              [value]="posPromoDraft.minAmount ?? ''"
+              (input)="posPromoDraft.minAmount = +$any($event.target).value || null"
+              min="1" placeholder="選填，例：300" />
+          </div>
         </div>
       </div>
-    </div> -->
-  </div>
+
+      <!-- 底部操作 -->
+      <div class="pos-pp-ft">
+        <button class="btn btn-sm btn-ghost-red" (click)="closePromoPanel()">取消</button>
+        <button class="btn btn-sm" style="background:#c49756;color:#0d1117;font-weight:600;" (click)="savePromo()">儲存</button>
+      </div>
+    </div>
+  }
 }
 
 <!-- ════════════════════════════════════════
@@ -1593,7 +1554,7 @@
               <th>姓名</th>
               <th>帳號</th>
               <th>班別</th>
-              <th>上次登入</th>
+              <th>入職時間</th>
               <th>狀態</th>
               <th>操作</th>
             </tr>
@@ -1604,7 +1565,7 @@
                 <td>{{ staff.name }}</td>
                 <td class="mono" style="color: #8892b0">{{ staff.account }}</td>
                 <td>{{ staff.shift }}</td>
-                <td style="color: #8892b0">{{ staff.lastLogin }}</td>
+                <td style="color: #8892b0">{{ staff.joinedAt }}</td>
                 <td>
                   @if (staff.isActive) {
                     <span class="badge-ok">啟用</span>
@@ -1666,6 +1627,17 @@
           placeholder="例：chen.xy"
           [value]="newStaffAccount()"
           (input)="newStaffAccount.set($any($event.target).value)"
+        />
+      </div>
+
+      <div class="modal-field">
+        <label class="modal-label">密碼 *</label>
+        <input
+          type="password"
+          class="modal-input"
+          placeholder="請設定登入密碼"
+          [value]="newStaffPassword()"
+          (input)="newStaffPassword.set($any($event.target).value)"
         />
       </div>
 

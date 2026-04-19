@@ -18,7 +18,9 @@
  * =====================================================
  */
 
-import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, signal, computed, ViewChild, ElementRef } from '@angular/core';
+import { gsap } from 'gsap';
+import autoAnimate from '@formkit/auto-animate';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
@@ -52,6 +54,22 @@ interface CartItem {
   qty: number;
 }
 
+/* ── 活動型別 ───────────────────────────────────────── */
+interface PosPromo {
+  id: number;
+  title: string;
+  isActive: boolean;
+  color: string;
+  ended: boolean;
+  rawStartTime: string;
+  rawEndTime: string;
+  type: 'promotion' | 'announcement';
+  description?: string;
+  image?: string;
+  badgeColor?: string;
+  minAmount?: number;
+}
+
 /* ── 員工帳號型別 ───────────────────────────────────── */
 interface StaffAccount {
   id: number;
@@ -59,7 +77,7 @@ interface StaffAccount {
   account: string;
   shift: string;
   isActive: boolean;
-  lastLogin: string;
+  joinedAt: string;
 }
 
 @Component({
@@ -69,7 +87,11 @@ interface StaffAccount {
   templateUrl: './pos-terminal.component.html',
   styleUrls: ['./pos-terminal.component.scss']
 })
-export class PosTerminalComponent implements OnInit, OnDestroy {
+export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
+
+  @ViewChild('cartListEl')    private cartListEl!: ElementRef<HTMLElement>;
+  @ViewChild('totalEl')       private totalEl!: ElementRef<HTMLElement>;
+  @ViewChild('checkoutBtnEl') private checkoutBtnEl!: ElementRef<HTMLElement>;
 
   /* ── 即時時鐘 ─────────────────────────────────────── */
   clockStr = signal('');
@@ -136,10 +158,23 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
   });
 
   /* ── 新增員工 Modal 狀態 ──────────────────────────── */
-  showAddStaffModal = signal(false);
-  newStaffName      = signal('');
-  newStaffAccount   = signal('');
-  newStaffShift     = signal('早班');
+  showAddStaffModal  = signal(false);
+  newStaffName       = signal('');
+  newStaffAccount    = signal('');
+  newStaffPassword   = signal('');
+  newStaffShift      = signal('早班');
+
+  /* ── 活動管理 ─────────────────────────────────────── */
+  posPromos = signal<PosPromo[]>([
+    { id: 1, title: '滿 $300 贈招牌滷蛋×2',  isActive: true,  color: '#c49756', ended: false, rawStartTime: '2026-01-01', rawEndTime: '2099-12-31', type: 'promotion',    description: '消費滿 $300 即贈招牌滷蛋兩顆，無使用期限。',     badgeColor: '#c49756', minAmount: 300 },
+    { id: 2, title: '週一 9 折優惠',          isActive: true,  color: '#4f8ef7', ended: false, rawStartTime: '2026-01-01', rawEndTime: '2026-06-30', type: 'promotion',    description: '每週一全品項享 9 折優惠，適用於本分店。',          badgeColor: '#4f8ef7' },
+    { id: 3, title: '夏季新菜單上線公告',      isActive: true,  color: '#c084fc', ended: false, rawStartTime: '2026-04-01', rawEndTime: '2026-06-30', type: 'announcement', description: '2026 夏季菜單已正式上線，新增 6 款季節限定料理。', badgeColor: '#c084fc' },
+    { id: 4, title: '週年慶全館 8 折',         isActive: false, color: '#6b7280', ended: true,  rawStartTime: '2025-01-01', rawEndTime: '2025-12-31', type: 'promotion',    description: '週年慶期間全館商品享 8 折，活動已結束。',          badgeColor: '#6b7280' },
+  ]);
+  showPosPromoPanel = signal(false);
+  posPromoDraft = { name: '', description: '', startTime: '', endTime: '', badgeColor: '#c49756', minAmount: null as number | null, image: '', currency: 'NT$' };
+  posToastMsg = signal('');
+  private posToastTimer: any = null;
 
   /* ── 會員/訪客模式 ─────────────────────────────────
    * 'none'   = 未選擇（顯示選擇按鈕）
@@ -355,9 +390,9 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
 
   /* ── 員工帳號清單（Signal 化） ──────────────────────── */
   staffAccounts = signal<StaffAccount[]>([
-    { id: 1, name: '王小明', account: 'wang.xm', shift: '早班',  isActive: true,  lastLogin: '今日 09:00' },
-    { id: 2, name: '李佳靜', account: 'lee.jj',  shift: '晚班',  isActive: true,  lastLogin: '昨日 17:00' },
-    { id: 3, name: '張偉成', account: 'chang.wc', shift: '假日班', isActive: false, lastLogin: '3天前' },
+    { id: 1, name: '王小明', account: 'wang.xm', shift: '早班',  isActive: true,  joinedAt: '2024-09-01' },
+    { id: 2, name: '李佳靜', account: 'lee.jj',  shift: '晚班',  isActive: true,  joinedAt: '2025-03-15' },
+    { id: 3, name: '張偉成', account: 'chang.wc', shift: '假日班', isActive: false, joinedAt: '2023-11-20' },
   ]);
 
   /* 計時器 ID */
@@ -374,7 +409,7 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const user = this.authService.currentUser;
-    if (!user || (user.role !== 'branch_manager' && user.role !== 'staff')) {
+    if (!user || (user.role !== 'branch_manager' && user.role !== 'deputy_manager' && user.role !== 'staff')) {
       this.router.navigate(['/staff-login']);
       return;
     }
@@ -404,6 +439,12 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
     //   },
     //   error: (err) => console.error('[POS] 載入商品失敗', err)
     // });
+  }
+
+  ngAfterViewInit(): void {
+    if (this.cartListEl?.nativeElement) {
+      autoAnimate(this.cartListEl.nativeElement, { duration: 180 });
+    }
   }
 
   ngOnDestroy(): void {
@@ -455,7 +496,8 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
 
   /* 判斷是否為分店長 */
   get isBM(): boolean {
-    return this.authService.currentUser?.role === 'branch_manager';
+    const role = this.authService.currentUser?.role;
+    return role === 'branch_manager' || role === 'deputy_manager';
   }
 
   /* 更新時鐘 */
@@ -476,10 +518,26 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
   setTab(tab: PosTab): void {
     if (tab === 'staff' && !this.isBM) return;
     this.activeTab.set(tab);
+    setTimeout(() => {
+      const panel = document.querySelector<HTMLElement>('.page-panel, .pos-main');
+      if (panel) gsap.fromTo(panel,
+        { opacity: 0, y: 8 },
+        { opacity: 1, y: 0, duration: 0.22, ease: 'power2.out' }
+      );
+    }, 0);
+  }
+
+  /* GSAP：合計數字彈跳（加入/移除品項時呼叫） */
+  private animateTotal(): void {
+    setTimeout(() => {
+      const el = this.totalEl?.nativeElement;
+      if (!el) return;
+      gsap.fromTo(el, { scale: 1.07 }, { scale: 1, duration: 0.24, ease: 'back.out(3)' });
+    }, 0);
   }
 
   /* 加入購物車 */
-  addToCart(product: PosProduct): void {
+  addToCart(product: PosProduct, event?: MouseEvent): void {
     const current = this.cartItems();
     const existing = current.find(c => c.id === product.id);
     if (existing) {
@@ -496,6 +554,12 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
       }]);
     }
     if (navigator.vibrate) navigator.vibrate(25);
+    if (event?.currentTarget) {
+      gsap.fromTo(event.currentTarget as HTMLElement,
+        { scale: 0.95 }, { scale: 1, duration: 0.18, ease: 'back.out(3)' }
+      );
+    }
+    this.animateTotal();
   }
 
   /* 增減數量 */
@@ -511,6 +575,7 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
         c.id === id ? { ...c, qty: newQty } : c
       ));
     }
+    this.animateTotal();
   }
 
   /* 清空購物車 */
@@ -522,6 +587,7 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
   /* 直接移除單一品項 */
   removeItem(id: number): void {
     this.cartItems.update(list => list.filter(c => c.id !== id));
+    this.animateTotal();
   }
 
   /* ── 現金計算器狀態 ───────────────────────────────── */
@@ -572,6 +638,8 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
   /* 點擊結帳：若選現金 → 顯示計算器；其他方式直接結帳 */
   onCheckoutClick(): void {
     if (this.cartItems().length === 0) return;
+    const btn = this.checkoutBtnEl?.nativeElement;
+    if (btn) gsap.fromTo(btn, { scale: 0.96 }, { scale: 1, duration: 0.2, ease: 'back.out(2)' });
     if (this.payMethod() === 'cash') {
       this.cashInput.set('');
       this.showCashCalc.set(true);
@@ -760,6 +828,7 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
   openAddStaff(): void {
     this.newStaffName.set('');
     this.newStaffAccount.set('');
+    this.newStaffPassword.set('');
     this.newStaffShift.set('早班');
     this.showAddStaffModal.set(true);
   }
@@ -769,9 +838,10 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
   }
 
   confirmAddStaff(): void {
-    const name    = this.newStaffName().trim();
-    const account = this.newStaffAccount().trim();
-    if (!name || !account) return;
+    const name     = this.newStaffName().trim();
+    const account  = this.newStaffAccount().trim();
+    const password = this.newStaffPassword().trim();
+    if (!name || !account || !password) return;
     const newId = Math.max(...this.staffAccounts().map(s => s.id)) + 1;
     this.staffAccounts.update(list => [...list, {
       id:        newId,
@@ -779,7 +849,7 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
       account,
       shift:     this.newStaffShift(),
       isActive:  true,
-      lastLogin: '剛建立'
+      joinedAt: new Date().toISOString().slice(0, 10)
     }]);
     this.showAddStaffModal.set(false);
   }
@@ -789,6 +859,80 @@ export class PosTerminalComponent implements OnInit, OnDestroy {
     this.staffAccounts.update(list =>
       list.map(s => s.id === id ? { ...s, isActive: !s.isActive } : s)
     );
+  }
+
+  /* ── 活動管理方法 ─────────────────────────────────── */
+  today(): string {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  posShowToast(msg: string): void {
+    this.posToastMsg.set(msg);
+    clearTimeout(this.posToastTimer);
+    this.posToastTimer = setTimeout(() => this.posToastMsg.set(''), 3000);
+  }
+
+  deletePromo(id: number): void {
+    const promo = this.posPromos().find(p => p.id === id);
+    if (!promo) return;
+    if (!confirm(`確定刪除活動「${promo.title}」？此操作無法復原。`)) return;
+    this.posPromos.update(list => list.filter(p => p.id !== id));
+    this.posShowToast(`活動「${promo.title}」已刪除`);
+  }
+
+  togglePromo(id: number): void {
+    const current = this.posPromos().find(p => p.id === id);
+    if (!current || current.ended) return;
+    this.posPromos.update(list =>
+      list.map(p => p.id === id ? { ...p, isActive: !p.isActive } : p)
+    );
+  }
+
+  openAddPromo(): void {
+    this.posPromoDraft = { name: '', description: '', startTime: '', endTime: '', badgeColor: '#c49756', minAmount: null, image: '', currency: 'NT$' };
+    this.showPosPromoPanel.set(true);
+  }
+
+  closePromoPanel(): void {
+    this.showPosPromoPanel.set(false);
+  }
+
+  onPromoBadgeColorPick(color: string): void {
+    this.posPromoDraft.badgeColor = color;
+  }
+
+  onPromoImageChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    const reader = new FileReader();
+    reader.onload = (e) => { this.posPromoDraft.image = e.target?.result as string; };
+    reader.readAsDataURL(input.files[0]);
+  }
+
+  savePromo(): void {
+    if (!this.posPromoDraft.name.trim()) { this.posShowToast('請輸入活動名稱'); return; }
+    if (!this.posPromoDraft.startTime || !this.posPromoDraft.endTime) {
+      this.posShowToast('請填寫活動開始與結束日期'); return;
+    }
+    const saved = { ...this.posPromoDraft };
+    const ids = this.posPromos().map(p => p.id);
+    const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+    this.posPromos.update(list => [...list, {
+      id: newId,
+      title: saved.name.trim(),
+      isActive: true,
+      color: saved.badgeColor || '#c49756',
+      ended: false,
+      rawStartTime: saved.startTime,
+      rawEndTime:   saved.endTime,
+      type: 'promotion' as const,
+      description:  saved.description,
+      image:        saved.image,
+      badgeColor:   saved.badgeColor,
+      minAmount:    saved.minAmount ?? undefined,
+    }]);
+    this.closePromoPanel();
+    this.posShowToast(`活動「${saved.name.trim()}」已新增`);
   }
 
   /* 登出 */

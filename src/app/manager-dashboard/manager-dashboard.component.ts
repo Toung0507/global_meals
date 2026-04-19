@@ -78,9 +78,10 @@ interface DashAccount {
   account: string;
   branch?: string;
   shift?: string;
-  lastLogin: string;
+  joinedAt: string;
   isActive: boolean;
   role: 'bm' | 'staff';
+  country?: string;
 }
 
 /* ── 分店型別（對應 global_area 資料表）───────────── */
@@ -97,9 +98,11 @@ interface DashBranch {
 interface DashTax {
   id: number;
   country: string;
-  currency: string;   /* 幣別代碼，例 TWD / JPY / KRW */
-  taxType: string;    /* 'INCLUSIVE'（內含稅）| 'EXCLUSIVE'（外加稅） */
+  countryCode: string; /* 國別代碼，例 TW / JP / KR */
+  currency: string;    /* 幣別代碼，例 TWD / JPY / KRW */
+  taxType: string;     /* 'INCLUSIVE'（內含稅）| 'EXCLUSIVE'（外加稅） */
   rate: number;
+  discountLimit?: number; /* 折扣上限金額（當地幣別） */
   editing: boolean;
   editValue: number;
 }
@@ -140,7 +143,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     promotions: '🎯 活動管理',
     inventory:  '📦 庫存管理',
     users:      '👥 帳號管理',
-    tax:        '🌍 稅率設定',
+    tax:        '🌍 國家基本設定',
     finance:    '💰 財務報表',
     branches:   '🏪 分店管理'
   };
@@ -191,12 +194,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 帳號清單（Signal） ─────────────────────────── */
   accounts = signal<DashAccount[]>([
-    { id: 1, name: '陳美玲',     account: 'chen.ml',  branch: '台灣台北店', lastLogin: '2026-04-01 09:12', isActive: true,  role: 'bm' },
-    { id: 2, name: '田中一郎',   account: 'tanaka.i', branch: '日本東京店', lastLogin: '2026-04-01 08:55', isActive: true,  role: 'bm' },
-    { id: 3, name: 'Somchai P.', account: 'somchai.p', branch: '泰國曼谷店', lastLogin: '2026-03-30 14:20', isActive: false, role: 'bm' },
-    { id: 4, name: '王小明',     account: 'wang.xm',  shift: '早班', lastLogin: '今日 09:00', isActive: true,  role: 'staff', branch: '台北店' },
-    { id: 5, name: '李佳靜',     account: 'lee.jj',   shift: '晚班', lastLogin: '昨日 17:00', isActive: true,  role: 'staff', branch: '台北店' },
-    { id: 6, name: 'Yuki T.',    account: 'yuki.t',   shift: '全天', lastLogin: '今日 10:30', isActive: true,  role: 'staff', branch: '東京店' },
+    { id: 1, name: '陳美玲',     account: 'chen.ml',   branch: '台灣台北店', joinedAt: '2024-03-15', isActive: true,  role: 'bm',    country: 'TW' },
+    { id: 2, name: '田中一郎',   account: 'tanaka.i',  branch: '日本東京店', joinedAt: '2024-06-01', isActive: true,  role: 'bm',    country: 'JP' },
+    { id: 3, name: 'Somchai P.', account: 'somchai.p', branch: '泰國曼谷店', joinedAt: '2024-09-20', isActive: false, role: 'bm',    country: 'TH' },
+    { id: 4, name: '王小明',     account: 'wang.xm',   shift: '早班',        joinedAt: '2025-01-10', isActive: true,  role: 'staff', branch: '台北店', country: 'TW' },
+    { id: 5, name: '李佳靜',     account: 'lee.jj',    shift: '晚班',        joinedAt: '2025-03-22', isActive: true,  role: 'staff', branch: '台北店', country: 'TW' },
+    { id: 6, name: 'Yuki T.',    account: 'yuki.t',    shift: '全天',        joinedAt: '2025-07-08', isActive: true,  role: 'staff', branch: '東京店', country: 'JP' },
   ]);
 
   bmAccounts    = computed(() => this.accounts().filter(a => a.role === 'bm'));
@@ -204,10 +207,13 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 稅率清單（Signal） ─────────────────────────── */
   taxes = signal<DashTax[]>([
-    { id: 1, country: '台灣', currency: 'TWD', taxType: 'INCLUSIVE', rate: 5,  editing: false, editValue: 5  },
-    { id: 2, country: '日本', currency: 'JPY', taxType: 'INCLUSIVE', rate: 10, editing: false, editValue: 10 },
-    { id: 3, country: '泰國', currency: 'THB', taxType: 'EXCLUSIVE', rate: 7,  editing: false, editValue: 7  },
+    { id: 1, country: '台灣', countryCode: 'TW', currency: 'TWD', taxType: 'INCLUSIVE', rate: 5,  discountLimit: 200,   editing: false, editValue: 5  },
+    { id: 2, country: '日本', countryCode: 'JP', currency: 'JPY', taxType: 'INCLUSIVE', rate: 10, discountLimit: 1000,  editing: false, editValue: 10 },
+    { id: 3, country: '韓國', countryCode: 'KR', currency: 'KRW', taxType: 'EXCLUSIVE', rate: 10, discountLimit: 10000, editing: false, editValue: 10 },
   ]);
+
+  /* ── 國家設定子頁籤 ──────────────────────────────── */
+  taxSubTab = signal<'tax' | 'discount'>('tax');
 
   /* ── 商品篩選 ─────────────────────────────────── */
   productCategoryFilter = signal<string>('全部分類');
@@ -255,13 +261,13 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 表單草稿（普通屬性，開啟 modal 時重置） ─────────── */
   productDraft = { name: '', category: '台式', price: 165, stock: 0, emoji: '🍜' };
-  promoDraft   = { name: '', type: 'promotion' as 'promotion' | 'announcement', description: '', startTime: '', endTime: '', color: '#c49756', badgeColor: '#c49756', minAmount: null as number | null, image: '' };
+  promoDraft   = { name: '', type: 'promotion' as 'promotion' | 'announcement', description: '', startTime: '', endTime: '', color: '#c49756', badgeColor: '#c49756', minAmount: null as number | null, image: '', currency: 'NT$' };
   showPromoPanel = signal(false);
   giftDraft    = { promoId: 0, rawName: '', rawStartTime: '', rawEndTime: '', fullAmount: 300, giftProductId: null as number | null, quantity: -1 };
-  accountDraft: { name: string; account: string; branch: string; shift: string; role: 'bm' | 'staff'; isActive: boolean } =
-    { name: '', account: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true };
-  taxDraft: { country: string; currency: string; taxType: 'INCLUSIVE' | 'EXCLUSIVE'; rate: number; effectiveDate: string } =
-    { country: '', currency: '', taxType: 'INCLUSIVE', rate: 5, effectiveDate: '' };
+  accountDraft: { name: string; account: string; password: string; branch: string; shift: string; role: 'bm' | 'staff'; isActive: boolean; country: string } =
+    { name: '', account: '', password: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true, country: 'TW' };
+  taxDraft: { country: string; countryCode: string; currency: string; taxType: 'INCLUSIVE' | 'EXCLUSIVE'; rate: number; effectiveDate: string; discountLimit: number } =
+    { country: '', countryCode: '', currency: '', taxType: 'INCLUSIVE', rate: 5, effectiveDate: '', discountLimit: 0 };
   branchDraft     = { name: '', city: '', country: '', address: '', phone: '' };
   editBranchDraft = { id: 0, name: '', city: '', country: '', address: '', phone: '' };
 
@@ -396,13 +402,14 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       next: (res) => {
         if (res?.regionsList?.length) {
           this.taxes.set(res.regionsList.map((r: RegionVO) => ({
-            id:       r.id,
-            country:  r.country,
-            currency: r.currencyCode,
-            taxType:  r.taxType ?? 'INCLUSIVE',
-            rate:     +(+r.taxRate * 100).toFixed(2),
-            editing:  false,
-            editValue: +(+r.taxRate * 100).toFixed(2)
+            id:          r.id,
+            country:     r.country,
+            countryCode: '',
+            currency:    r.currencyCode,
+            taxType:     r.taxType ?? 'INCLUSIVE',
+            rate:        +(+r.taxRate * 100).toFixed(2),
+            editing:     false,
+            editValue:   +(+r.taxRate * 100).toFixed(2)
           })));
         }
       },
@@ -471,6 +478,20 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.products.update(list =>
       list.map(p => p.id === id ? { ...p, isActive: !p.isActive } : p)
     );
+  }
+
+  /* ── 今日日期（YYYY-MM-DD），供活動開始日期 [min] 使用 ── */
+  today(): string {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  /* ── 活動：刪除 ─────────────────────────────────── */
+  deletePromo(id: number): void {
+    const promo = this.promos().find(p => p.id === id);
+    if (!promo) return;
+    if (!confirm(`確定刪除活動「${promo.rawName}」？此操作無法復原。`)) return;
+    this.promos.update(list => list.filter(p => p.id !== id));
+    this.showToast(`🗑️ 活動「${promo.rawName}」已刪除`);
   }
 
   /* ── 活動：啟用/停用切換 ─────────────────────────── */
@@ -708,7 +729,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 新增活動 Slide-in Panel ───────────────────────── */
   openAddPromo(): void {
-    this.promoDraft = { name: '', type: 'promotion', description: '', startTime: '', endTime: '', color: '#c49756', badgeColor: '#c49756', minAmount: null, image: '' };
+    this.promoDraft = { name: '', type: 'promotion', description: '', startTime: '', endTime: '', color: '#c49756', badgeColor: '#c49756', minAmount: null, image: '', currency: 'NT$' };
     this.showPromoPanel.set(true);
   }
 
@@ -773,7 +794,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   /* ── 新增 / 編輯帳號 Modal ─────────────────────────── */
   openAddAccount(): void {
     this.editingAccountId.set(null);
-    this.accountDraft = { name: '', account: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true };
+    this.accountDraft = { name: '', account: '', password: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true, country: 'TW' };
     this.activeModal.set('addAccount');
   }
 
@@ -784,10 +805,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.accountDraft = {
       name: acc.name,
       account: acc.account,
+      password: '',
       branch: acc.branch ?? '台灣台北店',
       shift: acc.shift ?? '早班',
       role: acc.role,
-      isActive: acc.isActive
+      isActive: acc.isActive,
+      country: acc.country ?? 'TW'
     };
     this.activeModal.set('addAccount');
   }
@@ -795,6 +818,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   saveAccount(): void {
     if (!this.accountDraft.name.trim() || !this.accountDraft.account.trim()) {
       this.showToast('⚠️ 姓名與帳號為必填'); return;
+    }
+    if (this.editingAccountId() === null && !this.accountDraft.password.trim()) {
+      this.showToast('⚠️ 新增帳號時密碼為必填'); return;
     }
     const editId = this.editingAccountId();
     const savedName = this.accountDraft.name;
@@ -806,22 +832,25 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         branch: this.accountDraft.branch,
         shift: this.accountDraft.role === 'staff' ? this.accountDraft.shift : undefined,
         role: this.accountDraft.role,
-        isActive: this.accountDraft.isActive
+        isActive: this.accountDraft.isActive,
+        country: this.accountDraft.country
       } : a));
       this.closeModal();
       this.showToast(`✅ 帳號「${savedName}」已更新`);
     } else {
       const ids = this.accounts().map(a => a.id);
       const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+      const today = new Date().toISOString().slice(0, 10);
       this.accounts.update(list => [...list, {
         id: newId,
         name: this.accountDraft.name,
         account: this.accountDraft.account,
         branch: this.accountDraft.branch,
         shift: this.accountDraft.role === 'staff' ? this.accountDraft.shift : undefined,
-        lastLogin: '從未登入',
+        joinedAt: today,
         isActive: this.accountDraft.isActive,
-        role: this.accountDraft.role
+        role: this.accountDraft.role,
+        country: this.accountDraft.country
       }]);
       this.closeModal();
       this.showToast(`✅ 帳號「${savedName}」已新增`);
@@ -830,7 +859,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 新增國家稅率 Modal ─────────────────────────────── */
   openAddCountry(): void {
-    this.taxDraft = { country: '', currency: '', taxType: 'INCLUSIVE', rate: 5, effectiveDate: '' };
+    this.taxDraft = { country: '', countryCode: '', currency: '', taxType: 'INCLUSIVE', rate: 5, effectiveDate: '', discountLimit: 0 };
     this.activeModal.set('addCountry');
   }
 
@@ -862,9 +891,13 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         this.taxes.update(list => [...list, {
           id: newId,
           country: saved.country,
+          countryCode: saved.countryCode.trim().toUpperCase(),
           currency: resolvedCurrency,
           taxType: saved.taxType,
-          rate: saved.rate, editing: false, editValue: saved.rate
+          rate: saved.rate,
+          discountLimit: saved.discountLimit || undefined,
+          editing: false,
+          editValue: saved.rate
         }]);
         this.closeModal();
         this.showToast(`後端暫不可用，已本地新增 ${saved.country}（${resolvedCurrency}）`);
@@ -905,29 +938,31 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   }
 
   saveBranch(): void {
-    if (!this.branchDraft.name.trim()) { this.showToast('⚠️ 請輸入分店名稱'); return; }
+    if (!this.branchDraft.country.trim() || !this.branchDraft.city.trim()) {
+      this.showToast('⚠️ 請選擇國家與城市'); return;
+    }
     const saved = { ...this.branchDraft };
+    const autoName = `${saved.country.trim()}${saved.city.trim()}店`;
     this.apiService.createBranch({
       country: saved.country.trim(),
-      branch: saved.name.trim(),
+      branch: autoName,
       address: saved.address.trim(),
       phone: saved.phone.trim()
     }).subscribe({
       next: () => {
         this.loadBranches();
         this.closeModal();
-        this.showToast(`✅ 分店「${saved.name.trim()}」已新增`);
+        this.showToast(`✅ 分店「${autoName}」已新增`);
       },
       error: () => {
-        /* API 失敗時降級為本地更新 */
         const ids = this.branches().map(b => b.id);
         const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
         this.branches.update(list => [...list, {
-          id: newId, name: saved.name.trim(), city: saved.city.trim(),
+          id: newId, name: autoName, city: saved.city.trim(),
           country: saved.country.trim(), address: saved.address.trim(), phone: saved.phone.trim()
         }]);
         this.closeModal();
-        this.showToast(`⚠️ 後端暫不可用，僅本地新增分店「${saved.name.trim()}」`);
+        this.showToast(`⚠️ 後端暫不可用，僅本地新增分店「${autoName}」`);
       }
     });
   }
@@ -941,30 +976,32 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   }
 
   saveEditBranch(): void {
-    if (!this.editBranchDraft.name.trim()) { this.showToast('⚠️ 請輸入分店名稱'); return; }
+    if (!this.editBranchDraft.country.trim() || !this.editBranchDraft.city.trim()) {
+      this.showToast('⚠️ 請選擇國家與城市'); return;
+    }
     const saved = { ...this.editBranchDraft };
+    const autoName = `${saved.country.trim()}${saved.city.trim()}店`;
     this.apiService.updateBranch({
       id: saved.id,
       country: saved.country.trim(),
-      branch: saved.name.trim(),
+      branch: autoName,
       address: saved.address.trim(),
       phone: saved.phone.trim()
     }).subscribe({
       next: () => {
         this.loadBranches();
         this.closeModal();
-        this.showToast(`✅ 分店「${saved.name.trim()}」已更新`);
+        this.showToast(`✅ 分店「${autoName}」已更新`);
       },
       error: () => {
-        /* API 失敗時降級為本地更新 */
         this.branches.update(list =>
           list.map(b => b.id === saved.id ? {
-            ...b, name: saved.name.trim(), city: saved.city.trim(),
+            ...b, name: autoName, city: saved.city.trim(),
             country: saved.country.trim(), address: saved.address.trim(), phone: saved.phone.trim()
           } : b)
         );
         this.closeModal();
-        this.showToast(`⚠️ 後端暫不可用，僅本地更新分店「${saved.name.trim()}」`);
+        this.showToast(`⚠️ 後端暫不可用，僅本地更新分店「${autoName}」`);
       }
     });
   }

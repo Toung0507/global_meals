@@ -295,6 +295,20 @@
       }
     </div>
 
+    <!-- 國家 / 分店切換 -->
+    <div class="sidebar-country-switch">
+      @for (c of allCountries(); track c.code) {
+        <button
+          class="sidebar-country-btn"
+          [class.active]="activeCountry() === c.code"
+          (click)="selectCountry(c.code)"
+        >
+          <span class="sidebar-flag-dot" [class]="'flag-' + c.code.toLowerCase()"></span>
+          <span class="sidebar-country-name">{{ c.nameLocal }}</span>
+        </button>
+      }
+    </div>
+
     <!-- 分隔線 -->
     <div class="sidebar-divider">
       <span>導覽功能</span>
@@ -948,81 +962,108 @@
               </button>
             </div>
 
-            <!-- ── 多活動進度條（每個活動一條，可收折展開）────── -->
+            <!-- ── 活動進度抽屜（單一抽屜，收折所有活動）────── -->
             @if (cartTotal() > 0) {
-              <div class="multi-promo-bars">
-                @for (promo of PROMO_ACTIVITIES; track promo.name) {
-                  <div
-                    class="promo-bar-item"
-                    [class.promo-bar-done]="cartTotal() >= promo.minSpend"
-                    [class.promo-bar-expanded]="isPromoBarExpanded(promo.name)"
-                  >
-                    <!-- 標題列（點擊展開/收折） -->
-                    <button
-                      class="promo-bar-header"
-                      (click)="togglePromoProgressBar(promo.name)"
-                      type="button"
-                    >
-                      <!-- 左側圖示 -->
-                      <div class="pbh-icon">
-                        @if (cartTotal() >= promo.minSpend) {
-                          <!-- 達成：綠色打勾 -->
-                          <svg viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="11" fill="#22C55E"/>
-                            <path d="M7 12.5l3.5 3.5 6.5-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                          </svg>
-                        } @else {
-                          <!-- 未達成：橘色禮品 SVG -->
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                            <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/>
-                            <rect x="2" y="6" width="20" height="6" rx="1"/>
-                            <path d="M12 12v9"/>
-                            <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/>
-                            <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/>
-                          </svg>
-                        }
-                      </div>
+              <div class="promo-drawer" [class.promo-drawer-open]="promoDrawerOpen()">
 
-                      <!-- 活動名稱 -->
-                      <span class="pbh-name">{{ promo.name }}</span>
-
-                      <!-- 右側：進度提示或達成標籤 -->
-                      @if (cartTotal() >= promo.minSpend) {
-                        <span class="pbh-done-tag">達成！點此選贈品</span>
-                      } @else {
-                        <span class="pbh-remain">
-                          差 <strong>NT$ {{ promo.minSpend - cartTotal() }}</strong>
-                        </span>
-                      }
-
-                      <!-- 展開箭頭 -->
-                      <svg class="pbh-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polyline points="6 9 12 15 18 9"/>
+                <!-- 抽屜標題列 -->
+                <button class="promo-drawer-header" (click)="togglePromoDrawer()" type="button">
+                  <!-- 左側：活動圖示 -->
+                  <div class="pdh-icon" [class.pdh-icon-has-done]="promoCompletedCount > 0">
+                    @if (promoCompletedCount > 0) {
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="11" fill="#22C55E"/>
+                        <path d="M7 12.5l3.5 3.5 6.5-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
-                    </button>
+                    } @else {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                        <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/>
+                        <rect x="2" y="6" width="20" height="6" rx="1"/>
+                        <path d="M12 12v9"/>
+                        <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/>
+                        <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/>
+                      </svg>
+                    }
+                  </div>
 
-                    <!-- 展開內容：進度條詳細 -->
-                    @if (isPromoBarExpanded(promo.name)) {
-                      <div class="promo-bar-body">
-                        <div class="pbb-track">
-                          <div
-                            class="pbb-fill"
-                            [style.width.%]="cartTotal() >= promo.minSpend ? 100 : (cartTotal() / promo.minSpend) * 100"
-                          >
-                            <div class="pbb-shimmer"></div>
+                  <!-- 中間：標題 + 摘要 -->
+                  <div class="pdh-text">
+                    <span class="pdh-title">進行中活動</span>
+                    <span class="pdh-summary">
+                      @if (promoCompletedCount > 0) {
+                        已達成 {{ promoCompletedCount }} / {{ PROMO_ACTIVITIES.length }} 個活動
+                      } @else {
+                        共 {{ PROMO_ACTIVITIES.length }} 個活動，展開查看進度
+                      }
+                    </span>
+                  </div>
+
+                  <!-- 右側：已達成徽章 + 箭頭 -->
+                  @if (promoCompletedCount > 0) {
+                    <span class="pdh-badge">{{ promoCompletedCount }} 個達成</span>
+                  }
+                  <svg class="pdh-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+
+                <!-- 抽屜內容：各活動進度條 -->
+                @if (promoDrawerOpen()) {
+                  <div class="promo-drawer-body">
+                    @for (promo of PROMO_ACTIVITIES; track promo.name; let i = $index) {
+                      <div
+                        class="promo-bar-item"
+                        [class.promo-bar-done]="cartTotal() >= promo.minSpend"
+                        [class.promo-bar-expanded]="isPromoBarExpanded(promo.name)"
+                        [style.animation-delay]="(i * 50) + 'ms'"
+                      >
+                        <button class="promo-bar-header" (click)="togglePromoProgressBar(promo.name)" type="button">
+                          <div class="pbh-icon">
+                            @if (cartTotal() >= promo.minSpend) {
+                              <svg viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="11" fill="#22C55E"/>
+                                <path d="M7 12.5l3.5 3.5 6.5-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                              </svg>
+                            } @else {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                                <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/>
+                                <rect x="2" y="6" width="20" height="6" rx="1"/>
+                                <path d="M12 12v9"/>
+                                <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/>
+                                <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/>
+                              </svg>
+                            }
                           </div>
-                          <div class="pbb-goal">
-                            <svg viewBox="0 0 14 14" fill="none">
-                              <circle cx="7" cy="7" r="6" fill="#F0A500" stroke="#fff" stroke-width="1.5"/>
-                            </svg>
-                          </div>
-                        </div>
-                        <div class="pbb-info-row">
-                          <span class="pbb-counter">{{ cartTotal() > promo.minSpend ? promo.minSpend : cartTotal() }} / {{ promo.minSpend }}</span>
+                          <span class="pbh-name">{{ promo.name }}</span>
                           @if (cartTotal() >= promo.minSpend) {
-                            <span class="pbb-success-text">可至結帳頁選取贈品</span>
+                            <span class="pbh-done-tag">達成！點此選贈品</span>
+                          } @else {
+                            <span class="pbh-remain">差 <strong>NT$ {{ promo.minSpend - cartTotal() }}</strong></span>
                           }
-                        </div>
+                          <svg class="pbh-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9"/>
+                          </svg>
+                        </button>
+                        @if (isPromoBarExpanded(promo.name)) {
+                          <div class="promo-bar-body">
+                            <div class="pbb-track">
+                              <div class="pbb-fill" [style.width.%]="cartTotal() >= promo.minSpend ? 100 : (cartTotal() / promo.minSpend) * 100">
+                                <div class="pbb-shimmer"></div>
+                              </div>
+                              <div class="pbb-goal">
+                                <svg viewBox="0 0 14 14" fill="none">
+                                  <circle cx="7" cy="7" r="6" fill="#F0A500" stroke="#fff" stroke-width="1.5"/>
+                                </svg>
+                              </div>
+                            </div>
+                            <div class="pbb-info-row">
+                              <span class="pbb-counter">{{ cartTotal() > promo.minSpend ? promo.minSpend : cartTotal() }} / {{ promo.minSpend }}</span>
+                              @if (cartTotal() >= promo.minSpend) {
+                                <span class="pbb-success-text">可至結帳頁選取贈品</span>
+                              }
+                            </div>
+                          </div>
+                        }
                       </div>
                     }
                   </div>
@@ -1584,72 +1625,65 @@
               </div>
             }
 
-            <!-- 訂單品項列表 -->
+            <!-- 訂單品項列表 + 活動選擇：2 欄佈局 -->
             @if (cartCount() > 0) {
-              <div class="checkout-items">
-                <!-- 已選活動贈品：顯示於品項列表最上方 -->
-                @if (selectedPromoGift() && selectedPromoName() && selectedPromoName() !== '不參加活動優惠') {
-                  <div class="checkout-item checkout-item-gift">
-                    <div class="co-item-info">
-                      <span class="co-item-name">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px;margin-right:4px;vertical-align:middle;"><path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/><rect x="2" y="6" width="20" height="6" rx="1"/><path d="M12 12v9"/><path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/><path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/></svg>
-                        {{ selectedPromoName() }} - {{ selectedPromoGift() }}
-                      </span>
-                      <span class="co-item-unit">NT$ 0</span>
-                    </div>
-                    <span class="co-item-subtotal co-gift-free">免費</span>
-                  </div>
-                }
-                @for (item of cartItems(); track item.id) {
-                  <div class="checkout-item">
-                    <div class="co-item-info">
-                      <span class="co-item-name">{{ item.name }}</span>
-                      <span class="co-item-unit">NT$ {{ item.price }}</span>
-                    </div>
-                    <div class="co-item-ctrl">
-                      <button
-                        class="co-delete-btn"
-                        (click)="removeFromCart(item.id)"
-                        aria-label="移除商品"
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                        >
-                          <polyline points="3 6 5 6 21 6"></polyline>
-                          <path
-                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                          ></path>
-                          <line x1="10" y1="11" x2="10" y2="17"></line>
-                          <line x1="14" y1="11" x2="14" y2="17"></line>
-                        </svg>
-                      </button>
-                      <button
-                        class="co-qty-btn"
-                        (click)="updateCartQuantity(item.id, -1)"
-                      >
-                        −
-                      </button>
-                      <span class="co-qty">{{ item.quantity }}</span>
-                      <button
-                        class="co-qty-btn"
-                        (click)="updateCartQuantity(item.id, 1)"
-                      >
-                        ＋
-                      </button>
-                    </div>
-                    <span class="co-item-subtotal"
-                      >NT$ {{ item.price * item.quantity }}</span
-                    >
-                  </div>
-                }
-              </div>
+              <div class="checkout-grid">
 
-              <!-- ── 活動優惠選擇（accordion 設計）─────────────── -->
-              @if (unlockedPromos().length > 0) {
-                <div class="checkout-promo-section">
+                <!-- ── 左欄：訂單品項 ─────────────────────────── -->
+                <div class="checkout-col-left">
+                  <div class="checkout-col-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:15px;height:15px;">
+                      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                      <rect x="9" y="3" width="6" height="4" rx="1"/>
+                    </svg>
+                    訂單明細
+                    <span class="checkout-col-count">{{ cartCount() }} 件</span>
+                  </div>
+                  <div class="checkout-items">
+                    @for (item of cartItems(); track item.id) {
+                      <div class="checkout-item">
+                        <div class="co-item-info">
+                          <span class="co-item-name">{{ item.name }}</span>
+                          <span class="co-item-unit">NT$ {{ item.price }}</span>
+                        </div>
+                        <div class="co-item-ctrl">
+                          <button class="co-delete-btn" (click)="removeFromCart(item.id)" aria-label="移除商品">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              <line x1="10" y1="11" x2="10" y2="17"></line>
+                              <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                          </button>
+                          <button class="co-qty-btn" (click)="updateCartQuantity(item.id, -1)">−</button>
+                          <span class="co-qty">{{ item.quantity }}</span>
+                          <button class="co-qty-btn" (click)="updateCartQuantity(item.id, 1)">＋</button>
+                        </div>
+                        <span class="co-item-subtotal">NT$ {{ item.price * item.quantity }}</span>
+                      </div>
+                    }
+                    <!-- 已選贈品：顯示在品項列表底部 -->
+                    @if (selectedPromoGift() && selectedPromoName() && selectedPromoName() !== '不參加活動優惠') {
+                      <div class="checkout-item checkout-item-gift">
+                        <div class="co-item-info">
+                          <span class="co-item-name">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px;margin-right:4px;vertical-align:middle;"><path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/><rect x="2" y="6" width="20" height="6" rx="1"/><path d="M12 12v9"/><path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/><path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/></svg>
+                            {{ selectedPromoName() }} - {{ selectedPromoGift() }}
+                          </span>
+                          <span class="co-item-unit">NT$ 0</span>
+                        </div>
+                        <span class="co-item-subtotal co-gift-free">免費</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- ── 右欄：活動選擇 + 金額 + 送出 ──────────── -->
+                <div class="checkout-col-right">
+
+                  <!-- 活動優惠選擇（accordion 設計）-->
+                  @if (unlockedPromos().length > 0) {
+                    <div class="checkout-promo-section">
 
                   <!-- 上方：綠色贈品面板（按此選擇免費餐點） -->
                   <div class="promo-gift-panel" [class.panel-open]="promoGiftPanelOpen()" [class.has-gift]="!!selectedPromoGift()">
@@ -1796,52 +1830,40 @@
                 </div>
               }
 
-              <!-- 金額明細 -->
-              <div class="checkout-summary">
-                <div class="summary-row">
-                  <span>小計</span>
-                  <span>NT$ {{ cartTotal() }}</span>
-                </div>
-                <!-- 8折折扣行（使用折扣券時顯示） -->
-                @if (useDiscountCoupon()) {
-                  <div class="summary-row summary-row-discount">
-                    <span>折扣券折扣（8折）</span>
-                    <span class="summary-discount-price"
-                      >－ NT$ {{ discountAmount() }}</span
-                    >
+                </div><!-- /checkout-col-right -->
+              </div><!-- /checkout-grid -->
+
+              <!-- 金額明細 + 操作按鈕（獨立置中區塊） -->
+              <div class="checkout-footer-block">
+                <div class="checkout-summary">
+                  <div class="summary-row">
+                    <span>小計</span>
+                    <span>NT$ {{ cartTotal() }}</span>
                   </div>
-                }
-                <div class="summary-row summary-row-total">
-                  <span>總計</span>
-                  <span class="summary-total-price"
-                    >NT$ {{ discountedTotal() }}</span
-                  >
+                  @if (useDiscountCoupon()) {
+                    <div class="summary-row summary-row-discount">
+                      <span>折扣券折扣（8折）</span>
+                      <span class="summary-discount-price">－ NT$ {{ discountAmount() }}</span>
+                    </div>
+                  }
+                  <div class="summary-row summary-row-total">
+                    <span>總計</span>
+                    <span class="summary-total-price">NT$ {{ discountedTotal() }}</span>
+                  </div>
                 </div>
-              </div>
 
-              <!-- 進入結帳頁面 → 先開啟訂單預覽 -->
-              <button class="checkout-submit" (click)="openOrderPreview()">
-                進入結帳頁面 — NT$ {{ discountedTotal() }}
-              </button>
+                <button class="checkout-submit" (click)="openOrderPreview()">
+                  進入結帳頁面 — NT$ {{ discountedTotal() }}
+                </button>
 
-              <!-- 清空購物車 -->
-              <button
-                class="checkout-clear enhance-clear-btn"
-                (click)="clearCart()"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path
-                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                  ></path>
-                </svg>
-                <span>清空購物車</span>
-              </button>
+                <button class="checkout-clear enhance-clear-btn" (click)="clearCart()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                  <span>清空購物車</span>
+                </button>
+              </div><!-- /checkout-footer-block -->
             }
           </div>
 

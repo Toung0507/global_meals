@@ -28,6 +28,8 @@ export interface LiveOrder {
   payMethod: string;
   source: 'pos' | 'customer';
   customerName?: string;
+  orderType?: string;   /* '內用' | '外帶'，POS 下單時帶入 */
+  note?: string;        /* 備註，選填 */
 }
 
 @Injectable({ providedIn: 'root' })

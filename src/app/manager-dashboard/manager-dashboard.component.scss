@@ -352,6 +352,14 @@ $admin-purple:     #c084fc;   // 側邊欄副標題紫色
 .btn-ghost-red:hover  { background-color: rgba(220,38,38,0.14); color: #991b1b; transform: translateY(-1px); }
 .btn-ghost-red:active { transform: scale(0.97); }
 
+@keyframes promo-delete-blink {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(220,38,38,0); color: #dc2626; }
+  50%       { opacity: 0.7; box-shadow: 0 0 12px 4px rgba(220,38,38,0.6); color: #ff6b6b; }
+}
+.promo-delete-pulse {
+  animation: promo-delete-blink 1.6s ease-in-out infinite;
+}
+
 /* 綠色幽靈按鈕 */
 .btn-ghost-green {
     background-color: rgba(22,163,74,0.08);
@@ -732,6 +740,23 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     align-items: center;
     flex-shrink: 0;
 }
+.pp-currency-select {
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    border-right: 1px solid #D4DCE8;
+    border-radius: 0;
+    background: #F4F6FA url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%234A5A70' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 8px center;
+    color: #4A5A70;
+    font-size: 0.82rem;
+    font-family: 'DM Mono', monospace;
+    height: 38px;
+    padding: 0 28px 0 12px;
+    flex-shrink: 0;
+    cursor: pointer;
+    outline: none;
+    &:focus { background-color: #EDF0F7; }
+}
 .pp-amount-input {
     border: none !important;
     border-radius: 0 !important;
@@ -739,6 +764,28 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     flex: 1;
 }
 
+
+/* ── 國家基本設定：左右並排 ───────────────────────────── */
+.tax-split-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+
+    @media (max-width: 900px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.tax-discount-note {
+    font-size: 0.72rem;
+    color: #4A5A70;
+    margin-top: 16px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    line-height: 1.6;
+}
 
 /* ── 稅率設定列 ───────────────────────────────────────── */
 .tax-row {

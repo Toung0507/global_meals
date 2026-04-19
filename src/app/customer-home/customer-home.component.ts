@@ -30,6 +30,7 @@ import { OrderService } from '../shared/order.service';
 import { firstValueFrom } from 'rxjs';
 import { ApiService, GetOrdersVo, CartSyncReq, CreateOrdersReq, PayReq, CartRemoveReq, CartClearReq } from '../shared/api.service';
 import { DEMO_BASE_URL } from '../shared/demo.config';
+import { BranchService, CountryCode, CountryConfig } from '../shared/branch.service';
 
 /* ── 購物車品項型別 ─────────────────────────────────── */
 export interface CartItem {
@@ -350,6 +351,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   promoGiftPanelOpen = signal(false);
   /* 菜單頁各活動進度條的展開狀態（key = 活動名稱） */
   promoProgressExpanded = signal<Record<string, boolean>>({});
+  /* 菜單頁：整個活動抽屜是否展開 */
+  promoDrawerOpen = signal<boolean>(false);
 
   /* 根據目前小計，篩出已達門檻的活動 */
   unlockedPromos = computed(() =>
@@ -361,13 +364,23 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     return this.PROMO_ACTIVITIES.find(p => p.name === this.selectedPromoName()) ?? null;
   }
 
-  /* 菜單頁：切換特定活動進度條的展開/收折 */
+  /* 菜單頁：整個活動抽屜展開/收折 */
+  togglePromoDrawer(): void {
+    this.promoDrawerOpen.update(v => !v);
+  }
+
+  /* 菜單頁：切換特定活動進度條的展開/收折（抽屜內部） */
   togglePromoProgressBar(name: string): void {
     this.promoProgressExpanded.update(v => ({ ...v, [name]: !v[name] }));
   }
 
   isPromoBarExpanded(name: string): boolean {
     return this.promoProgressExpanded()[name] ?? false;
+  }
+
+  /* 菜單頁：已達門檻的活動數量 */
+  get promoCompletedCount(): number {
+    return this.PROMO_ACTIVITIES.filter(p => this.cartTotal() >= p.minSpend).length;
   }
 
   /* 結帳頁：切換綠色贈品面板 */
@@ -632,18 +645,31 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     );
   });
 
+  /* ── 國家切換 ──────────────────────────────────────── */
+  allCountries = signal<CountryConfig[]>([]);
+  activeCountry = signal<CountryCode>('TW');
+
   constructor(
     private router: Router,
     public authService: AuthService,
     private loadingService: LoadingService,
     public orderService: OrderService,
     private apiService: ApiService,
+    private branchService: BranchService,
   ) {}
+
+  selectCountry(code: CountryCode): void {
+    this.branchService.setCountry(code);
+    this.activeCountry.set(code);
+  }
 
   ngOnInit(): void {
     if (!this.authService.currentUser) {
       this.authService.loginAsGuest('');
     }
+    this.branchService.init();
+    this.allCountries.set(this.branchService.allCountries);
+    this.activeCountry.set(this.branchService.country);
     /* 啟動首頁輪播自動播放（5 秒換一張） */
     this.heroTimer = setInterval(() => {
       if (!this.heroPaused) {

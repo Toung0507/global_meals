@@ -241,6 +241,72 @@ export interface GetOrdersDetailVo {
   isGift: boolean;
 }
 
+/* ── Members（會員）──────────────────────────────── */
+
+export interface RegisterMembersReq {
+  name: string;
+  phone: string;
+  country: string;    /* BranchService.country — 'TW' | 'JP' | 'KR' */
+  password?: string;  /* 訪客版不需要密碼 */
+}
+
+export interface LoginMembersReq {
+  phone: string;
+  password: string;
+}
+
+export interface MembersRes extends BasicRes {
+  memberId?: number;
+  name?: string;
+  phone?: string;
+  orderCount?: number;
+  isDiscount?: boolean;
+}
+
+export interface UpdatePasswordReq {
+  phone: string;
+  oldPassword: string;
+  newPassword: string;
+}
+
+/* ── Staff（員工）──────────────────────────────────── */
+
+export interface LoginStaffReq {
+  account: string;  /* email 或帳號 */
+  password: string;
+}
+
+export interface StaffVO {
+  id: number;
+  name: string;
+  account: string;
+  role: string;       /* ADMIN / REGION_MANAGER / MANAGER_AGENT / STAFF */
+  globalAreaId: number;
+  isStatus: boolean;
+  hireAt: string;
+}
+
+export interface StaffSearchRes extends BasicRes {
+  staffList?: StaffVO[];
+}
+
+export interface RegisterStaffReq {
+  name: string;
+  account: string;
+  password: string;
+  role: string;
+  globalAreaId: number;
+}
+
+export interface UpdateStaffStatusReq {
+  isStatus: boolean;
+}
+
+export interface ChangePasswordReq {
+  oldPassword: string;
+  newPassword: string;
+}
+
 /* ── GlobalArea（分店）────────────────────────────── */
 
 export interface CreateGlobalAreaReq {
@@ -620,85 +686,100 @@ export class ApiService {
   }
 
   /* ══════════════════════════════════════════════════
-   * ⚠ TODO [API串接點] — 以下 API 等後端建立 Controller 後再啟用
+   * Members API  →  members/（無前綴，後端已建立）
    * ══════════════════════════════════════════════════ */
 
-  /*
-   * ⚠ TODO [API串接點 - Members 會員登入]
-   * 後端待建立 MembersController，建立後取消以下方法的註解。
-   *
-   * memberLogin(phone: string, password: string): Observable<{ code: number; message: string; memberId: number; name: string }> {
-   *   return this.http.post<any>(`${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.LOGIN}`, { phone, password });
-   * }
-   *
-   * memberRegister(req: { name: string; phone: string; password: string }): Observable<BasicRes> {
-   *   return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.REGISTER}`, req);
-   * }
-   *
-   * getMemberProfile(memberId: number): Observable<any> {
-   *   return this.http.get<any>(`${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.PROFILE}?memberId=${memberId}`);
-   * }
-   */
+  /** 訪客快速建立（不需密碼）*/
+  registerGuest(req: RegisterMembersReq): Observable<BasicRes> {
+    return this.http.post<BasicRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.REGISTER_GUEST}`, req,
+      { withCredentials: true }
+    );
+  }
 
-  /*
-   * ⚠ TODO [API串接點 - Staff 員工登入]
-   * 後端待建立 StaffController，建立後取消以下方法的註解。
-   *
-   * staffLogin(account: string, password: string): Observable<{ code: number; message: string; staffId: number; role: string; name: string }> {
-   *   return this.http.post<any>(`${this.BASE}/${API_CONFIG.ENDPOINTS.STAFF.LOGIN}`, { account, password });
-   * }
-   *
-   * getAllStaff(): Observable<any> {
-   *   return this.http.get<any>(`${this.BASE}/${API_CONFIG.ENDPOINTS.STAFF.GET_ALL}`);
-   * }
-   *
-   * toggleStaff(req: { id: number; isStatus: boolean }): Observable<BasicRes> {
-   *   return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.STAFF.TOGGLE}`, req);
-   * }
-   */
+  /** 正式會員註冊（需密碼）*/
+  registerMember(req: RegisterMembersReq): Observable<BasicRes> {
+    return this.http.post<BasicRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.REGISTER_MEMBER}`, req,
+      { withCredentials: true }
+    );
+  }
 
-  /*
-   * ⚠ TODO [API串接點 - Products 商品管理]
-   * 後端待建立 ProductsController，建立後取消以下方法的註解。
-   * 注意：products 表無 price 欄位，價格在 branch_inventory.base_price。
-   *
-   * getActiveProducts(globalAreaId: number): Observable<any> {
-   *   return this.http.get<any>(`${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.GET_ACTIVE}?areaId=${globalAreaId}`);
-   * }
-   *
-   * getAllProducts(): Observable<any> {
-   *   return this.http.get<any>(`${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.GET_ALL}`);
-   * }
-   *
-   * getProductImage(productId: number): Observable<Blob> {
-   *   const path = API_CONFIG.ENDPOINTS.PRODUCTS.IMAGE.replace(':id', String(productId));
-   *   return this.http.get(`${this.BASE}/${path}`, { responseType: 'blob' });
-   * }
-   *
-   * createProduct(req: any): Observable<BasicRes> {
-   *   return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.CREATE}`, req);
-   * }
-   *
-   * updateProduct(req: any): Observable<BasicRes> {
-   *   return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.UPDATE}`, req);
-   * }
-   *
-   * toggleProduct(req: { id: number; active: boolean }): Observable<BasicRes> {
-   *   return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.TOGGLE}`, req);
-   * }
-   */
+  /** 會員登入（phone + password）回傳 MembersRes 含 memberId、name */
+  memberLogin(req: LoginMembersReq): Observable<MembersRes> {
+    return this.http.post<MembersRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.LOGIN}`, req,
+      { withCredentials: true }
+    );
+  }
 
-  /*
-   * ⚠ TODO [API串接點 - BranchInventory 分店庫存]
-   * 後端待建立 BranchInventoryController，建立後取消以下方法的註解。
-   *
-   * getBranchInventory(areaId: number): Observable<any> {
-   *   const path = API_CONFIG.ENDPOINTS.BRANCH_INVENTORY.GET_BY_AREA.replace(':areaId', String(areaId));
-   *   return this.http.get<any>(`${this.BASE}/${path}`);
-   * }
-   *
-   * updateBranchInventory(req: any): Observable<BasicRes> {
-   *   return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.BRANCH_INVENTORY.UPDATE}`, req);
-   * }
-   */
+  /** 會員登出（清除 Session）*/
+  memberLogout(): Observable<MembersRes> {
+    return this.http.get<MembersRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.LOGOUT}`,
+      { withCredentials: true }
+    );
+  }
+
+  /** 修改密碼（oldPassword 驗證後才能更新）*/
+  updateMemberPassword(req: UpdatePasswordReq): Observable<BasicRes> {
+    return this.http.post<BasicRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.UPDATE_PASSWORD}`, req,
+      { withCredentials: true }
+    );
+  }
+
+  /* ══════════════════════════════════════════════════
+   * Staff API  →  api/auth/ 和 api/admin/（後端已建立）
+   * ══════════════════════════════════════════════════ */
+
+  /** 員工登入（account + password），成功後後端寫入 Session */
+  staffLogin(req: LoginStaffReq): Observable<StaffSearchRes> {
+    return this.http.post<StaffSearchRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.STAFF.LOGIN}`, req,
+      { withCredentials: true }
+    );
+  }
+
+  /** 員工登出（清除 Session）*/
+  staffLogout(): Observable<BasicRes> {
+    return this.http.get<BasicRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.STAFF.LOGOUT}`,
+      { withCredentials: true }
+    );
+  }
+
+  /** 取得員工清單（ADMIN 看全部；RM 看自己分店）*/
+  getAllStaff(): Observable<StaffSearchRes> {
+    return this.http.get<StaffSearchRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.STAFF.GET_ALL}`,
+      { withCredentials: true }
+    );
+  }
+
+  /** 新增員工（RM 或 ST）*/
+  createStaff(req: RegisterStaffReq): Observable<StaffSearchRes> {
+    return this.http.post<StaffSearchRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.STAFF.CREATE}`, req,
+      { withCredentials: true }
+    );
+  }
+
+  /** 停權或復權（isStatus: true=啟用, false=停用）*/
+  updateStaffStatus(id: number, req: UpdateStaffStatusReq): Observable<StaffSearchRes> {
+    const path = API_CONFIG.ENDPOINTS.STAFF.UPDATE_STATUS.replace(':id', String(id));
+    return this.http.patch<StaffSearchRes>(
+      `${this.BASE}/${path}`, req,
+      { withCredentials: true }
+    );
+  }
+
+  /** 修改員工密碼 */
+  changeStaffPassword(id: number, req: ChangePasswordReq): Observable<StaffSearchRes> {
+    const path = API_CONFIG.ENDPOINTS.STAFF.CHANGE_PASSWORD.replace(':id', String(id));
+    return this.http.patch<StaffSearchRes>(
+      `${this.BASE}/${path}`, req,
+      { withCredentials: true }
+    );
+  }
 }

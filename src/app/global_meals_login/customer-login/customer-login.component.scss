@@ -86,9 +86,9 @@
     color: #6A6050;
 }
 
-/* 目前所在頁面的按鈕（客戶入口）— 活力橘紅背景表示「已選中」 */
+/* 目前所在頁面的按鈕（客戶入口）— 主色背景表示「已選中」，跟隨國家切換 */
 .mode-nav .nav-customer {
-    background-color: #D95C1A;
+    background-color: var(--c-primary);
     color: #ffffff;
     border-radius: 0 14px 14px 0;
 }
@@ -489,9 +489,9 @@
     box-sizing: border-box;
 }
 
-/* 輸入框被點選（獲得焦點）時：活力橘紅色邊框 */
+/* 輸入框獲得焦點時：跟隨國家主色 */
 .c-field input:focus {
-    border-color: #D95C1A;
+    border-color: var(--c-primary);
     box-shadow: 0 0 0 3px rgba(217, 92, 26, 0.10);
 }
 
@@ -581,7 +581,7 @@
     flex: 1;
     width: auto;
     height: clamp(50px, 7.5vh, 62px);
-    background: linear-gradient(145deg, #E06520 0%, #A84210 100%);
+    background: linear-gradient(145deg, var(--c-primary) 0%, var(--c-hover) 100%);
     color: #ffffff;
     border: none;
     border-radius: 16px;
@@ -647,8 +647,8 @@
     width: auto;
     height: clamp(50px, 7.5vh, 62px);
     background-color: #ffffff;
-    color: #D95C1A;
-    border: 2.5px solid #D95C1A;
+    color: var(--c-primary);
+    border: 2.5px solid var(--c-primary);
     border-radius: 16px;
     font-family: 'Noto Sans TC', sans-serif;
     font-size: clamp(14px, 1.9vh, 17px);
@@ -662,9 +662,9 @@
     transition: all 0.25s;
 }
 
-/* 滑鼠移到註冊按鈕時：背景變橘紅色、文字變白 */
+/* 滑鼠移到註冊按鈕時：填入主色、文字變白 */
 .c-register-btn:hover {
-    background-color: #D95C1A;
+    background-color: var(--c-primary);
     color: #ffffff;
     transform: translateY(-2px);
     box-shadow: 0 8px 22px rgba(217, 92, 26, 0.24);
@@ -725,6 +725,78 @@
 }
 
 
+/* ── CSS 變數（國家主題，由 BranchService 動態注入到 :root）──
+   預設值 = 台灣色盤；切換國家時 BranchService.applyTheme() 會覆蓋
+   ─────────────────────────────────────────────────────────────── */
+:host {
+    --c-primary: var(--brand-primary, #D95C1A);
+    --c-hover:   var(--brand-hover,   #A84210);
+    --c-bg:      var(--brand-bg,      #FFFAF3);
+    background-color: var(--c-bg);
+}
+
+/* ── 國家 / 分店切換列 ──────────────────────────────
+   固定在 mode-nav 正下方，切換台灣 / 日本 / 韓國
+   ─────────────────────────────────────────────────── */
+.c-country-switch {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    gap: 6px;
+    background-color: rgba(255, 250, 243, 0.90);
+    backdrop-filter: blur(8px);
+    border: 1.5px solid rgba(var(--brand-primary, 217 92 26) / 0.15);
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.c-country-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 9px;
+    background-color: transparent;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #9A8070;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.c-country-btn .c-flag-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.c-country-btn:hover {
+    background-color: rgba(217, 92, 26, 0.08);
+    color: #3D2010;
+}
+
+.c-country-btn.is-active {
+    background-color: var(--c-primary);
+    color: #ffffff;
+}
+
+.c-country-btn.is-active .c-flag-dot {
+    background-color: rgba(255, 255, 255, 0.6);
+}
+
+/* 各國旗幟代表色 */
+.c-flag-tw { background-color: #CE1126; }
+.c-flag-jp { background-color: #BC002D; }
+.c-flag-kr { background-color: #003478; }
+
 /* =====================================================
    響應式設計：畫面寬度小於 860px 時（手機或小平板）
    隱藏左側品牌欄，讓右側表單佔滿全寬
@@ -740,9 +812,93 @@
 
     .c-right {
         grid-column: 1 / -1;
+        padding-right: clamp(20px, 6vw, 40px);
+        padding-left: clamp(20px, 6vw, 40px);
     }
 }
 
+/* 480px：縮小 mode-nav 與 country-switch 的 padding */
+@media (max-width: 480px) {
+    :host {
+        padding-top: clamp(108px, 16vh, 128px); /* 為雙列 fixed bar 保留空間 */
+    }
+
+    .mode-nav {
+        top: 10px;
+    }
+
+    .mode-nav a {
+        padding: 8px 18px;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+    }
+
+    .c-country-switch {
+        top: 54px;
+        gap: 3px;
+        padding: 3px;
+    }
+
+    .c-country-btn {
+        padding: 5px 10px;
+        font-size: 11.5px;
+        gap: 4px;
+    }
+
+    .c-form-header h3 {
+        font-size: clamp(18px, 4.5vw, 26px);
+    }
+
+    .c-btn-group {
+        flex-direction: column;
+    }
+
+    .c-login-btn,
+    .c-register-btn {
+        flex: none;
+        width: 100%;
+    }
+}
+
+/* 375px：最小螢幕微調 */
+@media (max-width: 375px) {
+    .mode-nav a {
+        padding: 7px 13px;
+        font-size: 11.5px;
+    }
+
+    .c-country-btn {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    .c-right {
+        padding-right: 16px;
+        padding-left: 16px;
+    }
+}
+
+/* 減少動畫（使用者偏好）*/
+@media (prefers-reduced-motion: reduce) {
+    .c-float,
+    .c-ring-outer,
+    .c-ring-inner,
+    .c-login-btn::after {
+        animation: none;
+        transition: none;
+    }
+}
+
+
+/* ── 按鈕內 SVG 對齊 ─────────────────────────────── */
+.c-login-btn svg,
+.c-register-btn svg,
+.c-guest-btn svg,
+.c-welcome svg {
+    display: block;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
 
 /* ── 登入失敗錯誤訊息 ─────────────────────────────── */
 .c-error-msg {

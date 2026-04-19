@@ -56,10 +56,23 @@
    nav-customer 沒有 [routerLink] 表示這是當前頁面，點了不跳轉
    =================================================== -->
 <nav class="mode-nav">
-  <!-- (click)="goToStaff()" 觸發 TypeScript 的方法，先顯示 Loading 再切換頁面 -->
-  <a class="nav-staff" (click)="goToStaff()">⚙ 管理系統</a>
-  <a class="nav-customer">🍜 客戶入口</a>
+  <a class="nav-staff" (click)="goToStaff()">管理系統</a>
+  <a class="nav-customer">客戶入口</a>
 </nav>
+
+<!-- 國家 / 分店切換列 -->
+<div class="c-country-switch">
+  @for (c of allCountries; track c.code) {
+    <button
+      class="c-country-btn"
+      [class.is-active]="activeCountry === c.code"
+      (click)="selectCountry(c.code)"
+    >
+      <span class="c-flag-dot" [class]="'c-flag-' + c.code.toLowerCase()"></span>
+      {{ c.nameLocal }}
+    </button>
+  }
+</div>
 
 
 <!-- ===================================================
@@ -109,7 +122,7 @@
 
         <!-- 品牌標語 -->
         <div class="c-tagline">
-          <span class="c-tagline-pill">✦ 懶懶吃，飽飽樂 ✦</span>
+          <span class="c-tagline-pill">懶懶吃，飽飽樂</span>
         </div>
 
       </div>
@@ -125,7 +138,13 @@
 
       <!-- 表單頂部標題 -->
       <div class="c-form-header">
-        <div class="c-welcome">👋 歡迎回來</div>
+        <div class="c-welcome">
+          <!-- 揮手 SVG -->
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16" aria-hidden="true">
+            <path d="M10 2a1 1 0 0 1 1 1v5M7 4a1 1 0 0 1 1-1v4M4.5 6.5A1 1 0 0 1 6 5.6V9M13 4a1 1 0 0 1 1 1v5c0 3-2 5-4 5S6 18 6 15v-3"/>
+          </svg>
+          歡迎回來
+        </div>
         <h3>會員登入，開始美味旅程</h3>
         <p>登入享有個人化推薦、集點與專屬優惠</p>
       </div>
@@ -212,12 +231,21 @@
         <!-- 主要操作：會員登入
              (click)="onLogin()" 點擊後執行 TypeScript 的登入驗證方法 -->
         <button class="c-login-btn" (click)="onLogin()">
-          <span>🔑</span> 會員登入
+          <!-- 鑰匙 SVG -->
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="17" height="17" aria-hidden="true">
+            <circle cx="8" cy="8" r="5"/>
+            <path d="M13 13l5 5M12.5 8H20M17 10.5V8"/>
+          </svg>
+          會員登入
         </button>
 
         <!-- 次要操作：前往註冊（點擊後跳轉到 /customer-register） -->
         <button class="c-register-btn" [routerLink]="['/customer-register']">
-          ✦ 前往註冊，享受美食
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16" aria-hidden="true">
+            <path d="M12 5H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9"/>
+            <path d="M15 3l2 2-6 6H9v-2l6-6z"/>
+          </svg>
+          前往註冊，享受美食
         </button>
 
       </div>
@@ -227,7 +255,12 @@
 
       <!-- 訪客快速點餐（不需要登入，點擊後跳轉到 /customer-guest） -->
       <button class="c-guest-btn" [routerLink]="['/customer-guest']">
-        <span>👤</span> 訪客快速點餐，免登入
+        <!-- 人物輪廓 SVG -->
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" width="17" height="17" aria-hidden="true">
+          <circle cx="10" cy="7" r="3.5"/>
+          <path d="M3 18c0-3.5 3.1-6 7-6s7 2.5 7 6"/>
+        </svg>
+        訪客快速點餐，免登入
       </button>
 
     </section>
