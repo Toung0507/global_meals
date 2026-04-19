@@ -2761,21 +2761,13 @@
           <!-- Activity Card List -->
           <div class="promo-zone-list">
             @for (promo of PROMO_DISPLAY; track promo.name; let i = $index) {
-              <div class="pz-card" (click)="openPromoDetail(i)">
-                <div class="pz-card-img-wrap">
-                  <img
-                    [src]="promo.image"
-                    [alt]="promo.name"
-                    class="pz-card-img"
-                    width="400"
-                    height="200"
-                  />
-                  <span class="pz-card-tag" [class]="'pzt-' + promo.tagType">{{ promo.tag }}</span>
-                </div>
+              <div class="pz-card" [ngClass]="'pz-bg-' + promo.tagType" (click)="openPromoDetail(i)">
+                <!-- 左側：文字內容 -->
                 <div class="pz-card-body">
+                  <span class="pz-card-tag" [ngClass]="'pzt-' + promo.tagType">{{ promo.tag }}</span>
                   <h3 class="pz-card-title">{{ promo.name }}</h3>
                   <div class="pz-card-date">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;">
                       <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                       <line x1="16" y1="2" x2="16" y2="6"></line>
                       <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -2784,9 +2776,17 @@
                     {{ promo.startDate }} ～ {{ promo.endDate }}
                   </div>
                   <p class="pz-card-desc">消費滿 NT${{ promo.minSpend }} 可選贈品</p>
-                  <div class="pz-card-footer">
-                    <span class="pz-card-more">查看活動詳情 →</span>
-                  </div>
+                  <span class="pz-card-more">查看詳情 →</span>
+                </div>
+                <!-- 右側：圖片 -->
+                <div class="pz-card-img-wrap">
+                  <img
+                    [src]="promo.image"
+                    [alt]="promo.name"
+                    class="pz-card-img"
+                    width="320"
+                    height="160"
+                  />
                 </div>
               </div>
             }
