@@ -10,10 +10,6 @@
 
 | 區域 | 說明 |
 |------|------|
-| `訪客登入`|請AI自動協助修正|
-| `客戶端loading動畫`|請AI自動協助修正|
-| `所有商品卡片名稱、描述`|請AI自動協助修正|
-| `所有贈品描述`  |請AI自動協助修正|
 | 底部導覽標籤 | `navTabs` 改為 `computed`，讀取 `lang.navHome/navMenu/navCart/navTracker/navOrders/navPromos` |
 | 搜尋欄 placeholder | 首頁 + 菜單頁兩處改為 `[placeholder]="lang.searchPlaceholder"` |
 | 分類按鈕 | 首頁 + 菜單頁兩組改用 `lang.catAll/catRice/catNoodles/catSnacks/catLight/catDrinks` |
@@ -37,6 +33,10 @@
 
 | 硬字串 | 建議 lang key |
 |--------|--------------|
+| `訪客登入`|請AI自動協助修正|
+| `客戶端loading動畫`|請AI自動協助修正|
+| `所有商品卡片名稱、描述`|請AI自動協助修正|
+| `所有贈品描述`  |請AI自動協助修正|
 | `個人資料`（section title） | `profileTitle` |
 | `會員名稱`（label） | `nameLbl`（已在 register 定義，可共用） |
 | `手機號碼`（label） | `phoneLbl`（可共用） |
