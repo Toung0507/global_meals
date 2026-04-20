@@ -30,8 +30,8 @@
 
 ---
 
-### 1. 側邊欄（Sidebar）
-**檔案：** `customer-home.component.html` L15–L462
+### 0. 側邊欄（Sidebar）
+**檔案：** AI自動尋找以及修正。
 
 | 硬字串 | 建議 lang key |
 | `訪客登入` | `請AI自動協助修正` |
@@ -40,6 +40,7 @@
 | `所有贈品描述` | `請AI自動協助修正` |
 
 ---
+
 ### 1. 側邊欄（Sidebar）
 **檔案：** `customer-home.component.html` L15–L462
 
