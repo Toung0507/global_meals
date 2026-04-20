@@ -89,11 +89,12 @@ interface DashAccount {
 /* ── 分店型別（對應 global_area 資料表）───────────── */
 interface DashBranch {
   id: number;
-  name: string;     /* 完整分店名稱，例：台灣台北店 (= branch) */
-  city: string;     /* 城市，例：台北 */
-  country: string;  /* 國家，例：台灣 */
-  address: string;  /* 地址 */
-  phone: string;    /* 電話 */
+  name: string;      /* 完整分店名稱，例：台灣台北店 (= branch) */
+  city: string;      /* 城市，例：台北 */
+  country: string;   /* 國家，例：台灣（顯示用） */
+  regionsId: number; /* 對應 Regions 表 id（API 用） */
+  address: string;   /* 地址 */
+  phone: string;     /* 電話 */
 }
 
 /* ── 稅率型別 ──────────────────────────────────────── */
@@ -250,9 +251,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 分店清單（Signal，對應 global_area 資料表）─── */
   branches = signal<DashBranch[]>([
-    { id: 1, name: '台灣台北店', city: '台北', country: '台灣', address: '台北市中山區南京東路一段 88 號', phone: '02-2345-6789' },
-    { id: 2, name: '日本東京店', city: '東京', country: '日本', address: '東京都新宿区新宿3-10-1',          phone: '+81-3-1234-5678' },
-    { id: 3, name: '泰國曼谷店', city: '曼谷', country: '泰國', address: '101 Sukhumvit Rd, Bangkok',       phone: '+66-2-987-6543' },
+    { id: 1, name: '台灣台北店', city: '台北', country: '台灣', regionsId: 1, address: '台北市中山區南京東路一段 88 號', phone: '02-2345-6789' },
+    { id: 2, name: '日本東京店', city: '東京', country: '日本', regionsId: 2, address: '東京都新宿区新宿3-10-1',          phone: '+81-3-1234-5678' },
+    { id: 3, name: '泰國曼谷店', city: '曼谷', country: '泰國', regionsId: 3, address: '101 Sukhumvit Rd, Bangkok',       phone: '+66-2-987-6543' },
   ]);
 
   /* ── Modal 狀態 ─────────────────────────────────────── */
@@ -270,8 +271,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     { name: '', account: '', password: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true, country: 'TW' };
   taxDraft: { country: string; countryCode: string; currency: string; taxType: 'INCLUSIVE' | 'EXCLUSIVE'; rate: number; effectiveDate: string; discountLimit: number } =
     { country: '', countryCode: '', currency: '', taxType: 'INCLUSIVE', rate: 5, effectiveDate: '', discountLimit: 0 };
-  branchDraft     = { name: '', city: '', country: '', address: '', phone: '' };
-  editBranchDraft = { id: 0, name: '', city: '', country: '', address: '', phone: '' };
+  branchDraft     = { regionsId: 0, city: '', address: '', phone: '' };
+  editBranchDraft = { id: 0, regionsId: 0, city: '', address: '', phone: '' };
 
   showToast(msg: string): void {
     /* 清除所有計時器，重置離場狀態 */
@@ -391,7 +392,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         if (res?.globalAreaList?.length) {
           this.branches.set(res.globalAreaList.map((b: GlobalAreaVO) => ({
             id: b.id, name: b.branch, city: '',
-            country: b.country, address: b.address, phone: b.phone
+            country: b.country, regionsId: b.regionsId ?? 0,
+            address: b.address, phone: b.phone
           })));
         }
         /* 若後端回傳空清單，保留 mock 初始值供 Demo 使用 */
@@ -1027,23 +1029,29 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     }, 600);
   }
 
+  /* ── 分店：輔助 — 依 regionsId 查國家名稱 ────────── */
+  getBranchCountryName(regionsId: number): string {
+    return this.taxes().find(t => t.id === regionsId)?.country ?? '';
+  }
+
   /* ── 分店：新增 Modal ─────────────────────────────── */
   openAddBranch(): void {
-    this.branchDraft = { name: '', city: '', country: '', address: '', phone: '' };
+    this.branchDraft = { regionsId: 0, city: '', address: '', phone: '' };
     this.activeModal.set('addBranch');
   }
 
   saveBranch(): void {
-    if (!this.branchDraft.country.trim() || !this.branchDraft.city.trim()) {
+    if (!this.branchDraft.regionsId || !this.branchDraft.city.trim()) {
       this.showToast('⚠️ 請選擇國家與城市'); return;
     }
     const saved = { ...this.branchDraft };
-    const autoName = `${saved.country.trim()}${saved.city.trim()}店`;
+    const countryName = this.getBranchCountryName(saved.regionsId);
+    const autoName    = `${countryName}${saved.city.trim()}店`;
     this.apiService.createBranch({
-      country: saved.country.trim(),
-      branch: autoName,
-      address: saved.address.trim(),
-      phone: saved.phone.trim()
+      regionsId: saved.regionsId,
+      branch:    autoName,
+      address:   saved.address.trim(),
+      phone:     saved.phone.trim(),
     }).subscribe({
       next: () => {
         this.loadBranches();
@@ -1051,15 +1059,16 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         this.showToast(`✅ 分店「${autoName}」已新增`);
       },
       error: () => {
-        const ids = this.branches().map(b => b.id);
+        const ids   = this.branches().map(b => b.id);
         const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
         this.branches.update(list => [...list, {
           id: newId, name: autoName, city: saved.city.trim(),
-          country: saved.country.trim(), address: saved.address.trim(), phone: saved.phone.trim()
+          country: countryName, regionsId: saved.regionsId,
+          address: saved.address.trim(), phone: saved.phone.trim(),
         }]);
         this.closeModal();
         this.showToast(`⚠️ 後端暫不可用，僅本地新增分店「${autoName}」`);
-      }
+      },
     });
   }
 
@@ -1067,22 +1076,23 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   openEditBranch(id: number): void {
     const b = this.branches().find(x => x.id === id);
     if (!b) return;
-    this.editBranchDraft = { ...b };
+    this.editBranchDraft = { id: b.id, regionsId: b.regionsId, city: b.city, address: b.address, phone: b.phone };
     this.activeModal.set('editBranch');
   }
 
   saveEditBranch(): void {
-    if (!this.editBranchDraft.country.trim() || !this.editBranchDraft.city.trim()) {
+    if (!this.editBranchDraft.regionsId || !this.editBranchDraft.city.trim()) {
       this.showToast('⚠️ 請選擇國家與城市'); return;
     }
-    const saved = { ...this.editBranchDraft };
-    const autoName = `${saved.country.trim()}${saved.city.trim()}店`;
+    const saved       = { ...this.editBranchDraft };
+    const countryName = this.getBranchCountryName(saved.regionsId);
+    const autoName    = `${countryName}${saved.city.trim()}店`;
     this.apiService.updateBranch({
-      id: saved.id,
-      country: saved.country.trim(),
-      branch: autoName,
-      address: saved.address.trim(),
-      phone: saved.phone.trim()
+      id:        saved.id,
+      regionsId: saved.regionsId,
+      branch:    autoName,
+      address:   saved.address.trim(),
+      phone:     saved.phone.trim(),
     }).subscribe({
       next: () => {
         this.loadBranches();
@@ -1093,12 +1103,13 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         this.branches.update(list =>
           list.map(b => b.id === saved.id ? {
             ...b, name: autoName, city: saved.city.trim(),
-            country: saved.country.trim(), address: saved.address.trim(), phone: saved.phone.trim()
+            country: countryName, regionsId: saved.regionsId,
+            address: saved.address.trim(), phone: saved.phone.trim(),
           } : b)
         );
         this.closeModal();
         this.showToast(`⚠️ 後端暫不可用，僅本地更新分店「${autoName}」`);
-      }
+      },
     });
   }
 

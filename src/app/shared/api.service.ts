@@ -310,7 +310,7 @@ export interface ChangePasswordReq {
 /* ── GlobalArea（分店）────────────────────────────── */
 
 export interface CreateGlobalAreaReq {
-  country: string;
+  regionsId: number;
   branch: string;
   address: string;
   phone: string;
@@ -318,7 +318,7 @@ export interface CreateGlobalAreaReq {
 
 export interface UpdateGlobalAreaReq {
   id: number;
-  country: string;
+  regionsId: number;
   branch: string;
   address: string;
   phone: string;
@@ -334,6 +334,7 @@ export interface GlobalAreaRes extends BasicRes {
 
 export interface GlobalAreaVO {
   id: number;
+  regionsId: number;
   country: string;
   branch: string;
   address: string;

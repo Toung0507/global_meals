@@ -1968,14 +1968,12 @@
             >
             <select
               class="form-select form-ctrl"
-              [(ngModel)]="branchDraft.country"
+              [(ngModel)]="branchDraft.regionsId"
             >
-              <option value="">請選擇</option>
-              <option value="台灣">台灣</option>
-              <option value="日本">日本</option>
-              <option value="韓國">韓國</option>
-              <option value="泰國">泰國</option>
-              <option value="新加坡">新加坡</option>
+              <option [ngValue]="0">請選擇</option>
+              @for (t of taxes(); track t.id) {
+                <option [ngValue]="t.id">{{ t.country }}</option>
+              }
             </select>
           </div>
           <div class="col-6">
@@ -1987,38 +1985,38 @@
               [(ngModel)]="branchDraft.city"
             >
               <option value="">請選擇</option>
-              @if (branchDraft.country === "台灣") {
+              @if (getBranchCountryName(branchDraft.regionsId) === "台灣") {
                 <option>台北</option>
                 <option>台中</option>
                 <option>台南</option>
                 <option>高雄</option>
               }
-              @if (branchDraft.country === "日本") {
+              @if (getBranchCountryName(branchDraft.regionsId) === "日本") {
                 <option>東京</option>
                 <option>大阪</option>
                 <option>京都</option>
                 <option>名古屋</option>
               }
-              @if (branchDraft.country === "韓國") {
+              @if (getBranchCountryName(branchDraft.regionsId) === "韓國") {
                 <option>首爾</option>
                 <option>釜山</option>
                 <option>濟州</option>
               }
-              @if (branchDraft.country === "泰國") {
+              @if (getBranchCountryName(branchDraft.regionsId) === "泰國") {
                 <option>曼谷</option>
                 <option>清邁</option>
                 <option>普吉</option>
               }
-              @if (branchDraft.country === "新加坡") {
+              @if (getBranchCountryName(branchDraft.regionsId) === "新加坡") {
                 <option>新加坡</option>
               }
-              @if (branchDraft.country === "") {
+              @if (!branchDraft.regionsId) {
                 <option disabled>請先選擇國家</option>
               }
             </select>
           </div>
         </div>
-        @if (branchDraft.country && branchDraft.city) {
+        @if (branchDraft.regionsId && branchDraft.city) {
           <div
             style="
               font-size: 0.76rem;
@@ -2030,7 +2028,7 @@
             "
           >
             分店名稱將自動設為：<strong
-              >{{ branchDraft.country }}{{ branchDraft.city }}店</strong
+              >{{ getBranchCountryName(branchDraft.regionsId) }}{{ branchDraft.city }}店</strong
             >
           </div>
         }
@@ -2086,14 +2084,12 @@
             >
             <select
               class="form-select form-ctrl"
-              [(ngModel)]="editBranchDraft.country"
+              [(ngModel)]="editBranchDraft.regionsId"
             >
-              <option value="">請選擇</option>
-              <option value="台灣">台灣</option>
-              <option value="日本">日本</option>
-              <option value="韓國">韓國</option>
-              <option value="泰國">泰國</option>
-              <option value="新加坡">新加坡</option>
+              <option [ngValue]="0">請選擇</option>
+              @for (t of taxes(); track t.id) {
+                <option [ngValue]="t.id">{{ t.country }}</option>
+              }
             </select>
           </div>
           <div class="col-6">
@@ -2105,38 +2101,38 @@
               [(ngModel)]="editBranchDraft.city"
             >
               <option value="">請選擇</option>
-              @if (editBranchDraft.country === "台灣") {
+              @if (getBranchCountryName(editBranchDraft.regionsId) === "台灣") {
                 <option>台北</option>
                 <option>台中</option>
                 <option>台南</option>
                 <option>高雄</option>
               }
-              @if (editBranchDraft.country === "日本") {
+              @if (getBranchCountryName(editBranchDraft.regionsId) === "日本") {
                 <option>東京</option>
                 <option>大阪</option>
                 <option>京都</option>
                 <option>名古屋</option>
               }
-              @if (editBranchDraft.country === "韓國") {
+              @if (getBranchCountryName(editBranchDraft.regionsId) === "韓國") {
                 <option>首爾</option>
                 <option>釜山</option>
                 <option>濟州</option>
               }
-              @if (editBranchDraft.country === "泰國") {
+              @if (getBranchCountryName(editBranchDraft.regionsId) === "泰國") {
                 <option>曼谷</option>
                 <option>清邁</option>
                 <option>普吉</option>
               }
-              @if (editBranchDraft.country === "新加坡") {
+              @if (getBranchCountryName(editBranchDraft.regionsId) === "新加坡") {
                 <option>新加坡</option>
               }
-              @if (!editBranchDraft.country) {
+              @if (!editBranchDraft.regionsId) {
                 <option disabled>請先選擇國家</option>
               }
             </select>
           </div>
         </div>
-        @if (editBranchDraft.country && editBranchDraft.city) {
+        @if (editBranchDraft.regionsId && editBranchDraft.city) {
           <div
             style="
               font-size: 0.76rem;
@@ -2148,7 +2144,7 @@
             "
           >
             分店名稱將自動設為：<strong
-              >{{ editBranchDraft.country }}{{ editBranchDraft.city }}店</strong
+              >{{ getBranchCountryName(editBranchDraft.regionsId) }}{{ editBranchDraft.city }}店</strong
             >
           </div>
         }
