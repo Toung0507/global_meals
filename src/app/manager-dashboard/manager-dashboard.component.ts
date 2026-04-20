@@ -64,6 +64,8 @@ interface DashPromo {
 /* ── 庫存型別 ──────────────────────────────────────── */
 interface DashInventory {
   id: number;
+  productId: number;
+  globalAreaId: number;
   name: string;
   category: string;
   branch: string;
@@ -180,11 +182,11 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 庫存清單（Signal） ─────────────────────────── */
   inventory = signal<DashInventory[]>([
-    { id: 1, name: '紅燒牛肉麵',   category: '台式', branch: '台北店', stock: 48, safeStock: 10 },
-    { id: 2, name: '越南牛肉河粉', category: '南洋', branch: '曼谷店', stock: 5,  safeStock: 10 },
-    { id: 3, name: '義式肉醬寬麵', category: '西式', branch: '東京店', stock: 0,  safeStock: 10 },
-    { id: 4, name: '印度奶油咖哩飯', category: '南洋', branch: '台北店', stock: 32, safeStock: 10 },
-    { id: 5, name: '珍珠奶茶',     category: '飲品', branch: '全部分店', stock: 120, safeStock: 30 },
+    { id: 1, productId: 1, globalAreaId: 1, name: '紅燒牛肉麵',    category: '台式', branch: '台北店',   stock: 48,  safeStock: 10 },
+    { id: 2, productId: 3, globalAreaId: 2, name: '越南牛肉河粉',  category: '南洋', branch: '曼谷店',   stock: 5,   safeStock: 10 },
+    { id: 3, productId: 4, globalAreaId: 3, name: '義式肉醬寬麵',  category: '西式', branch: '東京店',   stock: 0,   safeStock: 10 },
+    { id: 4, productId: 2, globalAreaId: 1, name: '印度奶油咖哩飯',category: '南洋', branch: '台北店',   stock: 32,  safeStock: 10 },
+    { id: 5, productId: 6, globalAreaId: 1, name: '珍珠奶茶',      category: '飲品', branch: '全部分店', stock: 120, safeStock: 30 },
   ]);
 
   /* 庫存調整狀態 */
@@ -479,12 +481,14 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       next: (res) => {
         if (res?.inventory?.length) {
           this.inventory.set(res.inventory.map((inv: BranchInventoryVO) => ({
-            id:         inv.id,
-            name:       inv.productName,
-            category:   inv.category,
-            branch:     `分店 ${inv.globalAreaId}`,
-            stock:      inv.stockQuantity,
-            safeStock:  10,
+            id:           inv.id,
+            productId:    inv.productId,
+            globalAreaId: inv.globalAreaId,
+            name:         inv.productName,
+            category:     inv.category,
+            branch:       `分店 ${inv.globalAreaId}`,
+            stock:        inv.stockQuantity,
+            safeStock:    10,
           })));
         }
         /* 若後端回空清單，保留 mock 初始值供 Demo 使用 */
@@ -528,9 +532,23 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 商品：上/下架切換 ─────────────────────────── */
   toggleProduct(id: number): void {
+    const p = this.products().find(x => x.id === id);
+    if (!p) return;
+    const newActive = !p.isActive;
+    /* 樂觀更新 UI */
     this.products.update(list =>
-      list.map(p => p.id === id ? { ...p, isActive: !p.isActive } : p)
+      list.map(x => x.id === id ? { ...x, isActive: newActive } : x)
     );
+    this.apiService.toggleProduct({ id, active: newActive }).subscribe({
+      next: () => this.loadProducts(),
+      error: () => {
+        /* 失敗時還原 */
+        this.products.update(list =>
+          list.map(x => x.id === id ? { ...x, isActive: !newActive } : x)
+        );
+        this.showToast('⚠️ 切換上下架失敗，請重試');
+      }
+    });
   }
 
   /* ── 今日日期（YYYY-MM-DD），供活動開始日期 [min] 使用 ── */
@@ -633,12 +651,23 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     const id  = this.adjustingInventoryId();
     const amt = this.adjustInventoryAmt();
     if (id === null) return;
+    const item = this.inventory().find(i => i.id === id);
     this.inventory.update(list =>
       list.map(i => i.id === id ? { ...i, stock: amt } : i)
     );
     this.adjustingInventoryId.set(null);
     this.adjustInventorySavedId.set(id);
     setTimeout(() => this.adjustInventorySavedId.set(null), 1800);
+    if (item) {
+      this.apiService.updateBranchInventory({
+        productId:    item.productId,
+        globalAreaId: item.globalAreaId,
+        stockQuantity: amt,
+      }).subscribe({
+        next:  () => this.loadInventory(),
+        error: () => this.showToast('⚠️ 庫存更新失敗，本地已儲存'),
+      });
+    }
   }
 
   /* ── 帳號：停/復權 ─────────────────────────────── */
@@ -761,6 +790,10 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       } : p));
       this.closeModal();
       this.showToast(`✅ 商品「${savedName}」已更新`);
+      this.apiService.updateProduct({ id: editId, name: this.productDraft.name, category: this.productDraft.category }).subscribe({
+        next: () => this.loadProducts(),
+        error: () => this.showToast('⚠️ 後端更新失敗，本地已儲存')
+      });
     } else {
       /* 新增商品 */
       const ids = this.products().map(p => p.id);
@@ -777,6 +810,16 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       }]);
       this.closeModal();
       this.showToast(`✅ 商品「${savedName}」已新增`);
+      this.apiService.createProduct({
+        name: this.productDraft.name,
+        category: this.productDraft.category,
+        globalAreaId: 1,
+        basePrice: this.productDraft.price,
+        stockQuantity: this.productDraft.stock,
+      }).subscribe({
+        next: () => this.loadProducts(),
+        error: () => this.showToast('⚠️ 後端新增失敗，本地已儲存')
+      });
     }
   }
 
