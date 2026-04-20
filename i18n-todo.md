@@ -10,6 +10,10 @@
 
 | 區域 | 說明 |
 |------|------|
+| `訪客登入`                               |
+| `客戶端loading動畫`                      |
+| `所有商品卡片名稱、描述`                 |
+| `所有贈品描述`                           |
 | 底部導覽標籤 | `navTabs` 改為 `computed`，讀取 `lang.navHome/navMenu/navCart/navTracker/navOrders/navPromos` |
 | 搜尋欄 placeholder | 首頁 + 菜單頁兩處改為 `[placeholder]="lang.searchPlaceholder"` |
 | 分類按鈕 | 首頁 + 菜單頁兩組改用 `lang.catAll/catRice/catNoodles/catSnacks/catLight/catDrinks` |
