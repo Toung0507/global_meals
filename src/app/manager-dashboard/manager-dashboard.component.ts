@@ -21,9 +21,10 @@ import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { QRCodeComponent } from 'angularx-qrcode';
 
 import { AuthService } from '../shared/auth.service';
-import { ApiService, GlobalAreaVO, RegionVO, PromotionDetailVo, ProductVO, BranchInventoryVO } from '../shared/api.service';
+import { ApiService, GlobalAreaVO, RegionVO, PromotionDetailVo, ProductVO, BranchInventoryVO, MonthlyReportRes } from '../shared/api.service';
 
 /* ── 側邊欄頁籤型別 ─────────────────────────────────── */
 export type DashTab = 'dashboard' | 'orders' | 'products' | 'promotions' | 'inventory' | 'users' | 'tax' | 'finance' | 'branches';
@@ -126,7 +127,7 @@ interface DashOrder {
 @Component({
   selector: 'app-manager-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, QRCodeComponent],
   templateUrl: './manager-dashboard.component.html',
   styleUrls: ['./manager-dashboard.component.scss']
 })
@@ -248,6 +249,40 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   financeRevenue = signal<number>(0);
   financeOrders  = signal<number>(0);
   financeAvgPrice = signal<number>(0);
+
+  /* ── 月報表 ─────────────────────────────────────── */
+  reportMonth   = signal<string>((() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  })());
+  monthlyReport   = signal<MonthlyReportRes | null>(null);
+  reportLoading   = signal<boolean>(false);
+
+  get reportMonthValue(): string { return this.reportMonth(); }
+  set reportMonthValue(v: string) { this.reportMonth.set(v); }
+
+  get currentYearMonth(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  /* ── 活動詳情 ────────────────────────────────────── */
+  selectedPromo = signal<DashPromo | null>(null);
+
+  openPromoDetail(promo: DashPromo): void { this.selectedPromo.set(promo); }
+  closePromoDetail(): void { this.selectedPromo.set(null); }
+
+  /* ── QR Code 分店 ───────────────────────────────── */
+  qrBranchId = signal<number | null>(null);
+
+  getTableQrUrl(branchId: number): string {
+    const origin = window.location.origin;
+    return `${origin}/order?table=${branchId}`;
+  }
+
+  toggleQr(branchId: number): void {
+    this.qrBranchId.set(this.qrBranchId() === branchId ? null : branchId);
+  }
 
   /* ── 分店清單（Signal，對應 global_area 資料表）─── */
   branches = signal<DashBranch[]>([
@@ -513,8 +548,10 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   setTab(tab: DashTab): void {
     this.activeTab.set(tab);
     if (tab === 'finance') {
-      /* 切換到財務頁時執行數字計數動畫 */
       setTimeout(() => this.runFinanceCounter(), 80);
+      if (!this.monthlyReport()) {
+        this.loadMonthlyReport();
+      }
     }
   }
   setUserSubTab(sub: UserSubTab): void { this.userSubTab.set(sub); }
@@ -708,9 +745,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       '美國': 'USD', '英國': 'GBP', '法國': 'EUR', '德國': 'EUR',
       '新加坡': 'SGD', '馬來西亞': 'MYR', '印尼': 'IDR', '越南': 'VND',
     };
-    this.apiService.updateRegion({
-      id: target.id,
+    this.apiService.upsertRegion({
       country: target.country,
+      countryCode: target.countryCode || '',
       currencyCode: target.currency || currencyMap[target.country] || 'USD',
       taxRate: target.editValue / 100,
       taxType: target.taxType as 'INCLUSIVE' | 'EXCLUSIVE'
@@ -971,8 +1008,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     };
     const resolvedCurrency = saved.currency.trim() || currencyMap[saved.country.trim()] || 'USD';
     const taxTypeLabel = saved.taxType === 'INCLUSIVE' ? '內含稅' : '外加稅';
-    this.apiService.createRegion({
+    this.apiService.upsertRegion({
       country: saved.country.trim(),
+      countryCode: saved.countryCode.trim().toUpperCase(),
       currencyCode: resolvedCurrency,
       taxRate: saved.rate / 100,
       taxType: saved.taxType as 'INCLUSIVE' | 'EXCLUSIVE'
@@ -1027,6 +1065,30 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       this.isExporting.set(false);
       this.showToast('✅ CSV 匯出成功，共 ' + this.allOrders().length + ' 筆訂單');
     }, 600);
+  }
+
+  /* ── 月報表：合計輔助（template 不支援 arrow fn） ──── */
+  sumReportTotal(data: { totalAmount: number }[]): number {
+    let total = 0;
+    for (const d of data) total += d.totalAmount;
+    return total;
+  }
+
+  /* ── 月報表：查詢 ──────────────────────────────────── */
+  loadMonthlyReport(): void {
+    const month = this.reportMonth();
+    if (!month) return;
+    this.reportLoading.set(true);
+    this.apiService.getMonthlyReport({ reportDate: month }).subscribe({
+      next: (res) => {
+        this.monthlyReport.set(res);
+        this.reportLoading.set(false);
+      },
+      error: () => {
+        this.reportLoading.set(false);
+        this.showToast('⚠️ 報表載入失敗，請確認後端連線或 Session 是否有效');
+      }
+    });
   }
 
   /* ── 分店：輔助 — 依 regionsId 查國家名稱 ────────── */

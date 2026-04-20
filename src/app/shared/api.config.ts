@@ -65,10 +65,18 @@ export const API_CONFIG = {
     },
 
     // 稅率（RegionsController，@RequestMapping("lazybaobao/regions")）
+    // ⚠ dev-wun 已重構：create/update → upsert 統一端點，另新增 update_usage_cap
     REGIONS: {
-      GET_ALL: 'lazybaobao/regions/get_all_tax', // GET  取得全部國家稅率
-      CREATE: 'lazybaobao/regions/create', // POST 新增國家稅率
-      UPDATE: 'lazybaobao/regions/update', // POST 更新國家稅率
+      GET_ALL:          'lazybaobao/regions/get_all_tax',       // GET  取得全部國家稅率
+      UPSERT:           'lazybaobao/regions/upsert',            // POST 新增或更新稅率（合一端點）
+      UPDATE_USAGE_CAP: 'lazybaobao/regions/update_usage_cap', // POST 更新折扣上限
+    },
+
+    // 月報表（ReportsController，dev-kao，無前綴）
+    REPORTS: {
+      MONTHLY:       'find_monthly_reports',               // POST 查詢單月報表（含上月對比）
+      MONTHLY_RANGE: 'find_monthly_reports_by_date_range', // POST 查詢月份區間報表
+      REVENUE:       'get_revenue_reports',                // POST 查詢日期區間營業額
     },
 
     // 匯率（ExchangeRatesController，@RequestMapping("lazybaobao/exchange_rates")）

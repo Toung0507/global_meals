@@ -239,6 +239,47 @@
 }
 
 
+/* 角色說明徽章列表 */
+.s-role-badges {
+    flex: 0;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 0 4px;
+}
+
+.s-role-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 7px 12px;
+    transition: background 150ms;
+}
+
+.s-role-badge:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.s-role-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.s-role-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.s-role-desc {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.45);
+}
+
 /* =====================================================
    第三區塊：系統資訊列表
    flex: 0 讓此區塊緊貼 brand 下方，不搶 logo 空間

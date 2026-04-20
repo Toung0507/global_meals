@@ -513,6 +513,32 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
 }
 .promo-meta-sep { color: #D4DCE8; }
 
+/* 活動類型篩選 tab */
+.promo-type-tabs {
+    display: flex;
+    gap: 6px;
+}
+.promo-type-tab {
+    padding: 5px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: transparent;
+    color: #8a9ab0;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 150ms;
+    &.active {
+        background: rgba(196,151,86,0.15);
+        border-color: #c49756;
+        color: #c49756;
+        font-weight: 600;
+    }
+    &:hover:not(.active) {
+        background: rgba(255,255,255,0.05);
+        color: #d4dce8;
+    }
+}
+
 /* 類型 badge */
 .promo-type-badge {
     font-size: 0.65rem;
