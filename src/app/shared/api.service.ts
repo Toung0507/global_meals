@@ -204,6 +204,7 @@ export interface PayReq {
   orderDateId: string;
   paymentMethod: string;  /* ⚠ 必填！例：'CASH' | 'CREDIT_CARD' | 'MOBILE_PAY' */
   transactionId: string;  /* ⚠ 必填！現金付款可傳 "CASH_PAYMENT" */
+  totalAmount: number;    /* ⚠ 必填！後端用於驗證金額是否一致 */
 }
 
 /* POST Orders/GetAllOrdersList 的請求 */
@@ -343,19 +344,18 @@ export interface GlobalAreaVO {
 
 /* ── Regions（稅率）────────────────────────────────── */
 
-export interface CreateRegionsReq {
+/* ⚠ dev-wun：upsert 統一端點取代原本的 create/update */
+export interface UpsertRegionsTaxReq {
   country: string;
   currencyCode: string;  /* 三碼貨幣代碼，例如 'TWD' 'JPY' */
+  countryCode: string;   /* 兩碼國家代碼，例如 'TW' 'JP' 'KR' */
   taxRate: number;       /* 小數格式，例如 0.05 = 5% */
   taxType: 'INCLUSIVE' | 'EXCLUSIVE';
 }
 
-export interface UpdateRegionsReq {
+export interface UpdateRegionsUsageCapReq extends UpsertRegionsTaxReq {
   id: number;
-  country: string;
-  currencyCode: string;
-  taxRate: number;
-  taxType: 'INCLUSIVE' | 'EXCLUSIVE';
+  usageCap: number;  /* 折扣上限（各國貨幣單位，例如 TW=200, JP=1000） */
 }
 
 export interface RegionsRes extends BasicRes {
@@ -365,9 +365,55 @@ export interface RegionsRes extends BasicRes {
 export interface RegionVO {
   id: number;
   country: string;
+  countryCode: string;   /* TW / JP / KR */
   currencyCode: string;
-  taxRate: number;  /* 小數格式（0.05 = 5%），顯示時需 × 100 */
+  taxRate: number;   /* 小數格式（0.05 = 5%），顯示時需 × 100 */
   taxType: string;
+  usageCap: number;  /* 折扣上限 */
+}
+
+/* ── Reports（月報表，dev-kao）────────────────────── */
+
+export interface MonthlyReportReq {
+  reportDate: string;  /* 格式：YYYY-MM，例如 '2026-04' */
+}
+
+export interface MonthRangeReportsReq {
+  startMonth: string;  /* 格式：YYYY-MM */
+  endMonth: string;
+}
+
+export interface RevenueQueryReq {
+  startDate: string;    /* 格式：yyyy-MM-dd */
+  endDate: string;
+  branchId?: number;    /* null 或不傳 = 查全部或按 regionsId */
+  regionsId?: number;   /* null 或不傳 = 查全球 */
+}
+
+export interface MonthlyReportDetail {
+  reportDate: string;
+  branchName: string;
+  regionsName: string;
+  totalAmount: number;
+}
+
+export interface MonthlyReportRes extends BasicRes {
+  currentData: MonthlyReportDetail[];  /* 本月各店報表 */
+  lastData: MonthlyReportDetail[];     /* 上月各店報表（對比用） */
+}
+
+export interface MonthRangeReportsRes extends BasicRes {
+  currentMonth: MonthlyReportDetail[];  /* 區間內各月份各店報表 */
+}
+
+export interface RevenueData {
+  branchName: string;
+  regionsName: string;
+  totalAmount: number;
+}
+
+export interface RevenueQueryRes extends BasicRes {
+  revenueData: RevenueData[];
 }
 
 /* ── ExchangeRates（匯率）──────────────────────────── */
@@ -727,14 +773,41 @@ export class ApiService {
     return this.http.get<RegionsRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.REGIONS.GET_ALL}`);
   }
 
-  /** 新增國家稅率 */
-  createRegion(req: CreateRegionsReq): Observable<BasicRes> {
-    return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.REGIONS.CREATE}`, req);
+  /** 新增或更新國家稅率（upsert 統一端點，dev-wun）*/
+  upsertRegion(req: UpsertRegionsTaxReq): Observable<BasicRes> {
+    return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.REGIONS.UPSERT}`, req);
   }
 
-  /** 更新國家稅率 */
-  updateRegion(req: UpdateRegionsReq): Observable<BasicRes> {
-    return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.REGIONS.UPDATE}`, req);
+  /** 更新折扣上限（dev-wun）*/
+  updateRegionUsageCap(req: UpdateRegionsUsageCapReq): Observable<BasicRes> {
+    return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.REGIONS.UPDATE_USAGE_CAP}`, req);
+  }
+
+  /* ══════════════════════════════════════════════════
+   * Reports API  →  無前綴（dev-kao）
+   * ══════════════════════════════════════════════════ */
+
+  /** 查詢單月報表（含本月 + 上月對比）⚠ 需員工 Session */
+  getMonthlyReport(req: MonthlyReportReq): Observable<MonthlyReportRes> {
+    return this.http.post<MonthlyReportRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.REPORTS.MONTHLY}`, req,
+      { withCredentials: true }
+    );
+  }
+
+  /** 查詢月份區間報表 ⚠ 需員工 Session */
+  getMonthlyReportByRange(req: MonthRangeReportsReq): Observable<MonthRangeReportsRes> {
+    return this.http.post<MonthRangeReportsRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.REPORTS.MONTHLY_RANGE}`, req,
+      { withCredentials: true }
+    );
+  }
+
+  /** 查詢日期區間營業額（可依分店 / 國家 / 全球維度查詢）*/
+  getRevenueReports(req: RevenueQueryReq): Observable<RevenueQueryRes> {
+    return this.http.post<RevenueQueryRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.REPORTS.REVENUE}`, req
+    );
   }
 
   /* ══════════════════════════════════════════════════
@@ -857,12 +930,15 @@ export class ApiService {
 
   private mockProducts(): ProductVO[] {
     return [
-      { id: 1, name: '紅燒牛肉麵',     category: '台式', description: '',   active: true,  basePrice: 165, stockQuantity: 48,  maxOrderQuantity: 5 },
-      { id: 2, name: '印度奶油咖哩飯',  category: '南洋', description: '',   active: true,  basePrice: 175, stockQuantity: 32,  maxOrderQuantity: 5 },
-      { id: 3, name: '越南牛肉河粉',    category: '南洋', description: '',   active: true,  basePrice: 155, stockQuantity: 5,   maxOrderQuantity: 5 },
-      { id: 4, name: '義式肉醬寬麵',    category: '西式', description: '',   active: false, basePrice: 185, stockQuantity: 0,   maxOrderQuantity: 5 },
-      { id: 5, name: '墨西哥辣雞捲',    category: '西式', description: '',   active: true,  basePrice: 145, stockQuantity: 18,  maxOrderQuantity: 5 },
-      { id: 6, name: '珍珠奶茶',        category: '飲品', description: '',   active: true,  basePrice: 65,  stockQuantity: 120, maxOrderQuantity: 5 },
+      { id: 1, name: '招牌滷肉飯',   category: '飯食', description: '慢燉豬五花，滷汁濃醇入味，配半熟滷蛋與爽脆泡菜', active: true,  basePrice: 120, stockQuantity: 20,  maxOrderQuantity: 5 },
+      { id: 2, name: '古早味排骨飯', category: '飯食', description: '台式醃製炸排骨，滷汁菜頭配白飯',                   active: true,  basePrice: 145, stockQuantity: 15,  maxOrderQuantity: 5 },
+      { id: 3, name: '牛排',         category: '飯食', description: '精選澳洲牛肉，炭烤鎖汁，附時蔬與醬汁',             active: true,  basePrice: 130, stockQuantity: 10,  maxOrderQuantity: 5 },
+      { id: 4, name: '三杯雞',       category: '飯食', description: '麻油、醬油、米酒三杯燒製，九層塔香氣四溢',         active: true,  basePrice: 150, stockQuantity: 15,  maxOrderQuantity: 5 },
+      { id: 5, name: '阿三陽春麵',   category: '麵食', description: '古法熬製清湯底，手工製麵條彈牙有嚼勁',             active: true,  basePrice: 120, stockQuantity: 15,  maxOrderQuantity: 5 },
+      { id: 6, name: '蚵仔煎',       category: '小吃', description: '鮮蚵地瓜粉煎餅，淋上特製甜辣醬',                   active: true,  basePrice: 80,  stockQuantity: 18,  maxOrderQuantity: 5 },
+      { id: 7, name: '蚵仔麵線',     category: '小吃', description: '鮮蚵燴入麵線，甜辣醬提味，道地夜市風味',           active: true,  basePrice: 70,  stockQuantity: 20,  maxOrderQuantity: 5 },
+      { id: 8, name: '黑糖珍珠奶茶', category: '飲品', description: '現煮珍珠，手工黑糖虎紋',                           active: true,  basePrice: 75,  stockQuantity: 50,  maxOrderQuantity: 5 },
+      { id: 9, name: '仙草奶茶',     category: '飲品', description: '台灣本產仙草凍，搭配濃醇鮮奶茶',                   active: true,  basePrice: 65,  stockQuantity: 30,  maxOrderQuantity: 5 },
     ];
   }
 

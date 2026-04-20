@@ -162,6 +162,58 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     return user.name || '無名氏';
   });
 
+  /* ── 菜單品項（API 載入後動態填充；MOCK_MODE 下使用靜態 Demo 資料）── */
+  menuItems = signal<MenuItem[]>([
+    { id: 1, name: '招牌滷肉飯',   nameEn: 'Braised Pork Rice',      price: 120, image: '', category: '飯食', categoryEn: 'Rice',    description: '慢燉豬五花，滷汁濃醇入味，配半熟滷蛋與爽脆泡菜', stock: 20 },
+    { id: 2, name: '古早味排骨飯', nameEn: 'Pork Chop Rice',         price: 145, image: '', category: '飯食', categoryEn: 'Rice',    description: '台式醃製炸排骨，滷汁菜頭配白飯', stock: 15 },
+    { id: 8, name: '牛排',         nameEn: 'Beef Steak',             price: 130, image: '', category: '飯食', categoryEn: 'Rice',    description: '精選澳洲牛肉，炭烤鎖汁，附時蔬與醬汁', stock: 10 },
+    { id: 9, name: '三杯雞',       nameEn: 'Three Cup Chicken',      price: 150, image: '', category: '飯食', categoryEn: 'Rice',    description: '麻油、醬油、米酒三杯燒製，九層塔香氣四溢', stock: 15 },
+    { id: 3, name: '蚵仔煎',       nameEn: 'Oyster Pancake',         price: 80,  image: '', category: '小吃', categoryEn: 'Snacks',  description: '鮮蚵地瓜粉煎餅，淋上特製甜辣醬', stock: 18 },
+    { id: 7, name: '蚵仔麵線',     nameEn: 'Oyster Vermicelli',      price: 70,  image: '', category: '小吃', categoryEn: 'Snacks',  description: '鮮蚵燴入麵線，甜辣醬提味，道地夜市風味', stock: 20 },
+    { id: 4, name: '阿三陽春麵',   nameEn: 'Traditional Noodle',    price: 120, image: '', category: '麵食', categoryEn: 'Noodles', description: '古法熬製清湯底，手工製麵條彈牙有嚼勁', stock: 15 },
+    { id: 5, name: '黑糖珍珠奶茶', nameEn: 'Brown Sugar Boba',       price: 75,  image: '', category: '飲品', categoryEn: 'Drinks',  description: '現煮珍珠，手工黑糖虎紋', stock: 50 },
+    { id: 6, name: '仙草奶茶',     nameEn: 'Grass Jelly Milk Tea',  price: 65,  image: '', category: '飲品', categoryEn: 'Drinks',  description: '台灣本產仙草凍，搭配濃醇鮮奶茶', stock: 30 },
+  ]);
+
+  /** 從 menuItems 衍生的分類清單（去重，保持插入順序） */
+  menuCategories = computed<string[]>(() => {
+    const seen = new Set<string>();
+    const cats: string[] = [];
+    for (const item of this.menuItems()) {
+      if (!seen.has(item.category)) { seen.add(item.category); cats.push(item.category); }
+    }
+    return cats;
+  });
+
+  /** 取得指定分類中通過搜尋/篩選的品項 */
+  getItemsByCategory(cat: string): MenuItem[] {
+    return this.menuItems().filter(item =>
+      item.category === cat && this.isMenuItemShown(item.name, item.category)
+    );
+  }
+
+  /** 分類標題文字（含 emoji） */
+  getCategoryLabel(cat: string): string {
+    const MAP: Record<string, string> = {
+      '飯食': '🍱 飯食料理', '小吃': '🦪 台灣小吃',
+      '麵食': '🍜 麵食',     '飲品': '🧋 特調飲品',
+    };
+    return MAP[cat] ?? `🍽 ${cat}`;
+  }
+
+  /** CSS 背景圖 class（MOCK 模式下依名稱對應；真實模式下由 image 欄位帶入） */
+  getMenuImageClass(item: MenuItem): string {
+    if (item.image) return '';
+    const MAP: Record<string, string> = {
+      '招牌滷肉飯': 'mi-braised-pork', '古早味排骨飯': 'mi-pork-chop',
+      '蚵仔煎': 'mi-oyster-pancake',   '阿三陽春麵': 'mi-beef',
+      '黑糖珍珠奶茶': 'mi-bbt',        '仙草奶茶': 'mi-grass-jelly',
+      '蚵仔麵線': 'mi-oyster-noodle',  '牛排': 'mi-steak',
+      '三杯雞': 'mi-3cup-chicken',
+    };
+    return MAP[item.name] ?? '';
+  }
+
   /* ── 菜單：分類篩選 & 搜尋 ────────────────────────── */
   activeMenuCategory = signal<string>('all');
   menuSearchQuery = signal<string>('');
@@ -551,21 +603,19 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     };
   });
 
-  /* ── 底部導覽列定義 ───────────────────────────────── */
-  private readonly ALL_TABS: NavTab[] = [
-    { id: 'home', label: '首頁', icon: 'home' },
-    { id: 'menu', label: '菜單', icon: 'menu' },
-    { id: 'checkout', label: '購物車', icon: 'checkout' },
-    { id: 'tracker', label: '訂單追蹤', icon: 'tracker' },
-    { id: 'orders', label: '我的訂單', icon: 'orders' },
-    { id: 'promotions', label: '活動專區', icon: 'promotions' },
-  ];
-
-  navTabs = computed<NavTab[]>(() =>
-    this.isGuest()
-      ? this.ALL_TABS.filter((t) => t.id !== 'orders')
-      : this.ALL_TABS,
-  );
+  /* ── 底部導覽列定義（語言響應式） ────────────────── */
+  navTabs = computed<NavTab[]>(() => {
+    const l = this.branchService.lang();
+    const ALL: NavTab[] = [
+      { id: 'home',       label: l.navHome,    icon: 'home'       },
+      { id: 'menu',       label: l.navMenu,    icon: 'menu'       },
+      { id: 'checkout',   label: l.navCart,    icon: 'checkout'   },
+      { id: 'tracker',    label: l.navTracker, icon: 'tracker'    },
+      { id: 'orders',     label: l.navOrders,  icon: 'orders'     },
+      { id: 'promotions', label: l.navPromos,  icon: 'promotions' },
+    ];
+    return this.isGuest() ? ALL.filter(t => t.id !== 'orders') : ALL;
+  });
 
   /* ── 訂單管理資料 ──────────────────────────────────── */
   activeOrderTab = signal<'completed' | 'cancelled' | 'refunded'>('completed');
@@ -705,13 +755,16 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   allCountries = signal<CountryConfig[]>([]);
   activeCountry = signal<CountryCode>('TW');
 
+  /** 語言字典快捷 getter（供 HTML 直接使用） */
+  get lang() { return this.branchService.lang(); }
+
   constructor(
     private router: Router,
     public authService: AuthService,
     private loadingService: LoadingService,
     public orderService: OrderService,
     private apiService: ApiService,
-    private branchService: BranchService,
+    public branchService: BranchService,
   ) {}
 
   selectCountry(code: CountryCode): void {
@@ -744,28 +797,22 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       this.phoneNumber.set(user.phone);
     }
 
-    // ⚠ TODO [API串接點 - 載入菜單商品]
-    // 目前菜單品項以靜態 HTML 硬寫於 customer-home.component.html。
-    // 串接步驟：
-    //   1. 在此元件新增 menuItems = signal<MenuItem[]>([...預設品項...])
-    //   2. 將 HTML 中 <div class="menu-item-card"> 改為 @for (item of menuItems(); ...)
-    //   3. 取消下方 API 呼叫區塊：
-    //
-    // const areaId = 1;
-    // this.apiService.getActiveProducts(areaId).subscribe({
-    //   next: (res) => {
-    //     if (res?.products?.length) {
-    //       this.menuItems.set(res.products.map(p => ({
-    //         id: p.id, name: p.name, nameEn: p.name,
-    //         price: p.basePrice, image: '',
-    //         category: p.category, categoryEn: p.category,
-    //         description: p.description ?? '',
-    //         stock: p.stockQuantity,
-    //       })));
-    //     }
-    //   },
-    //   error: () => console.warn('[Customer] 菜單 API 連線失敗，使用 Demo 資料')
-    // });
+    /* 載入菜單商品（MOCK_MODE=true 時 ApiService 直接回傳假資料，不發 HTTP） */
+    const areaId = 1;
+    this.apiService.getActiveProducts(areaId).subscribe({
+      next: (res) => {
+        if (res?.products?.length) {
+          this.menuItems.set(res.products.map(p => ({
+            id: p.id, name: p.name, nameEn: p.name,
+            price: p.basePrice, image: '',
+            category: p.category, categoryEn: p.category,
+            description: p.description ?? '',
+            stock: p.stockQuantity,
+          })));
+        }
+      },
+      error: () => console.warn('[Customer] 菜單 API 連線失敗，使用 Demo 資料')
+    });
 
     /* 載入真實歷史訂單（僅會員，訪客跳過）
      * ⚠ 需後端 MembersController 建立後，memberId 才會對應真實資料庫 ID
@@ -1008,6 +1055,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       transactionId: this.paymentMethod() === 'cash'
         ? 'CASH_PAYMENT'
         : `DEMO_TXN_${Date.now()}`,
+      totalAmount:   orderRes.totalAmount,
     };
     await firstValueFrom(this.apiService.pay(payReq));
 

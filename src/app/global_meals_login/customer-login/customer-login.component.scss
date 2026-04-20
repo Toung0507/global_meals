@@ -942,3 +942,34 @@
     color: #6A4830;
     margin-bottom: 2px;
 }
+
+/* ── QR Code 現場點餐區塊 ── */
+.c-qr-block {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.c-qr-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #6b3a1f;
+    letter-spacing: 0.04em;
+}
+
+.c-qr-wrap {
+    background: #fffaf3;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 2px 10px rgba(107, 58, 31, 0.15);
+    border: 2px solid rgba(217, 92, 26, 0.25);
+}
+
+.c-qr-hint {
+    font-size: 11px;
+    color: #A84210;
+    text-align: center;
+    opacity: 0.85;
+}
