@@ -730,8 +730,8 @@
    ─────────────────────────────────────────────────────────────── */
 :host {
     --c-primary: var(--brand-primary, #D95C1A);
-    --c-hover:   var(--brand-hover,   #A84210);
-    --c-bg:      var(--brand-bg,      #FFFAF3);
+    --c-hover: var(--brand-hover, #A84210);
+    --c-bg: var(--brand-bg, #FFFAF3);
     background-color: var(--c-bg);
 }
 
@@ -793,9 +793,17 @@
 }
 
 /* 各國旗幟代表色 */
-.c-flag-tw { background-color: #CE1126; }
-.c-flag-jp { background-color: #BC002D; }
-.c-flag-kr { background-color: #003478; }
+.c-flag-tw {
+    background-color: #CE1126;
+}
+
+.c-flag-jp {
+    background-color: #BC002D;
+}
+
+.c-flag-kr {
+    background-color: #003478;
+}
 
 /* =====================================================
    響應式設計：畫面寬度小於 860px 時（手機或小平板）
@@ -820,7 +828,8 @@
 /* 480px：縮小 mode-nav 與 country-switch 的 padding */
 @media (max-width: 480px) {
     :host {
-        padding-top: clamp(108px, 16vh, 128px); /* 為雙列 fixed bar 保留空間 */
+        padding-top: clamp(108px, 16vh, 128px);
+        /* 為雙列 fixed bar 保留空間 */
     }
 
     .mode-nav {
@@ -880,6 +889,7 @@
 
 /* 減少動畫（使用者偏好）*/
 @media (prefers-reduced-motion: reduce) {
+
     .c-float,
     .c-ring-outer,
     .c-ring-inner,
@@ -897,7 +907,6 @@
 .c-welcome svg {
     display: block;
     flex-shrink: 0;
-    vertical-align: middle;
 }
 
 /* ── 登入失敗錯誤訊息 ─────────────────────────────── */
