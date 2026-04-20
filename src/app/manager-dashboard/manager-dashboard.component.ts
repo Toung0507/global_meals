@@ -23,7 +23,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '../shared/auth.service';
-import { ApiService, GlobalAreaVO, RegionVO, PromotionDetailVo } from '../shared/api.service';
+import { ApiService, GlobalAreaVO, RegionVO, PromotionDetailVo, ProductVO, BranchInventoryVO } from '../shared/api.service';
 
 /* ── 側邊欄頁籤型別 ─────────────────────────────────── */
 export type DashTab = 'dashboard' | 'orders' | 'products' | 'promotions' | 'inventory' | 'users' | 'tax' | 'finance' | 'branches';
@@ -361,6 +361,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.loadBranches();
     this.loadTaxes();
     this.loadPromos();
+    this.loadProducts();
+    this.loadInventory();
   }
 
   ngOnDestroy(): void {
@@ -437,6 +439,57 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         }
       },
       error: () => console.warn('[Manager] 活動 API 連線失敗，使用 Demo 資料')
+    });
+  }
+
+  /* ── 從後端載入商品清單 ──────────────────────────── */
+  private loadProducts(globalAreaId = 1): void {
+    this.apiService.getAllProducts(globalAreaId).subscribe({
+      next: (res) => {
+        if (res?.products?.length) {
+          const emojiMap: Record<string, string> = {
+            '台式': '🍜', '南洋': '🍛', '西式': '🍝', '飲品': '🧋'
+          };
+          const bgMap: Record<string, string> = {
+            '台式': 'linear-gradient(135deg,#c49756,#8b5e3c)',
+            '南洋': 'linear-gradient(135deg,#f59e0b,#d97706)',
+            '西式': 'linear-gradient(135deg,#818cf8,#6366f1)',
+            '飲品': 'linear-gradient(135deg,#06b6d4,#0891b2)',
+          };
+          this.products.set(res.products.map((p: ProductVO) => ({
+            id:       p.id,
+            name:     p.name,
+            category: p.category,
+            price:    p.basePrice,
+            stock:    p.stockQuantity,
+            isActive: p.active,
+            emoji:    emojiMap[p.category] ?? '🍽️',
+            emojiBg:  bgMap[p.category]   ?? 'linear-gradient(135deg,#6b7280,#374151)',
+          })));
+        }
+        /* 若後端回空清單，保留 mock 初始值供 Demo 使用 */
+      },
+      error: () => console.warn('[Manager] 商品 API 連線失敗，使用 Demo 資料')
+    });
+  }
+
+  /* ── 從後端載入庫存清單 ──────────────────────────── */
+  private loadInventory(globalAreaId = 1): void {
+    this.apiService.getBranchInventory(globalAreaId).subscribe({
+      next: (res) => {
+        if (res?.inventory?.length) {
+          this.inventory.set(res.inventory.map((inv: BranchInventoryVO) => ({
+            id:         inv.id,
+            name:       inv.productName,
+            category:   inv.category,
+            branch:     `分店 ${inv.globalAreaId}`,
+            stock:      inv.stockQuantity,
+            safeStock:  10,
+          })));
+        }
+        /* 若後端回空清單，保留 mock 初始值供 Demo 使用 */
+      },
+      error: () => console.warn('[Manager] 庫存 API 連線失敗，使用 Demo 資料')
     });
   }
 

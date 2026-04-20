@@ -745,23 +745,26 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     }
 
     // ⚠ TODO [API串接點 - 載入菜單商品]
-    // 後端 ProductsController 建立後，取消下方區塊：
-    // this.apiService.getAllActiveProducts().subscribe({
+    // 目前菜單品項以靜態 HTML 硬寫於 customer-home.component.html。
+    // 串接步驟：
+    //   1. 在此元件新增 menuItems = signal<MenuItem[]>([...預設品項...])
+    //   2. 將 HTML 中 <div class="menu-item-card"> 改為 @for (item of menuItems(); ...)
+    //   3. 取消下方 API 呼叫區塊：
+    //
+    // const areaId = 1;
+    // this.apiService.getActiveProducts(areaId).subscribe({
     //   next: (res) => {
-    //     this.menuItems.set(res.products.map(p => ({
-    //       id: p.id,
-    //       name: p.name,
-    //       nameEn: p.name,                // 後端若有英文名欄位則帶入
-    //       price: p.basePrice,
-    //       image: `/api/products/${p.id}/image`,  // BLOB 圖片路徑
-    //       category: p.category,
-    //       categoryEn: p.category,
-    //       description: p.description ?? '',
-    //       stock: p.stockQuantity,
-    //       isActive: p.isActive
-    //     })));
+    //     if (res?.products?.length) {
+    //       this.menuItems.set(res.products.map(p => ({
+    //         id: p.id, name: p.name, nameEn: p.name,
+    //         price: p.basePrice, image: '',
+    //         category: p.category, categoryEn: p.category,
+    //         description: p.description ?? '',
+    //         stock: p.stockQuantity,
+    //       })));
+    //     }
     //   },
-    //   error: (err) => console.error('[Customer] 載入菜單失敗', err)
+    //   error: () => console.warn('[Customer] 菜單 API 連線失敗，使用 Demo 資料')
     // });
 
     /* 載入真實歷史訂單（僅會員，訪客跳過）

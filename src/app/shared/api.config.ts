@@ -97,23 +97,20 @@ export const API_CONFIG = {
       CHANGE_PASSWORD: 'api/admin/staff/:id/password', // PATCH 修改密碼
     },
 
-    // 商品（ProductsController，後端待建立）
-    // ⚠ 注意：products.food_img 是 MEDIUMBLOB，商品列表不應包含圖片欄位
-    //         圖片應使用獨立的 IMAGE 端點，或傳 Base64 string
+    // 商品（ProductsController，lazybaobao 前綴）
     PRODUCTS: {
-      GET_ACTIVE: '/products/active', // GET  取得上架商品清單（菜單用）
-      GET_ALL: '/products/get_all', // GET  取得全部商品（含下架，管理端用）
-      IMAGE: '/products/:id/image', // GET  取得商品圖片（MEDIUMBLOB → Base64）
-      CREATE: '/products/create', // POST 新增商品（同時建 branch_inventory）
-      UPDATE: '/products/update', // POST 修改商品資訊
-      TOGGLE: '/products/toggle', // POST 上/下架切換（is_active）
+      GET_ACTIVE: 'lazybaobao/products/active',      // GET  ?globalAreaId=X
+      GET_ALL:    'lazybaobao/products/get_all',     // GET  ?globalAreaId=X（管理端）
+      IMAGE:      'lazybaobao/products/:id/image',   // GET  回傳 Base64 字串
+      CREATE:     'lazybaobao/products/create',      // POST 新增商品
+      UPDATE:     'lazybaobao/products/update',      // POST 修改商品
+      TOGGLE:     'lazybaobao/products/toggle',      // POST 切換上/下架
     },
 
-    // 分店庫存（BranchInventoryController，後端待建立）
-    // ⚠ 注意：每個分店對同一商品可能有不同售價（branch_inventory.base_price）
+    // 分店庫存（BranchInventoryController，lazybaobao 前綴）
     BRANCH_INVENTORY: {
-      GET_BY_AREA: '/branch_inventory/:areaId', // GET  取得該分店庫存清單
-      UPDATE: '/branch_inventory/update', // POST 更新分店庫存或價格
+      GET_BY_AREA: 'lazybaobao/branch_inventory/:areaId', // GET
+      UPDATE:      'lazybaobao/branch_inventory/update',  // POST
     },
   },
 };

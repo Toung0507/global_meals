@@ -386,6 +386,73 @@ export interface ExchangeRateVO {
   updatedAt: string;
 }
 
+/* ── Products（商品）─────────────────────────────── */
+
+export interface ProductVO {
+  id: number;
+  name: string;
+  category: string;
+  description: string;
+  active: boolean;
+  basePrice: number;
+  stockQuantity: number;
+  maxOrderQuantity: number;
+}
+
+export interface ProductsRes extends BasicRes {
+  products: ProductVO[];
+}
+
+export interface CreateProductReq {
+  name: string;
+  category: string;
+  description?: string;
+  globalAreaId: number;
+  basePrice: number;
+  stockQuantity: number;
+  maxOrderQuantity?: number;
+  imageBase64?: string;
+}
+
+export interface UpdateProductReq {
+  id: number;
+  name?: string;
+  category?: string;
+  description?: string;
+  imageBase64?: string;
+}
+
+export interface ToggleProductReq {
+  id: number;
+  active: boolean;
+}
+
+/* ── BranchInventory（分店庫存）─────────────────── */
+
+export interface BranchInventoryVO {
+  id: number;
+  productId: number;
+  productName: string;
+  category: string;
+  globalAreaId: number;
+  stockQuantity: number;
+  basePrice: number;
+  maxOrderQuantity: number;
+  version: number;
+}
+
+export interface BranchInventoryRes extends BasicRes {
+  inventory: BranchInventoryVO[];
+}
+
+export interface UpdateBranchInventoryReq {
+  productId: number;
+  globalAreaId: number;
+  basePrice?: number;
+  stockQuantity?: number;
+  maxOrderQuantity?: number;
+}
+
 /* ── Promotions（促銷活動）────────────────────────── */
 
 /* POST /promotions/calculate 的請求
@@ -781,5 +848,87 @@ export class ApiService {
       `${this.BASE}/${path}`, req,
       { withCredentials: true }
     );
+  }
+
+  /* ══════════════════════════════════════════════════
+   * Products API  →  lazybaobao/products/
+   * ══════════════════════════════════════════════════ */
+
+  private mockProducts(): ProductVO[] {
+    return [
+      { id: 1, name: '紅燒牛肉麵',     category: '台式', description: '',   active: true,  basePrice: 165, stockQuantity: 48,  maxOrderQuantity: 5 },
+      { id: 2, name: '印度奶油咖哩飯',  category: '南洋', description: '',   active: true,  basePrice: 175, stockQuantity: 32,  maxOrderQuantity: 5 },
+      { id: 3, name: '越南牛肉河粉',    category: '南洋', description: '',   active: true,  basePrice: 155, stockQuantity: 5,   maxOrderQuantity: 5 },
+      { id: 4, name: '義式肉醬寬麵',    category: '西式', description: '',   active: false, basePrice: 185, stockQuantity: 0,   maxOrderQuantity: 5 },
+      { id: 5, name: '墨西哥辣雞捲',    category: '西式', description: '',   active: true,  basePrice: 145, stockQuantity: 18,  maxOrderQuantity: 5 },
+      { id: 6, name: '珍珠奶茶',        category: '飲品', description: '',   active: true,  basePrice: 65,  stockQuantity: 120, maxOrderQuantity: 5 },
+    ];
+  }
+
+  /** 前台菜單：只回已上架商品＋分店售價庫存 */
+  getActiveProducts(globalAreaId: number): Observable<ProductsRes> {
+    if (this.isMock) return of({ code: 200, message: 'ok', products: this.mockProducts().filter(p => p.active) });
+    return this.http.get<ProductsRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.GET_ACTIVE}?globalAreaId=${globalAreaId}`
+    );
+  }
+
+  /** 管理端：取得全部商品（含下架）*/
+  getAllProducts(globalAreaId: number): Observable<ProductsRes> {
+    if (this.isMock) return of({ code: 200, message: 'ok', products: this.mockProducts() });
+    return this.http.get<ProductsRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.GET_ALL}?globalAreaId=${globalAreaId}`
+    );
+  }
+
+  /** 取得商品圖片（回傳 Base64 字串）*/
+  getProductImage(id: number): Observable<string> {
+    const path = API_CONFIG.ENDPOINTS.PRODUCTS.IMAGE.replace(':id', String(id));
+    return this.http.get(`${this.BASE}/${path}`, { responseType: 'text' });
+  }
+
+  /** 新增商品（含分店初始庫存售價）*/
+  createProduct(req: CreateProductReq): Observable<BasicRes> {
+    if (this.isMock) return of({ code: 200, message: 'ok' });
+    return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.CREATE}`, req);
+  }
+
+  /** 修改商品基本資訊 */
+  updateProduct(req: UpdateProductReq): Observable<BasicRes> {
+    if (this.isMock) return of({ code: 200, message: 'ok' });
+    return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.UPDATE}`, req);
+  }
+
+  /** 切換上/下架（active=true/false）*/
+  toggleProduct(req: ToggleProductReq): Observable<BasicRes> {
+    if (this.isMock) return of({ code: 200, message: 'ok' });
+    return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.TOGGLE}`, req);
+  }
+
+  /* ══════════════════════════════════════════════════
+   * BranchInventory API  →  lazybaobao/branch_inventory/
+   * ══════════════════════════════════════════════════ */
+
+  private mockInventory(): BranchInventoryVO[] {
+    return [
+      { id: 1, productId: 1, productName: '紅燒牛肉麵',    category: '台式', globalAreaId: 1, stockQuantity: 48,  basePrice: 165, maxOrderQuantity: 5, version: 0 },
+      { id: 2, productId: 3, productName: '越南牛肉河粉',   category: '南洋', globalAreaId: 2, stockQuantity: 5,   basePrice: 155, maxOrderQuantity: 5, version: 0 },
+      { id: 3, productId: 4, productName: '義式肉醬寬麵',   category: '西式', globalAreaId: 3, stockQuantity: 0,   basePrice: 185, maxOrderQuantity: 5, version: 0 },
+      { id: 4, productId: 2, productName: '印度奶油咖哩飯', category: '南洋', globalAreaId: 1, stockQuantity: 32,  basePrice: 175, maxOrderQuantity: 5, version: 0 },
+      { id: 5, productId: 6, productName: '珍珠奶茶',       category: '飲品', globalAreaId: 1, stockQuantity: 120, basePrice: 65,  maxOrderQuantity: 5, version: 0 },
+    ];
+  }
+
+  /** 取得指定分店的庫存清單（含商品名稱）*/
+  getBranchInventory(areaId: number): Observable<BranchInventoryRes> {
+    if (this.isMock) return of({ code: 200, message: 'ok', inventory: this.mockInventory() });
+    const path = API_CONFIG.ENDPOINTS.BRANCH_INVENTORY.GET_BY_AREA.replace(':areaId', String(areaId));
+    return this.http.get<BranchInventoryRes>(`${this.BASE}/${path}`);
+  }
+
+  /** 更新分店庫存售價（null 欄位不覆蓋）*/
+  updateBranchInventory(req: UpdateBranchInventoryReq): Observable<BasicRes> {
+    if (this.isMock) return of({ code: 200, message: 'ok' });
+    return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.BRANCH_INVENTORY.UPDATE}`, req);
   }
 }
