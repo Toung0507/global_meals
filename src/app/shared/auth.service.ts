@@ -21,7 +21,7 @@
  * =====================================================
  */
 
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { ApiService, LoginMembersReq, LoginStaffReq, MembersRes, StaffSearchRes } from './api.service';
 
@@ -222,6 +222,9 @@ export class AuthService {
     } catch { return null; }
   })();
 
+  /** true 時代表後端 Session 已過期，顯示重登入 Modal */
+  sessionExpired = signal<boolean>(false);
+
   currentUser: MockUser | null = (() => {
     try {
       const saved = sessionStorage.getItem('currentUser');
@@ -330,15 +333,27 @@ export class AuthService {
    * 同時呼叫後端 logout，清除 Server-side Session
    * ─────────────────────────────────────────────────*/
   logout(): void {
-    // 清除前端 Session 狀態
     this.currentUser = null;
     this.currentMember = null;
     this.currentStaff = null;
     sessionStorage.removeItem('currentUser');
     sessionStorage.removeItem('currentMember');
     sessionStorage.removeItem('currentStaff');
-    // 同步通知後端清除 Server-side Session（不等待回傳，fire-and-forget）
     this.apiService.staffLogout().subscribe({ error: () => {} });
+  }
+
+  /** 後端 Session 過期（401）時由 HttpInterceptor 呼叫 */
+  handleSessionExpired(): void {
+    this.currentUser = null;
+    this.currentMember = null;
+    sessionStorage.removeItem('currentUser');
+    sessionStorage.removeItem('currentMember');
+    this.sessionExpired.set(true);
+  }
+
+  /** 重登入 Modal 關閉或登入成功後呼叫 */
+  clearSessionExpired(): void {
+    this.sessionExpired.set(false);
   }
 
 

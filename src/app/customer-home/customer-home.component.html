@@ -3166,3 +3166,15 @@
     </div>
   </div>
 }
+
+<!-- ── Session 過期重登入 Modal ─────────────────────── -->
+@if (authService.sessionExpired()) {
+  <div class="session-expired-overlay" (click)="goToLogin()">
+    <div class="session-expired-modal" (click)="$event.stopPropagation()">
+      <div class="session-expired-icon">⏱️</div>
+      <h3 class="session-expired-title">登入已過期</h3>
+      <p class="session-expired-desc">您的登入狀態已逾時，請重新登入後繼續操作。</p>
+      <button class="session-expired-btn" (click)="goToLogin()">重新登入</button>
+    </div>
+  </div>
+}

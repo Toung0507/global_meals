@@ -1122,4 +1122,10 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     this.authService.logout();
     this.router.navigate(['/customer-login']);
   }
+
+  /* ── Session 過期：導向重新登入 ──────────────────── */
+  goToLogin(): void {
+    this.authService.clearSessionExpired();
+    this.router.navigate(['/customer-login']);
+  }
 }
