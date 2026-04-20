@@ -4,11 +4,12 @@
  * 用途說明：訪客快速點餐頁面 — 輸入手機號碼後直接進入菜單
  * =====================================================
  */
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../shared/auth.service';
 import { LoadingService } from '../../shared/loading.service';
+import { BranchService } from '../../shared/branch.service';
 
 @Component({
   selector: 'app-customer-guest',
@@ -17,7 +18,7 @@ import { LoadingService } from '../../shared/loading.service';
   templateUrl: './customer-guest.component.html',
   styleUrls: ['./customer-guest.component.scss']
 })
-export class CustomerGuestComponent {
+export class CustomerGuestComponent implements OnInit {
 
   /** 手機號碼欄位 */
   phone: string = '';
@@ -28,8 +29,13 @@ export class CustomerGuestComponent {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private loadingService: LoadingService
+    private loadingService: LoadingService,
+    private branchService: BranchService
   ) {}
+
+  ngOnInit(): void {
+    this.branchService.init();
+  }
 
   /**
    * 進入點餐 — 驗證手機號碼格式後登入為訪客，導向主頁

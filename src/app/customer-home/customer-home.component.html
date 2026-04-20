@@ -14,9 +14,15 @@
   ═══════════════════════════════════════════════════ -->
   <aside class="ch-sidebar">
     <!-- 品牌標誌區 -->
-    <div class="sidebar-brand">
+    <div class="sidebar-brand" (click)="setTab('home')" style="cursor: pointer">
       <div class="sidebar-logo-wrap">
-        <img src="/assets/logo圓形.png" alt="Logo" class="sidebar-logo" />
+        <img
+          src="/assets/logo圓形.png"
+          alt="Logo"
+          class="sidebar-logo"
+          width="48"
+          height="48"
+        />
         <div class="sidebar-logo-ring"></div>
       </div>
       <div class="brand-text">
@@ -117,7 +123,7 @@
                   />
                 } @else {
                   <span class="pr-value">{{
-                    authService.currentUser?.email || "test@lazybao.com"
+                    authService.currentUser?.email || "（未設定）"
                   }}</span>
                 }
               </div>
@@ -128,8 +134,8 @@
                     <input
                       [type]="showPassword() ? 'text' : 'password'"
                       class="pr-input"
-                      value="12345678"
-                      placeholder="更新密碼"
+                      value=""
+                      placeholder="輸入新密碼"
                     />
                     <button
                       class="pr-eye-btn"
@@ -179,8 +185,8 @@
                     <input
                       [type]="showConfirmPassword() ? 'text' : 'password'"
                       class="pr-input"
-                      value="12345678"
-                      placeholder="再次輸入密碼"
+                      value=""
+                      placeholder="再次輸入新密碼"
                     />
                     <button
                       class="pr-eye-btn"
@@ -237,7 +243,9 @@
               </div>
               <p class="pr-status-desc">
                 @if (hasDiscountReady()) {
-                  點餐滿 10 次！您可在下一次點餐選擇折抵。
+                  已點餐
+                  <strong>{{ memberOrderCount() }}</strong>
+                  次，您獲得了折扣兌換券 !! 請於購物車結帳時使用。
                 } @else {
                   已點餐 <strong>{{ memberOrderCount() }}</strong> 次，差
                   <strong class="highlight">{{ ordersUntilDiscount() }}</strong>
@@ -284,6 +292,20 @@
             </button>
           </div>
         </div>
+      }
+    </div>
+
+    <!-- 國家 / 分店切換 -->
+    <div class="sidebar-country-switch">
+      @for (c of allCountries(); track c.code) {
+        <button
+          class="sidebar-country-btn"
+          [class.active]="activeCountry() === c.code"
+          (click)="selectCountry(c.code)"
+        >
+          <span class="sidebar-flag-dot" [class]="'flag-' + c.code.toLowerCase()"></span>
+          <span class="sidebar-country-name">{{ c.nameLocal }}</span>
+        </button>
       }
     </div>
 
@@ -378,6 +400,18 @@
                 <polyline points="10 9 9 9 8 9"></polyline>
               </svg>
             }
+            <!-- 活動專區 -->
+            @if (tab.icon === "promotions") {
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                <line x1="7" y1="7" x2="7.01" y2="7" />
+              </svg>
+            }
           </div>
           <span class="sidebar-label">{{ tab.label }}</span>
           @if (activeTab() === tab.id) {
@@ -388,23 +422,6 @@
     </nav>
 
     <div class="sidebar-footer">
-      <!-- 獨家 promo 卡片 (填補空白並提升高級感) -->
-      @if (!isGuest()) {
-        <div class="sidebar-promo-card">
-          <div class="spc-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4" />
-              <rect x="2" y="6" width="20" height="6" rx="1" />
-              <path d="M12 12v9" />
-              <path d="M12 6L11.5 1.5l-2.5 2L12 6z" />
-            </svg>
-          </div>
-          <div class="spc-text">
-            <span class="spc-title">探索絕妙風味</span>
-            <span class="spc-subtitle">加入老饕行列享優惠</span>
-          </div>
-        </div>
-      }
 
       <div class="sidebar-footer-info">
         <span class="footer-tip">✦ 懶懶吃，飽飽樂 ✦</span>
@@ -458,35 +475,132 @@
           aria-label="品牌形象首頁"
           style="padding-top: 24px"
         >
-          <!-- 英雄區塊 -->
-          <div class="home-hero">
-            <div class="home-hero-bg">
-              <div class="hero-orb hero-orb-1"></div>
-              <div class="hero-orb hero-orb-2"></div>
-              <div class="hero-orb hero-orb-3"></div>
+          <!-- ── 首頁輪播 ───────────────────────────────────── -->
+          <div
+            class="home-carousel"
+            (mouseenter)="pauseCarousel()"
+            (mouseleave)="resumeCarousel()"
+          >
+            <!-- 滑動軌道：三張卡片並排，translateX 切換 -->
+            <div
+              class="hc-track"
+              [style.transform]="
+                'translateX(-' + heroSlideIndex() * 33.3333 + '%)'
+              "
+            >
+              <!-- ── 卡片 1：品牌形象 ── -->
+              <div class="hc-slide hc-slide-brand">
+                <div class="hcs-left">
+                  <span class="hcs-tag">✦ 全球風味 • 一掌點餐 ✦</span>
+                  <h2 class="hcs-title">懶 飽 飽</h2>
+                  <p class="hcs-en">Global Meals</p>
+                  <p class="hcs-desc">懶懶吃，飽飽樂 — 探索各地絕妙風味</p>
+                  <button class="hcs-btn" (click)="setTab('menu')">
+                    立即點餐 →
+                  </button>
+                </div>
+                <div class="hcs-right">
+                  <img
+                    src="/assets/主頁輪播圖1.jpg"
+                    alt="懶飽飽特色餐點"
+                    class="hcsr-img"
+                    width="480"
+                    height="270"
+                  />
+                </div>
+              </div>
+
+              <!-- ── 卡片 2：滿額好禮 ── -->
+              <div class="hc-slide hc-slide-promo">
+                <div class="hcs-left">
+                  <span class="hcs-tag hcs-tag-dark">🎁 期間限定</span>
+                  <h2 class="hcs-title hcs-title-dark">滿額送好禮</h2>
+                  <p class="hcs-desc hcs-desc-dark">
+                    消費滿 NT$300<br />贈招牌滷蛋 × 2
+                  </p>
+                  <button class="hcs-btn hcs-btn-dark" (click)="setTab('menu')">
+                    前往點餐
+                  </button>
+                </div>
+                <div class="hcs-right">
+                  <img
+                    src="/assets/主頁輪播圖2.jpg"
+                    alt="滿額好禮"
+                    class="hcsr-img"
+                    width="480"
+                    height="270"
+                  />
+                </div>
+              </div>
+
+              <!-- ── 卡片 3：主廚推薦 ── -->
+              <div class="hc-slide hc-slide-chef">
+                <div class="hcs-left">
+                  <span class="hcs-tag hcs-tag-light">今日精選</span>
+                  <h2 class="hcs-title">本週主廚推薦</h2>
+                  <p class="hcs-desc">
+                    日式烤雞串<br />只要 NT$ <strong>145</strong>
+                  </p>
+                  <button class="hcs-btn" (click)="setTab('menu')">
+                    查看菜單
+                  </button>
+                </div>
+                <div class="hcs-right">
+                  <img
+                    src="/assets/主頁輪播圖3.jpg"
+                    alt="本週主廚推薦"
+                    class="hcsr-img"
+                    width="480"
+                    height="270"
+                  />
+                </div>
+              </div>
             </div>
-            <div class="home-hero-content">
-              <div class="hero-badge">✦ 全球風味 • 一掌點餐 ✦</div>
-              <h1 class="hero-title">
-                <span class="hero-title-zh">懶 飽 飽</span>
-                <span class="hero-title-en">Global Meals</span>
-              </h1>
-              <p class="hero-subtitle">
-                懶懶吃，飽飽樂 — 探索來自世界各地的絕妙風味
-              </p>
-              <button class="hero-cta" (click)="setTab('menu')">
-                <span>立即點餐</span>
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                >
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </button>
+            <!-- /hc-track -->
+
+            <!-- 左右箭頭 -->
+            <button
+              class="hc-arrow hc-arrow-prev"
+              (click)="prevHeroSlide()"
+              aria-label="上一張"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <button
+              class="hc-arrow hc-arrow-next"
+              (click)="nextHeroSlide()"
+              aria-label="下一張"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+
+            <!-- 底部圓點指示器 -->
+            <div class="hc-dots">
+              @for (dot of [0, 1, 2]; track dot) {
+                <button
+                  class="hc-dot"
+                  [class.active]="heroSlideIndex() === dot"
+                  (click)="goToHeroSlide(dot)"
+                  [attr.aria-label]="'切換至第 ' + (dot + 1) + ' 張'"
+                ></button>
+              }
             </div>
           </div>
+          <!-- /home-carousel -->
 
           <!-- 首頁搜尋與分類列 (移回頂部功能) -->
           <div class="home-section" style="padding-bottom: 0">
@@ -518,12 +632,27 @@
               </div>
               <!-- 台灣分店分類標籤列 -->
               <div class="menu-cat-bar">
-                <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='all'"  (click)="setMenuCategory('all');setTab('menu')">全部</button>
-                <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='飯食'" (click)="setMenuCategory('飯食');setTab('menu')">🍚 飯食</button>
-                <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='麵食'" (click)="setMenuCategory('麵食');setTab('menu')">🍜 麵食</button>
-                <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='小吃'" (click)="setMenuCategory('小吃');setTab('menu')">🍢 小吃</button>
-                <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='輕食'" (click)="setMenuCategory('輕食');setTab('menu')">🥗 輕食</button>
-                <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='飲品'" (click)="setMenuCategory('飲品');setTab('menu')">🧋 飲品</button>
+                <button class="menu-cat-btn" [class.active]="activeMenuCategory() === 'all'" (click)="setMenuCategory('all'); setTab('menu')">全部</button>
+                <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '飯食'" (click)="setMenuCategory('飯食'); setTab('menu')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13h16"/><path d="M4 13c0 5.5 2.7 7.5 8 7.5S20 18.5 20 13"/><line x1="8" y1="5" x2="9" y2="13"/><line x1="16" y1="5" x2="15" y2="13"/></svg>
+                  <span>飯食</span>
+                </button>
+                <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '麵食'" (click)="setMenuCategory('麵食'); setTab('menu')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13h16"/><path d="M4 13c0 5.5 2.7 7.5 8 7.5S20 18.5 20 13"/><path d="M7 9c1-1.5 2-1 3 0s2 1.5 3 0 2-1 3 0"/></svg>
+                  <span>麵食</span>
+                </button>
+                <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '小吃'" (click)="setMenuCategory('小吃'); setTab('menu')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="21"/><circle cx="12" cy="8" r="2.5"/><circle cx="12" cy="15" r="2.5"/></svg>
+                  <span>小吃</span>
+                </button>
+                <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '輕食'" (click)="setMenuCategory('輕食'); setTab('menu')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12"/><path d="M12 12C10 8 6 6 3 7c0 5 3 9 9 9z"/><path d="M12 12c2-4 6-6 9-5 0 5-3 9-9 9z"/></svg>
+                  <span>輕食</span>
+                </button>
+                <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '飲品'" (click)="setMenuCategory('飲品'); setTab('menu')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 3l-1.5 18h13L17 3H7z"/><line x1="15" y1="3" x2="12" y2="12"/><circle cx="9" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="11" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
+                  <span>飲品</span>
+                </button>
               </div>
             </div>
           </div>
@@ -547,13 +676,11 @@
                   alt="招牌滷肉飯"
                 />
                 <div class="featured-info">
-                  <span class="featured-tag hot-tag">🔥 本週熱銷</span>
                   <h3 class="featured-name">招牌滷肉飯</h3>
                   <p class="featured-desc">
                     慢燉豬五花，滷汁濃醇入味，配半熟滷蛋與爽脆泡菜
                   </p>
                   <span class="featured-price">NT$ <strong>120</strong></span>
-                  <span class="featured-order-count">👥 156 人點過</span>
                 </div>
               </div>
               <!-- 首頁小卡：古早味排骨飯 -->
@@ -565,13 +692,11 @@
                   alt="古早味排骨飯"
                 />
                 <div class="featured-info">
-                  <span class="featured-tag hot-tag">🔥 本週熱銷</span>
                   <h3 class="featured-name">古早味排骨飯</h3>
                   <p class="featured-desc">
                     台式醃製炸排骨，搭配滷汁菜頭與白飯
                   </p>
                   <span class="featured-price">NT$ <strong>145</strong></span>
-                  <span class="featured-order-count">👥 215 人點過</span>
                 </div>
               </div>
               <!-- 首頁小卡：蚵仔麵線 -->
@@ -583,28 +708,49 @@
                   alt="蚵仔麵線"
                 />
                 <div class="featured-info">
-                  <span class="featured-tag new-tag">✨ 新品上市</span>
                   <h3 class="featured-name">蚵仔麵線</h3>
                   <p class="featured-desc">
                     鮮蚵燴入麵線，甜辣醬提味，道地夜市風味
                   </p>
                   <span class="featured-price">NT$ <strong>70</strong></span>
-                  <span class="featured-order-count">👥 68 人點過</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 促銷橫幅 -->
+          <!-- 促銷橫幅：三個活動自動輪播（每 3 秒切換一則） -->
           <div class="home-promo-banner" (click)="setTab('menu')">
-            <div class="promo-content">
-              <span class="promo-icon">🎁</span>
-              <div class="promo-text">
-                <strong>消費滿 NT$300</strong>
-                <span>即贈招牌滷蛋 × 2</span>
-              </div>
+            <!-- 滑動軌道：transform 驅動橫向切換 -->
+            <div
+              class="promo-slide-track"
+              [style.transform]="'translateX(-' + (promoBannerIndex() * 33.3333) + '%)'"
+            >
+              @for (promo of PROMO_ACTIVITIES; track promo.name) {
+                <div class="promo-slide">
+                  <div class="promo-content">
+                    <!-- 禮物 SVG（取代 emoji，避免跨平台字型差異） -->
+                    <svg class="promo-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                      <rect x="2" y="7" width="20" height="5"></rect>
+                      <line x1="12" y1="22" x2="12" y2="7"></line>
+                      <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                      <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                    </svg>
+                    <div class="promo-text">
+                      <strong>{{ promo.name }}・消費滿 NT${{ promo.minSpend }}</strong>
+                      <span>即贈 {{ promo.gifts[0] }}</span>
+                    </div>
+                  </div>
+                  <span class="promo-arrow">→</span>
+                </div>
+              }
             </div>
-            <span class="promo-arrow">→</span>
+            <!-- 指示點：顯示目前是第幾則活動 -->
+            <div class="promo-dots">
+              @for (promo of PROMO_ACTIVITIES; track promo.name; let i = $index) {
+                <span class="promo-dot" [class.active]="promoBannerIndex() === i"></span>
+              }
+            </div>
           </div>
 
           <!-- 快速分類入口 -->
@@ -615,103 +761,147 @@
               <h2 class="section-title">今日優惠</h2>
             </div>
 
-            <!-- 橫向捲動優惠卡列（5 張） -->
-            <div class="deal-scroll">
-              <!-- 優惠卡 1：阿三陽春麵 -->
-              <div class="deal-card" (click)="setTab('menu')">
-                <div class="deal-card-img">
-                  <img class="deal-card-photo" src="/assets/阿三陽春麵.jpg" alt="阿三陽春麵">
-                  <span class="deal-badge">限時</span>
-                </div>
-                <div class="deal-card-body">
-                  <p class="deal-name">阿三陽春麵</p>
-                  <div class="deal-prices">
-                    <span class="deal-original">NT$120</span>
-                    <span class="deal-sale">NT$<strong>99</strong></span>
+            <!-- 橫向捲動優惠卡列（含右側箭頭按鈕） -->
+            <div class="deal-scroll-wrapper">
+              <div class="deal-scroll" #dealScrollEl>
+                <!-- 優惠卡 1：阿三陽春麵 -->
+                <div class="deal-card" (click)="setTab('menu')">
+                  <div class="deal-card-img">
+                    <img
+                      class="deal-card-photo"
+                      src="/assets/阿三陽春麵.jpg"
+                      alt="阿三陽春麵"
+                    />
                   </div>
-                  <span class="deal-order-count">👥 94 人點過</span>
+                  <div class="deal-card-body">
+                    <p class="deal-name">阿三陽春麵</p>
+                    <div class="deal-prices">
+                      <span class="deal-original">NT$120</span>
+                      <span class="deal-sale">NT$<strong>99</strong></span>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <!-- 優惠卡 2：蚵仔煎 -->
-              <div class="deal-card" (click)="setTab('menu')">
-                <div class="deal-card-img">
-                  <img class="deal-card-photo" src="/assets/蚵仔煎.jpg" alt="蚵仔煎">
-                  <span class="deal-badge">8折</span>
-                </div>
-                <div class="deal-card-body">
-                  <p class="deal-name">蚵仔煎</p>
-                  <div class="deal-prices">
-                    <span class="deal-original">NT$80</span>
-                    <span class="deal-sale">NT$<strong>65</strong></span>
+                <!-- 優惠卡 2：蚵仔煎 -->
+                <div class="deal-card" (click)="setTab('menu')">
+                  <div class="deal-card-img">
+                    <img
+                      class="deal-card-photo"
+                      src="/assets/蚵仔煎.jpg"
+                      alt="蚵仔煎"
+                    />
                   </div>
-                  <span class="deal-order-count">👥 147 人點過</span>
+                  <div class="deal-card-body">
+                    <p class="deal-name">蚵仔煎</p>
+                    <div class="deal-prices">
+                      <span class="deal-original">NT$80</span>
+                      <span class="deal-sale">NT$<strong>65</strong></span>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <!-- 優惠卡 3：黑糖珍珠奶茶 -->
-              <div class="deal-card" (click)="setTab('menu')">
-                <div class="deal-card-img">
-                  <img class="deal-card-photo" src="/assets/黑糖珍珠奶茶.jpg" alt="黑糖珍珠奶茶">
-                  <span class="deal-badge">7折</span>
-                </div>
-                <div class="deal-card-body">
-                  <p class="deal-name">黑糖珍珠奶茶</p>
-                  <div class="deal-prices">
-                    <span class="deal-original">NT$75</span>
-                    <span class="deal-sale">NT$<strong>55</strong></span>
+                <!-- 優惠卡 3：黑糖珍珠奶茶 -->
+                <div class="deal-card" (click)="setTab('menu')">
+                  <div class="deal-card-img">
+                    <img
+                      class="deal-card-photo"
+                      src="/assets/黑糖珍珠奶茶.jpg"
+                      alt="黑糖珍珠奶茶"
+                    />
                   </div>
-                  <span class="deal-order-count">👥 412 人點過</span>
+                  <div class="deal-card-body">
+                    <p class="deal-name">黑糖珍珠奶茶</p>
+                    <div class="deal-prices">
+                      <span class="deal-original">NT$75</span>
+                      <span class="deal-sale">NT$<strong>55</strong></span>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <!-- 優惠卡 4：牛排 -->
-              <div class="deal-card" (click)="setTab('menu')">
-                <div class="deal-card-img">
-                  <img class="deal-card-photo" src="/assets/牛排.jpg" alt="牛排">
-                  <span class="deal-badge">限時</span>
-                </div>
-                <div class="deal-card-body">
-                  <p class="deal-name">牛排</p>
-                  <div class="deal-prices">
-                    <span class="deal-original">NT$130</span>
-                    <span class="deal-sale">NT$<strong>105</strong></span>
+                <!-- 優惠卡 4：牛排 -->
+                <div class="deal-card" (click)="setTab('menu')">
+                  <div class="deal-card-img">
+                    <img
+                      class="deal-card-photo"
+                      src="/assets/牛排.jpg"
+                      alt="牛排"
+                    />
                   </div>
-                  <span class="deal-order-count">👥 73 人點過</span>
+                  <div class="deal-card-body">
+                    <p class="deal-name">牛排</p>
+                    <div class="deal-prices">
+                      <span class="deal-original">NT$130</span>
+                      <span class="deal-sale">NT$<strong>105</strong></span>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <!-- 優惠卡 5：仙草奶茶 -->
-              <div class="deal-card" (click)="setTab('menu')">
-                <div class="deal-card-img">
-                  <img class="deal-card-photo" src="/assets/仙草奶茶.jpg" alt="仙草奶茶">
-                  <span class="deal-badge">今日</span>
-                </div>
-                <div class="deal-card-body">
-                  <p class="deal-name">仙草奶茶</p>
-                  <div class="deal-prices">
-                    <span class="deal-original">NT$65</span>
-                    <span class="deal-sale">NT$<strong>49</strong></span>
+                <!-- 優惠卡 5：仙草奶茶 -->
+                <div class="deal-card" (click)="setTab('menu')">
+                  <div class="deal-card-img">
+                    <img
+                      class="deal-card-photo"
+                      src="/assets/仙草奶茶.jpg"
+                      alt="仙草奶茶"
+                    />
                   </div>
-                  <span class="deal-order-count">👥 96 人點過</span>
+                  <div class="deal-card-body">
+                    <p class="deal-name">仙草奶茶</p>
+                    <div class="deal-prices">
+                      <span class="deal-original">NT$65</span>
+                      <span class="deal-sale">NT$<strong>49</strong></span>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <!-- 優惠卡 6：三杯雞 -->
-              <div class="deal-card" (click)="setTab('menu')">
-                <div class="deal-card-img">
-                  <img class="deal-card-photo" src="/assets/三杯雞.jpg" alt="三杯雞">
-                  <span class="deal-badge">9折</span>
-                </div>
-                <div class="deal-card-body">
-                  <p class="deal-name">三杯雞</p>
-                  <div class="deal-prices">
-                    <span class="deal-original">NT$150</span>
-                    <span class="deal-sale">NT$<strong>135</strong></span>
+                <!-- 優惠卡 6：三杯雞 -->
+                <div class="deal-card" (click)="setTab('menu')">
+                  <div class="deal-card-img">
+                    <img
+                      class="deal-card-photo"
+                      src="/assets/三杯雞.jpg"
+                      alt="三杯雞"
+                    />
                   </div>
-                  <span class="deal-order-count">👥 128 人點過</span>
+                  <div class="deal-card-body">
+                    <p class="deal-name">三杯雞</p>
+                    <div class="deal-prices">
+                      <span class="deal-original">NT$150</span>
+                      <span class="deal-sale">NT$<strong>135</strong></span>
+                    </div>
+                  </div>
                 </div>
               </div>
+              <!-- 左側箭頭按鈕：點擊後向左滾動一張卡片 -->
+              <button
+                class="deal-scroll-arrow deal-scroll-arrow-left"
+                (click)="scrollDealsLeft(dealScrollEl)"
+                aria-label="向左捲動"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+              <!-- 右側箭頭按鈕：點擊後向右滾動一張卡片 -->
+              <button
+                class="deal-scroll-arrow"
+                (click)="scrollDeals(dealScrollEl)"
+                aria-label="向右捲動"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
             </div>
           </div>
 
@@ -749,127 +939,154 @@
             <!-- 分類標籤列（帶漸層遮罩暗示可左滑） -->
             <div class="menu-cat-bar">
               <!-- 台灣分店菜單篩選標籤 -->
-              <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='all'"  (click)="setMenuCategory('all')">全部</button>
-              <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='飯食'" (click)="setMenuCategory('飯食')">🍚 飯食</button>
-              <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='麵食'" (click)="setMenuCategory('麵食')">🍜 麵食</button>
-              <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='小吃'" (click)="setMenuCategory('小吃')">🍢 小吃</button>
-              <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='輕食'" (click)="setMenuCategory('輕食')">🥗 輕食</button>
-              <button class="menu-cat-btn" [class.active]="activeMenuCategory()==='飲品'" (click)="setMenuCategory('飲品')">🧋 飲品</button>
+              <button class="menu-cat-btn" [class.active]="activeMenuCategory() === 'all'" (click)="setMenuCategory('all')">全部</button>
+              <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '飯食'" (click)="setMenuCategory('飯食')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13h16"/><path d="M4 13c0 5.5 2.7 7.5 8 7.5S20 18.5 20 13"/><line x1="8" y1="5" x2="9" y2="13"/><line x1="16" y1="5" x2="15" y2="13"/></svg>
+                <span>飯食</span>
+              </button>
+              <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '麵食'" (click)="setMenuCategory('麵食')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13h16"/><path d="M4 13c0 5.5 2.7 7.5 8 7.5S20 18.5 20 13"/><path d="M7 9c1-1.5 2-1 3 0s2 1.5 3 0 2-1 3 0"/></svg>
+                <span>麵食</span>
+              </button>
+              <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '小吃'" (click)="setMenuCategory('小吃')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="21"/><circle cx="12" cy="8" r="2.5"/><circle cx="12" cy="15" r="2.5"/></svg>
+                <span>小吃</span>
+              </button>
+              <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '輕食'" (click)="setMenuCategory('輕食')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12"/><path d="M12 12C10 8 6 6 3 7c0 5 3 9 9 9z"/><path d="M12 12c2-4 6-6 9-5 0 5-3 9-9 9z"/></svg>
+                <span>輕食</span>
+              </button>
+              <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '飲品'" (click)="setMenuCategory('飲品')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 3l-1.5 18h13L17 3H7z"/><line x1="15" y1="3" x2="12" y2="12"/><circle cx="9" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="11" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
+                <span>飲品</span>
+              </button>
             </div>
 
-            <!-- ── 滿額促銷橫幅（v5 全新設計）────────────────────────
-               觸發：購物車有品項（0 < cartTotal() < 300）
-               版面：左側橘紅色塊（禮品圖示）+ 右側三列資訊
-               三列：①標題膠囊 + 剩餘金額　②進度條　③計數器 + 獎勵標籤
-               動畫：promoReveal（translateY(-12px) + opacity 0→1 滑入）
-               位置：在 .menu-header 內，隨 sticky 固定，不被標頭覆蓋
-          ──────────────────────────────────────────────────────── -->
-            @if (cartTotal() > 0 && cartTotal() < 300) {
-              <div class="promo-wrap">
-                <div class="promo-card">
-                  <!-- 左側：橘紅漸層色塊（禮品圖示 + 限定標籤） -->
-                  <div class="promo-card-left">
-                    <span class="promo-card-emoji">🎁</span>
-                    <span class="promo-card-tag">限定</span>
+            <!-- ── 活動進度抽屜（單一抽屜，收折所有活動）────── -->
+            @if (cartTotal() > 0) {
+              <div class="promo-drawer" [class.promo-drawer-open]="promoDrawerOpen()">
+
+                <!-- 抽屜標題列 -->
+                <button class="promo-drawer-header" (click)="togglePromoDrawer()" type="button">
+                  <!-- 左側：活動圖示 -->
+                  <div class="pdh-icon" [class.pdh-icon-has-done]="promoCompletedCount > 0">
+                    @if (promoCompletedCount > 0) {
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="11" fill="#22C55E"/>
+                        <path d="M7 12.5l3.5 3.5 6.5-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    } @else {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                        <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/>
+                        <rect x="2" y="6" width="20" height="6" rx="1"/>
+                        <path d="M12 12v9"/>
+                        <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/>
+                        <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/>
+                      </svg>
+                    }
                   </div>
 
-                  <!-- 右側：三列式資訊區塊 -->
-                  <div class="promo-card-right">
-                    <!-- 第一列：標題標籤 + 剩餘金額 -->
-                    <div class="promo-card-row-top">
-                      <span class="promo-card-title">免費贈品進度</span>
-                      <span class="promo-card-remain"
-                        >差
-                        <strong class="promo-card-amt"
-                          >NT$ {{ 300 - cartTotal() }}</strong
-                        ></span
-                      >
-                    </div>
-
-                    <!-- 第二列：進度條（含 shimmer 掃光 + 終點金色圓圈） -->
-                    <div class="promo-card-track">
-                      <div
-                        class="promo-card-fill"
-                        [style.width.%]="(cartTotal() / 300) * 100"
-                      >
-                        <div class="promo-fill-shimmer"></div>
-                      </div>
-                      <!-- 目標終點：金色小圓圈（視覺化目標位置） -->
-                      <div class="promo-track-goal">
-                        <svg viewBox="0 0 14 14" fill="none">
-                          <circle
-                            cx="7"
-                            cy="7"
-                            r="6"
-                            fill="#F0A500"
-                            stroke="#fff"
-                            stroke-width="1.5"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-
-                    <!-- 第三列：進度計數 + 獎勵膠囊標籤 -->
-                    <div class="promo-card-row-bottom">
-                      <span class="promo-card-counter"
-                        >{{ cartTotal() }}
-                        <span class="promo-card-sep">/</span> 300</span
-                      >
-                      <span class="promo-card-reward">🏆 招牌滷蛋 × 2</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            }
-
-            <!-- 滿額達成狀態（cartTotal >= 300）：綠色成功卡 -->
-            @if (cartTotal() >= 300) {
-              <div class="promo-wrap">
-                <div class="promo-unlocked-card">
-                  <!-- 左側綠色色塊（慶祝圖示） -->
-                  <div class="promo-unlocked-left">
-                    <span class="promo-unlocked-emoji">🎉</span>
+                  <!-- 中間：標題 + 摘要 -->
+                  <div class="pdh-text">
+                    <span class="pdh-title">進行中活動</span>
+                    <span class="pdh-summary">
+                      @if (promoCompletedCount > 0) {
+                        已達成 {{ promoCompletedCount }} / {{ PROMO_ACTIVITIES.length }} 個活動
+                      } @else {
+                        共 {{ PROMO_ACTIVITIES.length }} 個活動，展開查看進度
+                      }
+                    </span>
                   </div>
 
-                  <!-- 右側：成功標題 + 說明文字 -->
-                  <div class="promo-unlocked-right">
-                    <strong class="promo-unlocked-title"
-                      >滿額贈品已達成！</strong
-                    >
-                    <span class="promo-unlocked-sub"
-                      >招牌滷蛋 × 2 將在結帳時自動加入</span
-                    >
-                  </div>
-
-                  <!-- 右側打勾圓形圖示（pop 動畫進場） -->
-                  <svg
-                    class="promo-unlocked-check-icon"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <circle cx="12" cy="12" r="11" fill="#22C55E" />
-                    <path
-                      d="M7 12.5l3.5 3.5 6.5-7"
-                      stroke="#fff"
-                      stroke-width="2.2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
+                  <!-- 右側：已達成徽章 + 箭頭 -->
+                  @if (promoCompletedCount > 0) {
+                    <span class="pdh-badge">{{ promoCompletedCount }} 個達成</span>
+                  }
+                  <svg class="pdh-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="6 9 12 15 18 9"/>
                   </svg>
-                </div>
+                </button>
+
+                <!-- 抽屜內容：各活動進度條 -->
+                @if (promoDrawerOpen()) {
+                  <div class="promo-drawer-body">
+                    @for (promo of PROMO_ACTIVITIES; track promo.name; let i = $index) {
+                      <div
+                        class="promo-bar-item"
+                        [class.promo-bar-done]="cartTotal() >= promo.minSpend"
+                        [class.promo-bar-expanded]="isPromoBarExpanded(promo.name)"
+                        [style.animation-delay]="(i * 50) + 'ms'"
+                      >
+                        <button class="promo-bar-header" (click)="togglePromoProgressBar(promo.name)" type="button">
+                          <div class="pbh-icon">
+                            @if (cartTotal() >= promo.minSpend) {
+                              <svg viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="11" fill="#22C55E"/>
+                                <path d="M7 12.5l3.5 3.5 6.5-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                              </svg>
+                            } @else {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                                <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/>
+                                <rect x="2" y="6" width="20" height="6" rx="1"/>
+                                <path d="M12 12v9"/>
+                                <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/>
+                                <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/>
+                              </svg>
+                            }
+                          </div>
+                          <span class="pbh-name">{{ promo.name }}</span>
+                          @if (cartTotal() >= promo.minSpend) {
+                            <span class="pbh-done-tag">達成！點此選贈品</span>
+                          } @else {
+                            <span class="pbh-remain">差 <strong>NT$ {{ promo.minSpend - cartTotal() }}</strong></span>
+                          }
+                          <svg class="pbh-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9"/>
+                          </svg>
+                        </button>
+                        @if (isPromoBarExpanded(promo.name)) {
+                          <div class="promo-bar-body">
+                            <div class="pbb-track">
+                              <div class="pbb-fill" [style.width.%]="cartTotal() >= promo.minSpend ? 100 : (cartTotal() / promo.minSpend) * 100">
+                                <div class="pbb-shimmer"></div>
+                              </div>
+                              <div class="pbb-goal">
+                                <svg viewBox="0 0 14 14" fill="none">
+                                  <circle cx="7" cy="7" r="6" fill="#F0A500" stroke="#fff" stroke-width="1.5"/>
+                                </svg>
+                              </div>
+                            </div>
+                            <div class="pbb-info-row">
+                              <span class="pbb-counter">{{ cartTotal() > promo.minSpend ? promo.minSpend : cartTotal() }} / {{ promo.minSpend }}</span>
+                              @if (cartTotal() >= promo.minSpend) {
+                                <span class="pbb-success-text">可至結帳頁選取贈品</span>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
               </div>
             }
           </div>
           <!-- /.menu-header（含搜尋列、分類列、促銷橫幅） -->
 
           <!-- ── 菜單分類：熱門精選 ────────────────────── -->
-          <div class="menu-category-section"
-            [hidden]="!isSectionShown([
-              {name:'紅燒牛肉麵', category:'麵食'},
-              {name:'古早味排骨飯', category:'飯食'},
-              {name:'蚵仔煎', category:'小吃'},
-              {name:'控肉飯', category:'飯食'}
-            ])"
+          <div
+            class="menu-category-section"
+            [hidden]="
+              !isSectionShown([
+                { name: '招牌滷肉飯', category: '飯食' },
+                { name: '古早味排骨飯', category: '飯食' },
+                { name: '蚵仔麵線', category: '小吃' },
+                { name: '蚵仔煎', category: '小吃' },
+                { name: '阿三陽春麵', category: '麵食' },
+                { name: '牛排', category: '飯食' },
+                { name: '三杯雞', category: '飯食' },
+              ])
+            "
           >
             <h3 class="menu-cat-title">
               <span class="menu-cat-line"></span>
@@ -877,37 +1094,41 @@
             </h3>
             <!-- Bento Grid 卡片排列 -->
             <div class="menu-items-list">
-              <!-- 卡片 1：紅燒牛肉麵 -->
-              <div class="menu-item-card" [hidden]="!isMenuItemShown('紅燒牛肉麵','麵食')">
-                <div class="menu-item-img mi-beef">
-                  <span class="menu-item-badge-overlay badge-hot">熱銷</span>
-                </div>
+              <!-- 卡片 1：招牌滷肉飯 -->
+              <div
+                class="menu-item-card"
+                [hidden]="!isMenuItemShown('招牌滷肉飯', '飯食')"
+              >
+                <div class="menu-item-img mi-braised-pork"></div>
                 <div class="menu-item-body">
                   <div>
-                    <h4 class="menu-item-name">紅燒牛肉麵</h4>
-                    <p class="menu-item-desc">慢燉 12 小時濃醇牛骨湯底</p>
+                    <h4 class="menu-item-name">招牌滷肉飯</h4>
+                    <p class="menu-item-desc">
+                      慢燉豬五花，滷汁濃醇入味，配半熟滷蛋與爽脆泡菜
+                    </p>
                   </div>
                   <div class="menu-item-bottom">
                     <div class="menu-price-group">
-                      <span class="menu-item-price">NT$ <strong>165</strong></span>
-                      <span class="menu-order-count">👥 328 人點過</span>
+                      <span class="menu-item-price"
+                        >NT$ <strong>120</strong></span
+                      >
                     </div>
                     <button
                       class="menu-add-btn"
                       (click)="
                         addToCart({
                           id: 1,
-                          name: '紅燒牛肉麵',
-                          nameEn: 'Braised Beef Noodle',
-                          price: 165,
+                          name: '招牌滷肉飯',
+                          nameEn: 'Braised Pork Rice',
+                          price: 120,
                           image: '',
-                          category: '麵食',
-                          categoryEn: 'Noodles',
+                          category: '飯食',
+                          categoryEn: 'Rice',
                           description: '',
                           stock: 20,
                         })
                       "
-                      aria-label="加入紅燒牛肉麵"
+                      aria-label="加入招牌滷肉飯"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -923,10 +1144,11 @@
               </div>
 
               <!-- 卡片 2：古早味排骨飯 -->
-              <div class="menu-item-card" [hidden]="!isMenuItemShown('古早味排骨飯','飯食')">
-                <div class="menu-item-img mi-pork-chop">
-                  <span class="menu-item-badge-overlay badge-hot">熱銷</span>
-                </div>
+              <div
+                class="menu-item-card"
+                [hidden]="!isMenuItemShown('古早味排骨飯', '飯食')"
+              >
+                <div class="menu-item-img mi-pork-chop"></div>
                 <div class="menu-item-body">
                   <div>
                     <h4 class="menu-item-name">古早味排骨飯</h4>
@@ -934,8 +1156,9 @@
                   </div>
                   <div class="menu-item-bottom">
                     <div class="menu-price-group">
-                      <span class="menu-item-price">NT$ <strong>145</strong></span>
-                      <span class="menu-order-count">👥 215 人點過</span>
+                      <span class="menu-item-price"
+                        >NT$ <strong>145</strong></span
+                      >
                     </div>
                     <button
                       class="menu-add-btn"
@@ -968,7 +1191,10 @@
               </div>
 
               <!-- 卡片 3：蚵仔煎 -->
-              <div class="menu-item-card" [hidden]="!isMenuItemShown('蚵仔煎','小吃')">
+              <div
+                class="menu-item-card"
+                [hidden]="!isMenuItemShown('蚵仔煎', '小吃')"
+              >
                 <div class="menu-item-img mi-oyster-pancake"></div>
                 <div class="menu-item-body">
                   <div>
@@ -977,8 +1203,9 @@
                   </div>
                   <div class="menu-item-bottom">
                     <div class="menu-price-group">
-                      <span class="menu-item-price">NT$ <strong>80</strong></span>
-                      <span class="menu-order-count">👥 147 人點過</span>
+                      <span class="menu-item-price"
+                        >NT$ <strong>80</strong></span
+                      >
                     </div>
                     <button
                       class="menu-add-btn"
@@ -1010,30 +1237,130 @@
                 </div>
               </div>
 
-              <!-- 卡片 4：控肉飯 -->
-              <div class="menu-item-card" [hidden]="!isMenuItemShown('控肉飯','飯食')">
-                <div class="menu-item-img mi-braised-belly">
-                  <span class="menu-item-badge-overlay badge-hot">熱銷</span>
-                </div>
+              <!-- 卡片 4：阿三陽春麵 -->
+              <div
+                class="menu-item-card"
+                [hidden]="!isMenuItemShown('阿三陽春麵', '麵食')"
+              >
+                <div class="menu-item-img mi-beef"></div>
                 <div class="menu-item-body">
                   <div>
-                    <h4 class="menu-item-name">控肉飯</h4>
+                    <h4 class="menu-item-name">阿三陽春麵</h4>
                     <p class="menu-item-desc">
-                      大塊豬五花慢燉入味，皮Q肉嫩配白飯
+                      古法熬製清湯底，手工製麵條彈牙有嚼勁
                     </p>
                   </div>
                   <div class="menu-item-bottom">
                     <div class="menu-price-group">
-                      <span class="menu-item-price">NT$ <strong>130</strong></span>
-                      <span class="menu-order-count">👥 189 人點過</span>
+                      <span class="menu-item-price"
+                        >NT$ <strong>120</strong></span
+                      >
                     </div>
                     <button
                       class="menu-add-btn"
                       (click)="
                         addToCart({
                           id: 4,
-                          name: '控肉飯',
-                          nameEn: 'Braised Pork Belly Rice',
+                          name: '阿三陽春麵',
+                          nameEn: 'Traditional Noodle Soup',
+                          price: 120,
+                          image: '',
+                          category: '麵食',
+                          categoryEn: 'Noodles',
+                          description: '',
+                          stock: 15,
+                        })
+                      "
+                      aria-label="加入阿三陽春麵"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <path d="M12 5v14M5 12h14" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 卡片 7：蚵仔麵線 -->
+              <div
+                class="menu-item-card"
+                [hidden]="!isMenuItemShown('蚵仔麵線', '小吃')"
+              >
+                <div class="menu-item-img mi-oyster-noodle"></div>
+                <div class="menu-item-body">
+                  <div>
+                    <h4 class="menu-item-name">蚵仔麵線</h4>
+                    <p class="menu-item-desc">
+                      鮮蚵燴入麵線，甜辣醬提味，道地夜市風味
+                    </p>
+                  </div>
+                  <div class="menu-item-bottom">
+                    <div class="menu-price-group">
+                      <span class="menu-item-price"
+                        >NT$ <strong>70</strong></span
+                      >
+                    </div>
+                    <button
+                      class="menu-add-btn"
+                      (click)="
+                        addToCart({
+                          id: 7,
+                          name: '蚵仔麵線',
+                          nameEn: 'Oyster Vermicelli',
+                          price: 70,
+                          image: '',
+                          category: '小吃',
+                          categoryEn: 'Snacks',
+                          description: '',
+                          stock: 20,
+                        })
+                      "
+                      aria-label="加入蚵仔麵線"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <path d="M12 5v14M5 12h14" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 卡片 8：牛排 -->
+              <div
+                class="menu-item-card"
+                [hidden]="!isMenuItemShown('牛排', '飯食')"
+              >
+                <div class="menu-item-img mi-steak"></div>
+                <div class="menu-item-body">
+                  <div>
+                    <h4 class="menu-item-name">牛排</h4>
+                    <p class="menu-item-desc">
+                      精選澳洲牛肉，炭烤鎖汁，附時蔬與醬汁
+                    </p>
+                  </div>
+                  <div class="menu-item-bottom">
+                    <div class="menu-price-group">
+                      <span class="menu-item-price"
+                        >NT$ <strong>130</strong></span
+                      >
+                    </div>
+                    <button
+                      class="menu-add-btn"
+                      (click)="
+                        addToCart({
+                          id: 8,
+                          name: '牛排',
+                          nameEn: 'Beef Steak',
                           price: 130,
                           image: '',
                           category: '飯食',
@@ -1042,7 +1369,56 @@
                           stock: 10,
                         })
                       "
-                      aria-label="加入控肉飯"
+                      aria-label="加入牛排"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <path d="M12 5v14M5 12h14" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 卡片 9：三杯雞 -->
+              <div
+                class="menu-item-card"
+                [hidden]="!isMenuItemShown('三杯雞', '飯食')"
+              >
+                <div class="menu-item-img mi-3cup-chicken"></div>
+                <div class="menu-item-body">
+                  <div>
+                    <h4 class="menu-item-name">三杯雞</h4>
+                    <p class="menu-item-desc">
+                      麻油、醬油、米酒三杯燒製，九層塔香氣四溢
+                    </p>
+                  </div>
+                  <div class="menu-item-bottom">
+                    <div class="menu-price-group">
+                      <span class="menu-item-price"
+                        >NT$ <strong>150</strong></span
+                      >
+                    </div>
+                    <button
+                      class="menu-add-btn"
+                      (click)="
+                        addToCart({
+                          id: 9,
+                          name: '三杯雞',
+                          nameEn: 'Three Cup Chicken',
+                          price: 150,
+                          image: '',
+                          category: '飯食',
+                          categoryEn: 'Rice',
+                          description: '',
+                          stock: 15,
+                        })
+                      "
+                      aria-label="加入三杯雞"
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -1060,11 +1436,14 @@
           </div>
 
           <!-- ── 菜單分類：特調飲品 ────────────────────── -->
-          <div class="menu-category-section"
-            [hidden]="!isSectionShown([
-              {name:'黑糖珍珠奶茶', category:'飲品'},
-              {name:'仙草奶茶', category:'飲品'}
-            ])"
+          <div
+            class="menu-category-section"
+            [hidden]="
+              !isSectionShown([
+                { name: '黑糖珍珠奶茶', category: '飲品' },
+                { name: '仙草奶茶', category: '飲品' },
+              ])
+            "
           >
             <h3 class="menu-cat-title">
               <span class="menu-cat-line"></span>
@@ -1072,10 +1451,11 @@
             </h3>
             <div class="menu-items-list">
               <!-- 卡片 5：黑糖珍珠奶茶 -->
-              <div class="menu-item-card" [hidden]="!isMenuItemShown('黑糖珍珠奶茶','飲品')">
-                <div class="menu-item-img mi-bbt">
-                  <span class="menu-item-badge-overlay badge-hot">熱銷</span>
-                </div>
+              <div
+                class="menu-item-card"
+                [hidden]="!isMenuItemShown('黑糖珍珠奶茶', '飲品')"
+              >
+                <div class="menu-item-img mi-bbt"></div>
                 <div class="menu-item-body">
                   <div>
                     <h4 class="menu-item-name">黑糖珍珠奶茶</h4>
@@ -1083,8 +1463,9 @@
                   </div>
                   <div class="menu-item-bottom">
                     <div class="menu-price-group">
-                      <span class="menu-item-price">NT$ <strong>75</strong></span>
-                      <span class="menu-order-count">👥 412 人點過</span>
+                      <span class="menu-item-price"
+                        >NT$ <strong>75</strong></span
+                      >
                     </div>
                     <button
                       class="menu-add-btn"
@@ -1117,9 +1498,11 @@
               </div>
 
               <!-- 卡片 6：仙草奶茶 -->
-              <div class="menu-item-card" [hidden]="!isMenuItemShown('仙草奶茶','飲品')">
+              <div
+                class="menu-item-card"
+                [hidden]="!isMenuItemShown('仙草奶茶', '飲品')"
+              >
                 <div class="menu-item-img mi-grass-jelly">
-                  <span class="menu-item-badge-overlay badge-new">新品</span>
                 </div>
                 <div class="menu-item-body">
                   <div>
@@ -1128,8 +1511,9 @@
                   </div>
                   <div class="menu-item-bottom">
                     <div class="menu-price-group">
-                      <span class="menu-item-price">NT$ <strong>65</strong></span>
-                      <span class="menu-order-count">👥 96 人點過</span>
+                      <span class="menu-item-price"
+                        >NT$ <strong>65</strong></span
+                      >
                     </div>
                     <button
                       class="menu-add-btn"
@@ -1241,104 +1625,245 @@
               </div>
             }
 
-            <!-- 訂單品項列表 -->
+            <!-- 訂單品項列表 + 活動選擇：2 欄佈局 -->
             @if (cartCount() > 0) {
-              <div class="checkout-items">
-                @for (item of cartItems(); track item.id) {
-                  <div class="checkout-item">
-                    <div class="co-item-info">
-                      <span class="co-item-name">{{ item.name }}</span>
-                      <span class="co-item-unit">NT$ {{ item.price }}</span>
-                    </div>
-                    <div class="co-item-ctrl">
-                      <button
-                        class="co-delete-btn"
-                        (click)="removeFromCart(item.id)"
-                        aria-label="移除商品"
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                        >
-                          <polyline points="3 6 5 6 21 6"></polyline>
-                          <path
-                            d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                          ></path>
-                          <line x1="10" y1="11" x2="10" y2="17"></line>
-                          <line x1="14" y1="11" x2="14" y2="17"></line>
-                        </svg>
-                      </button>
-                      <button
-                        class="co-qty-btn"
-                        (click)="updateCartQuantity(item.id, -1)"
-                      >
-                        −
-                      </button>
-                      <span class="co-qty">{{ item.quantity }}</span>
-                      <button
-                        class="co-qty-btn"
-                        (click)="updateCartQuantity(item.id, 1)"
-                      >
-                        ＋
-                      </button>
-                    </div>
-                    <span class="co-item-subtotal"
-                      >NT$ {{ item.price * item.quantity }}</span
-                    >
-                  </div>
-                }
-              </div>
+              <div class="checkout-grid">
 
-              <!-- 滿額贈品 -->
-              @if (cartTotal() >= 300) {
-                <div class="checkout-gift">
-                  <span class="gift-icon">🎁</span>
-                  <span class="gift-text">招牌滷蛋 × 2（滿額贈品）</span>
-                  <span class="gift-price">免費</span>
+                <!-- ── 左欄：訂單品項 ─────────────────────────── -->
+                <div class="checkout-col-left">
+                  <div class="checkout-col-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:15px;height:15px;">
+                      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                      <rect x="9" y="3" width="6" height="4" rx="1"/>
+                    </svg>
+                    訂單明細
+                    <span class="checkout-col-count">{{ cartCount() }} 件</span>
+                  </div>
+                  <div class="checkout-items">
+                    @for (item of cartItems(); track item.id) {
+                      <div class="checkout-item">
+                        <div class="co-item-info">
+                          <span class="co-item-name">{{ item.name }}</span>
+                          <span class="co-item-unit">NT$ {{ item.price }}</span>
+                        </div>
+                        <div class="co-item-ctrl">
+                          <button class="co-delete-btn" (click)="removeFromCart(item.id)" aria-label="移除商品">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              <line x1="10" y1="11" x2="10" y2="17"></line>
+                              <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                          </button>
+                          <button class="co-qty-btn" (click)="updateCartQuantity(item.id, -1)">−</button>
+                          <span class="co-qty">{{ item.quantity }}</span>
+                          <button class="co-qty-btn" (click)="updateCartQuantity(item.id, 1)">＋</button>
+                        </div>
+                        <span class="co-item-subtotal">NT$ {{ item.price * item.quantity }}</span>
+                      </div>
+                    }
+                    <!-- 已選贈品：顯示在品項列表底部 -->
+                    @if (selectedPromoGift() && selectedPromoName() && selectedPromoName() !== '不參加活動優惠') {
+                      <div class="checkout-item checkout-item-gift">
+                        <div class="co-item-info">
+                          <span class="co-item-name">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px;margin-right:4px;vertical-align:middle;"><path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/><rect x="2" y="6" width="20" height="6" rx="1"/><path d="M12 12v9"/><path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/><path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/></svg>
+                            {{ selectedPromoName() }} - {{ selectedPromoGift() }}
+                          </span>
+                          <span class="co-item-unit">NT$ 0</span>
+                        </div>
+                        <span class="co-item-subtotal co-gift-free">免費</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- ── 右欄：活動選擇 + 金額 + 送出 ──────────── -->
+                <div class="checkout-col-right">
+
+                  <!-- 活動優惠選擇（accordion 設計）-->
+                  @if (unlockedPromos().length > 0) {
+                    <div class="checkout-promo-section">
+
+                  <!-- 上方：綠色贈品面板（按此選擇免費餐點） -->
+                  <div class="promo-gift-panel" [class.panel-open]="promoGiftPanelOpen()" [class.has-gift]="!!selectedPromoGift()">
+                    <button class="pgp-header" (click)="togglePromoGiftPanel()" type="button">
+                      <!-- 贈品 SVG 圖示 -->
+                      <div class="pgp-icon" [class.pgp-icon-done]="!!selectedPromoGift()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                          <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/>
+                          <rect x="2" y="6" width="20" height="6" rx="1"/>
+                          <path d="M12 12v9"/>
+                          <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/>
+                          <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/>
+                        </svg>
+                      </div>
+                      <div class="pgp-text">
+                        @if (selectedPromoGift()) {
+                          <span class="pgp-label pgp-label-done">已選：{{ selectedPromoGift() }}</span>
+                          <span class="pgp-hint">點此更換免費餐點</span>
+                        } @else if (selectedPromoName() && selectedPromoName() !== '不參加活動優惠') {
+                          <span class="pgp-label">按此選擇免費餐點</span>
+                          <span class="pgp-hint">{{ selectedPromoName() }}</span>
+                        } @else {
+                          <span class="pgp-label">按此選擇免費餐點</span>
+                          <span class="pgp-hint">請先於下方選擇活動</span>
+                        }
+                      </div>
+                      @if (selectedPromoGift()) {
+                        <span class="pgp-free-tag">免費</span>
+                      }
+                      <svg class="pgp-chevron" [class.open]="promoGiftPanelOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+
+                    <!-- 展開：贈品選項列表 -->
+                    @if (promoGiftPanelOpen()) {
+                      <div class="pgp-options">
+                        @if (selectedPromoActivity) {
+                          @for (g of selectedPromoActivity.gifts; track g) {
+                            <button
+                              class="pgp-gift-opt"
+                              [class.selected]="selectedPromoGift() === g"
+                              (click)="selectPromoGift(g)"
+                              type="button"
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:16px;height:16px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                              <span>{{ g }}</span>
+                              @if (selectedPromoGift() === g) {
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;flex-shrink:0;margin-left:auto;">
+                                  <polyline points="20 6 9 17 4 12"/>
+                                </svg>
+                              }
+                            </button>
+                          }
+                        } @else {
+                          <p class="pgp-no-select-hint">請先於下方選擇活動，再回此處選取贈品</p>
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  <!-- 下方：活動選擇列表 -->
+                  <div class="promo-activity-list">
+                    <!-- 放棄參加 -->
+                    <button
+                      class="promo-act-row promo-act-skip"
+                      [class.selected]="selectedPromoName() === '不參加活動優惠'"
+                      (click)="selectPromo('不參加活動優惠')"
+                      type="button"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:16px;height:16px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                      <span>不參加活動優惠</span>
+                      @if (selectedPromoName() === '不參加活動優惠') {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;margin-left:auto;"><polyline points="20 6 9 17 4 12"/></svg>
+                      }
+                    </button>
+
+                    <!-- 各活動（accordion 項目） -->
+                    @for (act of unlockedPromos(); track act.name) {
+                      <button
+                        class="promo-act-row"
+                        [class.selected]="selectedPromoName() === act.name"
+                        (click)="selectPromo(act.name)"
+                        type="button"
+                      >
+                        <!-- 活動圖示 -->
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:16px;height:16px;flex-shrink:0;">
+                          <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+                        </svg>
+                        <div class="par-text">
+                          <span class="par-name">{{ act.name }}</span>
+                          <span class="par-hint">按此選擇此活動</span>
+                        </div>
+                        <span class="par-min-tag">滿 NT$ {{ act.minSpend }}</span>
+                        @if (selectedPromoName() === act.name) {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;flex-shrink:0;">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        }
+                      </button>
+                    }
+                  </div>
                 </div>
               }
 
-              <!-- 金額明細 -->
-              <div class="checkout-summary">
-                <div class="summary-row">
-                  <span>小計</span>
-                  <span>NT$ {{ cartTotal() }}</span>
-                </div>
-                <div class="summary-row">
-                  <span>稅率（內含 5%）</span>
-                  <span>已含稅</span>
-                </div>
-                <div class="summary-row summary-row-total">
-                  <span>總計</span>
-                  <span class="summary-total-price">NT$ {{ cartTotal() }}</span>
-                </div>
-              </div>
-
-              <!-- 進入結帳頁面 -->
-              <button class="checkout-submit" (click)="setTab('payment')">
-                進入結帳頁面 — NT$ {{ cartTotal() }}
-              </button>
-
-              <!-- 清空購物車 -->
-              <button
-                class="checkout-clear enhance-clear-btn"
-                (click)="clearCart()"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
+              <!-- 折扣兌換券（達 10 次才顯示） -->
+              @if (hasDiscountReady()) {
+                <div
+                  class="discount-coupon-block"
+                  [class.active]="useDiscountCoupon()"
                 >
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path
-                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                  ></path>
-                </svg>
-                <span>清空購物車</span>
-              </button>
+                  <div class="dcb-left">
+                    <svg
+                      class="dcb-icon"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4" />
+                      <rect x="2" y="6" width="20" height="6" rx="1" />
+                      <path d="M12 12v9" />
+                      <path d="M12 6L11.5 1.5l-2.5 2L12 6z" />
+                    </svg>
+                  </div>
+                  <div class="dcb-body">
+                    <span class="dcb-title">折扣兌換券</span>
+                    <span class="dcb-desc">
+                      @if (useDiscountCoupon()) {
+                        已選擇使用，本次享 8 折優惠
+                      } @else {
+                        您有 1 張折扣券，是否在本次訂單使用？
+                      }
+                    </span>
+                  </div>
+                  <button
+                    class="dcb-toggle"
+                    [class.used]="useDiscountCoupon()"
+                    (click)="toggleDiscountCoupon()"
+                    type="button"
+                  >
+                    {{ useDiscountCoupon() ? "取消使用" : "使用折扣券" }}
+                  </button>
+                </div>
+              }
+
+                </div><!-- /checkout-col-right -->
+              </div><!-- /checkout-grid -->
+
+              <!-- 金額明細 + 操作按鈕（獨立置中區塊） -->
+              <div class="checkout-footer-block">
+                <div class="checkout-summary">
+                  <div class="summary-row">
+                    <span>小計</span>
+                    <span>NT$ {{ cartTotal() }}</span>
+                  </div>
+                  @if (useDiscountCoupon()) {
+                    <div class="summary-row summary-row-discount">
+                      <span>折扣券折扣（8折）</span>
+                      <span class="summary-discount-price">－ NT$ {{ discountAmount() }}</span>
+                    </div>
+                  }
+                  <div class="summary-row summary-row-total">
+                    <span>總計</span>
+                    <span class="summary-total-price">NT$ {{ discountedTotal() }}</span>
+                  </div>
+                </div>
+
+                <button class="checkout-submit" (click)="openOrderPreview()">
+                  進入結帳頁面 — NT$ {{ discountedTotal() }}
+                </button>
+
+                <button class="checkout-clear enhance-clear-btn" (click)="clearCart()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                  <span>清空購物車</span>
+                </button>
+              </div><!-- /checkout-footer-block -->
             }
           </div>
 
@@ -1346,13 +1871,68 @@
         </section>
       }
 
+      <!-- ── 訂單預覽彈出視窗 ── -->
+      @if (showOrderPreview()) {
+        <div class="order-preview-overlay" (click)="closeOrderPreview()">
+          <div class="order-preview-modal" (click)="$event.stopPropagation()">
+            <div class="opm-header">
+              <h3 class="opm-title">確認訂單預覽</h3>
+              <p class="opm-subtitle">請確認品項是否正確，如有問題可按「上一步」修改</p>
+            </div>
+
+            <div class="opm-items">
+              @for (item of cartItems(); track item.id) {
+                <div class="opm-item-row">
+                  <span class="opm-item-name">{{ item.name }}</span>
+                  <div class="opm-item-right">
+                    <span class="opm-item-qty">× {{ item.quantity }}</span>
+                    <span class="opm-item-price">NT$ {{ item.price * item.quantity }}</span>
+                  </div>
+                </div>
+              }
+              @if (selectedPromoGift() && selectedPromoName() && selectedPromoName() !== '不參加活動優惠') {
+                <div class="opm-item-row opm-item-free">
+                  <span class="opm-item-name">{{ selectedPromoName() }} - {{ selectedPromoGift() }}</span>
+                  <div class="opm-item-right">
+                    <span class="opm-item-price opm-free-label">NT$ 0</span>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="opm-divider"></div>
+
+            @if (useDiscountCoupon()) {
+              <div class="opm-row opm-discount-row">
+                <span>折扣券折扣（8折）</span>
+                <span class="opm-discount-price">－ NT$ {{ discountAmount() }}</span>
+              </div>
+            }
+            <div class="opm-row opm-total-row">
+              <span>總計</span>
+              <span class="opm-total-amount">NT$ {{ discountedTotal() }}</span>
+            </div>
+
+            <div class="opm-actions">
+              <button class="opm-back-btn" (click)="closeOrderPreview()" type="button">
+                ← 上一步
+              </button>
+              <button class="opm-confirm-btn" (click)="goToPayment()" type="button">
+                確認建立訂單
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- ═══════════════════════════════════════════════
          確認訂單 (Checkout Payment Flow)
     ═══════════════════════════════════════════════════ -->
       @if (activeTab() === "payment") {
         <section class="ch-section fade-in">
-          <header class="payment-header">
-            <button class="payment-back-btn" (click)="setTab('checkout')">
+          <!-- 取消訂單 / 返回首頁 -->
+          <div class="payment-back-row">
+            <button class="payment-back-btn payment-cancel-btn" (click)="cancelCurrentOrder()">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -1361,15 +1941,22 @@
               >
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
-              返回
+              取消本次訂單，返回首頁
             </button>
-            <div class="payment-header-center">
-              <span class="payment-icon">🛒</span>
-              <h2 class="payment-title">確認訂單</h2>
-            </div>
-            <div style="width: 40px"></div>
-            <!-- Spacer -->
-          </header>
+          </div>
+          <!-- 標題：比照 checkout-title 樣式 -->
+          <h2 class="checkout-title">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+              <line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+            付款頁面
+          </h2>
 
           <div class="payment-content-wrapper">
             <!-- 唯讀購物明細簡介 -->
@@ -1385,14 +1972,35 @@
                   </div>
                 </div>
               }
+              <!-- 活動贈品列（已選且非「不參加」時才顯示） -->
+              @if (selectedPromoGift() && selectedPromoName() && selectedPromoName() !== '不參加活動優惠') {
+                <div class="psc-row psc-gift-row">
+                  <span class="psc-name">{{ selectedPromoName() }} - {{ selectedPromoGift() }}</span>
+                  <div class="psc-right">
+                    <span class="psc-price psc-gift-free">NT$ 0</span>
+                  </div>
+                </div>
+              }
               <div class="psc-divider"></div>
+              @if (useDiscountCoupon()) {
+                <div class="psc-row psc-discount-row">
+                  <span class="psc-name">折扣券折扣（8折）</span>
+                  <div class="psc-right">
+                    <span class="psc-discount-price"
+                      >－ NT$ {{ discountAmount() }}</span
+                    >
+                  </div>
+                </div>
+              }
               <div class="psc-total-row">
                 <span>總計</span>
-                <span class="psc-total-amount">NT$ {{ cartTotal() }}</span>
+                <span class="psc-total-amount"
+                  >NT$ {{ discountedTotal() }}</span
+                >
               </div>
             </div>
 
-            <!-- 備註欄位 -->
+            <!-- 備註欄位（暫停使用，改由電話號碼欄取代）
             <div class="checkout-note">
               <label class="checkout-note-label">訂單備註（選填）</label>
               <textarea
@@ -1403,90 +2011,238 @@
                 (input)="orderNote.set($any($event.target).value)"
               ></textarea>
             </div>
+            -->
 
-            <!-- 付款方式 -->
+            <!-- 電話號碼欄位
+                 ‧ 會員：預設自動填入帳號電話，可手動修改
+                 ‧ 訪客：空白＋必填，未填不能進入下一步 -->
+            <div class="checkout-note">
+              <label class="checkout-note-label">
+                聯絡電話
+                @if (isGuest()) {
+                  <span class="checkout-required-mark">*&nbsp;必填</span>
+                }
+              </label>
+              <input
+                type="tel"
+                class="checkout-note-input checkout-phone-input"
+                [placeholder]="isGuest() ? '請輸入電話號碼（訪客必填）' : '確認聯絡電話'"
+                [value]="phoneNumber()"
+                (input)="phoneNumber.set($any($event.target).value)"
+              />
+              <!-- 訪客未填時顯示提示 -->
+              @if (isGuest() && !isPhoneValid()) {
+                <span class="checkout-phone-hint">請填入電話號碼後才能送出訂單</span>
+              }
+            </div>
+
+            <!-- 付款方式選擇列 -->
             <div class="checkout-payment">
               <p class="checkout-payment-title">付款方式</p>
               <div class="payment-options">
-                <!-- 貨到付款（預設選項） -->
-                <label
-                  class="payment-opt"
-                  [class.active]="paymentMethod() === 'cod'"
-                  (click)="setPaymentMethod('cod')"
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    [checked]="paymentMethod() === 'cod'"
-                  />
-                  <span class="payment-icon">🏠</span>
-                  <span>貨到付款</span>
-                </label>
-                <label
-                  class="payment-opt"
-                  [class.active]="paymentMethod() === 'credit'"
-                  (click)="setPaymentMethod('credit')"
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    [checked]="paymentMethod() === 'credit'"
-                  />
-                  <span class="payment-icon">💳</span>
+                <label class="payment-opt" [class.active]="paymentMethod() === 'credit'" (click)="setPaymentMethod('credit')">
+                  <input type="radio" name="payment" [checked]="paymentMethod() === 'credit'" />
+                  <svg class="payment-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                   <span>信用卡</span>
                 </label>
-                <label
-                  class="payment-opt"
-                  [class.active]="paymentMethod() === 'mobile'"
-                  (click)="setPaymentMethod('mobile')"
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    [checked]="paymentMethod() === 'mobile'"
-                  />
-                  <span class="payment-icon">📱</span>
+                <label class="payment-opt" [class.active]="paymentMethod() === 'mobile'" (click)="setPaymentMethod('mobile')">
+                  <input type="radio" name="payment" [checked]="paymentMethod() === 'mobile'" />
+                  <svg class="payment-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
                   <span>行動支付</span>
                 </label>
-                <label
-                  class="payment-opt"
-                  [class.active]="paymentMethod() === 'cash'"
-                  (click)="setPaymentMethod('cash')"
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    [checked]="paymentMethod() === 'cash'"
-                  />
-                  <span class="payment-icon">💵</span>
+                <label class="payment-opt" [class.active]="paymentMethod() === 'cash'" (click)="setPaymentMethod('cash')">
+                  <input type="radio" name="payment" [checked]="paymentMethod() === 'cash'" />
+                  <svg class="payment-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>
                   <span>現金</span>
                 </label>
               </div>
             </div>
 
-            <!-- 送出訂單（isPlacingOrder 防重複 + spinner 回饋） -->
-            <button
-              class="checkout-submit"
-              [class.is-placing]="isPlacingOrder()"
-              [disabled]="isPlacingOrder()"
-              (click)="placeOrder()"
-            >
-              @if (isPlacingOrder()) {
-                <!-- 處理中：ldrs ring spinner -->
-                <span class="placing-spinner" aria-hidden="true"></span>
-                處理中...
-              } @else {
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                >
-                  <polyline points="20 6 9 17 4 12" />
+            <!-- ╔══════════════════════════════════════╗
+                 ║  信用卡表單（選信用卡時顯示）          ║
+                 ╚══════════════════════════════════════╝ -->
+            @if (paymentMethod() === 'credit') {
+              <div class="credit-card-panel">
+
+                <!-- 3D 翻轉視覺卡片 -->
+                <div class="card-visual-wrap">
+                  <div class="card-visual" [class.flipped]="cardFlipped()">
+                    <!-- 正面 -->
+                    <div class="card-face card-front">
+                      <div class="card-front-top">
+                        <!-- 晶片圖示（SVG） -->
+                        <svg class="card-chip-svg" viewBox="0 0 38 28" fill="none">
+                          <rect width="38" height="28" rx="4" fill="#c9a84c"/>
+                          <rect x="1" y="9" width="36" height="10" fill="#b8963e" opacity=".6"/>
+                          <rect x="12" y="1" width="14" height="26" fill="#b8963e" opacity=".6"/>
+                          <rect x="4" y="4" width="30" height="20" rx="2" fill="none" stroke="#e2c97e" stroke-width="1"/>
+                          <line x1="19" y1="1" x2="19" y2="27" stroke="#c9a84c" stroke-width=".8"/>
+                          <line x1="1" y1="14" x2="37" y2="14" stroke="#c9a84c" stroke-width=".8"/>
+                        </svg>
+                        <div class="card-bank-name">懶飽飽銀行</div>
+                      </div>
+                      <div class="card-number-display">
+                        {{ cardNumber() || '•••• •••• •••• ••••' }}
+                      </div>
+                      <div class="card-front-bottom">
+                        <div class="card-bottom-field">
+                          <span class="card-field-label">持卡人</span>
+                          <span class="card-field-value">{{ cardHolder() || 'YOUR NAME' }}</span>
+                        </div>
+                        <div class="card-bottom-field">
+                          <span class="card-field-label">有效期限</span>
+                          <span class="card-field-value">{{ cardExpiry() || 'MM/YY' }}</span>
+                        </div>
+                        <div class="card-network">
+                          <svg viewBox="0 0 50 32" class="card-network-svg">
+                            <circle cx="18" cy="16" r="14" fill="#eb001b" opacity=".85"/>
+                            <circle cx="32" cy="16" r="14" fill="#f79e1b" opacity=".85"/>
+                            <path d="M25 5.5a14 14 0 0 1 0 21 14 14 0 0 1 0-21z" fill="#ff5f00" opacity=".9"/>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 背面 -->
+                    <div class="card-face card-back">
+                      <div class="card-mag-stripe"></div>
+                      <div class="card-cvv-area">
+                        <div class="card-sig-strip">
+                          <span class="card-sig-text">AUTHORIZED SIGNATURE</span>
+                          <div class="card-cvv-box">
+                            <span class="card-cvv-label">CVV</span>
+                            <span class="card-cvv-val">{{ cardCvv() || '•••' }}</span>
+                          </div>
+                        </div>
+                        <p class="card-back-note">此卡僅供 Demo 流程演示使用</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 輸入表單 -->
+                <div class="cc-form">
+                  <div class="cc-field">
+                    <label class="cc-label">卡號</label>
+                    <input
+                      type="text"
+                      class="cc-input"
+                      placeholder="1234 5678 9012 3456"
+                      maxlength="19"
+                      inputmode="numeric"
+                      [value]="cardNumber()"
+                      (input)="onCardNumberInput($any($event.target).value)"
+                    />
+                  </div>
+                  <div class="cc-row-2">
+                    <div class="cc-field">
+                      <label class="cc-label">有效期限</label>
+                      <input
+                        type="text"
+                        class="cc-input"
+                        placeholder="MM/YY"
+                        maxlength="5"
+                        inputmode="numeric"
+                        [value]="cardExpiry()"
+                        (input)="onCardExpiryInput($any($event.target).value)"
+                      />
+                    </div>
+                    <div class="cc-field">
+                      <label class="cc-label">安全碼 CVV</label>
+                      <input
+                        type="text"
+                        class="cc-input"
+                        placeholder="•••"
+                        maxlength="4"
+                        inputmode="numeric"
+                        [value]="cardCvv()"
+                        (input)="onCvvInput($any($event.target).value)"
+                        (focus)="onCardCvvFocus()"
+                        (blur)="onCardCvvBlur()"
+                      />
+                    </div>
+                  </div>
+                  <div class="cc-field">
+                    <label class="cc-label">持卡人姓名（英文大寫）</label>
+                    <input
+                      type="text"
+                      class="cc-input"
+                      placeholder="CARDHOLDER NAME"
+                      [value]="cardHolder()"
+                      (input)="cardHolder.set($any($event.target).value.toUpperCase())"
+                    />
+                  </div>
+                  @if (cardNumber().length > 0 && !isCreditCardValid()) {
+                    <p class="cc-error">
+                      <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm-.75 3.75h1.5v4.5h-1.5v-4.5zm0 6h1.5v1.5h-1.5v-1.5z"/></svg>
+                      請確認卡片資料均填寫完整
+                    </p>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- ╔══════════════════════════════════════╗
+                 ║  行動支付 QR 碼（選行動支付時顯示）   ║
+                 ╚══════════════════════════════════════╝ -->
+            @if (paymentMethod() === 'mobile') {
+              <div class="mobile-pay-panel">
+                <div class="mp-amount-badge">NT$ {{ discountedTotal() }}</div>
+                <p class="mp-desc">請使用手機掃描以下 QR Code 完成付款</p>
+                <div class="qr-wrapper">
+                  <qrcode
+                    [qrdata]="mobilePayUrl()"
+                    [width]="200"
+                    [errorCorrectionLevel]="'M'"
+                    [colorDark]="'#111111'"
+                    [colorLight]="'#ffffff'"
+                    [margin]="2"
+                  ></qrcode>
+                  <p class="qr-expiry">此 QR Code 可用手機掃描 · 請在 5 分鐘內掃碼</p>
+                </div>
+                <!-- Demo 掃碼按鈕 -->
+                <button class="mp-scan-btn" (click)="openMobilePayModal()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18">
+                    <rect x="5" y="2" width="14" height="20" rx="2"/>
+                    <line x1="12" y1="18" x2="12.01" y2="18"/>
+                  </svg>
+                  模擬手機掃碼（Demo）
+                </button>
+                <p class="mp-note">實際場景：掃碼後手機將顯示訂單明細與付款確認畫面</p>
+              </div>
+            }
+
+            <!-- 送出訂單：現金 / 信用卡顯示按鈕；行動支付改為提示文字 -->
+            @if (paymentMethod() !== 'mobile') {
+              <button
+                class="checkout-submit"
+                [class.is-placing]="isPlacingOrder()"
+                [class.disabled]="paymentMethod() === 'credit' && !isCreditCardValid()"
+                [disabled]="isPlacingOrder() || (paymentMethod() === 'credit' && !isCreditCardValid())"
+                (click)="placeOrder()"
+              >
+                @if (isPlacingOrder()) {
+                  <span class="placing-spinner" aria-hidden="true"></span>
+                  處理中...
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  @if (paymentMethod() === 'credit') {
+                    確認付款（信用卡）— NT$ {{ discountedTotal() }}
+                  } @else {
+                    確認下單 — NT$ {{ discountedTotal() }}
+                  }
+                }
+              </button>
+            } @else {
+              <div class="mp-submit-hint">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
-                確認下單 — NT$ {{ cartTotal() }}
-              }
-            </button>
+                請掃描上方 QR Code，在手機上完成付款
+              </div>
+            }
           </div>
           <div style="height: 80px"></div>
         </section>
@@ -1957,12 +2713,26 @@
                   <!-- 虛線分隔 -->
                   <div class="ord-card-dash"></div>
 
-                  <!-- 底部：合計標籤 + 金額（大字） -->
+                  <!-- 底部：合計標籤 + 金額（大字） + 退款按鈕（已完成才顯示） -->
                   <div class="ord-card-foot">
                     <span class="ord-card-total-label">合　計</span>
-                    <div class="ord-card-total-wrap">
-                      <span class="ord-card-currency">NT$</span>
-                      <span class="ord-card-price">{{ order.total }}</span>
+                    <div class="ord-card-foot-right">
+                      <div class="ord-card-total-wrap">
+                        <span class="ord-card-currency">NT$</span>
+                        <span class="ord-card-price">{{ order.total }}</span>
+                      </div>
+                      @if (order.status === 'completed') {
+                        <button
+                          class="ord-refund-btn"
+                          (click)="openRefundModal(order)"
+                        >
+                          <svg viewBox="0 0 20 20" fill="none" class="ord-refund-icon">
+                            <path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2z" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                          </svg>
+                          申請退款
+                        </button>
+                      }
                     </div>
                   </div>
                 </div>
@@ -1975,6 +2745,141 @@
           <!-- 底部安全間距（避免被底部導覽列遮住） -->
           <div style="height: 88px"></div>
         </section>
+      }
+
+      <!-- ════════════════════════════════════════════════
+           頁籤：活動專區
+      ════════════════════════════════════════════════ -->
+      @if (activeTab() === "promotions") {
+        <section class="ch-section promo-section">
+          <!-- Header -->
+          <div class="promo-zone-header">
+            <div class="promo-zone-bar"></div>
+            <h2 class="promo-zone-title">活動專區</h2>
+          </div>
+
+          <!-- Activity Card List -->
+          <div class="promo-zone-list">
+            @for (promo of PROMO_DISPLAY; track promo.name; let i = $index) {
+              <div class="pz-card" [ngClass]="'pz-bg-' + promo.tagType" (click)="openPromoDetail(i)">
+                <!-- 左側：文字內容 -->
+                <div class="pz-card-body">
+                  <span class="pz-card-tag" [ngClass]="'pzt-' + promo.tagType">{{ promo.tag }}</span>
+                  <h3 class="pz-card-title">{{ promo.name }}</h3>
+                  <div class="pz-card-date">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    {{ promo.startDate }} ～ {{ promo.endDate }}
+                  </div>
+                  <p class="pz-card-desc">消費滿 NT${{ promo.minSpend }} 可選贈品</p>
+                  <span class="pz-card-more">查看詳情 →</span>
+                </div>
+                <!-- 右側：圖片 -->
+                <div class="pz-card-img-wrap">
+                  <img
+                    [src]="promo.image"
+                    [alt]="promo.name"
+                    class="pz-card-img"
+                    width="320"
+                    height="160"
+                  />
+                </div>
+              </div>
+            }
+          </div>
+
+          <div style="height:88px;"></div>
+        </section>
+
+        <!-- Detail Modal (centered) -->
+        @if (selectedPromoDetail) {
+          <div class="pz-overlay" (click)="closePromoDetail()">
+            <div class="pz-sheet" [ngClass]="'pzst-' + selectedPromoDetail.tagType" (click)="$event.stopPropagation()">
+              <!-- Header: 全寬圖片 + 漸層疊加 -->
+              <div class="pz-sheet-header">
+                <img
+                  [src]="selectedPromoDetail.image"
+                  [alt]="selectedPromoDetail.name"
+                  class="pz-sheet-img"
+                  width="560"
+                  height="200"
+                />
+                <div class="pz-sheet-header-body">
+                  <span class="pz-sheet-tag" [ngClass]="'pzt-' + selectedPromoDetail.tagType">{{ selectedPromoDetail.tag }}</span>
+                  <h2 class="pz-sheet-header-name">{{ selectedPromoDetail.name }}</h2>
+                </div>
+                <button class="pz-sheet-close" (click)="closePromoDetail()" aria-label="關閉">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Scrollable content -->
+              <div class="pz-sheet-content">
+                <!-- Date row -->
+                <div class="pz-sheet-date">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  <span>{{ selectedPromoDetail.startDate }}</span>
+                  <span class="pz-date-sep">—</span>
+                  <span>{{ selectedPromoDetail.endDate }}</span>
+                </div>
+
+                <!-- Spend threshold -->
+                <div class="pz-sheet-spend">
+                  消費滿 <strong>NT${{ selectedPromoDetail.minSpend }}</strong> 即可參加
+                </div>
+
+                <!-- Description -->
+                <p class="pz-sheet-desc">{{ selectedPromoDetail.description }}</p>
+
+                <!-- Highlights -->
+                <div class="pz-sheet-section">
+                  <h4 class="pz-sheet-section-title">活動說明</h4>
+                  <ul class="pz-highlight-list">
+                    @for (h of selectedPromoDetail.highlights; track h) {
+                      <li class="pz-highlight-item">{{ h }}</li>
+                    }
+                  </ul>
+                </div>
+
+                <!-- Gifts -->
+                <div class="pz-sheet-section">
+                  <h4 class="pz-sheet-section-title">可選贈品</h4>
+                  <div class="pz-gift-list">
+                    @for (gift of selectedPromoDetail.gifts; track gift) {
+                      <div class="pz-gift-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;">
+                          <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                          <rect x="2" y="7" width="20" height="5"></rect>
+                          <line x1="12" y1="22" x2="12" y2="7"></line>
+                          <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                          <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                        </svg>
+                        {{ gift }}
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- CTA -->
+                <button class="pz-sheet-cta" (click)="closePromoDetail(); setTab('menu')">
+                  立即前往點餐
+                </button>
+              </div>
+            </div>
+          </div>
+        }
       }
     </main>
 
@@ -2062,6 +2967,17 @@
               <polyline points="10 9 9 9 8 9"></polyline>
             </svg>
           }
+          @if (tab.icon === "promotions") {
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+              <line x1="7" y1="7" x2="7.01" y2="7" />
+            </svg>
+          }
 
           <span class="ch-nav-label">{{ tab.label }}</span>
         </button>
@@ -2069,3 +2985,196 @@
     </nav>
   </div>
 </div>
+
+<!-- ═══════════════════════════════════════════════════════════
+   行動支付 Modal（模擬手機掃碼後的付款畫面）
+   ─ 點擊遮罩關閉（僅在未完成付款時）
+═══════════════════════════════════════════════════════════ -->
+@if (showMobilePayModal()) {
+  <div class="mobile-pay-overlay" (click)="!mobilePayCompleted() && closeMobilePayModal()">
+    <div class="mobile-phone-frame" (click)="$event.stopPropagation()">
+      <!-- 手機頂部瀏海 -->
+      <div class="phone-notch"></div>
+
+      <div class="phone-screen">
+        @if (!mobilePayCompleted()) {
+          <!-- ── 訂單確認畫面 ── -->
+          <div class="mp-screen-header">
+            <div class="mp-screen-brand">🍚 懶飽飽 Lazy BaoBao</div>
+            <div class="mp-screen-subtitle">行動支付確認</div>
+          </div>
+
+          <div class="mp-screen-amount">
+            <span class="mp-screen-amount-label">付款金額</span>
+            <span class="mp-screen-amount-value">NT$ {{ discountedTotal() }}</span>
+          </div>
+
+          <div class="mp-screen-divider"></div>
+
+          <div class="mp-screen-items">
+            <p class="mp-screen-items-title">訂單明細</p>
+            @for (item of cartItems(); track item.id) {
+              <div class="mp-screen-item">
+                <span class="mp-screen-item-name">{{ item.name }} × {{ item.quantity }}</span>
+                <span class="mp-screen-item-price">NT$ {{ item.price * item.quantity }}</span>
+              </div>
+            }
+            @if (selectedPromoGift() && selectedPromoName() !== '不參加活動優惠') {
+              <div class="mp-screen-item mp-screen-item-gift">
+                <span class="mp-screen-item-name">🎁 {{ selectedPromoGift() }}</span>
+                <span class="mp-screen-item-price">NT$ 0</span>
+              </div>
+            }
+            @if (useDiscountCoupon()) {
+              <div class="mp-screen-item mp-screen-item-discount">
+                <span class="mp-screen-item-name">折扣券（8 折）</span>
+                <span class="mp-screen-item-price">－ NT$ {{ discountAmount() }}</span>
+              </div>
+            }
+          </div>
+
+          <div class="mp-screen-total">
+            <span>合計</span>
+            <span class="mp-screen-total-amt">NT$ {{ discountedTotal() }}</span>
+          </div>
+
+          <button class="mp-confirm-pay-btn" (click)="completeMobilePayment()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            確認付款
+          </button>
+          <button class="mp-cancel-btn" (click)="closeMobilePayModal()">取消</button>
+
+        } @else {
+          <!-- ── 付款成功動畫 ── -->
+          <div class="mp-success-screen">
+            <div class="mp-success-ripple"></div>
+            <div class="mp-success-circle">
+              <svg class="mp-success-check" viewBox="0 0 52 52" fill="none">
+                <circle cx="26" cy="26" r="25" stroke="#fff" stroke-width="2" fill="none"/>
+                <polyline class="mp-check-stroke" points="14,27 22,35 38,18" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              </svg>
+            </div>
+            <p class="mp-success-title">付款成功！</p>
+            <p class="mp-success-amount">NT$ {{ discountedTotal() }}</p>
+            <p class="mp-success-msg">訂單正在備餐中，感謝您使用懶飽飽</p>
+          </div>
+        }
+      </div>
+
+      <!-- 手機底部 Home 指示線 -->
+      <div class="phone-home-bar"></div>
+    </div>
+  </div>
+}
+
+<!-- ═══════════════════════════════════════════════════════════
+   退款申請 Modal
+   點擊遮罩層關閉；stopPropagation 防止點 Dialog 內部觸發關閉
+═══════════════════════════════════════════════════════════ -->
+@if (refundModalOpen()) {
+  <div class="refund-overlay" (click)="closeRefundModal()">
+    <div class="refund-dialog" (click)="$event.stopPropagation()">
+
+      <!-- 成功送出畫面 -->
+      @if (refundSubmitted()) {
+        <div class="refund-success">
+          <div class="refund-success-icon">
+            <svg viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="22" stroke="#27AE60" stroke-width="2.5"/>
+              <path d="M14 24l7 7 13-14" stroke="#27AE60" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <p class="refund-success-title">申請已送出</p>
+          <p class="refund-success-sub">我們將盡快為您處理退款，請稍候。</p>
+        </div>
+      }
+
+      <!-- 申請表單 -->
+      @if (!refundSubmitted()) {
+
+        <!-- 標題列 -->
+        <div class="refund-header">
+          <div class="refund-title-wrap">
+            <svg class="refund-title-icon" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z" stroke="#D95C1A" stroke-width="1.8"/>
+              <path d="M12 8v5" stroke="#D95C1A" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="12" cy="16" r="1" fill="#D95C1A"/>
+            </svg>
+            <span class="refund-title">申請退款</span>
+          </div>
+          <div class="refund-order-id">{{ refundTargetOrder()?.id }}</div>
+          <button class="refund-close-btn" (click)="closeRefundModal()">
+            <svg viewBox="0 0 20 20" fill="none">
+              <path d="M5 5l10 10M15 5l-10 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- 副標 -->
+        <p class="refund-subtitle">請選擇退款原因（可複選）</p>
+
+        <!-- 勾選原因清單 -->
+        <div class="refund-reasons">
+          @for (reason of refundReasons(); track reason.id) {
+            <label
+              class="refund-reason-item"
+              [class.is-checked]="reason.checked"
+              (click)="toggleRefundReason(reason.id)"
+            >
+              <span class="refund-checkbox" [class.checked]="reason.checked">
+                @if (reason.checked) {
+                  <svg viewBox="0 0 14 14" fill="none">
+                    <path d="M2.5 7l3.5 3.5 5.5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                }
+              </span>
+              <span class="refund-reason-label">{{ reason.label }}</span>
+            </label>
+          }
+        </div>
+
+        <!-- 其他問題文字輸入框 -->
+        <div class="refund-other-wrap">
+          <label class="refund-other-label">其他問題</label>
+          <textarea
+            class="refund-other-input"
+            placeholder="請描述您遇到的問題（選填）…"
+            rows="3"
+            [value]="refundOtherText()"
+            (input)="updateRefundOther($any($event.target).value)"
+          ></textarea>
+        </div>
+
+        <!-- 操作按鈕列 -->
+        <div class="refund-actions">
+          <button class="refund-cancel-btn" (click)="closeRefundModal()">
+            取消申請退款
+          </button>
+          <button
+            class="refund-submit-btn"
+            [class.disabled]="!hasRefundSelection()"
+            [disabled]="!hasRefundSelection()"
+            (click)="submitRefund()"
+          >
+            送出申請退款
+          </button>
+        </div>
+
+      }
+    </div>
+  </div>
+}
+
+<!-- ── Session 過期重登入 Modal ─────────────────────── -->
+@if (authService.sessionExpired()) {
+  <div class="session-expired-overlay" (click)="goToLogin()">
+    <div class="session-expired-modal" (click)="$event.stopPropagation()">
+      <div class="session-expired-icon">⏱️</div>
+      <h3 class="session-expired-title">登入已過期</h3>
+      <p class="session-expired-desc">您的登入狀態已逾時，請重新登入後繼續操作。</p>
+      <button class="session-expired-btn" (click)="goToLogin()">重新登入</button>
+    </div>
+  </div>
+}

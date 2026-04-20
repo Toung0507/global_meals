@@ -17,13 +17,14 @@
  * =====================================================
  */
 
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Router } from '@angular/router';
 
 import { AuthService } from '../../shared/auth.service';
 import { LoadingService } from '../../shared/loading.service';
+import { BranchService, CountryCode, CountryConfig } from '../../shared/branch.service';
 
 @Component({
   selector: 'app-customer-login',
@@ -35,7 +36,7 @@ import { LoadingService } from '../../shared/loading.service';
   templateUrl: './customer-login.component.html',
   styleUrls: ['./customer-login.component.scss']
 })
-export class CustomerLoginComponent {
+export class CustomerLoginComponent implements OnInit {
 
   /*
    * 密碼是否可見：預設為 false（隱藏）
@@ -59,11 +60,23 @@ export class CustomerLoginComponent {
    *   authService    → 帳號驗證
    *   loadingService → Loading 動畫
    */
+  get allCountries(): CountryConfig[] { return this.branchService.allCountries; }
+  get activeCountry(): CountryCode { return this.branchService.country; }
+
   constructor(
     private router: Router,
     private authService: AuthService,
-    private loadingService: LoadingService
+    private loadingService: LoadingService,
+    private branchService: BranchService
   ) {}
+
+  ngOnInit(): void {
+    this.branchService.init();
+  }
+
+  selectCountry(code: CountryCode): void {
+    this.branchService.setCountry(code);
+  }
 
   /*
    * 切換密碼顯示 / 隱藏狀態

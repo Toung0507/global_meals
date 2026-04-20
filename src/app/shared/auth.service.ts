@@ -21,7 +21,9 @@
  * =====================================================
  */
 
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
+import { Observable, tap } from 'rxjs';
+import { ApiService, LoginMembersReq, LoginStaffReq, MembersRes, StaffSearchRes } from './api.service';
 
 
 /* ── 使用者帳號的資料結構定義 ──────────────────────────
@@ -29,7 +31,7 @@ import { Injectable } from '@angular/core';
 ──────────────────────────────────────────────────── */
 export interface MockUser {
   id: number;
-  role: string;       /* 身分類型：'customer' | 'staff' | 'branch_manager' | 'boss' | 'guest' */
+  role: string;       /* 身分類型：'customer' | 'staff' | 'branch_manager' | 'deputy_manager' | 'boss' | 'guest' */
   name: string;       /* 顯示名稱 */
   phone: string;      /* 手機號碼 */
   email: string;      /* 電子郵件 */
@@ -63,12 +65,24 @@ const MOCK_USERS: MockUser[] = [
     phone: '0912-345-678',
     email: 'test@lazybao.com',
     password: 'test1234'
+    /*
+     * ── Demo 信用卡資料（付款頁面流程演示用，非真實卡號）──
+     *   卡號：4532 1234 5678 9012
+     *   到期日：12/28
+     *   CVV：123
+     *   持卡人：LAI PAO PAO（懶飽飽）
+     *   發卡行：懶飽飽虛擬銀行（Demo Only）
+     *
+     *   ⚠ 以上均為假資料，未來串接真實金流時請移除此區塊
+     *      並改用後端加密傳輸（如 TLS + tokenization）
+     * ────────────────────────────────────────────────────── */
   },
   /*
    * ── 管理系統測試帳號（未來串接後端後全部移除）──
-   *   老闆：admin@lazybao.com   / admin1234
-   *   分店長：manager@lazybao.com / mgr1234
-   *   員工：staff@lazybao.com  / staff1234
+   *   老闆：   admin@lazybao.com   / admin1234
+   *   分店長： manager@lazybao.com / mgr1234
+   *   副店長： deputy@lazybao.com  / deputy1234
+   *   員工：   staff@lazybao.com  / staff1234
    */
   {
     id: 2,
@@ -85,6 +99,14 @@ const MOCK_USERS: MockUser[] = [
     phone: '0900-000-002',
     email: 'manager@lazybao.com',
     password: 'mgr1234'
+  },
+  {
+    id: 5,
+    role: 'deputy_manager',
+    name: '李副店長',
+    phone: '0900-000-004',
+    email: 'deputy@lazybao.com',
+    password: 'deputy1234'
   },
   {
     id: 4,
@@ -158,10 +180,27 @@ const MOCK_ORDERS: MockOrder[] = [
 ];
 
 
+/* ── 員工資料結構（串接後端後使用）──────────────────── */
+export interface StaffUser {
+  id: number;
+  role: string;   /* ADMIN / REGION_MANAGER / MANAGER_AGENT / STAFF */
+  name: string;
+  account: string;
+  globalAreaId: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
+
+  /* 目前登入中的員工（後端 Session 驗證後儲存）*/
+  currentStaff: StaffUser | null = (() => {
+    try {
+      const saved = sessionStorage.getItem('currentStaff');
+      return saved ? JSON.parse(saved) as StaffUser : null;
+    } catch { return null; }
+  })();
 
   /*
    * 目前登入中的使用者
@@ -175,6 +214,17 @@ export class AuthService {
    * ⚠ TODO [API串接點]：串接後端後改為驗證 JWT token，
    *   不再使用 sessionStorage 儲存使用者物件
    */
+  /* 目前登入中的客戶（MockUser 保留向後相容，真實登入資料存 currentMember）*/
+  currentMember: MembersRes | null = (() => {
+    try {
+      const saved = sessionStorage.getItem('currentMember');
+      return saved ? JSON.parse(saved) as MembersRes : null;
+    } catch { return null; }
+  })();
+
+  /** true 時代表後端 Session 已過期，顯示重登入 Modal */
+  sessionExpired = signal<boolean>(false);
+
   currentUser: MockUser | null = (() => {
     try {
       const saved = sessionStorage.getItem('currentUser');
@@ -185,29 +235,85 @@ export class AuthService {
   })();
 
 
-  /*
-   * ── 登入驗證（暫時版本）──────────────────────────
-   * 參數 account：可以是手機號碼或電子郵件
-   * 參數 password：密碼（暫時明文）
-   * 回傳 boolean：true = 驗證成功，false = 帳號或密碼錯誤
-   *
-   * 未來替換方式：
-   *   return this.http.post<{token: string, user: User}>('/api/auth/login', { account, password })
+  constructor(private apiService: ApiService) {}
+
+  /* ── 會員登入（真實後端版本）───────────────────────
+   * 呼叫後端 POST members/login，由後端 Session 管理狀態
+   * 回傳 Observable<MembersRes>，讓元件訂閱並處理結果
+   * ────────────────────────────────────────────────── */
+  loginMember(phone: string, password: string): Observable<MembersRes> {
+    const req: LoginMembersReq = { phone, password };
+    return this.apiService.memberLogin(req).pipe(
+      tap(res => {
+        if (res.code === 200) {
+          this.currentMember = res;
+          sessionStorage.setItem('currentMember', JSON.stringify(res));
+          // 同步更新 currentUser 以維持向後相容（舊元件讀 currentUser）
+          if (res.memberId) {
+            this.currentUser = {
+              id: res.memberId,
+              role: 'customer',
+              name: res.name ?? '',
+              phone: res.phone ?? phone,
+              email: '',
+              password: ''
+            };
+            sessionStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+          }
+        }
+      })
+    );
+  }
+
+  /* ── 員工登入（真實後端版本）───────────────────────
+   * 呼叫後端 POST api/auth/login，由後端 Session 管理狀態
+   * 回傳 Observable<StaffSearchRes>，讓元件訂閱並處理結果
+   * ────────────────────────────────────────────────── */
+  loginStaffApi(account: string, password: string): Observable<StaffSearchRes> {
+    const req: LoginStaffReq = { account, password };
+    return this.apiService.staffLogin(req).pipe(
+      tap(res => {
+        if (res.code === 200 && res.staffList && res.staffList.length > 0) {
+          const staff = res.staffList[0];
+          const staffUser: StaffUser = {
+            id: staff.id,
+            role: staff.role,
+            name: staff.name,
+            account: staff.account,
+            globalAreaId: staff.globalAreaId
+          };
+          this.currentStaff = staffUser;
+          sessionStorage.setItem('currentStaff', JSON.stringify(staffUser));
+          // 同步更新 currentUser 讓舊元件讀到
+          this.currentUser = {
+            id: staff.id,
+            role: this.mapStaffRole(staff.role),
+            name: staff.name,
+            phone: '',
+            email: staff.account,
+            password: ''
+          };
+          sessionStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+        }
+      })
+    );
+  }
+
+  /* 將後端 role 字串轉換為前端舊版 role 字串（向後相容）*/
+  private mapStaffRole(backendRole: string): string {
+    const map: Record<string, string> = {
+      'ADMIN': 'boss',
+      'REGION_MANAGER': 'branch_manager',
+      'MANAGER_AGENT': 'deputy_manager',
+      'STAFF': 'staff'
+    };
+    return map[backendRole] ?? 'staff';
+  }
+
+  /* ── 登入驗證（Mock 版本，保留向後相容）──────────────
+   * ⚠ 此方法保留給尚未完成後端串接的頁面使用
    * ────────────────────────────────────────────────── */
   login(account: string, password: string): boolean {
-
-    // ⚠ TODO [API串接點 - 客戶登入]：將以下 Mock 邏輯替換為 HTTP 呼叫：
-    // import { API_CONFIG } from './api.config';
-    // return this.http.post<{token: string, user: MockUser}>(
-    //   `${API_CONFIG.BASE_URL}/api/${API_CONFIG.VERSION}${API_CONFIG.ENDPOINTS.AUTH.LOGIN}`,
-    //   { account, password }
-    // ).pipe(
-    //   tap(response => { this.currentUser = response.user; }),
-    //   map(() => true),
-    //   catchError(() => of(false))
-    // );
-
-    /* Array.find() 在陣列中尋找第一個符合條件的項目 */
     const found = MOCK_USERS.find(function(user) {
       return (user.email === account || user.phone === account)
           && user.password === password;
@@ -223,41 +329,43 @@ export class AuthService {
   }
 
 
-  /*
-   * ── 登出 ─────────────────────────────────────────
-   * 清除目前登入的使用者，回到未驗證狀態
-   * 未來替換：同時呼叫後端 /api/auth/logout 讓 token 失效
+  /* ── 登出（清除所有 Session 狀態）─────────────────
+   * 同時呼叫後端 logout，清除 Server-side Session
    * ─────────────────────────────────────────────────*/
   logout(): void {
     this.currentUser = null;
+    this.currentMember = null;
+    this.currentStaff = null;
     sessionStorage.removeItem('currentUser');
+    sessionStorage.removeItem('currentMember');
+    sessionStorage.removeItem('currentStaff');
+    this.apiService.staffLogout().subscribe({ error: () => {} });
+  }
+
+  /** 後端 Session 過期（401）時由 HttpInterceptor 呼叫 */
+  handleSessionExpired(): void {
+    this.currentUser = null;
+    this.currentMember = null;
+    sessionStorage.removeItem('currentUser');
+    sessionStorage.removeItem('currentMember');
+    this.sessionExpired.set(true);
+  }
+
+  /** 重登入 Modal 關閉或登入成功後呼叫 */
+  clearSessionExpired(): void {
+    this.sessionExpired.set(false);
   }
 
 
-  /*
-   * ── 管理人員登入（暫時版本）──────────────────────────
-   * 只允許 role 為 boss / branch_manager / staff 的帳號
-   * 回傳 MockUser | null：成功時回傳使用者物件，失敗時回傳 null
-   * 未來替換：HttpClient POST /api/auth/staff-login
+  /* ── 管理人員登入（Mock 版本，保留向後相容）────────────
+   * ⚠ 此方法保留給 staff-login 元件過渡期使用
+   *   已新增 loginStaffApi() 方法供正式串接後端使用
    * ─────────────────────────────────────────────────*/
   staffLogin(email: string, password: string): MockUser | null {
-
-    // ⚠ TODO [API串接點 - 管理員登入]：將以下 Mock 邏輯替換為 HTTP 呼叫：
-    // import { API_CONFIG } from './api.config';
-    // return this.http.post<{token: string, user: MockUser}>(
-    //   `${API_CONFIG.BASE_URL}/api/${API_CONFIG.VERSION}${API_CONFIG.ENDPOINTS.AUTH.LOGIN}`,
-    //   { email, password }
-    // ).pipe(
-    //   tap(response => { this.currentUser = response.user; }),
-    //   map(response => response.user),
-    //   catchError(() => of(null))
-    // );
-
-    /* Array.find() 尋找 email 與 password 都符合的管理帳號 */
     const found = MOCK_USERS.find(function(user) {
       return user.email === email
           && user.password === password
-          && (user.role === 'boss' || user.role === 'branch_manager' || user.role === 'staff');
+          && (user.role === 'boss' || user.role === 'branch_manager' || user.role === 'deputy_manager' || user.role === 'staff');
     });
 
     if (found) {

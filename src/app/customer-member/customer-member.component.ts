@@ -47,7 +47,6 @@ export class CustomerMemberComponent implements OnInit {
   editName: string = '';
   editPhone: string = '';
   editPassword: string = '';    /* 留空代表不修改密碼 */
-  showEditPassword: boolean = false;
 
   /* 儲存成功提示訊息（顯示 2 秒後自動消失） */
   saveSuccess: boolean = false;

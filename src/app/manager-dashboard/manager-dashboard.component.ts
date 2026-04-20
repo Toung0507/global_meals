@@ -23,9 +23,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '../shared/auth.service';
+import { ApiService, GlobalAreaVO, RegionVO, PromotionDetailVo, ProductVO, BranchInventoryVO } from '../shared/api.service';
 
 /* ── 側邊欄頁籤型別 ─────────────────────────────────── */
-export type DashTab = 'dashboard' | 'orders' | 'products' | 'promotions' | 'inventory' | 'users' | 'tax' | 'finance';
+export type DashTab = 'dashboard' | 'orders' | 'products' | 'promotions' | 'inventory' | 'users' | 'tax' | 'finance' | 'branches';
 
 /* ── 帳號管理子頁籤型別 ─────────────────────────────── */
 export type UserSubTab = 'bm' | 'staff';
@@ -50,11 +51,21 @@ interface DashPromo {
   isActive: boolean;
   color: string;
   ended: boolean;
+  rawName: string;       /* API 原始名稱，toggle 時帶回後端（@NotBlank 需要）*/
+  rawStartTime: string;  /* YYYY-MM-DD，toggle 時帶回後端（@NotNull 需要）*/
+  rawEndTime: string;    /* YYYY-MM-DD，toggle 時帶回後端（@NotNull 需要）*/
+  type: 'promotion' | 'announcement';
+  description?: string;
+  image?: string;
+  badgeColor?: string;
+  minAmount?: number;
 }
 
 /* ── 庫存型別 ──────────────────────────────────────── */
 interface DashInventory {
   id: number;
+  productId: number;
+  globalAreaId: number;
   name: string;
   category: string;
   branch: string;
@@ -69,18 +80,32 @@ interface DashAccount {
   account: string;
   branch?: string;
   shift?: string;
-  lastLogin: string;
+  joinedAt: string;
   isActive: boolean;
   role: 'bm' | 'staff';
+  country?: string;
+}
+
+/* ── 分店型別（對應 global_area 資料表）───────────── */
+interface DashBranch {
+  id: number;
+  name: string;      /* 完整分店名稱，例：台灣台北店 (= branch) */
+  city: string;      /* 城市，例：台北 */
+  country: string;   /* 國家，例：台灣（顯示用） */
+  regionsId: number; /* 對應 Regions 表 id（API 用） */
+  address: string;   /* 地址 */
+  phone: string;     /* 電話 */
 }
 
 /* ── 稅率型別 ──────────────────────────────────────── */
 interface DashTax {
   id: number;
-  flag: string;
   country: string;
-  branch: string;
+  countryCode: string; /* 國別代碼，例 TW / JP / KR */
+  currency: string;    /* 幣別代碼，例 TWD / JPY / KRW */
+  taxType: string;     /* 'INCLUSIVE'（內含稅）| 'EXCLUSIVE'（外加稅） */
   rate: number;
+  discountLimit?: number; /* 折扣上限金額（當地幣別） */
   editing: boolean;
   editValue: number;
 }
@@ -108,20 +133,22 @@ interface DashOrder {
 export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 頁籤狀態 ──────────────────────────────────── */
-  activeTab    = signal<DashTab>('dashboard');
+  /* 預設頁籤改為分店管理（綜合總覽等5個功能暫時停用） */
+  activeTab    = signal<DashTab>('branches');
   userSubTab   = signal<UserSubTab>('bm');
   clockStr     = signal('');
 
   /* ── 頁籤標題 ──────────────────────────────────── */
   readonly TAB_TITLES: Record<DashTab, string> = {
     dashboard:  '📊 綜合總覽',
-    orders:     '📋 訂單管理',
+    orders:     '📋 我的訂單',
     products:   '🛍️ 商品管理',
     promotions: '🎯 活動管理',
     inventory:  '📦 庫存管理',
     users:      '👥 帳號管理',
-    tax:        '🌍 稅率設定',
-    finance:    '💰 財務報表'
+    tax:        '🌍 國家基本設定',
+    finance:    '💰 財務報表',
+    branches:   '🏪 分店管理'
   };
 
   /* ── 商品清單（Signal） ─────────────────────────── */
@@ -136,19 +163,31 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 活動清單（Signal） ─────────────────────────── */
   promos = signal<DashPromo[]>([
-    { id: 1, title: '🎁 滿 $300 贈招牌滷蛋×2', scope: '全部分店 · 期限：無限期',      isActive: true,  color: '#c49756', ended: false },
-    { id: 2, title: '🍱 週一 9 折優惠',          scope: '日本東京店 · 期限：2026-06-30', isActive: true,  color: '#4f8ef7', ended: false },
-    { id: 3, title: '🥤 加購飲品 $29',            scope: '泰國曼谷店 · 期限：2026-05-01', isActive: true,  color: '#3ecf8e', ended: false },
-    { id: 4, title: '🎊 週年慶全館 8 折',         scope: '全部分店 · 已結束',             isActive: false, color: 'rgba(255,255,255,0.15)', ended: true },
+    { id: 1, title: '滿 $300 贈招牌滷蛋×2',  scope: '全部分店',    isActive: true,  color: '#c49756', ended: false, rawName: '滿 $300 贈招牌滷蛋×2',  rawStartTime: '2026-01-01', rawEndTime: '2099-12-31', type: 'promotion',    description: '消費滿 $300 即贈招牌滷蛋兩顆，無使用期限。', badgeColor: '#c49756', minAmount: 300 },
+    { id: 2, title: '週一 9 折優惠',          scope: '日本東京店',  isActive: true,  color: '#4f8ef7', ended: false, rawName: '週一 9 折優惠',          rawStartTime: '2026-01-01', rawEndTime: '2026-06-30', type: 'promotion',    description: '每週一全品項享 9 折優惠，適用於東京店。',     badgeColor: '#4f8ef7', minAmount: undefined },
+    { id: 3, title: '夏季新菜單上線公告',      scope: '全部分店',    isActive: true,  color: '#c084fc', ended: false, rawName: '夏季新菜單上線公告',      rawStartTime: '2026-04-01', rawEndTime: '2026-06-30', type: 'announcement', description: '2026 夏季菜單已正式上線，新增 6 款季節限定料理。', badgeColor: '#c084fc', minAmount: undefined },
+    { id: 4, title: '週年慶全館 8 折',         scope: '全部分店',    isActive: false, color: '#6b7280', ended: true,  rawName: '週年慶全館 8 折',         rawStartTime: '2025-01-01', rawEndTime: '2025-12-31', type: 'promotion',    description: '週年慶期間全館商品享 8 折，活動已結束。',     badgeColor: '#6b7280', minAmount: undefined },
   ]);
+
+  /* ── 活動分類篩選 Tab ────────────────────────────── */
+  promoTypeTab = signal<'all' | 'promotion' | 'announcement'>('all');
+
+  filteredPromos = computed(() => {
+    const tab = this.promoTypeTab();
+    if (tab === 'all') return this.promos();
+    return this.promos().filter(p => p.type === tab);
+  });
+
+  promoPromotionCount = computed(() => this.promos().filter(p => p.type === 'promotion').length);
+  promoAnnouncementCount = computed(() => this.promos().filter(p => p.type === 'announcement').length);
 
   /* ── 庫存清單（Signal） ─────────────────────────── */
   inventory = signal<DashInventory[]>([
-    { id: 1, name: '紅燒牛肉麵',   category: '台式', branch: '台北店', stock: 48, safeStock: 10 },
-    { id: 2, name: '越南牛肉河粉', category: '南洋', branch: '曼谷店', stock: 5,  safeStock: 10 },
-    { id: 3, name: '義式肉醬寬麵', category: '西式', branch: '東京店', stock: 0,  safeStock: 10 },
-    { id: 4, name: '印度奶油咖哩飯', category: '南洋', branch: '台北店', stock: 32, safeStock: 10 },
-    { id: 5, name: '珍珠奶茶',     category: '飲品', branch: '全部分店', stock: 120, safeStock: 30 },
+    { id: 1, productId: 1, globalAreaId: 1, name: '紅燒牛肉麵',    category: '台式', branch: '台北店',   stock: 48,  safeStock: 10 },
+    { id: 2, productId: 3, globalAreaId: 2, name: '越南牛肉河粉',  category: '南洋', branch: '曼谷店',   stock: 5,   safeStock: 10 },
+    { id: 3, productId: 4, globalAreaId: 3, name: '義式肉醬寬麵',  category: '西式', branch: '東京店',   stock: 0,   safeStock: 10 },
+    { id: 4, productId: 2, globalAreaId: 1, name: '印度奶油咖哩飯',category: '南洋', branch: '台北店',   stock: 32,  safeStock: 10 },
+    { id: 5, productId: 6, globalAreaId: 1, name: '珍珠奶茶',      category: '飲品', branch: '全部分店', stock: 120, safeStock: 30 },
   ]);
 
   /* 庫存調整狀態 */
@@ -158,12 +197,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 帳號清單（Signal） ─────────────────────────── */
   accounts = signal<DashAccount[]>([
-    { id: 1, name: '陳美玲',     account: 'chen.ml',  branch: '台灣台北店', lastLogin: '2026-04-01 09:12', isActive: true,  role: 'bm' },
-    { id: 2, name: '田中一郎',   account: 'tanaka.i', branch: '日本東京店', lastLogin: '2026-04-01 08:55', isActive: true,  role: 'bm' },
-    { id: 3, name: 'Somchai P.', account: 'somchai.p', branch: '泰國曼谷店', lastLogin: '2026-03-30 14:20', isActive: false, role: 'bm' },
-    { id: 4, name: '王小明',     account: 'wang.xm',  shift: '早班', lastLogin: '今日 09:00', isActive: true,  role: 'staff', branch: '台北店' },
-    { id: 5, name: '李佳靜',     account: 'lee.jj',   shift: '晚班', lastLogin: '昨日 17:00', isActive: true,  role: 'staff', branch: '台北店' },
-    { id: 6, name: 'Yuki T.',    account: 'yuki.t',   shift: '全天', lastLogin: '今日 10:30', isActive: true,  role: 'staff', branch: '東京店' },
+    { id: 1, name: '陳美玲',     account: 'chen.ml',   branch: '台灣台北店', joinedAt: '2024-03-15', isActive: true,  role: 'bm',    country: 'TW' },
+    { id: 2, name: '田中一郎',   account: 'tanaka.i',  branch: '日本東京店', joinedAt: '2024-06-01', isActive: true,  role: 'bm',    country: 'JP' },
+    { id: 3, name: 'Somchai P.', account: 'somchai.p', branch: '泰國曼谷店', joinedAt: '2024-09-20', isActive: false, role: 'bm',    country: 'TH' },
+    { id: 4, name: '王小明',     account: 'wang.xm',   shift: '早班',        joinedAt: '2025-01-10', isActive: true,  role: 'staff', branch: '台北店', country: 'TW' },
+    { id: 5, name: '李佳靜',     account: 'lee.jj',    shift: '晚班',        joinedAt: '2025-03-22', isActive: true,  role: 'staff', branch: '台北店', country: 'TW' },
+    { id: 6, name: 'Yuki T.',    account: 'yuki.t',    shift: '全天',        joinedAt: '2025-07-08', isActive: true,  role: 'staff', branch: '東京店', country: 'JP' },
   ]);
 
   bmAccounts    = computed(() => this.accounts().filter(a => a.role === 'bm'));
@@ -171,10 +210,13 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 稅率清單（Signal） ─────────────────────────── */
   taxes = signal<DashTax[]>([
-    { id: 1, flag: '🇹🇼', country: '台灣', branch: '台灣台北店', rate: 5,  editing: false, editValue: 5  },
-    { id: 2, flag: '🇯🇵', country: '日本', branch: '日本東京店', rate: 10, editing: false, editValue: 10 },
-    { id: 3, flag: '🇹🇭', country: '泰國', branch: '泰國曼谷店', rate: 7,  editing: false, editValue: 7  },
+    { id: 1, country: '台灣', countryCode: 'TW', currency: 'TWD', taxType: 'INCLUSIVE', rate: 5,  discountLimit: 200,   editing: false, editValue: 5  },
+    { id: 2, country: '日本', countryCode: 'JP', currency: 'JPY', taxType: 'INCLUSIVE', rate: 10, discountLimit: 1000,  editing: false, editValue: 10 },
+    { id: 3, country: '韓國', countryCode: 'KR', currency: 'KRW', taxType: 'EXCLUSIVE', rate: 10, discountLimit: 10000, editing: false, editValue: 10 },
   ]);
+
+  /* ── 國家設定子頁籤 ──────────────────────────────── */
+  taxSubTab = signal<'tax' | 'discount'>('tax');
 
   /* ── 商品篩選 ─────────────────────────────────── */
   productCategoryFilter = signal<string>('全部分類');
@@ -207,18 +249,30 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   financeOrders  = signal<number>(0);
   financeAvgPrice = signal<number>(0);
 
+  /* ── 分店清單（Signal，對應 global_area 資料表）─── */
+  branches = signal<DashBranch[]>([
+    { id: 1, name: '台灣台北店', city: '台北', country: '台灣', regionsId: 1, address: '台北市中山區南京東路一段 88 號', phone: '02-2345-6789' },
+    { id: 2, name: '日本東京店', city: '東京', country: '日本', regionsId: 2, address: '東京都新宿区新宿3-10-1',          phone: '+81-3-1234-5678' },
+    { id: 3, name: '泰國曼谷店', city: '曼谷', country: '泰國', regionsId: 3, address: '101 Sukhumvit Rd, Bangkok',       phone: '+66-2-987-6543' },
+  ]);
+
   /* ── Modal 狀態 ─────────────────────────────────────── */
-  activeModal       = signal<'orderDetail' | 'addProduct' | 'addPromo' | 'addAccount' | 'addCountry' | null>(null);
+  activeModal       = signal<'orderDetail' | 'addProduct' | 'addPromo' | 'addGift' | 'addAccount' | 'addCountry' | 'addBranch' | 'editBranch' | null>(null);
   selectedOrder     = signal<DashOrder | null>(null);
   editingAccountId  = signal<number | null>(null);
   editingProductId  = signal<number | null>(null);
 
   /* ── 表單草稿（普通屬性，開啟 modal 時重置） ─────────── */
   productDraft = { name: '', category: '台式', price: 165, stock: 0, emoji: '🍜' };
-  promoDraft   = { title: '', scope: '全部分店 · 期限：無限期', color: '#c49756' };
-  accountDraft: { name: string; account: string; branch: string; shift: string; role: 'bm' | 'staff'; isActive: boolean } =
-    { name: '', account: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true };
-  taxDraft = { flag: '🇹🇼', country: '', branch: '', rate: 5 };
+  promoDraft   = { name: '', type: 'promotion' as 'promotion' | 'announcement', description: '', startTime: '', endTime: '', color: '#c49756', badgeColor: '#c49756', minAmount: null as number | null, image: '', currency: 'NT$' };
+  showPromoPanel = signal(false);
+  giftDraft    = { promoId: 0, rawName: '', rawStartTime: '', rawEndTime: '', fullAmount: 300, giftProductId: null as number | null, quantity: -1 };
+  accountDraft: { name: string; account: string; password: string; branch: string; shift: string; role: 'bm' | 'staff'; isActive: boolean; country: string } =
+    { name: '', account: '', password: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true, country: 'TW' };
+  taxDraft: { country: string; countryCode: string; currency: string; taxType: 'INCLUSIVE' | 'EXCLUSIVE'; rate: number; effectiveDate: string; discountLimit: number } =
+    { country: '', countryCode: '', currency: '', taxType: 'INCLUSIVE', rate: 5, effectiveDate: '', discountLimit: 0 };
+  branchDraft     = { regionsId: 0, city: '', address: '', phone: '' };
+  editBranchDraft = { id: 0, regionsId: 0, city: '', address: '', phone: '' };
 
   showToast(msg: string): void {
     /* 清除所有計時器，重置離場狀態 */
@@ -281,10 +335,10 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   filteredOrders = computed(() => {
     return this.allOrders().filter(o => {
-      const branchMap: Record<string, string> = { '台北': '台北', '東京': '東京', '曼谷': '曼谷' };
       const bf = this.orderFilterBranch();
       const sf = this.orderFilterStatus();
-      const branchOk = bf === 'all' || o.branch === branchMap[bf];
+      /* 以完整分店名稱包含簡稱來比對（例：'台灣台北店'.includes('台北')） */
+      const branchOk = bf === 'all' || bf.includes(o.branch);
       const statusOk = sf === 'all' || o.statusLabel === sf;
       return branchOk && statusOk;
     });
@@ -295,7 +349,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    public authService: AuthService
+    public authService: AuthService,
+    private apiService: ApiService,
   ) {}
 
   ngOnInit(): void {
@@ -306,12 +361,142 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     }
     this.updateClock();
     this.clockInterval = setInterval(() => this.updateClock(), 1000);
+    this.loadBranches();
+    this.loadTaxes();
+    this.loadPromos();
+    this.loadProducts();
+    this.loadInventory();
   }
 
   ngOnDestroy(): void {
     if (this.clockInterval    !== null) clearInterval(this.clockInterval);
     if (this.toastTimer       !== null) clearTimeout(this.toastTimer);
     if (this.toastLeaveTimer  !== null) clearTimeout(this.toastLeaveTimer);
+  }
+
+  /* ── 國家 → 旗幟 Emoji 對照 ─────────────────────── */
+  private countryToFlag(country: string): string {
+    const map: Record<string, string> = {
+      '台灣': '🇹🇼', '日本': '🇯🇵', '泰國': '🇹🇭', '韓國': '🇰🇷',
+      '美國': '🇺🇸', '英國': '🇬🇧', '法國': '🇫🇷', '德國': '🇩🇪',
+      '中國': '🇨🇳', '印度': '🇮🇳', '澳洲': '🇦🇺', '加拿大': '🇨🇦',
+      '新加坡': '🇸🇬', '馬來西亞': '🇲🇾', '印尼': '🇮🇩', '越南': '🇻🇳',
+    };
+    return map[country] ?? '🏳️';
+  }
+
+  /* ── 從後端重新載入分店清單 ──────────────────────── */
+  private loadBranches(): void {
+    this.apiService.getAllBranches().subscribe({
+      next: (res) => {
+        if (res?.globalAreaList?.length) {
+          this.branches.set(res.globalAreaList.map((b: GlobalAreaVO) => ({
+            id: b.id, name: b.branch, city: '',
+            country: b.country, regionsId: b.regionsId ?? 0,
+            address: b.address, phone: b.phone
+          })));
+        }
+        /* 若後端回傳空清單，保留 mock 初始值供 Demo 使用 */
+      },
+      error: () => console.warn('[Manager] 分店 API 連線失敗，使用 Demo 資料')
+    });
+  }
+
+  /* ── 從後端重新載入稅率清單 ──────────────────────── */
+  private loadTaxes(): void {
+    this.apiService.getAllTax().subscribe({
+      next: (res) => {
+        if (res?.regionsList?.length) {
+          this.taxes.set(res.regionsList.map((r: RegionVO) => ({
+            id:          r.id,
+            country:     r.country,
+            countryCode: '',
+            currency:    r.currencyCode,
+            taxType:     r.taxType ?? 'INCLUSIVE',
+            rate:        +(+r.taxRate * 100).toFixed(2),
+            editing:     false,
+            editValue:   +(+r.taxRate * 100).toFixed(2)
+          })));
+        }
+      },
+      error: () => console.warn('[Manager] 稅率 API 連線失敗，使用 Demo 資料')
+    });
+  }
+
+  /* ── 從後端重新載入促銷活動清單 ─────────────────── */
+  private loadPromos(): void {
+    this.apiService.getPromotionsList().subscribe({
+      next: (res) => {
+        if (res?.data?.length) {
+          this.promos.set(res.data.map((p: PromotionDetailVo) => ({
+            id: p.id,
+            title: p.name + (p.gifts?.length ? `（${p.gifts.length} 項贈品）` : ''),
+            scope: `${p.startTime} ～ ${p.endTime}`,
+            isActive: p.active,
+            color: p.active ? '#c49756' : 'rgba(255,255,255,0.18)',
+            ended: !!p.endTime && new Date(p.endTime) < new Date(),
+            rawName:      p.name,
+            rawStartTime: p.startTime,
+            rawEndTime:   p.endTime,
+            type:         'promotion' as const,
+          })));
+        }
+      },
+      error: () => console.warn('[Manager] 活動 API 連線失敗，使用 Demo 資料')
+    });
+  }
+
+  /* ── 從後端載入商品清單 ──────────────────────────── */
+  private loadProducts(globalAreaId = 1): void {
+    this.apiService.getAllProducts(globalAreaId).subscribe({
+      next: (res) => {
+        if (res?.products?.length) {
+          const emojiMap: Record<string, string> = {
+            '台式': '🍜', '南洋': '🍛', '西式': '🍝', '飲品': '🧋'
+          };
+          const bgMap: Record<string, string> = {
+            '台式': 'linear-gradient(135deg,#c49756,#8b5e3c)',
+            '南洋': 'linear-gradient(135deg,#f59e0b,#d97706)',
+            '西式': 'linear-gradient(135deg,#818cf8,#6366f1)',
+            '飲品': 'linear-gradient(135deg,#06b6d4,#0891b2)',
+          };
+          this.products.set(res.products.map((p: ProductVO) => ({
+            id:       p.id,
+            name:     p.name,
+            category: p.category,
+            price:    p.basePrice,
+            stock:    p.stockQuantity,
+            isActive: p.active,
+            emoji:    emojiMap[p.category] ?? '🍽️',
+            emojiBg:  bgMap[p.category]   ?? 'linear-gradient(135deg,#6b7280,#374151)',
+          })));
+        }
+        /* 若後端回空清單，保留 mock 初始值供 Demo 使用 */
+      },
+      error: () => console.warn('[Manager] 商品 API 連線失敗，使用 Demo 資料')
+    });
+  }
+
+  /* ── 從後端載入庫存清單 ──────────────────────────── */
+  private loadInventory(globalAreaId = 1): void {
+    this.apiService.getBranchInventory(globalAreaId).subscribe({
+      next: (res) => {
+        if (res?.inventory?.length) {
+          this.inventory.set(res.inventory.map((inv: BranchInventoryVO) => ({
+            id:           inv.id,
+            productId:    inv.productId,
+            globalAreaId: inv.globalAreaId,
+            name:         inv.productName,
+            category:     inv.category,
+            branch:       `分店 ${inv.globalAreaId}`,
+            stock:        inv.stockQuantity,
+            safeStock:    10,
+          })));
+        }
+        /* 若後端回空清單，保留 mock 初始值供 Demo 使用 */
+      },
+      error: () => console.warn('[Manager] 庫存 API 連線失敗，使用 Demo 資料')
+    });
   }
 
   private updateClock(): void {
@@ -349,16 +534,102 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 商品：上/下架切換 ─────────────────────────── */
   toggleProduct(id: number): void {
+    const p = this.products().find(x => x.id === id);
+    if (!p) return;
+    const newActive = !p.isActive;
+    /* 樂觀更新 UI */
     this.products.update(list =>
-      list.map(p => p.id === id ? { ...p, isActive: !p.isActive } : p)
+      list.map(x => x.id === id ? { ...x, isActive: newActive } : x)
     );
+    this.apiService.toggleProduct({ id, active: newActive }).subscribe({
+      next: () => this.loadProducts(),
+      error: () => {
+        /* 失敗時還原 */
+        this.products.update(list =>
+          list.map(x => x.id === id ? { ...x, isActive: !newActive } : x)
+        );
+        this.showToast('⚠️ 切換上下架失敗，請重試');
+      }
+    });
+  }
+
+  /* ── 今日日期（YYYY-MM-DD），供活動開始日期 [min] 使用 ── */
+  today(): string {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  /* ── 活動：刪除 ─────────────────────────────────── */
+  deletePromo(id: number): void {
+    const promo = this.promos().find(p => p.id === id);
+    if (!promo) return;
+    if (!confirm(`確定刪除活動「${promo.rawName}」？此操作無法復原。`)) return;
+    this.promos.update(list => list.filter(p => p.id !== id));
+    this.showToast(`🗑️ 活動「${promo.rawName}」已刪除`);
   }
 
   /* ── 活動：啟用/停用切換 ─────────────────────────── */
   togglePromo(id: number): void {
+    const current = this.promos().find(p => p.id === id);
+    if (!current || current.ended) return;
+    const newActive = !current.isActive;
+    /* 樂觀更新 UI */
     this.promos.update(list =>
-      list.map(p => p.id === id && !p.ended ? { ...p, isActive: !p.isActive } : p)
+      list.map(p => p.id === id ? { ...p, isActive: newActive, color: newActive ? '#c49756' : 'rgba(255,255,255,0.18)' } : p)
     );
+    this.apiService.togglePromotion({
+      name:      current.rawName,
+      startTime: current.rawStartTime,
+      endTime:   current.rawEndTime,
+      promotionsId: id,
+      active:    newActive
+    }).subscribe({
+      next: () => this.showToast(newActive ? '✅ 活動已啟用' : '⏸️ 活動已暫停'),
+      error: () => {
+        /* API 失敗時還原 */
+        this.promos.update(list =>
+          list.map(p => p.id === id ? { ...p, isActive: !newActive, color: !newActive ? '#c49756' : 'rgba(255,255,255,0.18)' } : p)
+        );
+        this.showToast('❌ 切換失敗，請確認後端連線');
+      }
+    });
+  }
+
+  /* ── 活動：新增贈品規則 ─────────────────────────── */
+  openAddGift(promoId: number): void {
+    const promo = this.promos().find(p => p.id === promoId);
+    if (!promo) return;
+    this.giftDraft = {
+      promoId,
+      rawName:      promo.rawName,
+      rawStartTime: promo.rawStartTime,
+      rawEndTime:   promo.rawEndTime,
+      fullAmount:   300,
+      giftProductId: null,
+      quantity:     -1,
+    };
+    this.activeModal.set('addGift');
+  }
+
+  saveGift(): void {
+    if (this.giftDraft.giftProductId == null || this.giftDraft.giftProductId < 1) { this.showToast('⚠️ 請輸入贈品商品 ID（需大於 0）'); return; }
+    if (this.giftDraft.fullAmount <= 0) { this.showToast('⚠️ 滿額門檻需大於 0'); return; }
+    const d = this.giftDraft;
+    this.apiService.addGift({
+      name:         d.rawName,
+      startTime:    d.rawStartTime,
+      endTime:      d.rawEndTime,
+      promotionsId: d.promoId,
+      fullAmount:   d.fullAmount,
+      giftProductId: d.giftProductId!,
+      quantity:     d.quantity,
+    }).subscribe({
+      next: () => {
+        this.loadPromos();
+        this.closeModal();
+        this.showToast('✅ 贈品規則已新增');
+      },
+      error: () => this.showToast('❌ 新增失敗，請確認後端連線'),
+    });
   }
 
   /* ── 庫存：inline 調整 ─────────────────────────── */
@@ -382,12 +653,23 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     const id  = this.adjustingInventoryId();
     const amt = this.adjustInventoryAmt();
     if (id === null) return;
+    const item = this.inventory().find(i => i.id === id);
     this.inventory.update(list =>
       list.map(i => i.id === id ? { ...i, stock: amt } : i)
     );
     this.adjustingInventoryId.set(null);
     this.adjustInventorySavedId.set(id);
     setTimeout(() => this.adjustInventorySavedId.set(null), 1800);
+    if (item) {
+      this.apiService.updateBranchInventory({
+        productId:    item.productId,
+        globalAreaId: item.globalAreaId,
+        stockQuantity: amt,
+      }).subscribe({
+        next:  () => this.loadInventory(),
+        error: () => this.showToast('⚠️ 庫存更新失敗，本地已儲存'),
+      });
+    }
   }
 
   /* ── 帳號：停/復權 ─────────────────────────────── */
@@ -414,9 +696,28 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   }
 
   saveTax(id: number): void {
+    /* 先樂觀更新 UI */
     this.taxes.update(list =>
       list.map(t => t.id === id ? { ...t, rate: t.editValue, editing: false } : t)
     );
+    const target = this.taxes().find(t => t.id === id);
+    if (!target) return;
+    /* 同步至後端（currencyCode 以國家查詢，或以 TWD 作預設） */
+    const currencyMap: Record<string, string> = {
+      '台灣': 'TWD', '日本': 'JPY', '泰國': 'THB', '韓國': 'KRW',
+      '美國': 'USD', '英國': 'GBP', '法國': 'EUR', '德國': 'EUR',
+      '新加坡': 'SGD', '馬來西亞': 'MYR', '印尼': 'IDR', '越南': 'VND',
+    };
+    this.apiService.updateRegion({
+      id: target.id,
+      country: target.country,
+      currencyCode: target.currency || currencyMap[target.country] || 'USD',
+      taxRate: target.editValue / 100,
+      taxType: target.taxType as 'INCLUSIVE' | 'EXCLUSIVE'
+    }).subscribe({
+      next: () => this.showToast('稅率已同步至後端'),
+      error: () => this.showToast('稅率已更新，後端同步失敗（請確認連線）')
+    });
   }
 
   cancelEditTax(id: number): void {
@@ -491,6 +792,10 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       } : p));
       this.closeModal();
       this.showToast(`✅ 商品「${savedName}」已更新`);
+      this.apiService.updateProduct({ id: editId, name: this.productDraft.name, category: this.productDraft.category }).subscribe({
+        next: () => this.loadProducts(),
+        error: () => this.showToast('⚠️ 後端更新失敗，本地已儲存')
+      });
     } else {
       /* 新增商品 */
       const ids = this.products().map(p => p.id);
@@ -507,36 +812,87 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       }]);
       this.closeModal();
       this.showToast(`✅ 商品「${savedName}」已新增`);
+      this.apiService.createProduct({
+        name: this.productDraft.name,
+        category: this.productDraft.category,
+        globalAreaId: 1,
+        basePrice: this.productDraft.price,
+        stockQuantity: this.productDraft.stock,
+      }).subscribe({
+        next: () => this.loadProducts(),
+        error: () => this.showToast('⚠️ 後端新增失敗，本地已儲存')
+      });
     }
   }
 
-  /* ── 新增活動 Modal ─────────────────────────────────── */
+  /* ── 新增活動 Slide-in Panel ───────────────────────── */
   openAddPromo(): void {
-    this.promoDraft = { title: '', scope: '全部分店 · 期限：無限期', color: '#c49756' };
-    this.activeModal.set('addPromo');
+    this.promoDraft = { name: '', type: 'promotion', description: '', startTime: '', endTime: '', color: '#c49756', badgeColor: '#c49756', minAmount: null, image: '', currency: 'NT$' };
+    this.showPromoPanel.set(true);
+  }
+
+  closePromoPanel(): void {
+    this.showPromoPanel.set(false);
+  }
+
+  onPromoBadgeColorPick(color: string): void {
+    this.promoDraft.badgeColor = color;
+    this.promoDraft.color = color;
+  }
+
+  onPromoImageChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    const reader = new FileReader();
+    reader.onload = (e) => { this.promoDraft.image = e.target?.result as string; };
+    reader.readAsDataURL(input.files[0]);
   }
 
   savePromo(): void {
-    if (!this.promoDraft.title.trim()) { this.showToast('⚠️ 請輸入活動標題'); return; }
-    const ids = this.promos().map(p => p.id);
-    const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
-    const savedTitle = this.promoDraft.title;
-    this.promos.update(list => [...list, {
-      id: newId,
-      title: this.promoDraft.title,
-      scope: this.promoDraft.scope,
-      isActive: true,
-      color: this.promoDraft.color,
-      ended: false
-    }]);
-    this.closeModal();
-    this.showToast(`✅ 活動「${savedTitle}」已新增`);
+    if (!this.promoDraft.name.trim()) { this.showToast('請輸入活動名稱'); return; }
+    if (!this.promoDraft.startTime || !this.promoDraft.endTime) {
+      this.showToast('請填寫活動開始與結束日期'); return;
+    }
+    const saved = { ...this.promoDraft };
+    this.apiService.createPromotion({
+      name: saved.name.trim(),
+      startTime: saved.startTime,
+      endTime: saved.endTime
+    }).subscribe({
+      next: () => {
+        this.loadPromos();
+        this.closePromoPanel();
+        this.showToast(`活動「${saved.name.trim()}」已新增`);
+      },
+      error: () => {
+        const ids = this.promos().map(p => p.id);
+        const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+        this.promos.update(list => [...list, {
+          id: newId,
+          title: saved.name.trim(),
+          scope: `${saved.startTime} ～ ${saved.endTime}`,
+          isActive: true,
+          color: saved.badgeColor || '#c49756',
+          ended: false,
+          rawName:      saved.name.trim(),
+          rawStartTime: saved.startTime,
+          rawEndTime:   saved.endTime,
+          type:         saved.type,
+          description:  saved.description,
+          image:        saved.image,
+          badgeColor:   saved.badgeColor,
+          minAmount:    saved.minAmount ?? undefined,
+        }]);
+        this.closePromoPanel();
+        this.showToast(`後端暫不可用，已本地新增「${saved.name.trim()}」`);
+      }
+    });
   }
 
   /* ── 新增 / 編輯帳號 Modal ─────────────────────────── */
   openAddAccount(): void {
     this.editingAccountId.set(null);
-    this.accountDraft = { name: '', account: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true };
+    this.accountDraft = { name: '', account: '', password: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true, country: 'TW' };
     this.activeModal.set('addAccount');
   }
 
@@ -547,10 +903,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.accountDraft = {
       name: acc.name,
       account: acc.account,
+      password: '',
       branch: acc.branch ?? '台灣台北店',
       shift: acc.shift ?? '早班',
       role: acc.role,
-      isActive: acc.isActive
+      isActive: acc.isActive,
+      country: acc.country ?? 'TW'
     };
     this.activeModal.set('addAccount');
   }
@@ -558,6 +916,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   saveAccount(): void {
     if (!this.accountDraft.name.trim() || !this.accountDraft.account.trim()) {
       this.showToast('⚠️ 姓名與帳號為必填'); return;
+    }
+    if (this.editingAccountId() === null && !this.accountDraft.password.trim()) {
+      this.showToast('⚠️ 新增帳號時密碼為必填'); return;
     }
     const editId = this.editingAccountId();
     const savedName = this.accountDraft.name;
@@ -569,22 +930,25 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         branch: this.accountDraft.branch,
         shift: this.accountDraft.role === 'staff' ? this.accountDraft.shift : undefined,
         role: this.accountDraft.role,
-        isActive: this.accountDraft.isActive
+        isActive: this.accountDraft.isActive,
+        country: this.accountDraft.country
       } : a));
       this.closeModal();
       this.showToast(`✅ 帳號「${savedName}」已更新`);
     } else {
       const ids = this.accounts().map(a => a.id);
       const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+      const today = new Date().toISOString().slice(0, 10);
       this.accounts.update(list => [...list, {
         id: newId,
         name: this.accountDraft.name,
         account: this.accountDraft.account,
         branch: this.accountDraft.branch,
         shift: this.accountDraft.role === 'staff' ? this.accountDraft.shift : undefined,
-        lastLogin: '從未登入',
+        joinedAt: today,
         isActive: this.accountDraft.isActive,
-        role: this.accountDraft.role
+        role: this.accountDraft.role,
+        country: this.accountDraft.country
       }]);
       this.closeModal();
       this.showToast(`✅ 帳號「${savedName}」已新增`);
@@ -593,26 +957,50 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 新增國家稅率 Modal ─────────────────────────────── */
   openAddCountry(): void {
-    this.taxDraft = { flag: '🏳️', country: '', branch: '', rate: 5 };
+    this.taxDraft = { country: '', countryCode: '', currency: '', taxType: 'INCLUSIVE', rate: 5, effectiveDate: '', discountLimit: 0 };
     this.activeModal.set('addCountry');
   }
 
   saveCountry(): void {
-    if (!this.taxDraft.country.trim()) { this.showToast('⚠️ 請輸入國家名稱'); return; }
-    const ids = this.taxes().map(t => t.id);
-    const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+    if (!this.taxDraft.country.trim()) { this.showToast('請輸入國家／地區名稱'); return; }
     const saved = { ...this.taxDraft };
-    this.taxes.update(list => [...list, {
-      id: newId,
-      flag: saved.flag,
-      country: saved.country,
-      branch: saved.branch || `${saved.country}分店`,
-      rate: saved.rate,
-      editing: false,
-      editValue: saved.rate
-    }]);
-    this.closeModal();
-    this.showToast(`✅ 已新增 ${saved.flag} ${saved.country} 稅率 ${saved.rate}%`);
+    const currencyMap: Record<string, string> = {
+      '台灣': 'TWD', '日本': 'JPY', '泰國': 'THB', '韓國': 'KRW',
+      '美國': 'USD', '英國': 'GBP', '法國': 'EUR', '德國': 'EUR',
+      '新加坡': 'SGD', '馬來西亞': 'MYR', '印尼': 'IDR', '越南': 'VND',
+    };
+    const resolvedCurrency = saved.currency.trim() || currencyMap[saved.country.trim()] || 'USD';
+    const taxTypeLabel = saved.taxType === 'INCLUSIVE' ? '內含稅' : '外加稅';
+    this.apiService.createRegion({
+      country: saved.country.trim(),
+      currencyCode: resolvedCurrency,
+      taxRate: saved.rate / 100,
+      taxType: saved.taxType as 'INCLUSIVE' | 'EXCLUSIVE'
+    }).subscribe({
+      next: () => {
+        this.loadTaxes();
+        this.closeModal();
+        this.showToast(`已新增 ${saved.country}（${resolvedCurrency}）${taxTypeLabel} ${saved.rate}%`);
+      },
+      error: () => {
+        /* API 失敗時降級為本地更新 */
+        const ids = this.taxes().map(t => t.id);
+        const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+        this.taxes.update(list => [...list, {
+          id: newId,
+          country: saved.country,
+          countryCode: saved.countryCode.trim().toUpperCase(),
+          currency: resolvedCurrency,
+          taxType: saved.taxType,
+          rate: saved.rate,
+          discountLimit: saved.discountLimit || undefined,
+          editing: false,
+          editValue: saved.rate
+        }]);
+        this.closeModal();
+        this.showToast(`後端暫不可用，已本地新增 ${saved.country}（${resolvedCurrency}）`);
+      }
+    });
   }
 
   /* ── 財務報表：匯出 CSV（isExporting spinner 保護）── */
@@ -641,13 +1029,113 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     }, 600);
   }
 
+  /* ── 分店：輔助 — 依 regionsId 查國家名稱 ────────── */
+  getBranchCountryName(regionsId: number): string {
+    return this.taxes().find(t => t.id === regionsId)?.country ?? '';
+  }
+
+  /* ── 分店：新增 Modal ─────────────────────────────── */
+  openAddBranch(): void {
+    this.branchDraft = { regionsId: 0, city: '', address: '', phone: '' };
+    this.activeModal.set('addBranch');
+  }
+
+  saveBranch(): void {
+    if (!this.branchDraft.regionsId || !this.branchDraft.city.trim()) {
+      this.showToast('⚠️ 請選擇國家與城市'); return;
+    }
+    const saved = { ...this.branchDraft };
+    const countryName = this.getBranchCountryName(saved.regionsId);
+    const autoName    = `${countryName}${saved.city.trim()}店`;
+    this.apiService.createBranch({
+      regionsId: saved.regionsId,
+      branch:    autoName,
+      address:   saved.address.trim(),
+      phone:     saved.phone.trim(),
+    }).subscribe({
+      next: () => {
+        this.loadBranches();
+        this.closeModal();
+        this.showToast(`✅ 分店「${autoName}」已新增`);
+      },
+      error: () => {
+        const ids   = this.branches().map(b => b.id);
+        const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+        this.branches.update(list => [...list, {
+          id: newId, name: autoName, city: saved.city.trim(),
+          country: countryName, regionsId: saved.regionsId,
+          address: saved.address.trim(), phone: saved.phone.trim(),
+        }]);
+        this.closeModal();
+        this.showToast(`⚠️ 後端暫不可用，僅本地新增分店「${autoName}」`);
+      },
+    });
+  }
+
+  /* ── 分店：編輯 Modal ─────────────────────────────── */
+  openEditBranch(id: number): void {
+    const b = this.branches().find(x => x.id === id);
+    if (!b) return;
+    this.editBranchDraft = { id: b.id, regionsId: b.regionsId, city: b.city, address: b.address, phone: b.phone };
+    this.activeModal.set('editBranch');
+  }
+
+  saveEditBranch(): void {
+    if (!this.editBranchDraft.regionsId || !this.editBranchDraft.city.trim()) {
+      this.showToast('⚠️ 請選擇國家與城市'); return;
+    }
+    const saved       = { ...this.editBranchDraft };
+    const countryName = this.getBranchCountryName(saved.regionsId);
+    const autoName    = `${countryName}${saved.city.trim()}店`;
+    this.apiService.updateBranch({
+      id:        saved.id,
+      regionsId: saved.regionsId,
+      branch:    autoName,
+      address:   saved.address.trim(),
+      phone:     saved.phone.trim(),
+    }).subscribe({
+      next: () => {
+        this.loadBranches();
+        this.closeModal();
+        this.showToast(`✅ 分店「${autoName}」已更新`);
+      },
+      error: () => {
+        this.branches.update(list =>
+          list.map(b => b.id === saved.id ? {
+            ...b, name: autoName, city: saved.city.trim(),
+            country: countryName, regionsId: saved.regionsId,
+            address: saved.address.trim(), phone: saved.phone.trim(),
+          } : b)
+        );
+        this.closeModal();
+        this.showToast(`⚠️ 後端暫不可用，僅本地更新分店「${autoName}」`);
+      },
+    });
+  }
+
+  /* ── 分店：刪除 ───────────────────────────────────── */
+  deleteBranch(id: number): void {
+    const b = this.branches().find(x => x.id === id);
+    if (!b) return;
+    if (!confirm(`確定刪除分店「${b.name}」？此操作無法復原。`)) return;
+    this.apiService.deleteBranch({ globalAreaIdList: [id] }).subscribe({
+      next: () => {
+        this.branches.update(list => list.filter(x => x.id !== id));
+        this.showToast(`🗑️ 分店「${b.name}」已刪除`);
+      },
+      error: () => {
+        /* API 失敗時降級為本地刪除 */
+        this.branches.update(list => list.filter(x => x.id !== id));
+        this.showToast(`⚠️ 後端暫不可用，僅本地移除分店「${b.name}」`);
+      }
+    });
+  }
+
   /* ── 訂單篩選 ─────────────────────────────────── */
   onBranchFilter(event: Event): void {
     const val = (event.target as HTMLSelectElement).value;
-    const map: Record<string, string> = {
-      '全部分店': 'all', '台灣台北店': '台北', '日本東京店': '東京', '泰國曼谷店': '曼谷'
-    };
-    this.orderFilterBranch.set(map[val] ?? 'all');
+    /* '全部分店' → 'all'；其餘直接使用完整分店名稱供 filteredOrders 比對 */
+    this.orderFilterBranch.set(val === '全部分店' ? 'all' : val);
   }
 
   onStatusFilter(event: Event): void {

@@ -89,41 +89,60 @@
       <!-- 必填欄位說明 -->
       <p class="c-required-hint">* 以下欄位均為必填</p>
 
-      <!-- 會員名稱輸入欄位（對應 members.name） -->
+      <!-- 會員名稱 -->
       <div class="c-field">
         <label>會員名稱 <span class="c-required-mark">*</span></label>
         <input
           type="text"
+          [(ngModel)]="name"
+          name="name"
           placeholder="請輸入您的名稱"
           autocomplete="name"
           maxlength="50"
+          [class.c-input-error]="nameError"
+          (input)="clearError('name')"
         />
+        @if (nameError) {
+          <div class="c-error-msg">✗ 請輸入會員名稱</div>
+        }
       </div>
 
-      <!-- 手機號碼輸入欄位（對應 members.phone，作為唯一登入 ID） -->
+      <!-- 手機號碼：國碼前置 + 號碼輸入框 -->
       <div class="c-field">
         <label>手機號碼 <span class="c-required-mark">*</span></label>
-        <input
-          type="tel"
-          placeholder="請輸入手機號碼（作為登入帳號）"
-          autocomplete="tel"
-          maxlength="15"
-        />
+        <div class="c-phone-wrap" [class.c-input-error]="phoneError">
+          <span class="c-dial-badge">{{ dialLabel }}</span>
+          <span class="c-phone-sep">|</span>
+          <input
+            type="tel"
+            class="c-phone-input"
+            [(ngModel)]="phone"
+            name="phone"
+            placeholder="請輸入電話號碼（含區碼）"
+            autocomplete="tel"
+            maxlength="15"
+            (input)="clearError('phone')"
+          />
+        </div>
+        @if (phoneError) {
+          <div class="c-error-msg">✗ {{ phoneErrorMsg }}</div>
+        }
       </div>
 
-      <!-- 密碼輸入欄位（對應 members.password，儲存時會以 bcrypt 加密） -->
+      <!-- 密碼輸入欄位 -->
       <div class="c-field">
         <label>密碼 <span class="c-required-mark">*</span></label>
 
-        <!-- c-password-wrap：相對定位容器，讓眼睛按鈕可以貼在右側 -->
-        <div class="c-password-wrap">
+        <div class="c-password-wrap" [class.c-input-error]="passwordError">
           <input
             [type]="showPassword ? 'text' : 'password'"
-            placeholder="請設定密碼"
+            [(ngModel)]="password"
+            name="password"
+            placeholder="請設定密碼（至少 6 位）"
             autocomplete="new-password"
+            (input)="clearError('password')"
           />
 
-          <!-- 眼睛切換按鈕 -->
           <button
             type="button"
             class="c-eye-btn"
@@ -131,7 +150,6 @@
             (click)="togglePassword()"
             [attr.aria-label]="showPassword ? '隱藏密碼' : '顯示密碼'"
           >
-            <!-- 眼睛「睜開」圖示 -->
             @if (!showPassword) {
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                    fill="none" stroke="currentColor"
@@ -140,7 +158,6 @@
                 <circle cx="12" cy="12" r="3"/>
               </svg>
             }
-            <!-- 眼睛「閉上」圖示 -->
             @if (showPassword) {
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                    fill="none" stroke="currentColor"
@@ -153,20 +170,25 @@
             }
           </button>
         </div>
+        @if (passwordError) {
+          <div class="c-error-msg">✗ 密碼至少需要 6 個字元</div>
+        }
       </div>
 
-      <!-- 確認密碼欄位（前端驗證用，不送入資料庫） -->
+      <!-- 確認密碼欄位 -->
       <div class="c-field">
         <label>確認密碼 <span class="c-required-mark">*</span></label>
 
-        <div class="c-password-wrap">
+        <div class="c-password-wrap" [class.c-input-error]="confirmError">
           <input
             [type]="showConfirmPassword ? 'text' : 'password'"
+            [(ngModel)]="confirmPassword"
+            name="confirmPassword"
             placeholder="請再次輸入密碼"
             autocomplete="new-password"
+            (input)="clearError('confirm')"
           />
 
-          <!-- 眼睛切換按鈕（確認密碼） -->
           <button
             type="button"
             class="c-eye-btn"
@@ -194,11 +216,18 @@
             }
           </button>
         </div>
+        @if (confirmError) {
+          <div class="c-error-msg">✗ 兩次輸入的密碼不一致</div>
+        }
       </div>
 
       <!-- 立即註冊按鈕 -->
-      <button class="c-register-submit-btn">
-        <span>🎉</span> 立即註冊，開始點餐
+      <button class="c-register-submit-btn" (click)="onRegister()">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16" aria-hidden="true">
+          <path d="M12 5H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9"/>
+          <path d="M15 3l2 2-6 6H9v-2l6-6z"/>
+        </svg>
+        立即註冊，開始點餐
       </button>
 
       <!-- 返回登入連結 -->

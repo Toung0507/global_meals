@@ -590,6 +590,85 @@
 
 
 /* =====================================================
+   手機號碼欄位：國碼前置 + 號碼輸入框
+   ===================================================== */
+.c-phone-wrap {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: clamp(44px, 6vh, 52px);
+  border: 1.5px solid #F0D8B8;
+  border-radius: 12px;
+  background-color: #FFFDF8;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.c-phone-wrap:focus-within {
+  border-color: var(--c-primary, #D95C1A);
+  box-shadow: 0 0 0 3px rgba(217, 92, 26, 0.12);
+}
+
+.c-phone-wrap.c-input-error {
+  border-color: #E02424;
+  box-shadow: 0 0 0 3px rgba(224, 36, 36, 0.10);
+}
+
+.c-dial-badge {
+  flex-shrink: 0;
+  padding: 0 10px 0 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #D95C1A;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.c-phone-sep {
+  flex-shrink: 0;
+  color: #F0D8B8;
+  font-size: 1.1rem;
+  line-height: 1;
+  user-select: none;
+}
+
+.c-phone-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0 14px;
+  font-size: clamp(13px, 1.7vh, 15px);
+  color: #3D2010;
+  height: 100%;
+  font-family: inherit;
+}
+
+.c-phone-input::placeholder {
+  color: #C8A888;
+}
+
+/* 錯誤狀態下輸入框紅色邊框（適用於密碼 wrap） */
+.c-password-wrap.c-input-error input {
+  border-color: #E02424;
+}
+
+/* 錯誤訊息文字 */
+.c-error-msg {
+  font-size: 0.75rem;
+  color: #E02424;
+  margin-top: 4px;
+  padding-left: 4px;
+}
+
+/* 名稱輸入框錯誤狀態 */
+.c-input-error {
+  border-color: #E02424 !important;
+  box-shadow: 0 0 0 3px rgba(224, 36, 36, 0.10) !important;
+}
+
+
+/* =====================================================
    響應式設計：畫面寬度小於 860px 時
    隱藏左側品牌欄，讓右側表單佔滿全寬
    ===================================================== */
