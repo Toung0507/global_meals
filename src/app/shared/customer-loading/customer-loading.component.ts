@@ -19,13 +19,15 @@
  * =====================================================
  */
 
-import { Component, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, inject, computed } from '@angular/core';
 
 /* GSAP 動畫引擎 */
 import { gsap } from 'gsap';
 
 /* lottie-web：完整版播放器（renderer:'svg'），從 npm lottie-web 引入 */
 import lottie from 'lottie-web';
+
+import { BranchService } from '../branch.service';
 
 
 @Component({
@@ -36,6 +38,9 @@ import lottie from 'lottie-web';
   styleUrls: ['./customer-loading.component.scss']
 })
 export class CustomerLoadingComponent implements AfterViewInit {
+
+  private branchService = inject(BranchService);
+  lang = computed(() => this.branchService.lang());
 
   /* 全螢幕遮罩（GSAP 淡入用） */
   @ViewChild('overlay') overlay!: ElementRef;

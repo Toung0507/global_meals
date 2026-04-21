@@ -79,13 +79,13 @@
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
-              個人資料
+              {{ lang.profileTitle }}
             </div>
 
             <!-- 資訊網格 (模擬圖2排版) -->
             <div class="pr-grid">
               <div class="pr-row">
-                <span class="pr-label">會員名稱</span>
+                <span class="pr-label">{{ lang.nameLbl }}</span>
                 @if (isEditingProfile()) {
                   <input
                     type="text"
@@ -99,7 +99,7 @@
                 }
               </div>
               <div class="pr-row">
-                <span class="pr-label">手機號碼</span>
+                <span class="pr-label">{{ lang.phoneLbl }}</span>
                 @if (isEditingProfile()) {
                   <input
                     type="text"
@@ -113,29 +113,29 @@
                 }
               </div>
               <div class="pr-row">
-                <span class="pr-label">電子郵件</span>
+                <span class="pr-label">{{ lang.emailLbl }}</span>
                 @if (isEditingProfile()) {
                   <input
                     type="email"
                     class="pr-input"
                     [value]="authService.currentUser?.email || ''"
-                    placeholder="輸入Email"
+                    [placeholder]="lang.emailPlaceholder"
                   />
                 } @else {
                   <span class="pr-value">{{
-                    authService.currentUser?.email || "（未設定）"
+                    authService.currentUser?.email || lang.emailNotSet
                   }}</span>
                 }
               </div>
               <div class="pr-row">
-                <span class="pr-label">密碼</span>
+                <span class="pr-label">{{ lang.passwordLbl }}</span>
                 <div class="pr-input-group">
                   @if (isEditingProfile()) {
                     <input
                       [type]="showPassword() ? 'text' : 'password'"
                       class="pr-input"
                       value=""
-                      placeholder="輸入新密碼"
+                      [placeholder]="lang.newPwdPlaceholder"
                     />
                     <button
                       class="pr-eye-btn"
@@ -180,13 +180,13 @@
               <!-- 確認密碼 (僅編輯模式顯示) -->
               @if (isEditingProfile()) {
                 <div class="pr-row">
-                  <span class="pr-label">確認新密碼</span>
+                  <span class="pr-label">{{ lang.confirmPasswordLbl }}</span>
                   <div class="pr-input-group">
                     <input
                       [type]="showConfirmPassword() ? 'text' : 'password'"
                       class="pr-input"
                       value=""
-                      placeholder="再次輸入新密碼"
+                      [placeholder]="lang.confirmNewPwdPlaceholder"
                     />
                     <button
                       class="pr-eye-btn"
@@ -227,12 +227,12 @@
             <!-- 兌換券與訂餐狀態 (模擬圖3 DB) -->
             <div class="pr-database-status">
               <div class="pr-status-header">
-                <span class="pr-status-title">兌換券紀錄</span>
+                <span class="pr-status-title">{{ lang.couponTitle }}</span>
                 <span
                   class="pr-status-badge"
                   [class.ready]="hasDiscountReady()"
                 >
-                  {{ hasDiscountReady() ? "可使用" : "累積中" }}
+                  {{ hasDiscountReady() ? lang.couponReady : lang.couponAccum }}
                 </span>
               </div>
               <div class="pr-progress-bar">
@@ -243,13 +243,13 @@
               </div>
               <p class="pr-status-desc">
                 @if (hasDiscountReady()) {
-                  已點餐
+                  {{ lang.couponOrderedPre }}
                   <strong>{{ memberOrderCount() }}</strong>
-                  次，您獲得了折扣兌換券 !! 請於購物車結帳時使用。
+                  {{ lang.couponEarnedSuffix }}
                 } @else {
-                  已點餐 <strong>{{ memberOrderCount() }}</strong> 次，差
+                  {{ lang.couponOrderedPre }} <strong>{{ memberOrderCount() }}</strong> {{ lang.couponProgressMid }}
                   <strong class="highlight">{{ ordersUntilDiscount() }}</strong>
-                  次即可獲得折扣兌換券。
+                  {{ lang.couponProgressSuffix }}
                 }
               </p>
             </div>
@@ -274,7 +274,7 @@
                   <polyline points="17 21 17 13 7 13 7 21"></polyline>
                   <polyline points="7 3 7 8 15 8"></polyline>
                 </svg>
-                <span>儲存資料</span>
+                <span>{{ lang.saveProfile }}</span>
               } @else {
                 <svg
                   viewBox="0 0 24 24"
@@ -287,7 +287,7 @@
                     d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
                   />
                 </svg>
-                <span>修改資料</span>
+                <span>{{ lang.editProfile }}</span>
               }
             </button>
           </div>
@@ -311,7 +311,7 @@
 
     <!-- 分隔線 -->
     <div class="sidebar-divider">
-      <span>導覽功能</span>
+      <span>{{ lang.navDivider }}</span>
     </div>
 
     <!-- 導覽項目 -->
@@ -424,14 +424,14 @@
     <div class="sidebar-footer">
 
       <div class="sidebar-footer-info">
-        <span class="footer-tip">✦ 懶懶吃，飽飽樂 ✦</span>
+        <span class="footer-tip">{{ lang.footerTagline }}</span>
       </div>
       <!-- 登出 / 訪客升級按鈕 -->
       <button
         class="sidebar-logout"
         [class.guest-upgrade-btn]="isGuest()"
         (click)="logout()"
-        [attr.aria-label]="isGuest() ? '使用會員登入點餐' : '登出帳號'"
+        [attr.aria-label]="isGuest() ? lang.loginAsMember : lang.logout"
       >
         @if (isGuest()) {
           <svg
@@ -443,7 +443,7 @@
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
             <circle cx="12" cy="7" r="4" />
           </svg>
-          <span>使用會員登入點餐</span>
+          <span>{{ lang.loginAsMember }}</span>
         } @else {
           <svg
             viewBox="0 0 24 24"
@@ -455,7 +455,7 @@
             <polyline points="16 17 21 12 16 7" />
             <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
-          <span>登出帳號</span>
+          <span>{{ lang.logout }}</span>
         }
       </button>
     </div>
@@ -491,12 +491,12 @@
               <!-- ── 卡片 1：品牌形象 ── -->
               <div class="hc-slide hc-slide-brand">
                 <div class="hcs-left">
-                  <span class="hcs-tag">✦ 全球風味 • 一掌點餐 ✦</span>
+                  <span class="hcs-tag">{{ lang.heroSlide1Tag }}</span>
                   <h2 class="hcs-title">懶 飽 飽</h2>
                   <p class="hcs-en">Global Meals</p>
-                  <p class="hcs-desc">懶懶吃，飽飽樂 — 探索各地絕妙風味</p>
+                  <p class="hcs-desc">{{ lang.heroSlide1Desc }}</p>
                   <button class="hcs-btn" (click)="setTab('menu')">
-                    立即點餐 →
+                    {{ lang.orderNow }}
                   </button>
                 </div>
                 <div class="hcs-right">
@@ -513,13 +513,13 @@
               <!-- ── 卡片 2：滿額好禮 ── -->
               <div class="hc-slide hc-slide-promo">
                 <div class="hcs-left">
-                  <span class="hcs-tag hcs-tag-dark">🎁 期間限定</span>
-                  <h2 class="hcs-title hcs-title-dark">滿額送好禮</h2>
+                  <span class="hcs-tag hcs-tag-dark">{{ lang.limitedOffer }}</span>
+                  <h2 class="hcs-title hcs-title-dark">{{ lang.heroSlide2Title }}</h2>
                   <p class="hcs-desc hcs-desc-dark">
-                    消費滿 NT$300<br />贈招牌滷蛋 × 2
+                    {{ lang.heroSlide2DescPre }}{{ branchService.config.currency }}300<br />{{ lang.heroSlide2DescGift }}
                   </p>
                   <button class="hcs-btn hcs-btn-dark" (click)="setTab('menu')">
-                    前往點餐
+                    {{ lang.goOrder }}
                   </button>
                 </div>
                 <div class="hcs-right">
@@ -536,13 +536,13 @@
               <!-- ── 卡片 3：主廚推薦 ── -->
               <div class="hc-slide hc-slide-chef">
                 <div class="hcs-left">
-                  <span class="hcs-tag hcs-tag-light">今日精選</span>
-                  <h2 class="hcs-title">本週主廚推薦</h2>
+                  <span class="hcs-tag hcs-tag-light">{{ lang.todayPick }}</span>
+                  <h2 class="hcs-title">{{ lang.chefRec }}</h2>
                   <p class="hcs-desc">
-                    日式烤雞串<br />只要 NT$ <strong>145</strong>
+                    {{ lang.heroChefItemName }}<br />{{ lang.heroChefPricePre }}{{ branchService.config.currency }} <strong>145</strong>
                   </p>
                   <button class="hcs-btn" (click)="setTab('menu')">
-                    查看菜單
+                    {{ lang.viewMenu }}
                   </button>
                 </div>
                 <div class="hcs-right">
@@ -660,8 +660,8 @@
           <!-- 今日推薦 -->
           <div class="home-section">
             <div class="home-section-header">
-              <span class="section-tag">今日精選</span>
-              <h2 class="section-title">主廚推薦</h2>
+              <span class="section-tag">{{ lang.todayPick }}</span>
+              <h2 class="section-title">{{ lang.chefRec }}</h2>
             </div>
             <div class="home-featured-grid">
               <!-- 首頁大卡：招牌滷肉飯 -->
@@ -676,11 +676,9 @@
                   alt="招牌滷肉飯"
                 />
                 <div class="featured-info">
-                  <h3 class="featured-name">招牌滷肉飯</h3>
-                  <p class="featured-desc">
-                    慢燉豬五花，滷汁濃醇入味，配半熟滷蛋與爽脆泡菜
-                  </p>
-                  <span class="featured-price">NT$ <strong>120</strong></span>
+                  <h3 class="featured-name">{{ getLocalizedMenuName('招牌滷肉飯') }}</h3>
+                  <p class="featured-desc">{{ getLocalizedMenuDesc('招牌滷肉飯') }}</p>
+                  <span class="featured-price">{{ branchService.config.currency }} <strong>120</strong></span>
                 </div>
               </div>
               <!-- 首頁小卡：古早味排骨飯 -->
@@ -692,11 +690,9 @@
                   alt="古早味排骨飯"
                 />
                 <div class="featured-info">
-                  <h3 class="featured-name">古早味排骨飯</h3>
-                  <p class="featured-desc">
-                    台式醃製炸排骨，搭配滷汁菜頭與白飯
-                  </p>
-                  <span class="featured-price">NT$ <strong>145</strong></span>
+                  <h3 class="featured-name">{{ getLocalizedMenuName('古早味排骨飯') }}</h3>
+                  <p class="featured-desc">{{ getLocalizedMenuDesc('古早味排骨飯') }}</p>
+                  <span class="featured-price">{{ branchService.config.currency }} <strong>145</strong></span>
                 </div>
               </div>
               <!-- 首頁小卡：蚵仔麵線 -->
@@ -708,11 +704,9 @@
                   alt="蚵仔麵線"
                 />
                 <div class="featured-info">
-                  <h3 class="featured-name">蚵仔麵線</h3>
-                  <p class="featured-desc">
-                    鮮蚵燴入麵線，甜辣醬提味，道地夜市風味
-                  </p>
-                  <span class="featured-price">NT$ <strong>70</strong></span>
+                  <h3 class="featured-name">{{ getLocalizedMenuName('蚵仔麵線') }}</h3>
+                  <p class="featured-desc">{{ getLocalizedMenuDesc('蚵仔麵線') }}</p>
+                  <span class="featured-price">{{ branchService.config.currency }} <strong>70</strong></span>
                 </div>
               </div>
             </div>
@@ -737,8 +731,8 @@
                       <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
                     </svg>
                     <div class="promo-text">
-                      <strong>{{ promo.name }}・消費滿 NT${{ promo.minSpend }}</strong>
-                      <span>即贈 {{ promo.gifts[0] }}</span>
+                      <strong>{{ getLocalizedName(promo) }}・{{ lang.promoSpendPre }}{{ branchService.config.currency }}{{ promo.minSpend }}</strong>
+                      <span>{{ lang.promoGiftPrefix }}{{ getLocalizedGifts(promo)[0] }}</span>
                     </div>
                   </div>
                   <span class="promo-arrow">→</span>
@@ -757,8 +751,8 @@
           <!-- 今日優惠卡片列 -->
           <div class="home-section">
             <div class="home-section-header">
-              <span class="section-tag">限時特惠</span>
-              <h2 class="section-title">今日優惠</h2>
+              <span class="section-tag">{{ lang.limitedTimeOffer }}</span>
+              <h2 class="section-title">{{ lang.todayDeals }}</h2>
             </div>
 
             <!-- 橫向捲動優惠卡列（含右側箭頭按鈕） -->
@@ -774,10 +768,10 @@
                     />
                   </div>
                   <div class="deal-card-body">
-                    <p class="deal-name">阿三陽春麵</p>
+                    <p class="deal-name">{{ getLocalizedMenuName('阿三陽春麵') }}</p>
                     <div class="deal-prices">
-                      <span class="deal-original">NT$120</span>
-                      <span class="deal-sale">NT$<strong>99</strong></span>
+                      <span class="deal-original">{{ branchService.config.currency }}120</span>
+                      <span class="deal-sale">{{ branchService.config.currency }}<strong>99</strong></span>
                     </div>
                   </div>
                 </div>
@@ -792,10 +786,10 @@
                     />
                   </div>
                   <div class="deal-card-body">
-                    <p class="deal-name">蚵仔煎</p>
+                    <p class="deal-name">{{ getLocalizedMenuName('蚵仔煎') }}</p>
                     <div class="deal-prices">
-                      <span class="deal-original">NT$80</span>
-                      <span class="deal-sale">NT$<strong>65</strong></span>
+                      <span class="deal-original">{{ branchService.config.currency }}80</span>
+                      <span class="deal-sale">{{ branchService.config.currency }}<strong>65</strong></span>
                     </div>
                   </div>
                 </div>
@@ -810,10 +804,10 @@
                     />
                   </div>
                   <div class="deal-card-body">
-                    <p class="deal-name">黑糖珍珠奶茶</p>
+                    <p class="deal-name">{{ getLocalizedMenuName('黑糖珍珠奶茶') }}</p>
                     <div class="deal-prices">
-                      <span class="deal-original">NT$75</span>
-                      <span class="deal-sale">NT$<strong>55</strong></span>
+                      <span class="deal-original">{{ branchService.config.currency }}75</span>
+                      <span class="deal-sale">{{ branchService.config.currency }}<strong>55</strong></span>
                     </div>
                   </div>
                 </div>
@@ -828,10 +822,10 @@
                     />
                   </div>
                   <div class="deal-card-body">
-                    <p class="deal-name">牛排</p>
+                    <p class="deal-name">{{ getLocalizedMenuName('牛排') }}</p>
                     <div class="deal-prices">
-                      <span class="deal-original">NT$130</span>
-                      <span class="deal-sale">NT$<strong>105</strong></span>
+                      <span class="deal-original">{{ branchService.config.currency }}130</span>
+                      <span class="deal-sale">{{ branchService.config.currency }}<strong>105</strong></span>
                     </div>
                   </div>
                 </div>
@@ -846,10 +840,10 @@
                     />
                   </div>
                   <div class="deal-card-body">
-                    <p class="deal-name">仙草奶茶</p>
+                    <p class="deal-name">{{ getLocalizedMenuName('仙草奶茶') }}</p>
                     <div class="deal-prices">
-                      <span class="deal-original">NT$65</span>
-                      <span class="deal-sale">NT$<strong>49</strong></span>
+                      <span class="deal-original">{{ branchService.config.currency }}65</span>
+                      <span class="deal-sale">{{ branchService.config.currency }}<strong>49</strong></span>
                     </div>
                   </div>
                 </div>
@@ -864,10 +858,10 @@
                     />
                   </div>
                   <div class="deal-card-body">
-                    <p class="deal-name">三杯雞</p>
+                    <p class="deal-name">{{ getLocalizedMenuName('三杯雞') }}</p>
                     <div class="deal-prices">
-                      <span class="deal-original">NT$150</span>
-                      <span class="deal-sale">NT$<strong>135</strong></span>
+                      <span class="deal-original">{{ branchService.config.currency }}150</span>
+                      <span class="deal-sale">{{ branchService.config.currency }}<strong>135</strong></span>
                     </div>
                   </div>
                 </div>
@@ -987,19 +981,19 @@
 
                   <!-- 中間：標題 + 摘要 -->
                   <div class="pdh-text">
-                    <span class="pdh-title">進行中活動</span>
+                    <span class="pdh-title">{{ lang.promoInProgressTitle }}</span>
                     <span class="pdh-summary">
                       @if (promoCompletedCount > 0) {
-                        已達成 {{ promoCompletedCount }} / {{ PROMO_ACTIVITIES.length }} 個活動
+                        {{ lang.promoAchievedPre }} {{ promoCompletedCount }} / {{ PROMO_ACTIVITIES.length }} {{ lang.promoCountUnit }}
                       } @else {
-                        共 {{ PROMO_ACTIVITIES.length }} 個活動，展開查看進度
+                        {{ lang.promoTotalPre }} {{ PROMO_ACTIVITIES.length }} {{ lang.promoCountUnit }}{{ lang.promoExpandHint }}
                       }
                     </span>
                   </div>
 
                   <!-- 右側：已達成徽章 + 箭頭 -->
                   @if (promoCompletedCount > 0) {
-                    <span class="pdh-badge">{{ promoCompletedCount }} 個達成</span>
+                    <span class="pdh-badge">{{ promoCompletedCount }} {{ lang.promoBadgeDone }}</span>
                   }
                   <svg class="pdh-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <polyline points="6 9 12 15 18 9"/>
@@ -1033,11 +1027,11 @@
                               </svg>
                             }
                           </div>
-                          <span class="pbh-name">{{ promo.name }}</span>
+                          <span class="pbh-name">{{ getLocalizedName(promo) }}</span>
                           @if (cartTotal() >= promo.minSpend) {
-                            <span class="pbh-done-tag">達成！點此選贈品</span>
+                            <span class="pbh-done-tag">{{ lang.promoDoneTag }}</span>
                           } @else {
-                            <span class="pbh-remain">差 <strong>NT$ {{ promo.minSpend - cartTotal() }}</strong></span>
+                            <span class="pbh-remain">{{ lang.promoRemainPre }} <strong>{{ branchService.config.currency }} {{ promo.minSpend - cartTotal() }}</strong></span>
                           }
                           <svg class="pbh-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <polyline points="6 9 12 15 18 9"/>
@@ -1058,7 +1052,7 @@
                             <div class="pbb-info-row">
                               <span class="pbb-counter">{{ cartTotal() > promo.minSpend ? promo.minSpend : cartTotal() }} / {{ promo.minSpend }}</span>
                               @if (cartTotal() >= promo.minSpend) {
-                                <span class="pbb-success-text">可至結帳頁選取贈品</span>
+                                <span class="pbb-success-text">{{ lang.promoCanSelectGift }}</span>
                               }
                             </div>
                           </div>
@@ -1089,12 +1083,12 @@
                       </div>
                       <div class="menu-item-body">
                         <div>
-                          <h4 class="menu-item-name">{{ item.name }}</h4>
-                          <p class="menu-item-desc">{{ item.description }}</p>
+                          <h4 class="menu-item-name">{{ getLocalizedName(item) }}</h4>
+                          <p class="menu-item-desc">{{ getLocalizedDesc(item) }}</p>
                         </div>
                         <div class="menu-item-bottom">
                           <div class="menu-price-group">
-                            <span class="menu-item-price">NT$ <strong>{{ item.price }}</strong></span>
+                            <span class="menu-item-price">{{ branchService.config.currency }} <strong>{{ item.price }}</strong></span>
                           </div>
                           <button class="menu-add-btn" (click)="addToCart(item)" [attr.aria-label]="'加入' + item.name">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -1174,7 +1168,7 @@
                   d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
                 />
               </svg>
-              確認訂單
+              {{ lang.checkoutTitle }}
             </h2>
 
             <!-- 空購物車 -->
@@ -1199,15 +1193,15 @@
                       <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
                       <rect x="9" y="3" width="6" height="4" rx="1"/>
                     </svg>
-                    訂單明細
-                    <span class="checkout-col-count">{{ cartCount() }} 件</span>
+                    {{ lang.orderDetail }}
+                    <span class="checkout-col-count">{{ cartCount() }} {{ lang.itemCountSuffix }}</span>
                   </div>
                   <div class="checkout-items">
                     @for (item of cartItems(); track item.id) {
                       <div class="checkout-item">
                         <div class="co-item-info">
-                          <span class="co-item-name">{{ item.name }}</span>
-                          <span class="co-item-unit">NT$ {{ item.price }}</span>
+                          <span class="co-item-name">{{ getLocalizedName(item) }}</span>
+                          <span class="co-item-unit">{{ branchService.config.currency }} {{ item.price }}</span>
                         </div>
                         <div class="co-item-ctrl">
                           <button class="co-delete-btn" (click)="removeFromCart(item.id)" aria-label="移除商品">
@@ -1222,7 +1216,7 @@
                           <span class="co-qty">{{ item.quantity }}</span>
                           <button class="co-qty-btn" (click)="updateCartQuantity(item.id, 1)">＋</button>
                         </div>
-                        <span class="co-item-subtotal">NT$ {{ item.price * item.quantity }}</span>
+                        <span class="co-item-subtotal">{{ branchService.config.currency }} {{ item.price * item.quantity }}</span>
                       </div>
                     }
                     <!-- 已選贈品：顯示在品項列表底部 -->
@@ -1233,9 +1227,9 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px;margin-right:4px;vertical-align:middle;"><path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/><rect x="2" y="6" width="20" height="6" rx="1"/><path d="M12 12v9"/><path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/><path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/></svg>
                             {{ selectedPromoName() }} - {{ selectedPromoGift() }}
                           </span>
-                          <span class="co-item-unit">NT$ 0</span>
+                          <span class="co-item-unit">{{ branchService.config.currency }} 0</span>
                         </div>
-                        <span class="co-item-subtotal co-gift-free">免費</span>
+                        <span class="co-item-subtotal co-gift-free">{{ lang.free }}</span>
                       </div>
                     }
                   </div>
@@ -1263,18 +1257,18 @@
                       </div>
                       <div class="pgp-text">
                         @if (selectedPromoGift()) {
-                          <span class="pgp-label pgp-label-done">已選：{{ selectedPromoGift() }}</span>
-                          <span class="pgp-hint">點此更換免費餐點</span>
+                          <span class="pgp-label pgp-label-done">{{ lang.giftSelectedPre }}{{ selectedPromoGiftLocalized() }}</span>
+                          <span class="pgp-hint">{{ lang.giftChangeLbl }}</span>
                         } @else if (selectedPromoName() && selectedPromoName() !== '不參加活動優惠') {
-                          <span class="pgp-label">按此選擇免費餐點</span>
-                          <span class="pgp-hint">{{ selectedPromoName() }}</span>
+                          <span class="pgp-label">{{ lang.selectFreeItem }}</span>
+                          <span class="pgp-hint">{{ selectedPromoActivity ? getLocalizedName(selectedPromoActivity) : selectedPromoName() }}</span>
                         } @else {
-                          <span class="pgp-label">按此選擇免費餐點</span>
-                          <span class="pgp-hint">請先於下方選擇活動</span>
+                          <span class="pgp-label">{{ lang.selectFreeItem }}</span>
+                          <span class="pgp-hint">{{ lang.selectPromoFirst }}</span>
                         }
                       </div>
                       @if (selectedPromoGift()) {
-                        <span class="pgp-free-tag">免費</span>
+                        <span class="pgp-free-tag">{{ lang.free }}</span>
                       }
                       <svg class="pgp-chevron" [class.open]="promoGiftPanelOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <polyline points="6 9 12 15 18 9"/>
@@ -1285,7 +1279,7 @@
                     @if (promoGiftPanelOpen()) {
                       <div class="pgp-options">
                         @if (selectedPromoActivity) {
-                          @for (g of selectedPromoActivity.gifts; track g) {
+                          @for (g of selectedPromoActivity.gifts; track g; let gi = $index) {
                             <button
                               class="pgp-gift-opt"
                               [class.selected]="selectedPromoGift() === g"
@@ -1293,7 +1287,7 @@
                               type="button"
                             >
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:16px;height:16px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                              <span>{{ g }}</span>
+                              <span>{{ getLocalizedGifts(selectedPromoActivity!)[gi] || g }}</span>
                               @if (selectedPromoGift() === g) {
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;flex-shrink:0;margin-left:auto;">
                                   <polyline points="20 6 9 17 4 12"/>
@@ -1302,7 +1296,7 @@
                             </button>
                           }
                         } @else {
-                          <p class="pgp-no-select-hint">請先於下方選擇活動，再回此處選取贈品</p>
+                          <p class="pgp-no-select-hint">{{ lang.selectPromoFirst }}</p>
                         }
                       </div>
                     }
@@ -1318,7 +1312,7 @@
                       type="button"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:16px;height:16px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                      <span>不參加活動優惠</span>
+                      <span>{{ lang.skipPromo }}</span>
                       @if (selectedPromoName() === '不參加活動優惠') {
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;margin-left:auto;"><polyline points="20 6 9 17 4 12"/></svg>
                       }
@@ -1337,10 +1331,10 @@
                           <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
                         </svg>
                         <div class="par-text">
-                          <span class="par-name">{{ act.name }}</span>
-                          <span class="par-hint">按此選擇此活動</span>
+                          <span class="par-name">{{ getLocalizedName(act) }}</span>
+                          <span class="par-hint">{{ lang.selectThisPromo }}</span>
                         </div>
-                        <span class="par-min-tag">滿 NT$ {{ act.minSpend }}</span>
+                        <span class="par-min-tag">{{ lang.promoMinSpendPre }}{{ branchService.config.currency }} {{ act.minSpend }}</span>
                         @if (selectedPromoName() === act.name) {
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;flex-shrink:0;">
                             <polyline points="20 6 9 17 4 12"/>
@@ -1373,12 +1367,12 @@
                     </svg>
                   </div>
                   <div class="dcb-body">
-                    <span class="dcb-title">折扣兌換券</span>
+                    <span class="dcb-title">{{ lang.couponBlockTitle }}</span>
                     <span class="dcb-desc">
                       @if (useDiscountCoupon()) {
-                        已選擇使用，本次享 8 折優惠
+                        {{ lang.couponActive }}
                       } @else {
-                        您有 1 張折扣券，是否在本次訂單使用？
+                        {{ lang.couponAvailable }}
                       }
                     </span>
                   </div>
@@ -1388,7 +1382,7 @@
                     (click)="toggleDiscountCoupon()"
                     type="button"
                   >
-                    {{ useDiscountCoupon() ? "取消使用" : "使用折扣券" }}
+                    {{ useDiscountCoupon() ? lang.couponCancel : lang.couponUse }}
                   </button>
                 </div>
               }
@@ -1405,7 +1399,7 @@
                   </div>
                   @if (useDiscountCoupon()) {
                     <div class="summary-row summary-row-discount">
-                      <span>折扣券折扣（8折）</span>
+                      <span>{{ lang.couponDiscount }}</span>
                       <span class="summary-discount-price">－ {{ branchService.config.currency }} {{ discountAmount() }}</span>
                     </div>
                   }
@@ -1424,7 +1418,7 @@
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                   </svg>
-                  <span>清空購物車</span>
+                  <span>{{ lang.clearCart }}</span>
                 </button>
               </div><!-- /checkout-footer-block -->
             }
@@ -1439,17 +1433,17 @@
         <div class="order-preview-overlay" (click)="closeOrderPreview()">
           <div class="order-preview-modal" (click)="$event.stopPropagation()">
             <div class="opm-header">
-              <h3 class="opm-title">確認訂單預覽</h3>
-              <p class="opm-subtitle">請確認品項是否正確，如有問題可按「上一步」修改</p>
+              <h3 class="opm-title">{{ lang.previewTitle }}</h3>
+              <p class="opm-subtitle">{{ lang.previewHint }}</p>
             </div>
 
             <div class="opm-items">
               @for (item of cartItems(); track item.id) {
                 <div class="opm-item-row">
-                  <span class="opm-item-name">{{ item.name }}</span>
+                  <span class="opm-item-name">{{ getLocalizedName(item) }}</span>
                   <div class="opm-item-right">
                     <span class="opm-item-qty">× {{ item.quantity }}</span>
-                    <span class="opm-item-price">NT$ {{ item.price * item.quantity }}</span>
+                    <span class="opm-item-price">{{ branchService.config.currency }} {{ item.price * item.quantity }}</span>
                   </div>
                 </div>
               }
@@ -1457,7 +1451,7 @@
                 <div class="opm-item-row opm-item-free">
                   <span class="opm-item-name">{{ selectedPromoName() }} - {{ selectedPromoGift() }}</span>
                   <div class="opm-item-right">
-                    <span class="opm-item-price opm-free-label">NT$ 0</span>
+                    <span class="opm-item-price opm-free-label">{{ branchService.config.currency }} 0</span>
                   </div>
                 </div>
               }
@@ -1467,21 +1461,21 @@
 
             @if (useDiscountCoupon()) {
               <div class="opm-row opm-discount-row">
-                <span>折扣券折扣（8折）</span>
-                <span class="opm-discount-price">－ NT$ {{ discountAmount() }}</span>
+                <span>{{ lang.couponDiscount }}</span>
+                <span class="opm-discount-price">－ {{ branchService.config.currency }} {{ discountAmount() }}</span>
               </div>
             }
             <div class="opm-row opm-total-row">
-              <span>總計</span>
-              <span class="opm-total-amount">NT$ {{ discountedTotal() }}</span>
+              <span>{{ lang.total }}</span>
+              <span class="opm-total-amount">{{ branchService.config.currency }} {{ discountedTotal() }}</span>
             </div>
 
             <div class="opm-actions">
               <button class="opm-back-btn" (click)="closeOrderPreview()" type="button">
-                ← 上一步
+                {{ lang.goBack }}
               </button>
               <button class="opm-confirm-btn" (click)="goToPayment()" type="button">
-                確認建立訂單
+                {{ lang.confirmOrder }}
               </button>
             </div>
           </div>
@@ -1504,7 +1498,7 @@
               >
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
-              取消本次訂單，返回首頁
+              {{ lang.cancelOrderReturn }}
             </button>
           </div>
           <!-- 標題：比照 checkout-title 樣式 -->
@@ -1518,7 +1512,7 @@
               <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
               <line x1="1" y1="10" x2="23" y2="10"></line>
             </svg>
-            付款頁面
+            {{ lang.paymentTitle }}
           </h2>
 
           <div class="payment-content-wrapper">
@@ -1526,11 +1520,11 @@
             <div class="payment-summary-card">
               @for (item of cartItems(); track item.id) {
                 <div class="psc-row">
-                  <span class="psc-name">{{ item.name }}</span>
+                  <span class="psc-name">{{ getLocalizedName(item) }}</span>
                   <div class="psc-right">
                     <span class="psc-qty">× {{ item.quantity }}</span>
                     <span class="psc-price"
-                      >NT$ {{ item.price * item.quantity }}</span
+                      >{{ branchService.config.currency }} {{ item.price * item.quantity }}</span
                     >
                   </div>
                 </div>
@@ -1540,17 +1534,17 @@
                 <div class="psc-row psc-gift-row">
                   <span class="psc-name">{{ selectedPromoName() }} - {{ selectedPromoGift() }}</span>
                   <div class="psc-right">
-                    <span class="psc-price psc-gift-free">NT$ 0</span>
+                    <span class="psc-price psc-gift-free">{{ branchService.config.currency }} 0</span>
                   </div>
                 </div>
               }
               <div class="psc-divider"></div>
               @if (useDiscountCoupon()) {
                 <div class="psc-row psc-discount-row">
-                  <span class="psc-name">折扣券折扣（8折）</span>
+                  <span class="psc-name">{{ lang.couponDiscount }}</span>
                   <div class="psc-right">
                     <span class="psc-discount-price"
-                      >－ NT$ {{ discountAmount() }}</span
+                      >－ {{ branchService.config.currency }} {{ discountAmount() }}</span
                     >
                   </div>
                 </div>
@@ -1581,27 +1575,27 @@
                  ‧ 訪客：空白＋必填，未填不能進入下一步 -->
             <div class="checkout-note">
               <label class="checkout-note-label">
-                聯絡電話
+                {{ lang.contactPhone }}
                 @if (isGuest()) {
-                  <span class="checkout-required-mark">*&nbsp;必填</span>
+                  <span class="checkout-required-mark">*&nbsp;{{ lang.required }}</span>
                 }
               </label>
               <input
                 type="tel"
                 class="checkout-note-input checkout-phone-input"
-                [placeholder]="isGuest() ? '請輸入電話號碼（訪客必填）' : '確認聯絡電話'"
+                [placeholder]="isGuest() ? lang.guestPhonePlaceholder : lang.memberPhonePlaceholder"
                 [value]="phoneNumber()"
                 (input)="phoneNumber.set($any($event.target).value)"
               />
               <!-- 訪客未填時顯示提示 -->
               @if (isGuest() && !isPhoneValid()) {
-                <span class="checkout-phone-hint">請填入電話號碼後才能送出訂單</span>
+                <span class="checkout-phone-hint">{{ lang.phoneRequired }}</span>
               }
             </div>
 
             <!-- 付款方式選擇列 -->
             <div class="checkout-payment">
-              <p class="checkout-payment-title">付款方式</p>
+              <p class="checkout-payment-title">{{ lang.paymentMethodLbl }}</p>
               <div class="payment-options">
                 <label class="payment-opt" [class.active]="paymentMethod() === 'credit'" (click)="setPaymentMethod('credit')">
                   <input type="radio" name="payment" [checked]="paymentMethod() === 'credit'" />
@@ -1686,7 +1680,7 @@
                 <!-- 輸入表單 -->
                 <div class="cc-form">
                   <div class="cc-field">
-                    <label class="cc-label">卡號</label>
+                    <label class="cc-label">{{ lang.cardNumberLbl }}</label>
                     <input
                       type="text"
                       class="cc-input"
@@ -1699,7 +1693,7 @@
                   </div>
                   <div class="cc-row-2">
                     <div class="cc-field">
-                      <label class="cc-label">有效期限</label>
+                      <label class="cc-label">{{ lang.cardExpiryLbl }}</label>
                       <input
                         type="text"
                         class="cc-input"
@@ -1711,7 +1705,7 @@
                       />
                     </div>
                     <div class="cc-field">
-                      <label class="cc-label">安全碼 CVV</label>
+                      <label class="cc-label">{{ lang.cardCvvLbl }}</label>
                       <input
                         type="text"
                         class="cc-input"
@@ -1726,7 +1720,7 @@
                     </div>
                   </div>
                   <div class="cc-field">
-                    <label class="cc-label">持卡人姓名（英文大寫）</label>
+                    <label class="cc-label">{{ lang.cardHolderLbl }}</label>
                     <input
                       type="text"
                       class="cc-input"
@@ -1738,7 +1732,7 @@
                   @if (cardNumber().length > 0 && !isCreditCardValid()) {
                     <p class="cc-error">
                       <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm-.75 3.75h1.5v4.5h-1.5v-4.5zm0 6h1.5v1.5h-1.5v-1.5z"/></svg>
-                      請確認卡片資料均填寫完整
+                      {{ lang.cardIncomplete }}
                     </p>
                   }
                 </div>
@@ -1750,8 +1744,8 @@
                  ╚══════════════════════════════════════╝ -->
             @if (paymentMethod() === 'mobile') {
               <div class="mobile-pay-panel">
-                <div class="mp-amount-badge">NT$ {{ discountedTotal() }}</div>
-                <p class="mp-desc">請使用手機掃描以下 QR Code 完成付款</p>
+                <div class="mp-amount-badge">{{ branchService.config.currency }} {{ discountedTotal() }}</div>
+                <p class="mp-desc">{{ lang.mobilePayDesc }}</p>
                 <div class="qr-wrapper">
                   <qrcode
                     [qrdata]="mobilePayUrl()"
@@ -1761,7 +1755,7 @@
                     [colorLight]="'#ffffff'"
                     [margin]="2"
                   ></qrcode>
-                  <p class="qr-expiry">此 QR Code 可用手機掃描 · 請在 5 分鐘內掃碼</p>
+                  <p class="qr-expiry">{{ lang.qrExpiry }}</p>
                 </div>
                 <!-- Demo 掃碼按鈕 -->
                 <button class="mp-scan-btn" (click)="openMobilePayModal()">
@@ -1786,7 +1780,7 @@
               >
                 @if (isPlacingOrder()) {
                   <span class="placing-spinner" aria-hidden="true"></span>
-                  處理中...
+                  {{ lang.processing }}
                 } @else {
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <polyline points="20 6 9 17 4 12" />
@@ -1803,7 +1797,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
-                請掃描上方 QR Code，在手機上完成付款
+                {{ lang.mobilePayHint }}
               </div>
             }
           </div>
@@ -1820,12 +1814,12 @@
             <div class="tracker-container">
               <!-- 取餐號碼大牌 -->
               <div class="tracker-number-card">
-                <span class="tracker-number-label">您的取餐號碼</span>
+                <span class="tracker-number-label">{{ lang.pickupNumber }}</span>
                 <div class="tracker-number">{{ trackingOrder()!.number }}</div>
                 <span class="tracker-time-label"
-                  >預估等候
+                  >{{ lang.estimatedWait }}
                   <strong>{{ trackingOrder()!.estimatedMinutes }}</strong>
-                  分鐘</span
+                  {{ lang.minutes }}</span
                 >
               </div>
 
@@ -1937,9 +1931,9 @@
           @if (!trackingOrder()) {
             <div class="tracker-empty">
               <div class="tracker-empty-icon">🔔</div>
-              <p>目前沒有進行中的訂單</p>
+              <p>{{ lang.noActiveOrder }}</p>
               <button class="tracker-start-btn" (click)="setTab('menu')">
-                前往點餐
+                {{ lang.goOrder }}
               </button>
             </div>
           }
@@ -1962,10 +1956,10 @@
           <header class="ord-header">
             <div class="ord-title-row">
               <span class="ord-title-accent"></span>
-              <h2 class="ord-title">訂單紀錄</h2>
+              <h2 class="ord-title">{{ lang.orderHistoryTitle }}</h2>
             </div>
             <p class="ord-subtitle">
-              共 {{ orderHistoryList().length }} 筆歷史訂單
+              {{ lang.orderHistoryCountPre }} {{ orderHistoryList().length }} {{ lang.orderHistoryCountPost }}
             </p>
           </header>
 
@@ -1981,7 +1975,7 @@
               (click)="activeOrderTab.set('completed')"
             >
               <span class="ord-filter-dot dot-completed"></span>
-              已完成
+              {{ lang.statusCompleted }}
               <span class="ord-filter-count">{{ completedCount() }}</span>
             </button>
 
@@ -1992,7 +1986,7 @@
               (click)="activeOrderTab.set('cancelled')"
             >
               <span class="ord-filter-dot dot-cancelled"></span>
-              已取消
+              {{ lang.statusCancelled }}
               <span class="ord-filter-count">{{ cancelledCount() }}</span>
             </button>
 
@@ -2003,7 +1997,7 @@
               (click)="activeOrderTab.set('refunded')"
             >
               <span class="ord-filter-dot dot-refunded"></span>
-              已退款
+              {{ lang.statusRefunded }}
               <span class="ord-filter-count">{{ refundedCount() }}</span>
             </button>
           </div>
@@ -2097,17 +2091,15 @@
                   />
                 </svg>
                 <p class="ord-empty-text">
-                  目前沒有
                   @if (activeOrderTab() === "completed") {
-                    已完成
+                    {{ lang.noCompletedOrders }}
                   } @else if (activeOrderTab() === "cancelled") {
-                    已取消
+                    {{ lang.noCancelledOrders }}
                   } @else {
-                    已退款
+                    {{ lang.noRefundedOrders }}
                   }
-                  的訂單
                 </p>
-                <p class="ord-empty-sub">去點些美食吧！</p>
+                <p class="ord-empty-sub">{{ lang.goOrderSomething }}</p>
               </div>
             } @else {
               <!-- 訂單卡片（票據感設計）
@@ -2176,7 +2168,7 @@
                             stroke-linejoin="round"
                           />
                         </svg>
-                        已完成
+                        {{ lang.statusCompleted }}
                       } @else if (order.status === "cancelled") {
                         <!-- × icon -->
                         <svg viewBox="0 0 12 12" fill="none">
@@ -2194,7 +2186,7 @@
                             stroke-linecap="round"
                           />
                         </svg>
-                        已取消
+                        {{ lang.statusCancelled }}
                       } @else {
                         <!-- 退款箭頭 icon -->
                         <svg viewBox="0 0 12 12" fill="none">
@@ -2219,7 +2211,7 @@
                             stroke-linejoin="round"
                           />
                         </svg>
-                        已退款
+                        {{ lang.statusRefunded }}
                       }
                     </span>
                   </div>
@@ -2271,17 +2263,17 @@
                   </div>
 
                   <!-- 訂單品項文字 -->
-                  <div class="ord-card-items">{{ order.items }}</div>
+                  <div class="ord-card-items">{{ getLocalizedOrderItems(order) }}</div>
 
                   <!-- 虛線分隔 -->
                   <div class="ord-card-dash"></div>
 
                   <!-- 底部：合計標籤 + 金額（大字） + 退款按鈕（已完成才顯示） -->
                   <div class="ord-card-foot">
-                    <span class="ord-card-total-label">合　計</span>
+                    <span class="ord-card-total-label">{{ lang.totalLabel }}</span>
                     <div class="ord-card-foot-right">
                       <div class="ord-card-total-wrap">
-                        <span class="ord-card-currency">NT$</span>
+                        <span class="ord-card-currency">{{ branchService.config.currency }}</span>
                         <span class="ord-card-price">{{ order.total }}</span>
                       </div>
                       @if (order.status === 'completed') {
@@ -2293,7 +2285,7 @@
                             <path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2z" stroke="currentColor" stroke-width="1.5"/>
                             <path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                           </svg>
-                          申請退款
+                          {{ lang.requestRefund }}
                         </button>
                       }
                     </div>
@@ -2318,7 +2310,7 @@
           <!-- Header -->
           <div class="promo-zone-header">
             <div class="promo-zone-bar"></div>
-            <h2 class="promo-zone-title">活動專區</h2>
+            <h2 class="promo-zone-title">{{ lang.promoZoneTitle }}</h2>
           </div>
 
           <!-- Activity Card List -->
@@ -2327,8 +2319,8 @@
               <div class="pz-card" [ngClass]="'pz-bg-' + promo.tagType" (click)="openPromoDetail(i)">
                 <!-- 左側：文字內容 -->
                 <div class="pz-card-body">
-                  <span class="pz-card-tag" [ngClass]="'pzt-' + promo.tagType">{{ promo.tag }}</span>
-                  <h3 class="pz-card-title">{{ promo.name }}</h3>
+                  <span class="pz-card-tag" [ngClass]="'pzt-' + promo.tagType">{{ promo.tagType === 'new' ? lang.promoTagNew : promo.tagType === 'promo' ? lang.promoTagPromo : lang.promoTagPremium }}</span>
+                  <h3 class="pz-card-title">{{ getLocalizedName(promo) }}</h3>
                   <div class="pz-card-date">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;">
                       <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -2338,8 +2330,8 @@
                     </svg>
                     {{ promo.startDate }} ～ {{ promo.endDate }}
                   </div>
-                  <p class="pz-card-desc">消費滿 NT${{ promo.minSpend }} 可選贈品</p>
-                  <span class="pz-card-more">查看詳情 →</span>
+                  <p class="pz-card-desc">{{ lang.promoSpendPre }}{{ branchService.config.currency }}{{ promo.minSpend }}{{ lang.promoSpendPost }}</p>
+                  <span class="pz-card-more">{{ lang.viewDetails }}</span>
                 </div>
                 <!-- 右側：圖片 -->
                 <div class="pz-card-img-wrap">
@@ -2372,8 +2364,8 @@
                   height="200"
                 />
                 <div class="pz-sheet-header-body">
-                  <span class="pz-sheet-tag" [ngClass]="'pzt-' + selectedPromoDetail.tagType">{{ selectedPromoDetail.tag }}</span>
-                  <h2 class="pz-sheet-header-name">{{ selectedPromoDetail.name }}</h2>
+                  <span class="pz-sheet-tag" [ngClass]="'pzt-' + selectedPromoDetail.tagType">{{ selectedPromoDetail.tagType === 'new' ? lang.promoTagNew : selectedPromoDetail.tagType === 'promo' ? lang.promoTagPromo : lang.promoTagPremium }}</span>
+                  <h2 class="pz-sheet-header-name">{{ getLocalizedName(selectedPromoDetail) }}</h2>
                 </div>
                 <button class="pz-sheet-close" (click)="closePromoDetail()" aria-label="關閉">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -2400,17 +2392,17 @@
 
                 <!-- Spend threshold -->
                 <div class="pz-sheet-spend">
-                  消費滿 <strong>NT${{ selectedPromoDetail.minSpend }}</strong> 即可參加
+                  {{ lang.promoSpendPre }}<strong>{{ branchService.config.currency }}{{ selectedPromoDetail.minSpend }}</strong>{{ lang.promoJoinPost }}
                 </div>
 
                 <!-- Description -->
-                <p class="pz-sheet-desc">{{ selectedPromoDetail.description }}</p>
+                <p class="pz-sheet-desc">{{ getLocalizedDesc(selectedPromoDetail) }}</p>
 
                 <!-- Highlights -->
                 <div class="pz-sheet-section">
-                  <h4 class="pz-sheet-section-title">活動說明</h4>
+                  <h4 class="pz-sheet-section-title">{{ lang.activityDesc }}</h4>
                   <ul class="pz-highlight-list">
-                    @for (h of selectedPromoDetail.highlights; track h) {
+                    @for (h of getLocalizedHighlights(selectedPromoDetail); track h) {
                       <li class="pz-highlight-item">{{ h }}</li>
                     }
                   </ul>
@@ -2418,9 +2410,9 @@
 
                 <!-- Gifts -->
                 <div class="pz-sheet-section">
-                  <h4 class="pz-sheet-section-title">可選贈品</h4>
+                  <h4 class="pz-sheet-section-title">{{ lang.availableGifts }}</h4>
                   <div class="pz-gift-list">
-                    @for (gift of selectedPromoDetail.gifts; track gift) {
+                    @for (gift of getLocalizedGifts(selectedPromoDetail); track gift) {
                       <div class="pz-gift-item">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;">
                           <polyline points="20 12 20 22 4 22 4 12"></polyline>
@@ -2437,7 +2429,7 @@
 
                 <!-- CTA -->
                 <button class="pz-sheet-cta" (click)="closePromoDetail(); setTab('menu')">
-                  立即前往點餐
+                  {{ lang.goOrderNow }}
                 </button>
               </div>
             </div>
@@ -2568,46 +2560,46 @@
           </div>
 
           <div class="mp-screen-amount">
-            <span class="mp-screen-amount-label">付款金額</span>
-            <span class="mp-screen-amount-value">NT$ {{ discountedTotal() }}</span>
+            <span class="mp-screen-amount-label">{{ lang.payAmount }}</span>
+            <span class="mp-screen-amount-value">{{ branchService.config.currency }} {{ discountedTotal() }}</span>
           </div>
 
           <div class="mp-screen-divider"></div>
 
           <div class="mp-screen-items">
-            <p class="mp-screen-items-title">訂單明細</p>
+            <p class="mp-screen-items-title">{{ lang.orderDetail }}</p>
             @for (item of cartItems(); track item.id) {
               <div class="mp-screen-item">
-                <span class="mp-screen-item-name">{{ item.name }} × {{ item.quantity }}</span>
-                <span class="mp-screen-item-price">NT$ {{ item.price * item.quantity }}</span>
+                <span class="mp-screen-item-name">{{ getLocalizedName(item) }} × {{ item.quantity }}</span>
+                <span class="mp-screen-item-price">{{ branchService.config.currency }} {{ item.price * item.quantity }}</span>
               </div>
             }
             @if (selectedPromoGift() && selectedPromoName() !== '不參加活動優惠') {
               <div class="mp-screen-item mp-screen-item-gift">
-                <span class="mp-screen-item-name">🎁 {{ selectedPromoGift() }}</span>
-                <span class="mp-screen-item-price">NT$ 0</span>
+                <span class="mp-screen-item-name">🎁 {{ selectedPromoGiftLocalized() }}</span>
+                <span class="mp-screen-item-price">{{ branchService.config.currency }} 0</span>
               </div>
             }
             @if (useDiscountCoupon()) {
               <div class="mp-screen-item mp-screen-item-discount">
-                <span class="mp-screen-item-name">折扣券（8 折）</span>
-                <span class="mp-screen-item-price">－ NT$ {{ discountAmount() }}</span>
+                <span class="mp-screen-item-name">{{ lang.couponDiscount }}</span>
+                <span class="mp-screen-item-price">－ {{ branchService.config.currency }} {{ discountAmount() }}</span>
               </div>
             }
           </div>
 
           <div class="mp-screen-total">
-            <span>合計</span>
-            <span class="mp-screen-total-amt">NT$ {{ discountedTotal() }}</span>
+            <span>{{ lang.total }}</span>
+            <span class="mp-screen-total-amt">{{ branchService.config.currency }} {{ discountedTotal() }}</span>
           </div>
 
           <button class="mp-confirm-pay-btn" (click)="completeMobilePayment()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
               <polyline points="20 6 9 17 4 12"/>
             </svg>
-            確認付款
+            {{ lang.confirmPayment }}
           </button>
-          <button class="mp-cancel-btn" (click)="closeMobilePayModal()">取消</button>
+          <button class="mp-cancel-btn" (click)="closeMobilePayModal()">{{ lang.cancel }}</button>
 
         } @else {
           <!-- ── 付款成功動畫 ── -->
@@ -2649,8 +2641,8 @@
               <path d="M14 24l7 7 13-14" stroke="#27AE60" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
-          <p class="refund-success-title">申請已送出</p>
-          <p class="refund-success-sub">我們將盡快為您處理退款，請稍候。</p>
+          <p class="refund-success-title">{{ lang.refundSuccessTitle }}</p>
+          <p class="refund-success-sub">{{ lang.refundSuccessSub }}</p>
         </div>
       }
 
@@ -2665,7 +2657,7 @@
               <path d="M12 8v5" stroke="#D95C1A" stroke-width="2" stroke-linecap="round"/>
               <circle cx="12" cy="16" r="1" fill="#D95C1A"/>
             </svg>
-            <span class="refund-title">申請退款</span>
+            <span class="refund-title">{{ lang.refundTitle }}</span>
           </div>
           <div class="refund-order-id">{{ refundTargetOrder()?.id }}</div>
           <button class="refund-close-btn" (click)="closeRefundModal()">
@@ -2676,7 +2668,7 @@
         </div>
 
         <!-- 副標 -->
-        <p class="refund-subtitle">請選擇退款原因（可複選）</p>
+        <p class="refund-subtitle">{{ lang.refundSubtitle }}</p>
 
         <!-- 勾選原因清單 -->
         <div class="refund-reasons">
@@ -2700,10 +2692,10 @@
 
         <!-- 其他問題文字輸入框 -->
         <div class="refund-other-wrap">
-          <label class="refund-other-label">其他問題</label>
+          <label class="refund-other-label">{{ lang.refundOtherLabel }}</label>
           <textarea
             class="refund-other-input"
-            placeholder="請描述您遇到的問題（選填）…"
+            [placeholder]="lang.refundOtherPlaceholder"
             rows="3"
             [value]="refundOtherText()"
             (input)="updateRefundOther($any($event.target).value)"
@@ -2713,7 +2705,7 @@
         <!-- 操作按鈕列 -->
         <div class="refund-actions">
           <button class="refund-cancel-btn" (click)="closeRefundModal()">
-            取消申請退款
+            {{ lang.refundCancelBtn }}
           </button>
           <button
             class="refund-submit-btn"
@@ -2721,7 +2713,7 @@
             [disabled]="!hasRefundSelection()"
             (click)="submitRefund()"
           >
-            送出申請退款
+            {{ lang.refundSubmitBtn }}
           </button>
         </div>
 
@@ -2735,9 +2727,9 @@
   <div class="session-expired-overlay" (click)="goToLogin()">
     <div class="session-expired-modal" (click)="$event.stopPropagation()">
       <div class="session-expired-icon">⏱️</div>
-      <h3 class="session-expired-title">登入已過期</h3>
-      <p class="session-expired-desc">您的登入狀態已逾時，請重新登入後繼續操作。</p>
-      <button class="session-expired-btn" (click)="goToLogin()">重新登入</button>
+      <h3 class="session-expired-title">{{ lang.sessionExpiredTitle }}</h3>
+      <p class="session-expired-desc">{{ lang.sessionExpiredDesc }}</p>
+      <button class="session-expired-btn" (click)="goToLogin()">{{ lang.sessionExpiredBtn }}</button>
     </div>
   </div>
 }
