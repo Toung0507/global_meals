@@ -50,6 +50,79 @@ export interface LangDict {
   orderTrackerTitle: string; waiting: string; cooking: string; ready: string;
   /* ── Password visibility ── */
   showPwd: string; hidePwd: string;
+  /* ── User identity ── */
+  guestLabel: string; memberLabel: string; notLoggedIn: string; noName: string;
+  /* ── Sidebar profile ── */
+  profileTitle: string; emailLbl: string; emailPlaceholder: string;
+  newPwdPlaceholder: string; confirmNewPwdPlaceholder: string;
+  couponTitle: string; couponReady: string; couponAccum: string;
+  couponOrderedPre: string; couponOrdTimes: string;
+  couponEarnedSuffix: string; couponProgressMid: string; couponProgressSuffix: string;
+  saveProfile: string; editProfile: string;
+  navDivider: string; footerTagline: string; loginAsMember: string; logout: string;
+  /* ── Home carousel ── */
+  heroSlide1Tag: string; heroSlide1Desc: string; orderNow: string; limitedOffer: string;
+  heroSlide2Title: string; heroSlide2DescPre: string; heroSlide2DescGift: string;
+  todayPick: string; chefRec: string;
+  emailNotSet: string;
+  viewMenu: string; goOrder: string;
+  /* ── Home sections ── */
+  limitedTimeOffer: string; todayDeals: string;
+  /* ── Checkout page ── */
+  checkoutTitle: string; orderDetail: string; itemCountSuffix: string;
+  free: string; couponDiscount: string; clearCart: string;
+  couponBlockTitle: string; couponActive: string; couponAvailable: string;
+  couponCancel: string; couponUse: string;
+  selectFreeItem: string; selectPromoFirst: string;
+  /* ── Order preview modal ── */
+  previewTitle: string; previewHint: string; goBack: string; confirmOrder: string;
+  /* ── Payment page ── */
+  cancelOrderReturn: string; paymentTitle: string; paymentMethodLbl: string;
+  contactPhone: string; required: string;
+  guestPhonePlaceholder: string; memberPhonePlaceholder: string; phoneRequired: string;
+  cardNumberLbl: string; cardExpiryLbl: string; cardCvvLbl: string;
+  cardHolderLbl: string; cardIncomplete: string;
+  mobilePayDesc: string; qrExpiry: string; mobilePayHint: string; processing: string;
+  /* ── Tracker ── */
+  pickupNumber: string; estimatedWait: string; minutes: string; noActiveOrder: string;
+  /* ── Orders history ── */
+  orderHistoryTitle: string; orderHistoryCountPre: string; orderHistoryCountPost: string;
+  statusCompleted: string; statusCancelled: string; statusRefunded: string;
+  noCompletedOrders: string; noCancelledOrders: string; noRefundedOrders: string;
+  goOrderSomething: string; totalLabel: string; requestRefund: string;
+  /* ── Promotions ── */
+  promoTagNew: string; promoTagPromo: string; promoTagPremium: string;
+  /* ── Promo Banner / Drawer ── */
+  promoGiftPrefix: string;
+  promoInProgressTitle: string;
+  promoAchievedPre: string; promoCountUnit: string;
+  promoTotalPre: string; promoExpandHint: string;
+  promoBadgeDone: string; promoDoneTag: string;
+  promoRemainPre: string; promoCanSelectGift: string;
+  /* ── Checkout Promo Gift Panel ── */
+  giftSelectedPre: string; giftChangeLbl: string;
+  /* ── Checkout Promo Activity List ── */
+  skipPromo: string; selectThisPromo: string; promoMinSpendPre: string;
+  /* ── Promo Zone / Detail ── */
+  promoZoneTitle: string;
+  promoSpendPre: string; promoSpendPost: string;
+  promoJoinPost: string; viewDetails: string;
+  activityDesc: string; availableGifts: string; goOrderNow: string;
+  /* ── Mobile Pay Modal ── */
+  payAmount: string; confirmPayment: string; cancel: string;
+  /* ── Loading Screen ── */
+  loadingTagline: string; loadingWait: string;
+  /* ── Refund Modal ── */
+  refundTitle: string; refundSubtitle: string;
+  refundOtherLabel: string; refundOtherPlaceholder: string;
+  refundCancelBtn: string; refundSubmitBtn: string;
+  refundSuccessTitle: string; refundSuccessSub: string;
+  refundR1: string; refundR2: string; refundR3: string; refundR4: string;
+  refundR5: string; refundR6: string; refundR7: string;
+  /* ── Hero Slide chef item ── */
+  heroChefItemName: string; heroChefPricePre: string;
+  /* ── Session expired ── */
+  sessionExpiredTitle: string; sessionExpiredDesc: string; sessionExpiredBtn: string;
 }
 
 const TW: LangDict = {
@@ -80,6 +153,77 @@ const TW: LangDict = {
   checkout: '前往結帳', cancelOrder: '取消訂單', note: '備註', notePlaceholder: '特殊要求、口味偏好…',
   orderTrackerTitle: '訂單追蹤', waiting: '等待中', cooking: '製作中', ready: '可取餐',
   showPwd: '顯示密碼', hidePwd: '隱藏密碼',
+  guestLabel: '訪客', memberLabel: '會員', notLoggedIn: '未登入', noName: '無名氏',
+  profileTitle: '個人資料', emailLbl: '電子郵件', emailPlaceholder: '輸入Email',
+  newPwdPlaceholder: '輸入新密碼', confirmNewPwdPlaceholder: '再次輸入新密碼',
+  couponTitle: '兌換券紀錄', couponReady: '可使用', couponAccum: '累積中',
+  couponOrderedPre: '已點餐', couponOrdTimes: '次',
+  couponEarnedSuffix: '，您獲得了折扣兌換券 !! 請於購物車結帳時使用。',
+  couponProgressMid: '次，差', couponProgressSuffix: '次即可獲得折扣兌換券。',
+  saveProfile: '儲存資料', editProfile: '修改資料',
+  navDivider: '導覽功能', footerTagline: '✦ 懶懶吃，飽飽樂 ✦',
+  loginAsMember: '使用會員登入點餐', logout: '登出帳號',
+  heroSlide1Tag: '✦ 全球風味 • 一掌點餐 ✦',
+  heroSlide1Desc: '懶懶吃，飽飽樂 — 探索各地絕妙風味', orderNow: '立即點餐 →',
+  limitedOffer: '🎁 期間限定', heroSlide2Title: '滿額送好禮',
+  heroSlide2DescPre: '消費滿 ', heroSlide2DescGift: '贈招牌滷蛋 × 2',
+  emailNotSet: '（未設定）',
+  todayPick: '今日精選', chefRec: '本週主廚推薦',
+  viewMenu: '查看菜單', goOrder: '前往點餐',
+  limitedTimeOffer: '限時特惠', todayDeals: '今日優惠',
+  checkoutTitle: '確認訂單', orderDetail: '訂單明細', itemCountSuffix: '件',
+  free: '免費', couponDiscount: '折扣券折扣（8折）', clearCart: '清空購物車',
+  couponBlockTitle: '折扣兌換券', couponActive: '已選擇使用，本次享 8 折優惠',
+  couponAvailable: '您有 1 張折扣券，是否在本次訂單使用？',
+  couponCancel: '取消使用', couponUse: '使用折扣券',
+  selectFreeItem: '按此選擇免費餐點', selectPromoFirst: '請先於下方選擇活動',
+  previewTitle: '確認訂單預覽',
+  previewHint: '請確認品項是否正確，如有問題可按「上一步」修改',
+  goBack: '← 上一步', confirmOrder: '確認建立訂單',
+  cancelOrderReturn: '取消本次訂單，返回首頁', paymentTitle: '付款頁面',
+  paymentMethodLbl: '付款方式', contactPhone: '聯絡電話', required: '必填',
+  guestPhonePlaceholder: '請輸入電話號碼（訪客必填）', memberPhonePlaceholder: '確認聯絡電話',
+  phoneRequired: '請填入電話號碼後才能送出訂單',
+  cardNumberLbl: '卡號', cardExpiryLbl: '有效期限', cardCvvLbl: '安全碼 CVV',
+  cardHolderLbl: '持卡人姓名（英文大寫）', cardIncomplete: '請確認卡片資料均填寫完整',
+  mobilePayDesc: '請使用手機掃描以下 QR Code 完成付款',
+  qrExpiry: '此 QR Code 可用手機掃描 · 請在 5 分鐘內掃碼',
+  mobilePayHint: '請掃描上方 QR Code，在手機上完成付款', processing: '處理中...',
+  pickupNumber: '您的取餐號碼', estimatedWait: '預估等候', minutes: '分鐘',
+  noActiveOrder: '目前沒有進行中的訂單',
+  orderHistoryTitle: '訂單紀錄', orderHistoryCountPre: '共', orderHistoryCountPost: '筆歷史訂單',
+  statusCompleted: '已完成', statusCancelled: '已取消', statusRefunded: '已退款',
+  noCompletedOrders: '目前沒有已完成的訂單',
+  noCancelledOrders: '目前沒有已取消的訂單',
+  noRefundedOrders: '目前沒有已退款的訂單',
+  goOrderSomething: '去點些美食吧！', totalLabel: '合　計', requestRefund: '申請退款',
+  promoTagNew: '新會員限定', promoTagPromo: '期間限定', promoTagPremium: '限時豪禮',
+  promoGiftPrefix: '即贈 ',
+  promoInProgressTitle: '進行中活動',
+  promoAchievedPre: '已達成', promoCountUnit: '個活動',
+  promoTotalPre: '共', promoExpandHint: '，展開查看進度',
+  promoBadgeDone: '個達成', promoDoneTag: '達成！點此選贈品',
+  promoRemainPre: '差', promoCanSelectGift: '可至結帳頁選取贈品',
+  giftSelectedPre: '已選：', giftChangeLbl: '點此更換免費餐點',
+  skipPromo: '不參加活動優惠', selectThisPromo: '按此選擇此活動', promoMinSpendPre: '滿 ',
+  promoZoneTitle: '活動專區',
+  promoSpendPre: '消費滿 ', promoSpendPost: ' 可選贈品',
+  promoJoinPost: ' 即可參加', viewDetails: '查看詳情 →',
+  activityDesc: '活動說明', availableGifts: '可選贈品', goOrderNow: '立即前往點餐',
+  payAmount: '付款金額', confirmPayment: '確認付款', cancel: '取消',
+  loadingTagline: '✦ 懶懶吃，飽飽樂 ✦', loadingWait: '請稍候 · PLEASE WAIT',
+  refundTitle: '申請退款', refundSubtitle: '請選擇退款原因（可複選）',
+  refundOtherLabel: '其他問題', refundOtherPlaceholder: '請描述您遇到的問題（選填）…',
+  refundCancelBtn: '取消申請退款', refundSubmitBtn: '送出申請退款',
+  refundSuccessTitle: '申請已送出', refundSuccessSub: '我們將盡快為您處理退款，請稍候。',
+  refundR1: '餐點品項錯誤（與訂單內容不符）', refundR2: '食物有異物或異味',
+  refundR3: '食物未熟透或過度烹調', refundR4: '份量明顯不足',
+  refundR5: '餐點送達時已嚴重冷卻', refundR6: '包裝破損，影響食品衛生',
+  refundR7: '含有過敏原且未事先告知',
+  sessionExpiredTitle: '登入已過期',
+  sessionExpiredDesc: '您的登入狀態已逾時，請重新登入後繼續操作。',
+  heroChefItemName: '日式烤雞串', heroChefPricePre: '只要 ',
+  sessionExpiredBtn: '重新登入',
 };
 
 const JP: LangDict = {
@@ -110,6 +254,79 @@ const JP: LangDict = {
   checkout: '注文する', cancelOrder: '注文をキャンセル', note: '備考', notePlaceholder: '特別なご要望・味のご希望…',
   orderTrackerTitle: '注文追跡', waiting: '準備中', cooking: '調理中', ready: 'お受け取り可能',
   showPwd: 'パスワードを表示', hidePwd: 'パスワードを非表示',
+  guestLabel: 'ゲスト', memberLabel: '会員', notLoggedIn: '未ログイン', noName: '名無し',
+  profileTitle: '個人情報', emailLbl: 'メールアドレス', emailPlaceholder: 'メールアドレスを入力',
+  newPwdPlaceholder: '新しいパスワードを入力', confirmNewPwdPlaceholder: '新しいパスワードをもう一度入力',
+  couponTitle: 'クーポン記録', couponReady: '利用可能', couponAccum: '積立中',
+  couponOrderedPre: 'ご注文', couponOrdTimes: '回',
+  couponEarnedSuffix: '回達成！割引クーポンを獲得しました。決済時にご利用ください。',
+  couponProgressMid: '回注文で、残り', couponProgressSuffix: '回でクーポン獲得！',
+  saveProfile: '保存する', editProfile: '編集する',
+  navDivider: 'ナビゲーション', footerTagline: '✦ ゆっくり食べて、満腹の幸せ ✦',
+  loginAsMember: '会員でログインして注文する', logout: 'ログアウト',
+  heroSlide1Tag: '✦ 世界の味 • 指一本で注文 ✦',
+  heroSlide1Desc: 'ゆっくり食べて、満腹の幸せ — 世界の味を探索', orderNow: '今すぐ注文 →',
+  limitedOffer: '🎁 期間限定', heroSlide2Title: '満額プレゼント',
+  heroSlide2DescPre: '', heroSlide2DescGift: '特製煮卵 × 2 プレゼント',
+  emailNotSet: '（未設定）',
+  todayPick: '本日のおすすめ', chefRec: '今週のシェフのおすすめ',
+  viewMenu: 'メニューを見る', goOrder: '注文へ',
+  limitedTimeOffer: '期間限定特価', todayDeals: '今日のお得',
+  checkoutTitle: '注文確認', orderDetail: '注文内容', itemCountSuffix: '件',
+  free: '無料', couponDiscount: '割引クーポン（20%オフ）', clearCart: 'カートをクリア',
+  couponBlockTitle: '割引クーポン', couponActive: '割引クーポン使用中（20%オフ）',
+  couponAvailable: '割引クーポンが1枚あります。今回の注文で使用しますか？',
+  couponCancel: '使用をキャンセル', couponUse: 'クーポンを使用',
+  selectFreeItem: '無料メニューを選ぶ', selectPromoFirst: '下からキャンペーンを選んでください',
+  previewTitle: '注文プレビュー確認',
+  previewHint: '内容をご確認ください。変更は「戻る」を押してください',
+  goBack: '← 戻る', confirmOrder: '注文を確定する',
+  cancelOrderReturn: '注文をキャンセルしてホームへ戻る', paymentTitle: '支払い画面',
+  paymentMethodLbl: 'お支払い方法', contactPhone: '連絡先電話番号', required: '必須',
+  guestPhonePlaceholder: '電話番号を入力してください（ゲスト必須）',
+  memberPhonePlaceholder: '連絡先電話番号を確認',
+  phoneRequired: '電話番号を入力してから注文を送信してください',
+  cardNumberLbl: 'カード番号', cardExpiryLbl: '有効期限', cardCvvLbl: 'セキュリティコード CVV',
+  cardHolderLbl: 'カード名義（大文字）', cardIncomplete: 'カード情報をすべて正確に入力してください',
+  mobilePayDesc: 'スマートフォンで以下のQRコードをスキャンして支払いを完了してください',
+  qrExpiry: 'このQRコードはスマートフォンでスキャン · 5分以内にスキャンしてください',
+  mobilePayHint: '上のQRコードをスキャンして、スマートフォンで支払いを完了してください',
+  processing: '処理中...',
+  pickupNumber: 'お受け取り番号', estimatedWait: '推定待ち時間', minutes: '分',
+  noActiveOrder: '現在進行中の注文はありません',
+  orderHistoryTitle: '注文履歴', orderHistoryCountPre: '全', orderHistoryCountPost: '件の注文履歴',
+  statusCompleted: '完了', statusCancelled: 'キャンセル済み', statusRefunded: '返金済み',
+  noCompletedOrders: '完了した注文はありません',
+  noCancelledOrders: 'キャンセルした注文はありません',
+  noRefundedOrders: '返金済みの注文はありません',
+  goOrderSomething: 'お食事を注文しましょう！', totalLabel: '合計', requestRefund: '返金申請',
+  promoTagNew: '新会員限定', promoTagPromo: '期間限定', promoTagPremium: '期間限定ギフト',
+  promoGiftPrefix: '特典：',
+  promoInProgressTitle: '進行中キャンペーン',
+  promoAchievedPre: '達成済み', promoCountUnit: '件',
+  promoTotalPre: '全', promoExpandHint: '件、展開して確認',
+  promoBadgeDone: '件達成', promoDoneTag: '達成！特典を選ぶ',
+  promoRemainPre: 'あと', promoCanSelectGift: '会計ページで特典を選択してください',
+  giftSelectedPre: '選択済：', giftChangeLbl: '無料メニューを変更する',
+  skipPromo: 'キャンペーン不参加', selectThisPromo: 'このキャンペーンを選択', promoMinSpendPre: '',
+  promoZoneTitle: 'キャンペーン',
+  promoSpendPre: '', promoSpendPost: '以上で特典',
+  promoJoinPost: '以上で参加可能', viewDetails: '詳細を見る →',
+  activityDesc: 'キャンペーン説明', availableGifts: '選べる特典', goOrderNow: '今すぐ注文する',
+  payAmount: '支払金額', confirmPayment: '支払確認', cancel: 'キャンセル',
+  loadingTagline: '✦ のんびり食べて、お腹いっぱい ✦', loadingWait: 'しばらくお待ちください · PLEASE WAIT',
+  refundTitle: '返金申請', refundSubtitle: '返金理由を選択してください（複数可）',
+  refundOtherLabel: 'その他の問題', refundOtherPlaceholder: 'ご状況をご記入ください（任意）…',
+  refundCancelBtn: '申請をキャンセル', refundSubmitBtn: '返金を申請する',
+  refundSuccessTitle: '申請が送信されました', refundSuccessSub: 'できる限り早く対応いたします。しばらくお待ちください。',
+  refundR1: '注文内容と異なる商品が届いた', refundR2: '食品に異物・異臭があった',
+  refundR3: '食品が生焼け・過度に加熱されていた', refundR4: '量が明らかに不足していた',
+  refundR5: '届いた時点で食品が著しく冷めていた', refundR6: '包装が破損し衛生上問題がある',
+  refundR7: 'アレルゲンが事前に告知されていなかった',
+  sessionExpiredTitle: 'セッションが期限切れ',
+  sessionExpiredDesc: 'セッションの有効期限が切れました。再度ログインしてください。',
+  heroChefItemName: '日本風チキン串焼き', heroChefPricePre: '',
+  sessionExpiredBtn: '再ログイン',
 };
 
 const KR: LangDict = {
@@ -140,6 +357,79 @@ const KR: LangDict = {
   checkout: '주문하기', cancelOrder: '주문 취소', note: '메모', notePlaceholder: '특별 요청, 맛 선호도…',
   orderTrackerTitle: '주문 추적', waiting: '대기 중', cooking: '조리 중', ready: '수령 가능',
   showPwd: '비밀번호 표시', hidePwd: '비밀번호 숨기기',
+  guestLabel: '게스트', memberLabel: '회원', notLoggedIn: '미로그인', noName: '이름 없음',
+  profileTitle: '내 정보', emailLbl: '이메일', emailPlaceholder: '이메일 입력',
+  newPwdPlaceholder: '새 비밀번호 입력', confirmNewPwdPlaceholder: '새 비밀번호 다시 입력',
+  couponTitle: '쿠폰 기록', couponReady: '사용 가능', couponAccum: '적립 중',
+  couponOrderedPre: '주문 횟수', couponOrdTimes: '번',
+  couponEarnedSuffix: '번 달성! 할인 쿠폰을 받았습니다. 결제 시 사용하세요。',
+  couponProgressMid: '번 주문했으며，남은', couponProgressSuffix: '번 더 하면 쿠폰을 받을 수 있습니다。',
+  saveProfile: '저장', editProfile: '수정',
+  navDivider: '탐색 기능', footerTagline: '✦ 느긋하게 먹고, 배부르게 즐겨요 ✦',
+  loginAsMember: '회원으로 로그인하여 주문하기', logout: '로그아웃',
+  heroSlide1Tag: '✦ 세계의 맛 • 한 손으로 주문 ✦',
+  heroSlide1Desc: '느긋하게 먹고, 배부르게 — 세계 각지의 맛을 탐험', orderNow: '지금 주문하기 →',
+  limitedOffer: '🎁 기간 한정', heroSlide2Title: '일정 금액 이상 주문 시 선물',
+  heroSlide2DescPre: '', heroSlide2DescGift: '특제 조림달걀 × 2 증정',
+  emailNotSet: '（미설정）',
+  todayPick: '오늘의 엄선', chefRec: '이번 주 셰프 추천',
+  viewMenu: '메뉴 보기', goOrder: '주문하러 가기',
+  limitedTimeOffer: '한시 특가', todayDeals: '오늘의 특가',
+  checkoutTitle: '주문 확인', orderDetail: '주문 내역', itemCountSuffix: '건',
+  free: '무료', couponDiscount: '할인 쿠폰 (20% 할인)', clearCart: '장바구니 비우기',
+  couponBlockTitle: '할인 쿠폰', couponActive: '할인 쿠폰 사용 중 (20% 할인)',
+  couponAvailable: '할인 쿠폰 1장이 있습니다. 이번 주문에 사용하시겠습니까？',
+  couponCancel: '사용 취소', couponUse: '쿠폰 사용',
+  selectFreeItem: '무료 메뉴 선택하기', selectPromoFirst: '아래에서 먼저 이벤트를 선택하세요',
+  previewTitle: '주문 미리보기 확인',
+  previewHint: '내용을 확인하세요. 수정하려면 「이전」을 누르세요',
+  goBack: '← 이전', confirmOrder: '주문 확정',
+  cancelOrderReturn: '주문 취소 후 홈으로 돌아가기', paymentTitle: '결제 화면',
+  paymentMethodLbl: '결제 수단', contactPhone: '연락처 전화번호', required: '필수',
+  guestPhonePlaceholder: '전화번호를 입력하세요（게스트 필수）',
+  memberPhonePlaceholder: '연락처 전화번호 확인',
+  phoneRequired: '전화번호를 입력해야 주문을 제출할 수 있습니다',
+  cardNumberLbl: '카드 번호', cardExpiryLbl: '유효기간', cardCvvLbl: '보안코드 CVV',
+  cardHolderLbl: '카드 소유자 이름（대문자）', cardIncomplete: '카드 정보를 모두 입력해 주세요',
+  mobilePayDesc: '휴대폰으로 아래 QR 코드를 스캔하여 결제를 완료하세요',
+  qrExpiry: '이 QR 코드는 5분 이내에 스캔해 주세요',
+  mobilePayHint: '위의 QR 코드를 스캔하여 휴대폰에서 결제를 완료하세요',
+  processing: '처리 중...',
+  pickupNumber: '수령 번호', estimatedWait: '예상 대기', minutes: '분',
+  noActiveOrder: '진행 중인 주문이 없습니다',
+  orderHistoryTitle: '주문 내역', orderHistoryCountPre: '총', orderHistoryCountPost: '건의 주문 내역',
+  statusCompleted: '완료', statusCancelled: '취소됨', statusRefunded: '환불됨',
+  noCompletedOrders: '완료된 주문이 없습니다',
+  noCancelledOrders: '취소된 주문이 없습니다',
+  noRefundedOrders: '환불된 주문이 없습니다',
+  goOrderSomething: '음식을 주문해 보세요！', totalLabel: '합계', requestRefund: '환불 신청',
+  promoTagNew: '신규 회원 전용', promoTagPromo: '기간 한정', promoTagPremium: '기간 한정 선물',
+  promoGiftPrefix: '증정: ',
+  promoInProgressTitle: '진행 중 이벤트',
+  promoAchievedPre: '달성', promoCountUnit: '개 이벤트',
+  promoTotalPre: '총', promoExpandHint: ', 펼쳐서 진행 상황 확인',
+  promoBadgeDone: '개 달성', promoDoneTag: '달성! 사은품 선택',
+  promoRemainPre: '남은 금액', promoCanSelectGift: '결제 페이지에서 사은품 선택',
+  giftSelectedPre: '선택됨：', giftChangeLbl: '무료 메뉴 변경하기',
+  skipPromo: '이벤트 미참여', selectThisPromo: '이 이벤트 선택', promoMinSpendPre: '',
+  promoZoneTitle: '이벤트 존',
+  promoSpendPre: '', promoSpendPost: ' 이상 구매 시 사은품',
+  promoJoinPost: ' 이상 구매 시 참여 가능', viewDetails: '자세히 보기 →',
+  activityDesc: '이벤트 설명', availableGifts: '선택 가능한 사은품', goOrderNow: '지금 주문하기',
+  payAmount: '결제 금액', confirmPayment: '결제 확인', cancel: '취소',
+  loadingTagline: '✦ 느긋하게 먹고, 배불리 즐겨요 ✦', loadingWait: '잠시 기다려주세요 · PLEASE WAIT',
+  refundTitle: '환불 신청', refundSubtitle: '환불 사유를 선택해 주세요（복수 선택 가능）',
+  refundOtherLabel: '기타 문제', refundOtherPlaceholder: '문제를 설명해 주세요（선택 사항）…',
+  refundCancelBtn: '환불 신청 취소', refundSubmitBtn: '환불 신청 제출',
+  refundSuccessTitle: '신청이 접수되었습니다', refundSuccessSub: '최대한 빠르게 처리해 드리겠습니다. 잠시 기다려주세요。',
+  refundR1: '주문 내용과 다른 상품이 도착했습니다', refundR2: '음식에 이물질 또는 이취가 있었습니다',
+  refundR3: '음식이 설익거나 과도하게 조리되었습니다', refundR4: '양이 명백히 부족했습니다',
+  refundR5: '도착 시 음식이 심하게 식어 있었습니다', refundR6: '포장이 파손되어 위생상 문제가 있습니다',
+  refundR7: '알레르기 유발 성분이 사전에 고지되지 않았습니다',
+  sessionExpiredTitle: '로그인이 만료됨',
+  sessionExpiredDesc: '로그인 상태가 만료되었습니다. 다시 로그인해 주세요。',
+  heroChefItemName: '일본식 닭꼬치', heroChefPricePre: '',
+  sessionExpiredBtn: '다시 로그인',
 };
 
 const TRANSLATIONS: Record<CountryCode, LangDict> = { TW, JP, KR };

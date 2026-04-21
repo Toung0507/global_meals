@@ -37,6 +37,8 @@ export interface CartItem {
   id: number;
   name: string;
   nameEn: string;
+  nameJP?: string;
+  nameKR?: string;
   price: number;
   quantity: number;
   image: string;
@@ -49,11 +51,15 @@ export interface MenuItem {
   id: number;
   name: string;
   nameEn: string;
+  nameJP?: string;
+  nameKR?: string;
   price: number;
   image: string;
   category: string;
   categoryEn: string;
   description: string;
+  descriptionJP?: string;
+  descriptionKR?: string;
   isHot?: boolean;
   isNew?: boolean;
   stock: number;
@@ -149,30 +155,45 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   userRoleLabel = computed(() => {
     const user = this.authService.currentUser;
     if (!user) return '';
-    if (user.isGuest) return '訪客';
-    return '會員';
+    const l = this.branchService.lang();
+    if (user.isGuest) return l.guestLabel;
+    return l.memberLabel;
   });
 
   formattedName = computed(() => {
     const user = this.authService.currentUser;
-    if (!user) return '未登入';
+    const l = this.branchService.lang();
+    if (!user) return l.notLoggedIn;
     if (user.isGuest && user.phone) {
-      return `訪客「${user.phone}」`;
+      return `${l.guestLabel}「${user.phone}」`;
     }
-    return user.name || '無名氏';
+    return user.name || l.noName;
   });
+
+  /* ── 多語翻譯對照表（依中文名稱 key，供 API 回傳後合併用）── */
+  private static readonly MENU_I18N: Record<string, Pick<MenuItem, 'nameEn' | 'nameJP' | 'nameKR' | 'descriptionJP' | 'descriptionKR'>> = {
+    '招牌滷肉飯':   { nameEn: 'Braised Pork Rice',     nameJP: 'ルーローハン（魯肉飯）',         nameKR: '루로우판（대만식 돼지고기 조림밥）', descriptionJP: '豚バラ肉をじっくり煮込んだ濃厚タレ、半熟煮卵とさっぱりキムチ添え',                    descriptionKR: '천천히 조린 삼겹살, 진한 간장 소스, 반숙 달걀과 아삭한 겉절이 곁들임' },
+    '古早味排骨飯': { nameEn: 'Pork Chop Rice',        nameJP: '昔ながらのポークチョップライス', nameKR: '옛날식 돼지갈비 덮밥',               descriptionJP: '台湾式の揚げポークチョップ、大根の煮物と白ご飯',                                      descriptionKR: '대만식 튀긴 돼지갈비, 무 조림과 흰 쌀밥' },
+    '牛排':         { nameEn: 'Beef Steak',            nameJP: 'ビーフステーキ',                nameKR: '비프스테이크',                       descriptionJP: 'オーストラリア産牛肉、炭火焼きで旨みを閉じ込め、季節野菜とソース添え',                descriptionKR: '호주산 소고기, 직화구이로 육즙 봉인, 제철 채소와 소스 곁들임' },
+    '三杯雞':       { nameEn: 'Three Cup Chicken',     nameJP: '三杯鶏（サンベイジー）',          nameKR: '삼배닭（산베이지）',                  descriptionJP: 'ごま油・醤油・紹興酒で炒め煮、バジルの香り豊か',                                      descriptionKR: '참기름·간장·쌀술 삼배 조리, 바질 향이 가득' },
+    '蚵仔煎':       { nameEn: 'Oyster Pancake',        nameJP: 'カキのお好み焼き（蚵仔煎）',      nameKR: '굴전（대만식 오아체）',               descriptionJP: '新鮮な牡蠣を使ったさつまいも粉のパンケーキ、特製甘辛ソースがけ',                    descriptionKR: '신선한 굴을 넣은 고구마 전분 전, 특제 매콤달콤 소스 곁들임' },
+    '蚵仔麵線':     { nameEn: 'Oyster Vermicelli',     nameJP: 'カキのそうめん（蚵仔麵線）',      nameKR: '굴 국수（오아체미엔시엔）',           descriptionJP: '新鮮な牡蠣と細麺のスープ、甘辛ソースで味付けした夜市の定番',                        descriptionKR: '신선한 굴과 가는 국수의 조화, 매콤달콤 소스의 야시장 명물' },
+    '阿三陽春麵':   { nameEn: 'Traditional Noodle',   nameJP: '陽春麺（台湾スタイル）',           nameKR: '아싼 양춘면（대만식）',               descriptionJP: '昔ながら製法のクリアスープ、手打ち麺のもちもち食感',                                  descriptionKR: '전통 방식으로 우린 맑은 육수, 수제 면의 탱글탱글한 식감' },
+    '黑糖珍珠奶茶': { nameEn: 'Brown Sugar Boba',      nameJP: '黒糖タピオカミルクティー',         nameKR: '흑당 버블티',                        descriptionJP: '出来たてタピオカ、手作り黒糖タイガーストライプ',                                      descriptionKR: '갓 삶은 타피오카, 수제 흑당 호랑이 무늬' },
+    '仙草奶茶':     { nameEn: 'Grass Jelly Milk Tea', nameJP: '仙草ミルクティー',                nameKR: '선초 밀크티',                        descriptionJP: '台湾産仙草ゼリー入り、濃厚ミルクティーとの絶妙な組み合わせ',                          descriptionKR: '대만산 선초 젤리, 진한 밀크티와의 절묘한 조합' },
+  };
 
   /* ── 菜單品項（API 載入後動態填充；MOCK_MODE 下使用靜態 Demo 資料）── */
   menuItems = signal<MenuItem[]>([
-    { id: 1, name: '招牌滷肉飯',   nameEn: 'Braised Pork Rice',      price: 120, image: '', category: '飯食', categoryEn: 'Rice',    description: '慢燉豬五花，滷汁濃醇入味，配半熟滷蛋與爽脆泡菜', stock: 20 },
-    { id: 2, name: '古早味排骨飯', nameEn: 'Pork Chop Rice',         price: 145, image: '', category: '飯食', categoryEn: 'Rice',    description: '台式醃製炸排骨，滷汁菜頭配白飯', stock: 15 },
-    { id: 8, name: '牛排',         nameEn: 'Beef Steak',             price: 130, image: '', category: '飯食', categoryEn: 'Rice',    description: '精選澳洲牛肉，炭烤鎖汁，附時蔬與醬汁', stock: 10 },
-    { id: 9, name: '三杯雞',       nameEn: 'Three Cup Chicken',      price: 150, image: '', category: '飯食', categoryEn: 'Rice',    description: '麻油、醬油、米酒三杯燒製，九層塔香氣四溢', stock: 15 },
-    { id: 3, name: '蚵仔煎',       nameEn: 'Oyster Pancake',         price: 80,  image: '', category: '小吃', categoryEn: 'Snacks',  description: '鮮蚵地瓜粉煎餅，淋上特製甜辣醬', stock: 18 },
-    { id: 7, name: '蚵仔麵線',     nameEn: 'Oyster Vermicelli',      price: 70,  image: '', category: '小吃', categoryEn: 'Snacks',  description: '鮮蚵燴入麵線，甜辣醬提味，道地夜市風味', stock: 20 },
-    { id: 4, name: '阿三陽春麵',   nameEn: 'Traditional Noodle',    price: 120, image: '', category: '麵食', categoryEn: 'Noodles', description: '古法熬製清湯底，手工製麵條彈牙有嚼勁', stock: 15 },
-    { id: 5, name: '黑糖珍珠奶茶', nameEn: 'Brown Sugar Boba',       price: 75,  image: '', category: '飲品', categoryEn: 'Drinks',  description: '現煮珍珠，手工黑糖虎紋', stock: 50 },
-    { id: 6, name: '仙草奶茶',     nameEn: 'Grass Jelly Milk Tea',  price: 65,  image: '', category: '飲品', categoryEn: 'Drinks',  description: '台灣本產仙草凍，搭配濃醇鮮奶茶', stock: 30 },
+    { id: 1, name: '招牌滷肉飯',   ...CustomerHomeComponent.MENU_I18N['招牌滷肉飯'],   price: 120, image: '', category: '飯食', categoryEn: 'Rice',    description: '慢燉豬五花，滷汁濃醇入味，配半熟滷蛋與爽脆泡菜', stock: 20 },
+    { id: 2, name: '古早味排骨飯', ...CustomerHomeComponent.MENU_I18N['古早味排骨飯'], price: 145, image: '', category: '飯食', categoryEn: 'Rice',    description: '台式醃製炸排骨，滷汁菜頭配白飯', stock: 15 },
+    { id: 8, name: '牛排',         ...CustomerHomeComponent.MENU_I18N['牛排'],         price: 130, image: '', category: '飯食', categoryEn: 'Rice',    description: '精選澳洲牛肉，炭烤鎖汁，附時蔬與醬汁', stock: 10 },
+    { id: 9, name: '三杯雞',       ...CustomerHomeComponent.MENU_I18N['三杯雞'],       price: 150, image: '', category: '飯食', categoryEn: 'Rice',    description: '麻油、醬油、米酒三杯燒製，九層塔香氣四溢', stock: 15 },
+    { id: 3, name: '蚵仔煎',       ...CustomerHomeComponent.MENU_I18N['蚵仔煎'],       price: 80,  image: '', category: '小吃', categoryEn: 'Snacks',  description: '鮮蚵地瓜粉煎餅，淋上特製甜辣醬', stock: 18 },
+    { id: 7, name: '蚵仔麵線',     ...CustomerHomeComponent.MENU_I18N['蚵仔麵線'],     price: 70,  image: '', category: '小吃', categoryEn: 'Snacks',  description: '鮮蚵燴入麵線，甜辣醬提味，道地夜市風味', stock: 20 },
+    { id: 4, name: '阿三陽春麵',   ...CustomerHomeComponent.MENU_I18N['阿三陽春麵'],   price: 120, image: '', category: '麵食', categoryEn: 'Noodles', description: '古法熬製清湯底，手工製麵條彈牙有嚼勁', stock: 15 },
+    { id: 5, name: '黑糖珍珠奶茶', ...CustomerHomeComponent.MENU_I18N['黑糖珍珠奶茶'], price: 75,  image: '', category: '飲品', categoryEn: 'Drinks',  description: '現煮珍珠，手工黑糖虎紋', stock: 50 },
+    { id: 6, name: '仙草奶茶',     ...CustomerHomeComponent.MENU_I18N['仙草奶茶'],     price: 65,  image: '', category: '飲品', categoryEn: 'Drinks',  description: '台灣本產仙草凍，搭配濃醇鮮奶茶', stock: 30 },
   ]);
 
   /** 從 menuItems 衍生的分類清單（去重，保持插入順序） */
@@ -194,11 +215,22 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   /** 分類標題文字（含 emoji） */
   getCategoryLabel(cat: string): string {
-    const MAP: Record<string, string> = {
+    const cc = this.branchService.country;
+    const MAP_TW: Record<string, string> = {
       '飯食': '🍱 飯食料理', '小吃': '🦪 台灣小吃',
       '麵食': '🍜 麵食',     '飲品': '🧋 特調飲品',
     };
-    return MAP[cat] ?? `🍽 ${cat}`;
+    const MAP_JP: Record<string, string> = {
+      '飯食': '🍱 ご飯料理', '小吃': '🦪 台湾スナック',
+      '麵食': '🍜 麺料理',   '飲品': '🧋 ドリンク',
+    };
+    const MAP_KR: Record<string, string> = {
+      '飯食': '🍱 밥 요리', '小吃': '🦪 대만 간식',
+      '麵食': '🍜 면 요리', '飲品': '🧋 음료',
+    };
+    if (cc === 'JP') return MAP_JP[cat] ?? `🍽 ${cat}`;
+    if (cc === 'KR') return MAP_KR[cat] ?? `🍽 ${cat}`;
+    return MAP_TW[cat] ?? `🍽 ${cat}`;
   }
 
   /** CSS 背景圖 class（MOCK 模式下依名稱對應；真實模式下由 image 欄位帶入） */
@@ -380,58 +412,88 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   readonly PROMO_ACTIVITIES = [
     {
       name: '新會員首單禮',
+      nameJP: '新規会員初回注文特典',
+      nameKR: '신규 회원 첫 주문 선물',
       minSpend: 150,
-      gifts: ['招牌豆漿 × 1', '仙草奶茶 × 1'],
+      gifts:   ['招牌豆漿 × 1', '仙草奶茶 × 1'],
+      giftsJP: ['自慢の豆乳 × 1', '仙草ミルクティー × 1'],
+      giftsKR: ['시그니처 두유 × 1', '선초 밀크티 × 1'],
     },
     {
       name: '週末滿額禮',
+      nameJP: '週末お買い上げ特典',
+      nameKR: '주말 구매 달성 선물',
       minSpend: 300,
-      gifts: ['古早味豆干 × 2', '特製泡菜 × 1', '招牌滷蛋 × 2'],
+      gifts:   ['古早味豆干 × 2', '特製泡菜 × 1', '招牌滷蛋 × 2'],
+      giftsJP: ['昔ながら豆腐干 × 2', '特製キムチ × 1', '特製煮卵 × 2'],
+      giftsKR: ['옛날식 두부간 × 2', '특제 김치 × 1', '특제 조림달걀 × 2'],
     },
     {
       name: '消費達人大禮包',
+      nameJP: 'グルメ達人特大ギフトセット',
+      nameKR: '소비 달인 대형 선물 세트',
       minSpend: 500,
-      gifts: ['仙草奶茶 × 1 + 招牌滷蛋 × 2', '特製泡菜 × 1 + 古早味豆干 × 2'],
+      gifts:   ['仙草奶茶 × 1 + 招牌滷蛋 × 2', '特製泡菜 × 1 + 古早味豆干 × 2'],
+      giftsJP: ['仙草ミルクティー × 1 + 特製煮卵 × 2', '特製キムチ × 1 + 昔ながら豆腐干 × 2'],
+      giftsKR: ['선초 밀크티 × 1 + 특제 조림달걀 × 2', '특제 김치 × 1 + 옛날식 두부간 × 2'],
     },
   ];
 
   /* 活動專區展示資料（含完整圖片、日期、文案） */
   readonly PROMO_DISPLAY = [
     {
-      name: '新會員首單禮',
+      name: '新會員首單禮', nameJP: '新規会員初回注文特典', nameKR: '신규 회원 첫 주문 선물',
       tag: '新會員限定',
       tagType: 'new',
       image: '/assets/主頁輪播圖1.jpg',
       startDate: '2026-04-01',
       endDate: '2026-06-30',
       minSpend: 150,
-      gifts: ['招牌豆漿 × 1', '仙草奶茶 × 1'],
+      gifts:   ['招牌豆漿 × 1', '仙草奶茶 × 1'],
+      giftsJP: ['自慢の豆乳 × 1', '仙草ミルクティー × 1'],
+      giftsKR: ['시그니처 두유 × 1', '선초 밀크티 × 1'],
       description: '首次在懶飽飽下單的新會員，單筆消費滿 NT$150 即可獲得精選贈品一份！不論您喜歡台灣在地風味還是跨國美食，這份專屬歡迎禮都是我們對您最誠摯的招待，讓您第一口就愛上懶飽飽。',
-      highlights: ['首次消費即享', '任選一項贈品', '限首筆訂單使用', '可與菜單折扣並用'],
+      descriptionJP: 'はじめて懶飽飽でご注文いただく新規会員様へ、1回の購入で指定金額以上お買い上げいただくと、厳選プレゼントを1つプレゼント！台湾の地元グルメからインターナショナル料理まで、このウェルカムギフトが最高のおもてなしです。最初のひと口から懶飽飽の虜に。',
+      descriptionKR: '懶飽飽에서 처음 주문하시는 신규 회원님께, 1회 구매 지정 금액 이상 시 엄선된 선물을 1개 증정！대만 현지 맛부터 글로벌 푸드까지, 이 환영 선물이 저희의 진심 어린 대접입니다. 첫 입부터 懶飽飽에 빠져보세요。',
+      highlights:   ['首次消費即享', '任選一項贈品', '限首筆訂單使用', '可與菜單折扣並用'],
+      highlightsJP: ['初回ご注文でプレゼント', '1つのギフトをお選びいただけます', '初回注文のみ適用', 'メニュー割引との併用可'],
+      highlightsKR: ['첫 주문 시 즉시 증정', '선물 1개 선택 가능', '첫 번째 주문에만 적용', '메뉴 할인과 중복 사용 가능'],
     },
     {
-      name: '週末滿額禮',
+      name: '週末滿額禮', nameJP: '週末お買い上げ特典', nameKR: '주말 구매 달성 선물',
       tag: '期間限定',
       tagType: 'promo',
       image: '/assets/主頁輪播圖2.jpg',
       startDate: '2026-04-05',
       endDate: '2026-05-31',
       minSpend: 300,
-      gifts: ['古早味豆干 × 2', '特製泡菜 × 1', '招牌滷蛋 × 2'],
+      gifts:   ['古早味豆干 × 2', '特製泡菜 × 1', '招牌滷蛋 × 2'],
+      giftsJP: ['昔ながら豆腐干 × 2', '特製キムチ × 1', '特製煮卵 × 2'],
+      giftsKR: ['옛날식 두부간 × 2', '특제 김치 × 1', '특제 조림달걀 × 2'],
       description: '每逢週末，單筆消費滿 NT$300 即可選一份豐盛贈品！不論是和家人一起享用還是獨自犒賞自己，懶飽飽都準備了最道地的台灣小吃作為感謝禮，讓每個週末都過得更加美味。',
-      highlights: ['僅限週六、日適用', '消費滿 NT$300', '三款贈品任選一', '每筆訂單限贈一次'],
+      descriptionJP: '毎週末、1回の購入で指定金額以上お買い上げいただくと、豪華プレゼントをひとつお選びいただけます！ご家族とのお食事にも、ご自身へのご褒美にも、懶飽飽が最高の台湾グルメをご用意して感謝をお伝えします。',
+      descriptionKR: '매주 주말, 1회 구매 지정 금액 이상 시 풍성한 선물 1개를 선택하실 수 있습니다！가족과 함께하는 식사나 혼자만의 보상에, 懶飽飽가 최고의 대만 음식으로 감사를 전합니다。',
+      highlights:   ['僅限週六、日適用', '消費滿 NT$300', '三款贈品任選一', '每筆訂單限贈一次'],
+      highlightsJP: ['土曜・日曜のみ適用', '指定金額以上のご購入', '3種のギフトからお選び', '1注文につき1回限り'],
+      highlightsKR: ['토·일요일에만 적용', '지정 금액 이상 구매', '3종 선물 중 1개 선택', '주문당 1회 한정'],
     },
     {
-      name: '消費達人大禮包',
+      name: '消費達人大禮包', nameJP: 'グルメ達人特大ギフトセット', nameKR: '소비 달인 대형 선물 세트',
       tag: '限時豪禮',
       tagType: 'premium',
       image: '/assets/主頁輪播圖3.jpg',
       startDate: '2026-04-01',
       endDate: '2026-04-30',
       minSpend: 500,
-      gifts: ['仙草奶茶 × 1 + 招牌滷蛋 × 2', '特製泡菜 × 1 + 古早味豆干 × 2'],
+      gifts:   ['仙草奶茶 × 1 + 招牌滷蛋 × 2', '特製泡菜 × 1 + 古早味豆干 × 2'],
+      giftsJP: ['仙草ミルクティー × 1 + 特製煮卵 × 2', '特製キムチ × 1 + 昔ながら豆腐干 × 2'],
+      giftsKR: ['선초 밀크티 × 1 + 특제 조림달걀 × 2', '특제 김치 × 1 + 옛날식 두부간 × 2'],
       description: '單筆消費滿 NT$500，立享雙重組合贈品！這是懶飽飽為美食達人精心準備的超值回饋，豐盛組合讓您一次享受多種在地好味道，越吃越過癮，本月限定不容錯過。',
-      highlights: ['本月限定活動', '消費滿 NT$500', '兩款組合禮任選一', '可搭配折扣券使用'],
+      descriptionJP: '1回の購入で指定金額以上お買い上げいただくと、豪華ダブル特典セットがすぐもらえる！美食家のための超お得な感謝プレゼント、豊富な組み合わせで台湾の本場の味を一度に楽しめます。今月限定、お見逃しなく。',
+      descriptionKR: '1회 구매 지정 금액 이상 시 즉시 더블 콤보 선물 세트를 받으세요！미식가를 위한 초대박 감사 선물, 풍성한 조합으로 다양한 현지의 맛을 한번에 즐기세요. 이달 한정, 놓치지 마세요。',
+      highlights:   ['本月限定活動', '消費滿 NT$500', '兩款組合禮任選一', '可搭配折扣券使用'],
+      highlightsJP: ['今月限定キャンペーン', '指定金額以上のご購入', '2種の組み合わせギフトからお選び', '割引クーポンとの併用可'],
+      highlightsKR: ['이달 한정 이벤트', '지정 금액 이상 구매', '2종 콤보 선물 중 1개 선택', '할인 쿠폰과 중복 사용 가능'],
     },
   ];
 
@@ -449,6 +511,58 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   get selectedPromoDetail() {
     const i = this.promoDetailIndex();
     return i !== null ? this.PROMO_DISPLAY[i] : null;
+  }
+
+  /** 根據目前語言取得品項名稱 */
+  getLocalizedName(item: { name: string; nameJP?: string; nameKR?: string }): string {
+    const cc = this.branchService.country;
+    if (cc === 'JP') return item.nameJP ?? item.name;
+    if (cc === 'KR') return item.nameKR ?? item.name;
+    return item.name;
+  }
+
+  /** 根據目前語言取得品項描述 */
+  getLocalizedDesc(item: { description: string; descriptionJP?: string; descriptionKR?: string }): string {
+    const cc = this.branchService.country;
+    if (cc === 'JP') return item.descriptionJP ?? item.description;
+    if (cc === 'KR') return item.descriptionKR ?? item.description;
+    return item.description;
+  }
+
+  /** 根據目前語言取得活動贈品清單 */
+  getLocalizedGifts(promo: { gifts: string[]; giftsJP?: string[]; giftsKR?: string[] }): string[] {
+    const cc = this.branchService.country;
+    if (cc === 'JP') return promo.giftsJP ?? promo.gifts;
+    if (cc === 'KR') return promo.giftsKR ?? promo.gifts;
+    return promo.gifts;
+  }
+
+  /** 根據目前語言取得活動亮點清單 */
+  getLocalizedHighlights(promo: { highlights: string[]; highlightsJP?: string[]; highlightsKR?: string[] }): string[] {
+    const cc = this.branchService.country;
+    if (cc === 'JP') return promo.highlightsJP ?? promo.highlights;
+    if (cc === 'KR') return promo.highlightsKR ?? promo.highlights;
+    return promo.highlights;
+  }
+
+  /** 根據中文名稱查找 menuItems 並取得本地化名稱 */
+  getLocalizedMenuName(chineseName: string): string {
+    const item = this.menuItems().find(i => i.name === chineseName);
+    return item ? this.getLocalizedName(item) : chineseName;
+  }
+
+  /** 根據中文名稱查找 menuItems 並取得本地化描述 */
+  getLocalizedMenuDesc(chineseName: string): string {
+    const item = this.menuItems().find(i => i.name === chineseName);
+    return item ? this.getLocalizedDesc(item) : '';
+  }
+
+  /** 根據目前語言取得訂單品項文字 */
+  getLocalizedOrderItems(order: { items: string; itemsJP?: string; itemsKR?: string }): string {
+    const cc = this.branchService.country;
+    if (cc === 'JP') return order.itemsJP ?? order.items;
+    if (cc === 'KR') return order.itemsKR ?? order.items;
+    return order.items;
   }
 
   /* 已選活動名稱（'' = 未選, '不參加活動優惠' = 放棄） */
@@ -471,6 +585,18 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   get selectedPromoActivity() {
     return this.PROMO_ACTIVITIES.find(p => p.name === this.selectedPromoName()) ?? null;
   }
+
+  /** 已選贈品的本地化顯示名稱 */
+  selectedPromoGiftLocalized = computed(() => {
+    const gift = this.selectedPromoGift();
+    if (!gift) return '';
+    const activity = this.PROMO_ACTIVITIES.find(p => p.name === this.selectedPromoName());
+    if (!activity) return gift;
+    const idx = activity.gifts.indexOf(gift);
+    if (idx === -1) return gift;
+    const localized = this.getLocalizedGifts(activity);
+    return localized[idx] ?? gift;
+  });
 
   /* 菜單頁：整個活動抽屜展開/收折 */
   togglePromoDrawer(): void {
@@ -625,24 +751,30 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   refundTargetOrder = signal<{ id: string; total: number } | null>(null);
   refundSubmitted = signal(false);
 
-  refundReasons = signal([
-    { id: 'r1', label: '餐點品項錯誤（與訂單內容不符）', checked: false },
-    { id: 'r2', label: '食物有異物或異味', checked: false },
-    { id: 'r3', label: '食物未熟透或過度烹調', checked: false },
-    { id: 'r4', label: '份量明顯不足', checked: false },
-    { id: 'r5', label: '餐點送達時已嚴重冷卻', checked: false },
-    { id: 'r6', label: '包裝破損，影響食品衛生', checked: false },
-    { id: 'r7', label: '含有過敏原且未事先告知', checked: false },
-  ]);
+  refundChecked = signal<Record<string, boolean>>({ r1: false, r2: false, r3: false, r4: false, r5: false, r6: false, r7: false });
+
+  refundReasons = computed(() => {
+    const l = this.branchService.lang();
+    const c = this.refundChecked();
+    return [
+      { id: 'r1', label: l.refundR1, checked: c['r1'] },
+      { id: 'r2', label: l.refundR2, checked: c['r2'] },
+      { id: 'r3', label: l.refundR3, checked: c['r3'] },
+      { id: 'r4', label: l.refundR4, checked: c['r4'] },
+      { id: 'r5', label: l.refundR5, checked: c['r5'] },
+      { id: 'r6', label: l.refundR6, checked: c['r6'] },
+      { id: 'r7', label: l.refundR7, checked: c['r7'] },
+    ];
+  });
   refundOtherText = signal('');
 
   hasRefundSelection = computed(() =>
-    this.refundReasons().some((r) => r.checked) || this.refundOtherText().trim().length > 0
+    Object.values(this.refundChecked()).some(v => v) || this.refundOtherText().trim().length > 0
   );
 
   openRefundModal(order: { id: string; total: number }): void {
     this.refundTargetOrder.set(order);
-    this.refundReasons.update((list) => list.map((r) => ({ ...r, checked: false })));
+    this.refundChecked.set({ r1: false, r2: false, r3: false, r4: false, r5: false, r6: false, r7: false });
     this.refundOtherText.set('');
     this.refundSubmitted.set(false);
     this.refundModalOpen.set(true);
@@ -654,9 +786,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   toggleRefundReason(id: string): void {
-    this.refundReasons.update((list) =>
-      list.map((r) => (r.id === id ? { ...r, checked: !r.checked } : r))
-    );
+    this.refundChecked.update(c => ({ ...c, [id]: !c[id] }));
   }
 
   updateRefundOther(value: string): void {
@@ -679,6 +809,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       id: 'LBB-20260115-001',
       date: '2026-01-15',
       items: '紅燒牛肉麵 × 1、滷蛋 × 2',
+      itemsJP: '紅焼き牛肉麺 × 1、煮卵 × 2',
+      itemsKR: '홍사오 소고기 국수 × 1、반숙 달걀 × 2',
       total: 185,
       status: 'completed',
     },
@@ -686,6 +818,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       id: 'LBB-20260210-002',
       date: '2026-02-10',
       items: '三杯雞飯 × 1、味噌湯 × 1',
+      itemsJP: '三杯チキンライス × 1、味噌スープ × 1',
+      itemsKR: '산배이 닭고기 덮밥 × 1、된장국 × 1',
       total: 150,
       status: 'completed',
     },
@@ -693,6 +827,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       id: 'LBB-20260301-003',
       date: '2026-03-01',
       items: '咖哩雞飯 × 1、珍珠奶茶 × 2、小菜 × 1',
+      itemsJP: 'カレーチキンライス × 1、タピオカミルクティー × 2、小皿料理 × 1',
+      itemsKR: '카레 치킨 라이스 × 1、버블밀크티 × 2、사이드 메뉴 × 1',
       total: 320,
       status: 'completed',
     },
@@ -700,6 +836,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       id: 'LBB-20260318-004',
       date: '2026-03-18',
       items: '麻辣燙 × 1、白飯 × 1',
+      itemsJP: '麻辣湯（マーラータン）× 1、白ご飯 × 1',
+      itemsKR: '마라탕 × 1、흰밥 × 1',
       total: 175,
       status: 'completed',
     },
@@ -707,6 +845,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       id: 'LBB-20260325-005',
       date: '2026-03-25',
       items: '越南河粉 × 1、春捲 × 3',
+      itemsJP: 'ベトナムフォー × 1、生春巻き × 3',
+      itemsKR: '베트남 쌀국수（フォー）× 1、스프링롤 × 3',
       total: 210,
       status: 'completed',
     },
@@ -714,6 +854,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       id: 'LBB-20260401-006',
       date: '2026-04-01',
       items: '印度咖哩飯 × 2、饢餅 × 1、優格飲 × 2',
+      itemsJP: 'インドカレーライス × 2、ナン × 1、ラッシー × 2',
+      itemsKR: '인도 카레 라이스 × 2、난 × 1、라씨 × 2',
       total: 395,
       status: 'completed',
     },
@@ -721,6 +863,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       id: 'LBB-20260308-007',
       date: '2026-03-08',
       items: '鐵板燒套餐 × 2、冬瓜茶 × 2',
+      itemsJP: '鉄板焼きセット × 2、冬瓜茶 × 2',
+      itemsKR: '철판구이 세트 × 2、동과차 × 2',
       total: 480,
       status: 'cancelled',
     },
@@ -728,6 +872,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       id: 'LBB-20260220-008',
       date: '2026-02-20',
       items: '紅油抄手 × 2',
+      itemsJP: '紅油水餃子（ホンユーチャオショウ）× 2',
+      itemsKR: '훙유 완탕（홍유초우서우）× 2',
       total: 120,
       status: 'refunded',
     },
@@ -802,13 +948,21 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     this.apiService.getActiveProducts(areaId).subscribe({
       next: (res) => {
         if (res?.products?.length) {
-          this.menuItems.set(res.products.map(p => ({
-            id: p.id, name: p.name, nameEn: p.name,
-            price: p.basePrice, image: '',
-            category: p.category, categoryEn: p.category,
-            description: p.description ?? '',
-            stock: p.stockQuantity,
-          })));
+          this.menuItems.set(res.products.map(p => {
+            const i18n = CustomerHomeComponent.MENU_I18N[p.name] ?? {};
+            return {
+              id: p.id, name: p.name,
+              nameEn: i18n.nameEn ?? p.name,
+              nameJP: i18n.nameJP,
+              nameKR: i18n.nameKR,
+              price: p.basePrice, image: '',
+              category: p.category, categoryEn: p.category,
+              description: p.description ?? '',
+              descriptionJP: i18n.descriptionJP,
+              descriptionKR: i18n.descriptionKR,
+              stock: p.stockQuantity,
+            };
+          }));
         }
       },
       error: () => console.warn('[Customer] 菜單 API 連線失敗，使用 Demo 資料')
@@ -828,6 +982,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
               items: (o.getOrdersDetailVoList ?? [])
                 .map(d => `${d.productName} × ${d.quantity}`)
                 .join('、'),
+              itemsJP: '',
+              itemsKR: '',
               total: +o.totalAmount,
               status: o.status === 'COMPLETED' ? 'completed' as const
                     : o.status === 'CANCELLED' ? 'cancelled' as const
@@ -880,6 +1036,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
           id: item.id,
           name: item.name,
           nameEn: item.nameEn,
+          nameJP: item.nameJP,
+          nameKR: item.nameKR,
           price: item.price,
           quantity: 1,
           image: item.image,
@@ -1134,6 +1292,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
         id: orderId,
         date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
         items: itemTexts.join('、'),
+        itemsJP: '',
+        itemsKR: '',
         total: this.discountedTotal(),
         status: 'completed',
       },
