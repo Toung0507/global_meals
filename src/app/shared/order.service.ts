@@ -14,7 +14,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 
 /* ── 訂單狀態型別 ───────────────────────────────────── */
-export type OrderStatus = 'pending-cash' | 'waiting' | 'cooking' | 'ready' | 'done';
+export type OrderStatus = 'pending-cash' | 'waiting' | 'cooking' | 'ready' | 'done' | 'cancelled';
 
 /* ── 即時訂單型別 ───────────────────────────────────── */
 export interface LiveOrder {
@@ -121,6 +121,10 @@ export class OrderService {
     this._orders.update(list =>
       list.map(o => o.id === id ? { ...o, status } : o)
     );
+  }
+
+  removeOrder(id: string): void {
+    this._orders.update(list => list.filter(o => o.id !== id));
   }
 
   /* ── 產生下一個訂單號 ───────────────────────────── */

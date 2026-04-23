@@ -9,10 +9,9 @@ import { ApiService } from '../../shared/api.service';
   standalone: true,
   imports: [RouterModule, FormsModule],
   templateUrl: './customer-register.component.html',
-  styleUrls: ['./customer-register.component.scss']
+  styleUrls: ['./customer-register.component.scss'],
 })
 export class CustomerRegisterComponent implements OnInit {
-
   name = '';
   phone = '';
   password = '';
@@ -27,31 +26,40 @@ export class CustomerRegisterComponent implements OnInit {
   confirmError = false;
   registering = false;
   registerError = '';
+  showSuccessModal = false; // ✅ 正確位置：class 屬性區
 
   constructor(
     public branchService: BranchService,
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
     this.branchService.init();
   }
 
-  get lang() { return this.branchService.lang(); }
-  get dialCode(): string { return this.branchService.config.dialCode; }
+  get lang() {
+    return this.branchService.lang();
+  }
+  get dialCode(): string {
+    return this.branchService.config.dialCode;
+  }
   get dialLabel(): string {
     return `${this.branchService.config.nameLocal} ${this.branchService.config.dialCode}`;
   }
 
-  togglePassword(): void { this.showPassword = !this.showPassword; }
-  toggleConfirmPassword(): void { this.showConfirmPassword = !this.showConfirmPassword; }
+  togglePassword(): void {
+    this.showPassword = !this.showPassword;
+  }
+  toggleConfirmPassword(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
 
   clearError(field: 'name' | 'phone' | 'password' | 'confirm'): void {
-    if (field === 'name')     this.nameError = false;
-    if (field === 'phone')    this.phoneError = false;
+    if (field === 'name') this.nameError = false;
+    if (field === 'phone') this.phoneError = false;
     if (field === 'password') this.passwordError = false;
-    if (field === 'confirm')  this.confirmError = false;
+    if (field === 'confirm') this.confirmError = false;
   }
 
   onRegister(): void {
@@ -61,7 +69,10 @@ export class CustomerRegisterComponent implements OnInit {
     this.confirmError = false;
     let valid = true;
 
-    if (!this.name.trim()) { this.nameError = true; valid = false; }
+    if (!this.name.trim()) {
+      this.nameError = true;
+      valid = false;
+    }
 
     const cleaned = this.phone.replace(/\D/g, '');
     if (cleaned.length < 6) {
@@ -70,32 +81,45 @@ export class CustomerRegisterComponent implements OnInit {
       valid = false;
     }
 
-    if (this.password.length < 8) { this.passwordError = true; valid = false; }
-    if (this.password !== this.confirmPassword) { this.confirmError = true; valid = false; }
+    if (this.password.length < 8) {
+      this.passwordError = true;
+      valid = false;
+    }
+    if (this.password !== this.confirmPassword) {
+      this.confirmError = true;
+      valid = false;
+    }
 
     if (!valid) return;
 
     const fullPhone = `${this.dialCode}${this.phone.trim()}`;
     this.registering = true;
     this.registerError = '';
-    this.apiService.registerMember({
-      name: this.name.trim(),
-      phone: fullPhone,
-      country: this.branchService.country,
-      password: this.password
-    }).subscribe({
-      next: (res) => {
-        this.registering = false;
-        if (res.code === 200) {
-          this.router.navigate(['/customer-login']);
-        } else {
-          this.registerError = res.message ?? '註冊失敗，請稍後再試';
-        }
-      },
-      error: () => {
-        this.registering = false;
-        this.registerError = '連線失敗，請確認網路後再試';
-      }
-    });
+    // ✅ 這行已刪除（不需要在方法內重置）
+
+    this.apiService
+      .registerMember({
+        name: this.name.trim(),
+        phone: fullPhone,
+        country: this.branchService.country,
+        password: this.password,
+      })
+      .subscribe({
+        next: (res) => {
+          this.registering = false;
+          if (res.code === 200) {
+            this.showSuccessModal = true; // ✅ 有 this.
+            setTimeout(() => {
+              this.router.navigate(['/customer-login']);
+            }, 3000);
+          } else {
+            this.registerError = res.message ?? '註冊失敗，請稍後再試';
+          }
+        },
+        error: () => {
+          this.registering = false;
+          this.registerError = '連線失敗，請確認網路後再試';
+        },
+      });
   }
 }

@@ -112,21 +112,7 @@
                   }}</span>
                 }
               </div>
-              <div class="pr-row">
-                <span class="pr-label">{{ lang.emailLbl }}</span>
-                @if (isEditingProfile()) {
-                  <input
-                    type="email"
-                    class="pr-input"
-                    [value]="authService.currentUser?.email || ''"
-                    [placeholder]="lang.emailPlaceholder"
-                  />
-                } @else {
-                  <span class="pr-value">{{
-                    authService.currentUser?.email || lang.emailNotSet
-                  }}</span>
-                }
-              </div>
+
               <div class="pr-row">
                 <span class="pr-label">{{ lang.passwordLbl }}</span>
                 <div class="pr-input-group">
@@ -247,7 +233,9 @@
                   <strong>{{ memberOrderCount() }}</strong>
                   {{ lang.couponEarnedSuffix }}
                 } @else {
-                  {{ lang.couponOrderedPre }} <strong>{{ memberOrderCount() }}</strong> {{ lang.couponProgressMid }}
+                  {{ lang.couponOrderedPre }}
+                  <strong>{{ memberOrderCount() }}</strong>
+                  {{ lang.couponProgressMid }}
                   <strong class="highlight">{{ ordersUntilDiscount() }}</strong>
                   {{ lang.couponProgressSuffix }}
                 }
@@ -303,7 +291,10 @@
           [class.active]="activeCountry() === c.code"
           (click)="selectCountry(c.code)"
         >
-          <span class="sidebar-flag-dot" [class]="'flag-' + c.code.toLowerCase()"></span>
+          <span
+            class="sidebar-flag-dot"
+            [class]="'flag-' + c.code.toLowerCase()"
+          ></span>
           <span class="sidebar-country-name">{{ c.nameLocal }}</span>
         </button>
       }
@@ -408,7 +399,9 @@
                 stroke="currentColor"
                 stroke-width="1.8"
               >
-                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                <path
+                  d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"
+                />
                 <line x1="7" y1="7" x2="7.01" y2="7" />
               </svg>
             }
@@ -422,7 +415,6 @@
     </nav>
 
     <div class="sidebar-footer">
-
       <div class="sidebar-footer-info">
         <span class="footer-tip">{{ lang.footerTagline }}</span>
       </div>
@@ -495,8 +487,8 @@
                   <h2 class="hcs-title">懶 飽 飽</h2>
                   <p class="hcs-en">Global Meals</p>
                   <p class="hcs-desc">{{ lang.heroSlide1Desc }}</p>
-                  <button class="hcs-btn" (click)="setTab('menu')">
-                    {{ lang.orderNow }}
+                  <button class="hcs-btn" (click)="scrollToFeatured()">
+                    {{ lang.goFeatured }}
                   </button>
                 </div>
                 <div class="hcs-right">
@@ -513,12 +505,22 @@
               <!-- ── 卡片 2：滿額好禮 ── -->
               <div class="hc-slide hc-slide-promo">
                 <div class="hcs-left">
-                  <span class="hcs-tag hcs-tag-dark">{{ lang.limitedOffer }}</span>
-                  <h2 class="hcs-title hcs-title-dark">{{ lang.heroSlide2Title }}</h2>
+                  <span class="hcs-tag hcs-tag-dark">{{
+                    lang.limitedOffer
+                  }}</span>
+                  <h2 class="hcs-title hcs-title-dark">
+                    {{ lang.heroSlide2Title }}
+                  </h2>
                   <p class="hcs-desc hcs-desc-dark">
-                    {{ lang.heroSlide2DescPre }}{{ branchService.config.currency }}300<br />{{ lang.heroSlide2DescGift }}
+                    {{ lang.heroSlide2DescPre
+                    }}{{ branchService.config.currency }}300<br />{{
+                      lang.heroSlide2DescGift
+                    }}
                   </p>
-                  <button class="hcs-btn hcs-btn-dark" (click)="setTab('menu')">
+                  <button
+                    class="hcs-btn hcs-btn-dark"
+                    (click)="scrollToFeatured()"
+                  >
                     {{ lang.goOrder }}
                   </button>
                 </div>
@@ -536,13 +538,17 @@
               <!-- ── 卡片 3：主廚推薦 ── -->
               <div class="hc-slide hc-slide-chef">
                 <div class="hcs-left">
-                  <span class="hcs-tag hcs-tag-light">{{ lang.todayPick }}</span>
+                  <span class="hcs-tag hcs-tag-light">{{
+                    lang.todayPick
+                  }}</span>
                   <h2 class="hcs-title">{{ lang.chefRec }}</h2>
                   <p class="hcs-desc">
-                    {{ lang.heroChefItemName }}<br />{{ lang.heroChefPricePre }}{{ branchService.config.currency }} <strong>145</strong>
+                    {{ getLocalizedMenuName("古早味排骨飯") }}<br />{{
+                      lang.heroChefPricePre
+                    }}{{ branchService.config.currency }} <strong>145</strong>
                   </p>
-                  <button class="hcs-btn" (click)="setTab('menu')">
-                    {{ lang.viewMenu }}
+                  <button class="hcs-btn" (click)="scrollToFeatured()">
+                    {{ lang.goFeatured }}
                   </button>
                 </div>
                 <div class="hcs-right">
@@ -632,25 +638,116 @@
               </div>
               <!-- 分類標籤列 -->
               <div class="menu-cat-bar">
-                <button class="menu-cat-btn" [class.active]="activeMenuCategory() === 'all'" (click)="setMenuCategory('all'); setTab('menu')">{{ lang.catAll }}</button>
-                <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '飯食'" (click)="setMenuCategory('飯食'); setTab('menu')">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13h16"/><path d="M4 13c0 5.5 2.7 7.5 8 7.5S20 18.5 20 13"/><line x1="8" y1="5" x2="9" y2="13"/><line x1="16" y1="5" x2="15" y2="13"/></svg>
+                <button
+                  class="menu-cat-btn"
+                  [class.active]="activeMenuCategory() === 'all'"
+                  (click)="setMenuCategory('all'); setTab('menu')"
+                >
+                  {{ lang.catAll }}
+                </button>
+                <button
+                  class="menu-cat-btn"
+                  [class.active]="activeMenuCategory() === '飯食'"
+                  (click)="setMenuCategory('飯食'); setTab('menu')"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  >
+                    <path d="M4 13h16" />
+                    <path d="M4 13c0 5.5 2.7 7.5 8 7.5S20 18.5 20 13" />
+                    <line x1="8" y1="5" x2="9" y2="13" />
+                    <line x1="16" y1="5" x2="15" y2="13" />
+                  </svg>
                   <span>{{ lang.catRice }}</span>
                 </button>
-                <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '麵食'" (click)="setMenuCategory('麵食'); setTab('menu')">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13h16"/><path d="M4 13c0 5.5 2.7 7.5 8 7.5S20 18.5 20 13"/><path d="M7 9c1-1.5 2-1 3 0s2 1.5 3 0 2-1 3 0"/></svg>
+                <button
+                  class="menu-cat-btn"
+                  [class.active]="activeMenuCategory() === '麵食'"
+                  (click)="setMenuCategory('麵食'); setTab('menu')"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  >
+                    <path d="M4 13h16" />
+                    <path d="M4 13c0 5.5 2.7 7.5 8 7.5S20 18.5 20 13" />
+                    <path d="M7 9c1-1.5 2-1 3 0s2 1.5 3 0 2-1 3 0" />
+                  </svg>
                   <span>{{ lang.catNoodles }}</span>
                 </button>
-                <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '小吃'" (click)="setMenuCategory('小吃'); setTab('menu')">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="21"/><circle cx="12" cy="8" r="2.5"/><circle cx="12" cy="15" r="2.5"/></svg>
+                <button
+                  class="menu-cat-btn"
+                  [class.active]="activeMenuCategory() === '小吃'"
+                  (click)="setMenuCategory('小吃'); setTab('menu')"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  >
+                    <line x1="12" y1="3" x2="12" y2="21" />
+                    <circle cx="12" cy="8" r="2.5" />
+                    <circle cx="12" cy="15" r="2.5" />
+                  </svg>
                   <span>{{ lang.catSnacks }}</span>
                 </button>
-                <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '輕食'" (click)="setMenuCategory('輕食'); setTab('menu')">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12"/><path d="M12 12C10 8 6 6 3 7c0 5 3 9 9 9z"/><path d="M12 12c2-4 6-6 9-5 0 5-3 9-9 9z"/></svg>
+                <button
+                  class="menu-cat-btn"
+                  [class.active]="activeMenuCategory() === '輕食'"
+                  (click)="setMenuCategory('輕食'); setTab('menu')"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M12 22V12" />
+                    <path d="M12 12C10 8 6 6 3 7c0 5 3 9 9 9z" />
+                    <path d="M12 12c2-4 6-6 9-5 0 5-3 9-9 9z" />
+                  </svg>
                   <span>{{ lang.catLight }}</span>
                 </button>
-                <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '飲品'" (click)="setMenuCategory('飲品'); setTab('menu')">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 3l-1.5 18h13L17 3H7z"/><line x1="15" y1="3" x2="12" y2="12"/><circle cx="9" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="11" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
+                <button
+                  class="menu-cat-btn"
+                  [class.active]="activeMenuCategory() === '飲品'"
+                  (click)="setMenuCategory('飲品'); setTab('menu')"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  >
+                    <path d="M7 3l-1.5 18h13L17 3H7z" />
+                    <line x1="15" y1="3" x2="12" y2="12" />
+                    <circle
+                      cx="9"
+                      cy="8"
+                      r="1"
+                      fill="currentColor"
+                      stroke="none"
+                    />
+                    <circle
+                      cx="11"
+                      cy="12"
+                      r="1"
+                      fill="currentColor"
+                      stroke="none"
+                    />
+                  </svg>
                   <span>{{ lang.catDrinks }}</span>
                 </button>
               </div>
@@ -658,7 +755,7 @@
           </div>
 
           <!-- 今日推薦 -->
-          <div class="home-section">
+          <div class="home-section" id="featured-section">
             <div class="home-section-header">
               <span class="section-tag">{{ lang.todayPick }}</span>
               <h2 class="section-title">{{ lang.chefRec }}</h2>
@@ -676,9 +773,16 @@
                   alt="招牌滷肉飯"
                 />
                 <div class="featured-info">
-                  <h3 class="featured-name">{{ getLocalizedMenuName('招牌滷肉飯') }}</h3>
-                  <p class="featured-desc">{{ getLocalizedMenuDesc('招牌滷肉飯') }}</p>
-                  <span class="featured-price">{{ branchService.config.currency }} <strong>120</strong></span>
+                  <h3 class="featured-name">
+                    {{ getLocalizedMenuName("招牌滷肉飯") }}
+                  </h3>
+                  <p class="featured-desc">
+                    {{ getLocalizedMenuDesc("招牌滷肉飯") }}
+                  </p>
+                  <span class="featured-price"
+                    >{{ branchService.config.currency }}
+                    <strong>120</strong></span
+                  >
                 </div>
               </div>
               <!-- 首頁小卡：古早味排骨飯 -->
@@ -690,9 +794,16 @@
                   alt="古早味排骨飯"
                 />
                 <div class="featured-info">
-                  <h3 class="featured-name">{{ getLocalizedMenuName('古早味排骨飯') }}</h3>
-                  <p class="featured-desc">{{ getLocalizedMenuDesc('古早味排骨飯') }}</p>
-                  <span class="featured-price">{{ branchService.config.currency }} <strong>145</strong></span>
+                  <h3 class="featured-name">
+                    {{ getLocalizedMenuName("古早味排骨飯") }}
+                  </h3>
+                  <p class="featured-desc">
+                    {{ getLocalizedMenuDesc("古早味排骨飯") }}
+                  </p>
+                  <span class="featured-price"
+                    >{{ branchService.config.currency }}
+                    <strong>145</strong></span
+                  >
                 </div>
               </div>
               <!-- 首頁小卡：蚵仔麵線 -->
@@ -704,9 +815,16 @@
                   alt="蚵仔麵線"
                 />
                 <div class="featured-info">
-                  <h3 class="featured-name">{{ getLocalizedMenuName('蚵仔麵線') }}</h3>
-                  <p class="featured-desc">{{ getLocalizedMenuDesc('蚵仔麵線') }}</p>
-                  <span class="featured-price">{{ branchService.config.currency }} <strong>70</strong></span>
+                  <h3 class="featured-name">
+                    {{ getLocalizedMenuName("蚵仔麵線") }}
+                  </h3>
+                  <p class="featured-desc">
+                    {{ getLocalizedMenuDesc("蚵仔麵線") }}
+                  </p>
+                  <span class="featured-price"
+                    >{{ branchService.config.currency }}
+                    <strong>70</strong></span
+                  >
                 </div>
               </div>
             </div>
@@ -717,22 +835,43 @@
             <!-- 滑動軌道：transform 驅動橫向切換 -->
             <div
               class="promo-slide-track"
-              [style.transform]="'translateX(-' + (promoBannerIndex() * 33.3333) + '%)'"
+              [style.transform]="
+                'translateX(-' + promoBannerIndex() * 33.3333 + '%)'
+              "
             >
               @for (promo of PROMO_ACTIVITIES; track promo.name) {
                 <div class="promo-slide">
                   <div class="promo-content">
                     <!-- 禮物 SVG（取代 emoji，避免跨平台字型差異） -->
-                    <svg class="promo-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg
+                      class="promo-icon-svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
                       <polyline points="20 12 20 22 4 22 4 12"></polyline>
                       <rect x="2" y="7" width="20" height="5"></rect>
                       <line x1="12" y1="22" x2="12" y2="7"></line>
-                      <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
-                      <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                      <path
+                        d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"
+                      ></path>
+                      <path
+                        d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"
+                      ></path>
                     </svg>
                     <div class="promo-text">
-                      <strong>{{ getLocalizedName(promo) }}・{{ lang.promoSpendPre }}{{ branchService.config.currency }}{{ promo.minSpend }}</strong>
-                      <span>{{ lang.promoGiftPrefix }}{{ getLocalizedGifts(promo)[0] }}</span>
+                      <strong
+                        >{{ getLocalizedName(promo) }}・{{ lang.promoSpendPre
+                        }}{{ branchService.config.currency
+                        }}{{ promo.minSpend }}</strong
+                      >
+                      <span
+                        >{{ lang.promoGiftPrefix
+                        }}{{ getLocalizedGifts(promo)[0] }}</span
+                      >
                     </div>
                   </div>
                   <span class="promo-arrow">→</span>
@@ -741,8 +880,15 @@
             </div>
             <!-- 指示點：顯示目前是第幾則活動 -->
             <div class="promo-dots">
-              @for (promo of PROMO_ACTIVITIES; track promo.name; let i = $index) {
-                <span class="promo-dot" [class.active]="promoBannerIndex() === i"></span>
+              @for (
+                promo of PROMO_ACTIVITIES;
+                track promo.name;
+                let i = $index
+              ) {
+                <span
+                  class="promo-dot"
+                  [class.active]="promoBannerIndex() === i"
+                ></span>
               }
             </div>
           </div>
@@ -753,6 +899,7 @@
             <div class="home-section-header">
               <span class="section-tag">{{ lang.limitedTimeOffer }}</span>
               <h2 class="section-title">{{ lang.todayDeals }}</h2>
+              <p class="section-disclaimer">{{ lang.dealDisclaimer }}</p>
             </div>
 
             <!-- 橫向捲動優惠卡列（含右側箭頭按鈕） -->
@@ -768,10 +915,17 @@
                     />
                   </div>
                   <div class="deal-card-body">
-                    <p class="deal-name">{{ getLocalizedMenuName('阿三陽春麵') }}</p>
+                    <p class="deal-name">
+                      {{ getLocalizedMenuName("阿三陽春麵") }}
+                    </p>
                     <div class="deal-prices">
-                      <span class="deal-original">{{ branchService.config.currency }}120</span>
-                      <span class="deal-sale">{{ branchService.config.currency }}<strong>99</strong></span>
+                      <span class="deal-original"
+                        >{{ branchService.config.currency }}120</span
+                      >
+                      <span class="deal-sale"
+                        >{{ branchService.config.currency
+                        }}<strong>99</strong></span
+                      >
                     </div>
                   </div>
                 </div>
@@ -786,10 +940,17 @@
                     />
                   </div>
                   <div class="deal-card-body">
-                    <p class="deal-name">{{ getLocalizedMenuName('蚵仔煎') }}</p>
+                    <p class="deal-name">
+                      {{ getLocalizedMenuName("蚵仔煎") }}
+                    </p>
                     <div class="deal-prices">
-                      <span class="deal-original">{{ branchService.config.currency }}80</span>
-                      <span class="deal-sale">{{ branchService.config.currency }}<strong>65</strong></span>
+                      <span class="deal-original"
+                        >{{ branchService.config.currency }}80</span
+                      >
+                      <span class="deal-sale"
+                        >{{ branchService.config.currency
+                        }}<strong>65</strong></span
+                      >
                     </div>
                   </div>
                 </div>
@@ -804,10 +965,17 @@
                     />
                   </div>
                   <div class="deal-card-body">
-                    <p class="deal-name">{{ getLocalizedMenuName('黑糖珍珠奶茶') }}</p>
+                    <p class="deal-name">
+                      {{ getLocalizedMenuName("黑糖珍珠奶茶") }}
+                    </p>
                     <div class="deal-prices">
-                      <span class="deal-original">{{ branchService.config.currency }}75</span>
-                      <span class="deal-sale">{{ branchService.config.currency }}<strong>55</strong></span>
+                      <span class="deal-original"
+                        >{{ branchService.config.currency }}75</span
+                      >
+                      <span class="deal-sale"
+                        >{{ branchService.config.currency
+                        }}<strong>55</strong></span
+                      >
                     </div>
                   </div>
                 </div>
@@ -822,10 +990,15 @@
                     />
                   </div>
                   <div class="deal-card-body">
-                    <p class="deal-name">{{ getLocalizedMenuName('牛排') }}</p>
+                    <p class="deal-name">{{ getLocalizedMenuName("牛排") }}</p>
                     <div class="deal-prices">
-                      <span class="deal-original">{{ branchService.config.currency }}130</span>
-                      <span class="deal-sale">{{ branchService.config.currency }}<strong>105</strong></span>
+                      <span class="deal-original"
+                        >{{ branchService.config.currency }}130</span
+                      >
+                      <span class="deal-sale"
+                        >{{ branchService.config.currency
+                        }}<strong>105</strong></span
+                      >
                     </div>
                   </div>
                 </div>
@@ -840,10 +1013,17 @@
                     />
                   </div>
                   <div class="deal-card-body">
-                    <p class="deal-name">{{ getLocalizedMenuName('仙草奶茶') }}</p>
+                    <p class="deal-name">
+                      {{ getLocalizedMenuName("仙草奶茶") }}
+                    </p>
                     <div class="deal-prices">
-                      <span class="deal-original">{{ branchService.config.currency }}65</span>
-                      <span class="deal-sale">{{ branchService.config.currency }}<strong>49</strong></span>
+                      <span class="deal-original"
+                        >{{ branchService.config.currency }}65</span
+                      >
+                      <span class="deal-sale"
+                        >{{ branchService.config.currency
+                        }}<strong>49</strong></span
+                      >
                     </div>
                   </div>
                 </div>
@@ -858,10 +1038,17 @@
                     />
                   </div>
                   <div class="deal-card-body">
-                    <p class="deal-name">{{ getLocalizedMenuName('三杯雞') }}</p>
+                    <p class="deal-name">
+                      {{ getLocalizedMenuName("三杯雞") }}
+                    </p>
                     <div class="deal-prices">
-                      <span class="deal-original">{{ branchService.config.currency }}150</span>
-                      <span class="deal-sale">{{ branchService.config.currency }}<strong>135</strong></span>
+                      <span class="deal-original"
+                        >{{ branchService.config.currency }}150</span
+                      >
+                      <span class="deal-sale"
+                        >{{ branchService.config.currency
+                        }}<strong>135</strong></span
+                      >
                     </div>
                   </div>
                 </div>
@@ -932,127 +1119,320 @@
             </div>
             <!-- 分類標籤列 -->
             <div class="menu-cat-bar">
-              <button class="menu-cat-btn" [class.active]="activeMenuCategory() === 'all'" (click)="setMenuCategory('all')">{{ lang.catAll }}</button>
-              <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '飯食'" (click)="setMenuCategory('飯食')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13h16"/><path d="M4 13c0 5.5 2.7 7.5 8 7.5S20 18.5 20 13"/><line x1="8" y1="5" x2="9" y2="13"/><line x1="16" y1="5" x2="15" y2="13"/></svg>
+              <button
+                class="menu-cat-btn"
+                [class.active]="activeMenuCategory() === 'all'"
+                (click)="setMenuCategory('all')"
+              >
+                {{ lang.catAll }}
+              </button>
+              <button
+                class="menu-cat-btn"
+                [class.active]="activeMenuCategory() === '飯食'"
+                (click)="setMenuCategory('飯食')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                >
+                  <path d="M4 13h16" />
+                  <path d="M4 13c0 5.5 2.7 7.5 8 7.5S20 18.5 20 13" />
+                  <line x1="8" y1="5" x2="9" y2="13" />
+                  <line x1="16" y1="5" x2="15" y2="13" />
+                </svg>
                 <span>{{ lang.catRice }}</span>
               </button>
-              <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '麵食'" (click)="setMenuCategory('麵食')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 13h16"/><path d="M4 13c0 5.5 2.7 7.5 8 7.5S20 18.5 20 13"/><path d="M7 9c1-1.5 2-1 3 0s2 1.5 3 0 2-1 3 0"/></svg>
+              <button
+                class="menu-cat-btn"
+                [class.active]="activeMenuCategory() === '麵食'"
+                (click)="setMenuCategory('麵食')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                >
+                  <path d="M4 13h16" />
+                  <path d="M4 13c0 5.5 2.7 7.5 8 7.5S20 18.5 20 13" />
+                  <path d="M7 9c1-1.5 2-1 3 0s2 1.5 3 0 2-1 3 0" />
+                </svg>
                 <span>{{ lang.catNoodles }}</span>
               </button>
-              <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '小吃'" (click)="setMenuCategory('小吃')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="21"/><circle cx="12" cy="8" r="2.5"/><circle cx="12" cy="15" r="2.5"/></svg>
+              <button
+                class="menu-cat-btn"
+                [class.active]="activeMenuCategory() === '小吃'"
+                (click)="setMenuCategory('小吃')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                >
+                  <line x1="12" y1="3" x2="12" y2="21" />
+                  <circle cx="12" cy="8" r="2.5" />
+                  <circle cx="12" cy="15" r="2.5" />
+                </svg>
                 <span>{{ lang.catSnacks }}</span>
               </button>
-              <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '輕食'" (click)="setMenuCategory('輕食')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12"/><path d="M12 12C10 8 6 6 3 7c0 5 3 9 9 9z"/><path d="M12 12c2-4 6-6 9-5 0 5-3 9-9 9z"/></svg>
+              <button
+                class="menu-cat-btn"
+                [class.active]="activeMenuCategory() === '輕食'"
+                (click)="setMenuCategory('輕食')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M12 22V12" />
+                  <path d="M12 12C10 8 6 6 3 7c0 5 3 9 9 9z" />
+                  <path d="M12 12c2-4 6-6 9-5 0 5-3 9-9 9z" />
+                </svg>
                 <span>{{ lang.catLight }}</span>
               </button>
-              <button class="menu-cat-btn" [class.active]="activeMenuCategory() === '飲品'" (click)="setMenuCategory('飲品')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 3l-1.5 18h13L17 3H7z"/><line x1="15" y1="3" x2="12" y2="12"/><circle cx="9" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="11" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
+              <button
+                class="menu-cat-btn"
+                [class.active]="activeMenuCategory() === '飲品'"
+                (click)="setMenuCategory('飲品')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                >
+                  <path d="M7 3l-1.5 18h13L17 3H7z" />
+                  <line x1="15" y1="3" x2="12" y2="12" />
+                  <circle
+                    cx="9"
+                    cy="8"
+                    r="1"
+                    fill="currentColor"
+                    stroke="none"
+                  />
+                  <circle
+                    cx="11"
+                    cy="12"
+                    r="1"
+                    fill="currentColor"
+                    stroke="none"
+                  />
+                </svg>
                 <span>{{ lang.catDrinks }}</span>
               </button>
             </div>
 
             <!-- ── 活動進度抽屜（單一抽屜，收折所有活動）────── -->
             @if (cartTotal() > 0) {
-              <div class="promo-drawer" [class.promo-drawer-open]="promoDrawerOpen()">
-
+              <div
+                class="promo-drawer"
+                [class.promo-drawer-open]="promoDrawerOpen()"
+              >
                 <!-- 抽屜標題列 -->
-                <button class="promo-drawer-header" (click)="togglePromoDrawer()" type="button">
+                <button
+                  class="promo-drawer-header"
+                  (click)="togglePromoDrawer()"
+                  type="button"
+                >
                   <!-- 左側：活動圖示 -->
-                  <div class="pdh-icon" [class.pdh-icon-has-done]="promoCompletedCount > 0">
+                  <div
+                    class="pdh-icon"
+                    [class.pdh-icon-has-done]="promoCompletedCount > 0"
+                  >
                     @if (promoCompletedCount > 0) {
                       <svg viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="11" fill="#22C55E"/>
-                        <path d="M7 12.5l3.5 3.5 6.5-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="11" fill="#22C55E" />
+                        <path
+                          d="M7 12.5l3.5 3.5 6.5-7"
+                          stroke="#fff"
+                          stroke-width="2.2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
                       </svg>
                     } @else {
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                        <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/>
-                        <rect x="2" y="6" width="20" height="6" rx="1"/>
-                        <path d="M12 12v9"/>
-                        <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/>
-                        <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/>
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                      >
+                        <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4" />
+                        <rect x="2" y="6" width="20" height="6" rx="1" />
+                        <path d="M12 12v9" />
+                        <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6" />
+                        <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3" />
                       </svg>
                     }
                   </div>
 
                   <!-- 中間：標題 + 摘要 -->
                   <div class="pdh-text">
-                    <span class="pdh-title">{{ lang.promoInProgressTitle }}</span>
+                    <span class="pdh-title">{{
+                      lang.promoInProgressTitle
+                    }}</span>
                     <span class="pdh-summary">
                       @if (promoCompletedCount > 0) {
-                        {{ lang.promoAchievedPre }} {{ promoCompletedCount }} / {{ PROMO_ACTIVITIES.length }} {{ lang.promoCountUnit }}
+                        {{ lang.promoAchievedPre }} {{ promoCompletedCount }} /
+                        {{ PROMO_ACTIVITIES.length }} {{ lang.promoCountUnit }}
                       } @else {
-                        {{ lang.promoTotalPre }} {{ PROMO_ACTIVITIES.length }} {{ lang.promoCountUnit }}{{ lang.promoExpandHint }}
+                        {{ lang.promoTotalPre }} {{ PROMO_ACTIVITIES.length }}
+                        {{ lang.promoCountUnit }}{{ lang.promoExpandHint }}
                       }
                     </span>
                   </div>
 
                   <!-- 右側：已達成徽章 + 箭頭 -->
                   @if (promoCompletedCount > 0) {
-                    <span class="pdh-badge">{{ promoCompletedCount }} {{ lang.promoBadgeDone }}</span>
+                    <span class="pdh-badge"
+                      >{{ promoCompletedCount }} {{ lang.promoBadgeDone }}</span
+                    >
                   }
-                  <svg class="pdh-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="6 9 12 15 18 9"/>
+                  <svg
+                    class="pdh-chevron"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
                   </svg>
                 </button>
 
                 <!-- 抽屜內容：各活動進度條 -->
                 @if (promoDrawerOpen()) {
                   <div class="promo-drawer-body">
-                    @for (promo of PROMO_ACTIVITIES; track promo.name; let i = $index) {
+                    @for (
+                      promo of PROMO_ACTIVITIES;
+                      track promo.name;
+                      let i = $index
+                    ) {
                       <div
                         class="promo-bar-item"
                         [class.promo-bar-done]="cartTotal() >= promo.minSpend"
-                        [class.promo-bar-expanded]="isPromoBarExpanded(promo.name)"
-                        [style.animation-delay]="(i * 50) + 'ms'"
+                        [class.promo-bar-expanded]="
+                          isPromoBarExpanded(promo.name)
+                        "
+                        [style.animation-delay]="i * 50 + 'ms'"
                       >
-                        <button class="promo-bar-header" (click)="togglePromoProgressBar(promo.name)" type="button">
+                        <button
+                          class="promo-bar-header"
+                          (click)="togglePromoProgressBar(promo.name)"
+                          type="button"
+                        >
                           <div class="pbh-icon">
                             @if (cartTotal() >= promo.minSpend) {
                               <svg viewBox="0 0 24 24" fill="none">
-                                <circle cx="12" cy="12" r="11" fill="#22C55E"/>
-                                <path d="M7 12.5l3.5 3.5 6.5-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="12" cy="12" r="11" fill="#22C55E" />
+                                <path
+                                  d="M7 12.5l3.5 3.5 6.5-7"
+                                  stroke="#fff"
+                                  stroke-width="2.2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                />
                               </svg>
                             } @else {
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                                <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/>
-                                <rect x="2" y="6" width="20" height="6" rx="1"/>
-                                <path d="M12 12v9"/>
-                                <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/>
-                                <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/>
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="round"
+                              >
+                                <path
+                                  d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"
+                                />
+                                <rect
+                                  x="2"
+                                  y="6"
+                                  width="20"
+                                  height="6"
+                                  rx="1"
+                                />
+                                <path d="M12 12v9" />
+                                <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6" />
+                                <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3" />
                               </svg>
                             }
                           </div>
-                          <span class="pbh-name">{{ getLocalizedName(promo) }}</span>
+                          <span class="pbh-name">{{
+                            getLocalizedName(promo)
+                          }}</span>
                           @if (cartTotal() >= promo.minSpend) {
-                            <span class="pbh-done-tag">{{ lang.promoDoneTag }}</span>
+                            <span class="pbh-done-tag">{{
+                              lang.promoDoneTag
+                            }}</span>
                           } @else {
-                            <span class="pbh-remain">{{ lang.promoRemainPre }} <strong>{{ branchService.config.currency }} {{ promo.minSpend - cartTotal() }}</strong></span>
+                            <span class="pbh-remain"
+                              >{{ lang.promoRemainPre }}
+                              <strong
+                                >{{ branchService.config.currency }}
+                                {{ promo.minSpend - cartTotal() }}</strong
+                              ></span
+                            >
                           }
-                          <svg class="pbh-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <polyline points="6 9 12 15 18 9"/>
+                          <svg
+                            class="pbh-chevron"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                          >
+                            <polyline points="6 9 12 15 18 9" />
                           </svg>
                         </button>
                         @if (isPromoBarExpanded(promo.name)) {
                           <div class="promo-bar-body">
                             <div class="pbb-track">
-                              <div class="pbb-fill" [style.width.%]="cartTotal() >= promo.minSpend ? 100 : (cartTotal() / promo.minSpend) * 100">
+                              <div
+                                class="pbb-fill"
+                                [style.width.%]="
+                                  cartTotal() >= promo.minSpend
+                                    ? 100
+                                    : (cartTotal() / promo.minSpend) * 100
+                                "
+                              >
                                 <div class="pbb-shimmer"></div>
                               </div>
                               <div class="pbb-goal">
                                 <svg viewBox="0 0 14 14" fill="none">
-                                  <circle cx="7" cy="7" r="6" fill="#F0A500" stroke="#fff" stroke-width="1.5"/>
+                                  <circle
+                                    cx="7"
+                                    cy="7"
+                                    r="6"
+                                    fill="#F0A500"
+                                    stroke="#fff"
+                                    stroke-width="1.5"
+                                  />
                                 </svg>
                               </div>
                             </div>
                             <div class="pbb-info-row">
-                              <span class="pbb-counter">{{ cartTotal() > promo.minSpend ? promo.minSpend : cartTotal() }} / {{ promo.minSpend }}</span>
+                              <span class="pbb-counter"
+                                >{{
+                                  cartTotal() > promo.minSpend
+                                    ? promo.minSpend
+                                    : cartTotal()
+                                }}
+                                / {{ promo.minSpend }}</span
+                              >
                               @if (cartTotal() >= promo.minSpend) {
-                                <span class="pbb-success-text">{{ lang.promoCanSelectGift }}</span>
+                                <span class="pbb-success-text">{{
+                                  lang.promoCanSelectGift
+                                }}</span>
                               }
                             </div>
                           </div>
@@ -1078,20 +1458,42 @@
                 <div class="menu-items-list">
                   @for (item of catItems; track item.id) {
                     <div class="menu-item-card">
-                      <div class="menu-item-img" [ngClass]="getMenuImageClass(item)"
-                        [style.background-image]="item.image ? 'url(data:image/jpeg;base64,' + item.image + ')' : null">
-                      </div>
+                      <div
+                        class="menu-item-img"
+                        [ngClass]="getMenuImageClass(item)"
+                        [style.background-image]="
+                          item.image
+                            ? 'url(data:image/jpeg;base64,' + item.image + ')'
+                            : null
+                        "
+                      ></div>
                       <div class="menu-item-body">
                         <div>
-                          <h4 class="menu-item-name">{{ getLocalizedName(item) }}</h4>
-                          <p class="menu-item-desc">{{ getLocalizedDesc(item) }}</p>
+                          <h4 class="menu-item-name">
+                            {{ getLocalizedName(item) }}
+                          </h4>
+                          <p class="menu-item-desc">
+                            {{ getLocalizedDesc(item) }}
+                          </p>
                         </div>
                         <div class="menu-item-bottom">
                           <div class="menu-price-group">
-                            <span class="menu-item-price">{{ branchService.config.currency }} <strong>{{ item.price }}</strong></span>
+                            <span class="menu-item-price"
+                              >{{ branchService.config.currency }}
+                              <strong>{{ item.price }}</strong></span
+                            >
                           </div>
-                          <button class="menu-add-btn" (click)="addToCart(item)" [attr.aria-label]="'加入' + item.name">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <button
+                            class="menu-add-btn"
+                            (click)="addToCart(item)"
+                            [attr.aria-label]="'加入' + item.name"
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2.5"
+                            >
                               <path d="M12 5v14M5 12h14" />
                             </svg>
                           </button>
@@ -1131,7 +1533,9 @@
                 <span class="cart-float-label">{{ lang.navCart }}</span>
               </div>
               <div class="cart-float-right">
-                <span class="cart-float-total">{{ branchService.config.currency }} {{ cartTotal() }}</span>
+                <span class="cart-float-total"
+                  >{{ branchService.config.currency }} {{ cartTotal() }}</span
+                >
                 <svg
                   class="cart-float-arrow"
                   viewBox="0 0 24 24"
@@ -1185,51 +1589,119 @@
             <!-- 訂單品項列表 + 活動選擇：2 欄佈局 -->
             @if (cartCount() > 0) {
               <div class="checkout-grid">
-
                 <!-- ── 左欄：訂單品項 ─────────────────────────── -->
                 <div class="checkout-col-left">
                   <div class="checkout-col-label">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:15px;height:15px;">
-                      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-                      <rect x="9" y="3" width="6" height="4" rx="1"/>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      style="width: 15px; height: 15px"
+                    >
+                      <path
+                        d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"
+                      />
+                      <rect x="9" y="3" width="6" height="4" rx="1" />
                     </svg>
                     {{ lang.orderDetail }}
-                    <span class="checkout-col-count">{{ cartCount() }} {{ lang.itemCountSuffix }}</span>
+                    <span class="checkout-col-count"
+                      >{{ cartCount() }} {{ lang.itemCountSuffix }}</span
+                    >
                   </div>
                   <div class="checkout-items">
                     @for (item of cartItems(); track item.id) {
                       <div class="checkout-item">
                         <div class="co-item-info">
-                          <span class="co-item-name">{{ getLocalizedName(item) }}</span>
-                          <span class="co-item-unit">{{ branchService.config.currency }} {{ item.price }}</span>
+                          <span class="co-item-name">{{
+                            getLocalizedName(item)
+                          }}</span>
+                          <span class="co-item-unit"
+                            >{{ branchService.config.currency }}
+                            {{ item.price }}</span
+                          >
                         </div>
                         <div class="co-item-ctrl">
-                          <button class="co-delete-btn" (click)="removeFromCart(item.id)" aria-label="移除商品">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <button
+                            class="co-delete-btn"
+                            (click)="removeFromCart(item.id)"
+                            aria-label="移除商品"
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                            >
                               <polyline points="3 6 5 6 21 6"></polyline>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              <path
+                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                              ></path>
                               <line x1="10" y1="11" x2="10" y2="17"></line>
                               <line x1="14" y1="11" x2="14" y2="17"></line>
                             </svg>
                           </button>
-                          <button class="co-qty-btn" (click)="updateCartQuantity(item.id, -1)">−</button>
+                          <button
+                            class="co-qty-btn"
+                            (click)="updateCartQuantity(item.id, -1)"
+                          >
+                            −
+                          </button>
                           <span class="co-qty">{{ item.quantity }}</span>
-                          <button class="co-qty-btn" (click)="updateCartQuantity(item.id, 1)">＋</button>
+                          <button
+                            class="co-qty-btn"
+                            (click)="updateCartQuantity(item.id, 1)"
+                          >
+                            ＋
+                          </button>
                         </div>
-                        <span class="co-item-subtotal">{{ branchService.config.currency }} {{ item.price * item.quantity }}</span>
+                        <span class="co-item-subtotal"
+                          >{{ branchService.config.currency }}
+                          {{ item.price * item.quantity }}</span
+                        >
                       </div>
                     }
                     <!-- 已選贈品：顯示在品項列表底部 -->
-                    @if (selectedPromoGift() && selectedPromoName() && selectedPromoName() !== '不參加活動優惠') {
+                    @if (
+                      selectedPromoGift() &&
+                      selectedPromoName() &&
+                      selectedPromoName() !== "不參加活動優惠"
+                    ) {
                       <div class="checkout-item checkout-item-gift">
                         <div class="co-item-info">
                           <span class="co-item-name">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px;margin-right:4px;vertical-align:middle;"><path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/><rect x="2" y="6" width="20" height="6" rx="1"/><path d="M12 12v9"/><path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/><path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/></svg>
-                            {{ selectedPromoName() }} - {{ selectedPromoGift() }}
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="1.8"
+                              stroke-linecap="round"
+                              style="
+                                width: 14px;
+                                height: 14px;
+                                margin-right: 4px;
+                                vertical-align: middle;
+                              "
+                            >
+                              <path
+                                d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"
+                              />
+                              <rect x="2" y="6" width="20" height="6" rx="1" />
+                              <path d="M12 12v9" />
+                              <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6" />
+                              <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3" />
+                            </svg>
+                            {{ selectedPromoName() }} -
+                            {{ selectedPromoGift() }}
                           </span>
-                          <span class="co-item-unit">{{ branchService.config.currency }} 0</span>
+                          <span class="co-item-unit"
+                            >{{ branchService.config.currency }} 0</span
+                          >
                         </div>
-                        <span class="co-item-subtotal co-gift-free">{{ lang.free }}</span>
+                        <span class="co-item-subtotal co-gift-free">{{
+                          lang.free
+                        }}</span>
                       </div>
                     }
                   </div>
@@ -1237,190 +1709,347 @@
 
                 <!-- ── 右欄：活動選擇 + 金額 + 送出 ──────────── -->
                 <div class="checkout-col-right">
-
                   <!-- 活動優惠選擇（accordion 設計）-->
                   @if (unlockedPromos().length > 0) {
                     <div class="checkout-promo-section">
+                      <!-- 上方：綠色贈品面板（按此選擇免費餐點） -->
+                      <div
+                        class="promo-gift-panel"
+                        [class.panel-open]="promoGiftPanelOpen()"
+                        [class.has-gift]="!!selectedPromoGift()"
+                      >
+                        <button
+                          class="pgp-header"
+                          (click)="togglePromoGiftPanel()"
+                          type="button"
+                        >
+                          <!-- 贈品 SVG 圖示 -->
+                          <div
+                            class="pgp-icon"
+                            [class.pgp-icon-done]="!!selectedPromoGift()"
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="1.8"
+                              stroke-linecap="round"
+                            >
+                              <path
+                                d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"
+                              />
+                              <rect x="2" y="6" width="20" height="6" rx="1" />
+                              <path d="M12 12v9" />
+                              <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6" />
+                              <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3" />
+                            </svg>
+                          </div>
+                          <div class="pgp-text">
+                            @if (selectedPromoGift()) {
+                              <span class="pgp-label pgp-label-done"
+                                >{{ lang.giftSelectedPre
+                                }}{{ selectedPromoGiftLocalized() }}</span
+                              >
+                              <span class="pgp-hint">{{
+                                lang.giftChangeLbl
+                              }}</span>
+                            } @else if (
+                              selectedPromoName() &&
+                              selectedPromoName() !== "不參加活動優惠"
+                            ) {
+                              <span class="pgp-label">{{
+                                lang.selectFreeItem
+                              }}</span>
+                              <span class="pgp-hint">{{
+                                selectedPromoActivity
+                                  ? getLocalizedName(selectedPromoActivity)
+                                  : selectedPromoName()
+                              }}</span>
+                            } @else {
+                              <span class="pgp-label">{{
+                                lang.selectFreeItem
+                              }}</span>
+                              <span class="pgp-hint">{{
+                                lang.selectPromoFirst
+                              }}</span>
+                            }
+                          </div>
+                          @if (selectedPromoGift()) {
+                            <span class="pgp-free-tag">{{ lang.free }}</span>
+                          }
+                          <svg
+                            class="pgp-chevron"
+                            [class.open]="promoGiftPanelOpen()"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                          >
+                            <polyline points="6 9 12 15 18 9" />
+                          </svg>
+                        </button>
 
-                  <!-- 上方：綠色贈品面板（按此選擇免費餐點） -->
-                  <div class="promo-gift-panel" [class.panel-open]="promoGiftPanelOpen()" [class.has-gift]="!!selectedPromoGift()">
-                    <button class="pgp-header" (click)="togglePromoGiftPanel()" type="button">
-                      <!-- 贈品 SVG 圖示 -->
-                      <div class="pgp-icon" [class.pgp-icon-done]="!!selectedPromoGift()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                          <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"/>
-                          <rect x="2" y="6" width="20" height="6" rx="1"/>
-                          <path d="M12 12v9"/>
-                          <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6"/>
-                          <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3"/>
+                        <!-- 展開：贈品選項列表 -->
+                        @if (promoGiftPanelOpen()) {
+                          <div class="pgp-options">
+                            @if (selectedPromoActivity) {
+                              @for (
+                                g of selectedPromoActivity.gifts;
+                                track g;
+                                let gi = $index
+                              ) {
+                                <button
+                                  class="pgp-gift-opt"
+                                  [class.selected]="selectedPromoGift() === g"
+                                  (click)="selectPromoGift(g)"
+                                  type="button"
+                                >
+                                  <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    style="
+                                      width: 16px;
+                                      height: 16px;
+                                      flex-shrink: 0;
+                                    "
+                                  >
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M12 8v4l3 3" />
+                                  </svg>
+                                  <span>{{
+                                    getLocalizedGifts(selectedPromoActivity!)[
+                                      gi
+                                    ] || g
+                                  }}</span>
+                                  @if (selectedPromoGift() === g) {
+                                    <svg
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="2.5"
+                                      style="
+                                        width: 14px;
+                                        height: 14px;
+                                        flex-shrink: 0;
+                                        margin-left: auto;
+                                      "
+                                    >
+                                      <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                  }
+                                </button>
+                              }
+                            } @else {
+                              <p class="pgp-no-select-hint">
+                                {{ lang.selectPromoFirst }}
+                              </p>
+                            }
+                          </div>
+                        }
+                      </div>
+
+                      <!-- 下方：活動選擇列表 -->
+                      <div class="promo-activity-list">
+                        <!-- 放棄參加 -->
+                        <button
+                          class="promo-act-row promo-act-skip"
+                          [class.selected]="
+                            selectedPromoName() === '不參加活動優惠'
+                          "
+                          (click)="selectPromo('不參加活動優惠')"
+                          type="button"
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            style="width: 16px; height: 16px; flex-shrink: 0"
+                          >
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="15" y1="9" x2="9" y2="15" />
+                            <line x1="9" y1="9" x2="15" y2="15" />
+                          </svg>
+                          <span>{{ lang.skipPromo }}</span>
+                          @if (selectedPromoName() === "不參加活動優惠") {
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2.5"
+                              style="
+                                width: 14px;
+                                height: 14px;
+                                margin-left: auto;
+                              "
+                            >
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          }
+                        </button>
+
+                        <!-- 各活動（accordion 項目） -->
+                        @for (act of unlockedPromos(); track act.name) {
+                          <button
+                            class="promo-act-row"
+                            [class.selected]="selectedPromoName() === act.name"
+                            (click)="selectPromo(act.name)"
+                            type="button"
+                          >
+                            <!-- 活動圖示 -->
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="1.8"
+                              stroke-linecap="round"
+                              style="width: 16px; height: 16px; flex-shrink: 0"
+                            >
+                              <path
+                                d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"
+                              />
+                            </svg>
+                            <div class="par-text">
+                              <span class="par-name">{{
+                                getLocalizedName(act)
+                              }}</span>
+                              <span class="par-hint">{{
+                                lang.selectThisPromo
+                              }}</span>
+                            </div>
+                            <span class="par-min-tag"
+                              >{{ lang.promoMinSpendPre
+                              }}{{ branchService.config.currency }}
+                              {{ act.minSpend }}</span
+                            >
+                            @if (selectedPromoName() === act.name) {
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.5"
+                                style="
+                                  width: 14px;
+                                  height: 14px;
+                                  flex-shrink: 0;
+                                "
+                              >
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            }
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  <!-- 折扣兌換券（達 10 次才顯示） -->
+                  @if (hasDiscountReady()) {
+                    <div
+                      class="discount-coupon-block"
+                      [class.active]="useDiscountCoupon()"
+                    >
+                      <div class="dcb-left">
+                        <svg
+                          class="dcb-icon"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4" />
+                          <rect x="2" y="6" width="20" height="6" rx="1" />
+                          <path d="M12 12v9" />
+                          <path d="M12 6L11.5 1.5l-2.5 2L12 6z" />
                         </svg>
                       </div>
-                      <div class="pgp-text">
-                        @if (selectedPromoGift()) {
-                          <span class="pgp-label pgp-label-done">{{ lang.giftSelectedPre }}{{ selectedPromoGiftLocalized() }}</span>
-                          <span class="pgp-hint">{{ lang.giftChangeLbl }}</span>
-                        } @else if (selectedPromoName() && selectedPromoName() !== '不參加活動優惠') {
-                          <span class="pgp-label">{{ lang.selectFreeItem }}</span>
-                          <span class="pgp-hint">{{ selectedPromoActivity ? getLocalizedName(selectedPromoActivity) : selectedPromoName() }}</span>
-                        } @else {
-                          <span class="pgp-label">{{ lang.selectFreeItem }}</span>
-                          <span class="pgp-hint">{{ lang.selectPromoFirst }}</span>
-                        }
-                      </div>
-                      @if (selectedPromoGift()) {
-                        <span class="pgp-free-tag">{{ lang.free }}</span>
-                      }
-                      <svg class="pgp-chevron" [class.open]="promoGiftPanelOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polyline points="6 9 12 15 18 9"/>
-                      </svg>
-                    </button>
-
-                    <!-- 展開：贈品選項列表 -->
-                    @if (promoGiftPanelOpen()) {
-                      <div class="pgp-options">
-                        @if (selectedPromoActivity) {
-                          @for (g of selectedPromoActivity.gifts; track g; let gi = $index) {
-                            <button
-                              class="pgp-gift-opt"
-                              [class.selected]="selectedPromoGift() === g"
-                              (click)="selectPromoGift(g)"
-                              type="button"
-                            >
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:16px;height:16px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-                              <span>{{ getLocalizedGifts(selectedPromoActivity!)[gi] || g }}</span>
-                              @if (selectedPromoGift() === g) {
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;flex-shrink:0;margin-left:auto;">
-                                  <polyline points="20 6 9 17 4 12"/>
-                                </svg>
-                              }
-                            </button>
+                      <div class="dcb-body">
+                        <span class="dcb-title">{{
+                          lang.couponBlockTitle
+                        }}</span>
+                        <span class="dcb-desc">
+                          @if (useDiscountCoupon()) {
+                            {{ lang.couponActive }}
+                          } @else {
+                            {{ lang.couponAvailable }}
                           }
-                        } @else {
-                          <p class="pgp-no-select-hint">{{ lang.selectPromoFirst }}</p>
-                        }
+                        </span>
                       </div>
-                    }
-                  </div>
-
-                  <!-- 下方：活動選擇列表 -->
-                  <div class="promo-activity-list">
-                    <!-- 放棄參加 -->
-                    <button
-                      class="promo-act-row promo-act-skip"
-                      [class.selected]="selectedPromoName() === '不參加活動優惠'"
-                      (click)="selectPromo('不參加活動優惠')"
-                      type="button"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:16px;height:16px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                      <span>{{ lang.skipPromo }}</span>
-                      @if (selectedPromoName() === '不參加活動優惠') {
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;margin-left:auto;"><polyline points="20 6 9 17 4 12"/></svg>
-                      }
-                    </button>
-
-                    <!-- 各活動（accordion 項目） -->
-                    @for (act of unlockedPromos(); track act.name) {
                       <button
-                        class="promo-act-row"
-                        [class.selected]="selectedPromoName() === act.name"
-                        (click)="selectPromo(act.name)"
+                        class="dcb-toggle"
+                        [class.used]="useDiscountCoupon()"
+                        (click)="toggleDiscountCoupon()"
                         type="button"
                       >
-                        <!-- 活動圖示 -->
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:16px;height:16px;flex-shrink:0;">
-                          <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
-                        </svg>
-                        <div class="par-text">
-                          <span class="par-name">{{ getLocalizedName(act) }}</span>
-                          <span class="par-hint">{{ lang.selectThisPromo }}</span>
-                        </div>
-                        <span class="par-min-tag">{{ lang.promoMinSpendPre }}{{ branchService.config.currency }} {{ act.minSpend }}</span>
-                        @if (selectedPromoName() === act.name) {
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;flex-shrink:0;">
-                            <polyline points="20 6 9 17 4 12"/>
-                          </svg>
-                        }
+                        {{
+                          useDiscountCoupon()
+                            ? lang.couponCancel
+                            : lang.couponUse
+                        }}
                       </button>
-                    }
-                  </div>
+                    </div>
+                  }
                 </div>
-              }
-
-              <!-- 折扣兌換券（達 10 次才顯示） -->
-              @if (hasDiscountReady()) {
-                <div
-                  class="discount-coupon-block"
-                  [class.active]="useDiscountCoupon()"
-                >
-                  <div class="dcb-left">
-                    <svg
-                      class="dcb-icon"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                    >
-                      <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4" />
-                      <rect x="2" y="6" width="20" height="6" rx="1" />
-                      <path d="M12 12v9" />
-                      <path d="M12 6L11.5 1.5l-2.5 2L12 6z" />
-                    </svg>
-                  </div>
-                  <div class="dcb-body">
-                    <span class="dcb-title">{{ lang.couponBlockTitle }}</span>
-                    <span class="dcb-desc">
-                      @if (useDiscountCoupon()) {
-                        {{ lang.couponActive }}
-                      } @else {
-                        {{ lang.couponAvailable }}
-                      }
-                    </span>
-                  </div>
-                  <button
-                    class="dcb-toggle"
-                    [class.used]="useDiscountCoupon()"
-                    (click)="toggleDiscountCoupon()"
-                    type="button"
-                  >
-                    {{ useDiscountCoupon() ? lang.couponCancel : lang.couponUse }}
-                  </button>
-                </div>
-              }
-
-                </div><!-- /checkout-col-right -->
-              </div><!-- /checkout-grid -->
+                <!-- /checkout-col-right -->
+              </div>
+              <!-- /checkout-grid -->
 
               <!-- 金額明細 + 操作按鈕（獨立置中區塊） -->
               <div class="checkout-footer-block">
                 <div class="checkout-summary">
                   <div class="summary-row">
                     <span>{{ lang.subtotal }}</span>
-                    <span>{{ branchService.config.currency }} {{ cartTotal() }}</span>
+                    <span
+                      >{{ branchService.config.currency }}
+                      {{ cartTotal() }}</span
+                    >
                   </div>
                   @if (useDiscountCoupon()) {
                     <div class="summary-row summary-row-discount">
                       <span>{{ lang.couponDiscount }}</span>
-                      <span class="summary-discount-price">－ {{ branchService.config.currency }} {{ discountAmount() }}</span>
+                      <span class="summary-discount-price"
+                        >－ {{ branchService.config.currency }}
+                        {{ discountAmount() }}</span
+                      >
                     </div>
                   }
                   <div class="summary-row summary-row-total">
                     <span>{{ lang.total }}</span>
-                    <span class="summary-total-price">{{ branchService.config.currency }} {{ discountedTotal() }}</span>
+                    <span class="summary-total-price"
+                      >{{ branchService.config.currency }}
+                      {{ discountedTotal() }}</span
+                    >
                   </div>
                 </div>
 
                 <button class="checkout-submit" (click)="openOrderPreview()">
-                  {{ lang.checkout }} — {{ branchService.config.currency }} {{ discountedTotal() }}
+                  {{ lang.checkout }} — {{ branchService.config.currency }}
+                  {{ discountedTotal() }}
                 </button>
 
-                <button class="checkout-clear enhance-clear-btn" (click)="clearCart()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button
+                  class="checkout-clear enhance-clear-btn"
+                  (click)="clearCart()"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
                     <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <path
+                      d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                    ></path>
                   </svg>
                   <span>{{ lang.clearCart }}</span>
                 </button>
-              </div><!-- /checkout-footer-block -->
+              </div>
+              <!-- /checkout-footer-block -->
             }
           </div>
 
@@ -1440,18 +2069,31 @@
             <div class="opm-items">
               @for (item of cartItems(); track item.id) {
                 <div class="opm-item-row">
-                  <span class="opm-item-name">{{ getLocalizedName(item) }}</span>
+                  <span class="opm-item-name">{{
+                    getLocalizedName(item)
+                  }}</span>
                   <div class="opm-item-right">
                     <span class="opm-item-qty">× {{ item.quantity }}</span>
-                    <span class="opm-item-price">{{ branchService.config.currency }} {{ item.price * item.quantity }}</span>
+                    <span class="opm-item-price"
+                      >{{ branchService.config.currency }}
+                      {{ item.price * item.quantity }}</span
+                    >
                   </div>
                 </div>
               }
-              @if (selectedPromoGift() && selectedPromoName() && selectedPromoName() !== '不參加活動優惠') {
+              @if (
+                selectedPromoGift() &&
+                selectedPromoName() &&
+                selectedPromoName() !== "不參加活動優惠"
+              ) {
                 <div class="opm-item-row opm-item-free">
-                  <span class="opm-item-name">{{ selectedPromoName() }} - {{ selectedPromoGift() }}</span>
+                  <span class="opm-item-name"
+                    >{{ selectedPromoName() }} - {{ selectedPromoGift() }}</span
+                  >
                   <div class="opm-item-right">
-                    <span class="opm-item-price opm-free-label">{{ branchService.config.currency }} 0</span>
+                    <span class="opm-item-price opm-free-label"
+                      >{{ branchService.config.currency }} 0</span
+                    >
                   </div>
                 </div>
               }
@@ -1462,19 +2104,33 @@
             @if (useDiscountCoupon()) {
               <div class="opm-row opm-discount-row">
                 <span>{{ lang.couponDiscount }}</span>
-                <span class="opm-discount-price">－ {{ branchService.config.currency }} {{ discountAmount() }}</span>
+                <span class="opm-discount-price"
+                  >－ {{ branchService.config.currency }}
+                  {{ discountAmount() }}</span
+                >
               </div>
             }
             <div class="opm-row opm-total-row">
               <span>{{ lang.total }}</span>
-              <span class="opm-total-amount">{{ branchService.config.currency }} {{ discountedTotal() }}</span>
+              <span class="opm-total-amount"
+                >{{ branchService.config.currency }}
+                {{ discountedTotal() }}</span
+              >
             </div>
 
             <div class="opm-actions">
-              <button class="opm-back-btn" (click)="closeOrderPreview()" type="button">
+              <button
+                class="opm-back-btn"
+                (click)="closeOrderPreview()"
+                type="button"
+              >
                 {{ lang.goBack }}
               </button>
-              <button class="opm-confirm-btn" (click)="goToPayment()" type="button">
+              <button
+                class="opm-confirm-btn"
+                (click)="goToPayment()"
+                type="button"
+              >
                 {{ lang.confirmOrder }}
               </button>
             </div>
@@ -1489,7 +2145,10 @@
         <section class="ch-section fade-in">
           <!-- 取消訂單 / 返回首頁 -->
           <div class="payment-back-row">
-            <button class="payment-back-btn payment-cancel-btn" (click)="cancelCurrentOrder()">
+            <button
+              class="payment-back-btn payment-cancel-btn"
+              (click)="cancelCurrentOrder()"
+            >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -1524,17 +2183,26 @@
                   <div class="psc-right">
                     <span class="psc-qty">× {{ item.quantity }}</span>
                     <span class="psc-price"
-                      >{{ branchService.config.currency }} {{ item.price * item.quantity }}</span
+                      >{{ branchService.config.currency }}
+                      {{ item.price * item.quantity }}</span
                     >
                   </div>
                 </div>
               }
               <!-- 活動贈品列（已選且非「不參加」時才顯示） -->
-              @if (selectedPromoGift() && selectedPromoName() && selectedPromoName() !== '不參加活動優惠') {
+              @if (
+                selectedPromoGift() &&
+                selectedPromoName() &&
+                selectedPromoName() !== "不參加活動優惠"
+              ) {
                 <div class="psc-row psc-gift-row">
-                  <span class="psc-name">{{ selectedPromoName() }} - {{ selectedPromoGift() }}</span>
+                  <span class="psc-name"
+                    >{{ selectedPromoName() }} - {{ selectedPromoGift() }}</span
+                  >
                   <div class="psc-right">
-                    <span class="psc-price psc-gift-free">{{ branchService.config.currency }} 0</span>
+                    <span class="psc-price psc-gift-free"
+                      >{{ branchService.config.currency }} 0</span
+                    >
                   </div>
                 </div>
               }
@@ -1544,7 +2212,8 @@
                   <span class="psc-name">{{ lang.couponDiscount }}</span>
                   <div class="psc-right">
                     <span class="psc-discount-price"
-                      >－ {{ branchService.config.currency }} {{ discountAmount() }}</span
+                      >－ {{ branchService.config.currency }}
+                      {{ discountAmount() }}</span
                     >
                   </div>
                 </div>
@@ -1552,7 +2221,8 @@
               <div class="psc-total-row">
                 <span>{{ lang.total }}</span>
                 <span class="psc-total-amount"
-                  >{{ branchService.config.currency }} {{ discountedTotal() }}</span
+                  >{{ branchService.config.currency }}
+                  {{ discountedTotal() }}</span
                 >
               </div>
             </div>
@@ -1577,19 +2247,27 @@
               <label class="checkout-note-label">
                 {{ lang.contactPhone }}
                 @if (isGuest()) {
-                  <span class="checkout-required-mark">*&nbsp;{{ lang.required }}</span>
+                  <span class="checkout-required-mark"
+                    >*&nbsp;{{ lang.required }}</span
+                  >
                 }
               </label>
               <input
                 type="tel"
                 class="checkout-note-input checkout-phone-input"
-                [placeholder]="isGuest() ? lang.guestPhonePlaceholder : lang.memberPhonePlaceholder"
+                [placeholder]="
+                  isGuest()
+                    ? lang.guestPhonePlaceholder
+                    : lang.memberPhonePlaceholder
+                "
                 [value]="phoneNumber()"
                 (input)="phoneNumber.set($any($event.target).value)"
               />
               <!-- 訪客未填時顯示提示 -->
               @if (isGuest() && !isPhoneValid()) {
-                <span class="checkout-phone-hint">{{ lang.phoneRequired }}</span>
+                <span class="checkout-phone-hint">{{
+                  lang.phoneRequired
+                }}</span>
               }
             </div>
 
@@ -1597,19 +2275,74 @@
             <div class="checkout-payment">
               <p class="checkout-payment-title">{{ lang.paymentMethodLbl }}</p>
               <div class="payment-options">
-                <label class="payment-opt" [class.active]="paymentMethod() === 'credit'" (click)="setPaymentMethod('credit')">
-                  <input type="radio" name="payment" [checked]="paymentMethod() === 'credit'" />
-                  <svg class="payment-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                <label
+                  class="payment-opt"
+                  [class.active]="paymentMethod() === 'credit'"
+                  (click)="setPaymentMethod('credit')"
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    [checked]="paymentMethod() === 'credit'"
+                  />
+                  <svg
+                    class="payment-svg-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  >
+                    <rect x="1" y="4" width="22" height="16" rx="2" />
+                    <line x1="1" y1="10" x2="23" y2="10" />
+                  </svg>
                   <span>{{ lang.creditCard }}</span>
                 </label>
-                <label class="payment-opt" [class.active]="paymentMethod() === 'mobile'" (click)="setPaymentMethod('mobile')">
-                  <input type="radio" name="payment" [checked]="paymentMethod() === 'mobile'" />
-                  <svg class="payment-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                <label
+                  class="payment-opt"
+                  [class.active]="paymentMethod() === 'mobile'"
+                  (click)="setPaymentMethod('mobile')"
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    [checked]="paymentMethod() === 'mobile'"
+                  />
+                  <svg
+                    class="payment-svg-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  >
+                    <rect x="5" y="2" width="14" height="20" rx="2" />
+                    <line x1="12" y1="18" x2="12.01" y2="18" />
+                  </svg>
                   <span>{{ lang.mobilePay }}</span>
                 </label>
-                <label class="payment-opt" [class.active]="paymentMethod() === 'cash'" (click)="setPaymentMethod('cash')">
-                  <input type="radio" name="payment" [checked]="paymentMethod() === 'cash'" />
-                  <svg class="payment-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg>
+                <label
+                  class="payment-opt"
+                  [class.active]="paymentMethod() === 'cash'"
+                  (click)="setPaymentMethod('cash')"
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    [checked]="paymentMethod() === 'cash'"
+                  />
+                  <svg
+                    class="payment-svg-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  >
+                    <rect x="2" y="6" width="20" height="12" rx="2" />
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M6 12h.01M18 12h.01" />
+                  </svg>
                   <span>{{ lang.cash }}</span>
                 </label>
               </div>
@@ -1618,9 +2351,8 @@
             <!-- ╔══════════════════════════════════════╗
                  ║  信用卡表單（選信用卡時顯示）          ║
                  ╚══════════════════════════════════════╝ -->
-            @if (paymentMethod() === 'credit') {
+            @if (paymentMethod() === "credit") {
               <div class="credit-card-panel">
-
                 <!-- 3D 翻轉視覺卡片 -->
                 <div class="card-visual-wrap">
                   <div class="card-visual" [class.flipped]="cardFlipped()">
@@ -1628,33 +2360,94 @@
                     <div class="card-face card-front">
                       <div class="card-front-top">
                         <!-- 晶片圖示（SVG） -->
-                        <svg class="card-chip-svg" viewBox="0 0 38 28" fill="none">
-                          <rect width="38" height="28" rx="4" fill="#c9a84c"/>
-                          <rect x="1" y="9" width="36" height="10" fill="#b8963e" opacity=".6"/>
-                          <rect x="12" y="1" width="14" height="26" fill="#b8963e" opacity=".6"/>
-                          <rect x="4" y="4" width="30" height="20" rx="2" fill="none" stroke="#e2c97e" stroke-width="1"/>
-                          <line x1="19" y1="1" x2="19" y2="27" stroke="#c9a84c" stroke-width=".8"/>
-                          <line x1="1" y1="14" x2="37" y2="14" stroke="#c9a84c" stroke-width=".8"/>
+                        <svg
+                          class="card-chip-svg"
+                          viewBox="0 0 38 28"
+                          fill="none"
+                        >
+                          <rect width="38" height="28" rx="4" fill="#c9a84c" />
+                          <rect
+                            x="1"
+                            y="9"
+                            width="36"
+                            height="10"
+                            fill="#b8963e"
+                            opacity=".6"
+                          />
+                          <rect
+                            x="12"
+                            y="1"
+                            width="14"
+                            height="26"
+                            fill="#b8963e"
+                            opacity=".6"
+                          />
+                          <rect
+                            x="4"
+                            y="4"
+                            width="30"
+                            height="20"
+                            rx="2"
+                            fill="none"
+                            stroke="#e2c97e"
+                            stroke-width="1"
+                          />
+                          <line
+                            x1="19"
+                            y1="1"
+                            x2="19"
+                            y2="27"
+                            stroke="#c9a84c"
+                            stroke-width=".8"
+                          />
+                          <line
+                            x1="1"
+                            y1="14"
+                            x2="37"
+                            y2="14"
+                            stroke="#c9a84c"
+                            stroke-width=".8"
+                          />
                         </svg>
                         <div class="card-bank-name">懶飽飽銀行</div>
                       </div>
                       <div class="card-number-display">
-                        {{ cardNumber() || '•••• •••• •••• ••••' }}
+                        {{ cardNumber() || "•••• •••• •••• ••••" }}
                       </div>
                       <div class="card-front-bottom">
                         <div class="card-bottom-field">
                           <span class="card-field-label">持卡人</span>
-                          <span class="card-field-value">{{ cardHolder() || 'YOUR NAME' }}</span>
+                          <span class="card-field-value">{{
+                            cardHolder() || "YOUR NAME"
+                          }}</span>
                         </div>
                         <div class="card-bottom-field">
                           <span class="card-field-label">有效期限</span>
-                          <span class="card-field-value">{{ cardExpiry() || 'MM/YY' }}</span>
+                          <span class="card-field-value">{{
+                            cardExpiry() || "MM/YY"
+                          }}</span>
                         </div>
                         <div class="card-network">
                           <svg viewBox="0 0 50 32" class="card-network-svg">
-                            <circle cx="18" cy="16" r="14" fill="#eb001b" opacity=".85"/>
-                            <circle cx="32" cy="16" r="14" fill="#f79e1b" opacity=".85"/>
-                            <path d="M25 5.5a14 14 0 0 1 0 21 14 14 0 0 1 0-21z" fill="#ff5f00" opacity=".9"/>
+                            <circle
+                              cx="18"
+                              cy="16"
+                              r="14"
+                              fill="#eb001b"
+                              opacity=".85"
+                            />
+                            <circle
+                              cx="32"
+                              cy="16"
+                              r="14"
+                              fill="#f79e1b"
+                              opacity=".85"
+                            />
+                            <path
+                              d="M25 5.5a14 14 0 0 1 0 21 14 14 0 0 1 0-21z"
+                              fill="#ff5f00"
+                              opacity=".9"
+                            />
                           </svg>
                         </div>
                       </div>
@@ -1665,10 +2458,14 @@
                       <div class="card-mag-stripe"></div>
                       <div class="card-cvv-area">
                         <div class="card-sig-strip">
-                          <span class="card-sig-text">AUTHORIZED SIGNATURE</span>
+                          <span class="card-sig-text"
+                            >AUTHORIZED SIGNATURE</span
+                          >
                           <div class="card-cvv-box">
                             <span class="card-cvv-label">CVV</span>
-                            <span class="card-cvv-val">{{ cardCvv() || '•••' }}</span>
+                            <span class="card-cvv-val">{{
+                              cardCvv() || "•••"
+                            }}</span>
                           </div>
                         </div>
                         <p class="card-back-note">此卡僅供 Demo 流程演示使用</p>
@@ -1726,12 +2523,23 @@
                       class="cc-input"
                       placeholder="CARDHOLDER NAME"
                       [value]="cardHolder()"
-                      (input)="cardHolder.set($any($event.target).value.toUpperCase())"
+                      (input)="
+                        cardHolder.set($any($event.target).value.toUpperCase())
+                      "
                     />
                   </div>
                   @if (cardNumber().length > 0 && !isCreditCardValid()) {
                     <p class="cc-error">
-                      <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm-.75 3.75h1.5v4.5h-1.5v-4.5zm0 6h1.5v1.5h-1.5v-1.5z"/></svg>
+                      <svg
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                        width="14"
+                        height="14"
+                      >
+                        <path
+                          d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm-.75 3.75h1.5v4.5h-1.5v-4.5zm0 6h1.5v1.5h-1.5v-1.5z"
+                        />
+                      </svg>
                       {{ lang.cardIncomplete }}
                     </p>
                   }
@@ -1742,9 +2550,11 @@
             <!-- ╔══════════════════════════════════════╗
                  ║  行動支付 QR 碼（選行動支付時顯示）   ║
                  ╚══════════════════════════════════════╝ -->
-            @if (paymentMethod() === 'mobile') {
+            @if (paymentMethod() === "mobile") {
               <div class="mobile-pay-panel">
-                <div class="mp-amount-badge">{{ branchService.config.currency }} {{ discountedTotal() }}</div>
+                <div class="mp-amount-badge">
+                  {{ branchService.config.currency }} {{ discountedTotal() }}
+                </div>
                 <p class="mp-desc">{{ lang.mobilePayDesc }}</p>
                 <div class="qr-wrapper">
                   <qrcode
@@ -1759,43 +2569,72 @@
                 </div>
                 <!-- Demo 掃碼按鈕 -->
                 <button class="mp-scan-btn" (click)="openMobilePayModal()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18">
-                    <rect x="5" y="2" width="14" height="20" rx="2"/>
-                    <line x1="12" y1="18" x2="12.01" y2="18"/>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    width="18"
+                    height="18"
+                  >
+                    <rect x="5" y="2" width="14" height="20" rx="2" />
+                    <line x1="12" y1="18" x2="12.01" y2="18" />
                   </svg>
                   模擬手機掃碼（Demo）
                 </button>
-                <p class="mp-note">實際場景：掃碼後手機將顯示訂單明細與付款確認畫面</p>
+                <p class="mp-note">
+                  實際場景：掃碼後手機將顯示訂單明細與付款確認畫面
+                </p>
               </div>
             }
 
             <!-- 送出訂單：現金 / 信用卡顯示按鈕；行動支付改為提示文字 -->
-            @if (paymentMethod() !== 'mobile') {
+            @if (paymentMethod() !== "mobile") {
               <button
                 class="checkout-submit"
                 [class.is-placing]="isPlacingOrder()"
-                [class.disabled]="paymentMethod() === 'credit' && !isCreditCardValid()"
-                [disabled]="isPlacingOrder() || (paymentMethod() === 'credit' && !isCreditCardValid())"
+                [class.disabled]="
+                  paymentMethod() === 'credit' && !isCreditCardValid()
+                "
+                [disabled]="
+                  isPlacingOrder() ||
+                  (paymentMethod() === 'credit' && !isCreditCardValid())
+                "
                 (click)="placeOrder()"
               >
                 @if (isPlacingOrder()) {
                   <span class="placing-spinner" aria-hidden="true"></span>
                   {{ lang.processing }}
                 } @else {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
-                  @if (paymentMethod() === 'credit') {
-                    {{ lang.checkout }}（{{ lang.creditCard }}）— {{ branchService.config.currency }} {{ discountedTotal() }}
+                  @if (paymentMethod() === "credit") {
+                    {{ lang.checkout }}（{{ lang.creditCard }}）—
+                    {{ branchService.config.currency }} {{ discountedTotal() }}
                   } @else {
-                    {{ lang.checkout }} — {{ branchService.config.currency }} {{ discountedTotal() }}
+                    {{ lang.checkout }} — {{ branchService.config.currency }}
+                    {{ discountedTotal() }}
                   }
                 }
               </button>
             } @else {
               <div class="mp-submit-hint">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  width="16"
+                  height="16"
+                >
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
                 {{ lang.mobilePayHint }}
               </div>
@@ -1813,108 +2652,116 @@
           @if (trackingOrder()) {
             <div class="tracker-container">
               <!-- ── 現金待付款橫幅（PENDING_CASH 狀態）── -->
-              @if (trackingOrder()!.status === 'pending-cash') {
+              @if (trackingOrder()!.status === "pending-cash") {
                 <div class="pending-cash-banner">
                   <div class="pcb-icon">💵</div>
                   <div class="pcb-title">訂單已成立，請前往櫃台付款</div>
                   <div class="pcb-order-num">{{ trackingOrder()!.number }}</div>
                   <div class="pcb-hint">收銀員掃描此號碼後即開始備餐</div>
                   <div class="pcb-amount">
-                    {{ branchService.config.currency }} {{ trackingOrder()!.total }}
+                    {{ branchService.config.currency }}
+                    {{ trackingOrder()!.total }}
                   </div>
                 </div>
               }
 
               <!-- 取餐號碼大牌（非待付款時顯示） -->
-              @if (trackingOrder()!.status !== 'pending-cash') {
-              <div class="tracker-number-card">
-                <span class="tracker-number-label">{{ lang.pickupNumber }}</span>
-                <div class="tracker-number">{{ trackingOrder()!.number }}</div>
-                <span class="tracker-time-label"
-                  >{{ lang.estimatedWait }}
-                  <strong>{{ trackingOrder()!.estimatedMinutes }}</strong>
-                  {{ lang.minutes }}</span
-                >
-              </div>
+              @if (trackingOrder()!.status !== "pending-cash") {
+                <div class="tracker-number-card">
+                  <span class="tracker-number-label">{{
+                    lang.pickupNumber
+                  }}</span>
+                  <div class="tracker-number">
+                    {{ trackingOrder()!.number }}
+                  </div>
+                  <span class="tracker-time-label"
+                    >{{ lang.estimatedWait }}
+                    <strong>{{ trackingOrder()!.estimatedMinutes }}</strong>
+                    {{ lang.minutes }}</span
+                  >
+                </div>
               }
 
               <!-- 製作進度條（非待付款時顯示） -->
-              @if (trackingOrder()!.status !== 'pending-cash') {
-              <div class="tracker-steps">
-                <div
-                  class="tracker-step"
-                  [class.step-done]="
-                    ['cooking', 'ready', 'done'].includes(
-                      trackingOrder()!.status
-                    )
-                  "
-                  [class.step-active]="trackingOrder()!.status === 'waiting'"
-                >
-                  <div class="step-dot">
-                    @if (
-                      ["cooking", "ready", "done"].includes(
+              @if (trackingOrder()!.status !== "pending-cash") {
+                <div class="tracker-steps">
+                  <div
+                    class="tracker-step"
+                    [class.step-done]="
+                      ['cooking', 'ready', 'done'].includes(
                         trackingOrder()!.status
                       )
-                    ) {
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="3"
-                      >
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    }
+                    "
+                    [class.step-active]="trackingOrder()!.status === 'waiting'"
+                  >
+                    <div class="step-dot">
+                      @if (
+                        ["cooking", "ready", "done"].includes(
+                          trackingOrder()!.status
+                        )
+                      ) {
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="3"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      }
+                    </div>
+                    <div class="step-line"></div>
+                    <span class="step-label">{{ lang.waiting }}</span>
                   </div>
-                  <div class="step-line"></div>
-                  <span class="step-label">{{ lang.waiting }}</span>
-                </div>
-                <div
-                  class="tracker-step"
-                  [class.step-done]="
-                    ['ready', 'done'].includes(trackingOrder()!.status)
-                  "
-                  [class.step-active]="trackingOrder()!.status === 'cooking'"
-                >
-                  <div class="step-dot">
-                    @if (trackingOrder()!.status === "cooking") {
-                      <span class="step-cooking-dot"></span>
-                    }
-                    @if (["ready", "done"].includes(trackingOrder()!.status)) {
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="3"
-                      >
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    }
+                  <div
+                    class="tracker-step"
+                    [class.step-done]="
+                      ['ready', 'done'].includes(trackingOrder()!.status)
+                    "
+                    [class.step-active]="trackingOrder()!.status === 'cooking'"
+                  >
+                    <div class="step-dot">
+                      @if (trackingOrder()!.status === "cooking") {
+                        <span class="step-cooking-dot"></span>
+                      }
+                      @if (
+                        ["ready", "done"].includes(trackingOrder()!.status)
+                      ) {
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="3"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      }
+                    </div>
+                    <div class="step-line"></div>
+                    <span class="step-label">{{ lang.cooking }}</span>
                   </div>
-                  <div class="step-line"></div>
-                  <span class="step-label">{{ lang.cooking }}</span>
-                </div>
-                <div
-                  class="tracker-step"
-                  [class.step-done]="trackingOrder()!.status === 'done'"
-                  [class.step-active]="trackingOrder()!.status === 'ready'"
-                >
-                  <div class="step-dot">
-                    @if (trackingOrder()!.status === "done") {
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="3"
-                      >
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    }
+                  <div
+                    class="tracker-step"
+                    [class.step-done]="trackingOrder()!.status === 'done'"
+                    [class.step-active]="trackingOrder()!.status === 'ready'"
+                  >
+                    <div class="step-dot">
+                      @if (trackingOrder()!.status === "done") {
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="3"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      }
+                    </div>
+                    <span class="step-label">{{ lang.ready }} 🎉</span>
                   </div>
-                  <span class="step-label">{{ lang.ready }} 🎉</span>
                 </div>
-              </div>
-              } <!-- end @if status !== pending-cash -->
+              }
+              <!-- end @if status !== pending-cash -->
 
               <!-- 訂單明細 -->
               <div class="tracker-order-card">
@@ -1933,7 +2780,8 @@
                 <div class="toc-total">
                   <span>{{ lang.total }}</span>
                   <span class="toc-price"
-                    >{{ branchService.config.currency }} {{ trackingOrder()!.total }}</span
+                    >{{ branchService.config.currency }}
+                    {{ trackingOrder()!.total }}</span
                   >
                 </div>
               </div>
@@ -1942,6 +2790,27 @@
               <button class="tracker-more-btn" (click)="setTab('menu')">
                 {{ lang.navMenu }}
               </button>
+
+              <!-- 取消訂單（僅 waiting / pending-cash 時可取消）-->
+              @if (['waiting', 'pending-cash'].includes(trackingOrder()!.status)) {
+                <button class="tracker-cancel-btn" (click)="openCancelConfirm()">
+                  取消訂單
+                </button>
+              }
+            </div>
+          }
+
+          <!-- 取消訂單確認 Modal -->
+          @if (cancelConfirmOpen()) {
+            <div class="tracker-cancel-overlay" (click)="closeCancelConfirm()">
+              <div class="tracker-cancel-modal" (click)="$event.stopPropagation()">
+                <p class="tcm-title">確定取消此訂單？</p>
+                <p class="tcm-desc">取消後無法恢復，請確認再送出。</p>
+                <div class="tcm-btns">
+                  <button class="tcm-btn-ghost" (click)="closeCancelConfirm()">返回</button>
+                  <button class="tcm-btn-danger" (click)="confirmCancelOrder()">確認取消</button>
+                </div>
+              </div>
             </div>
           }
 
@@ -1976,7 +2845,8 @@
               <h2 class="ord-title">{{ lang.orderHistoryTitle }}</h2>
             </div>
             <p class="ord-subtitle">
-              {{ lang.orderHistoryCountPre }} {{ orderHistoryList().length }} {{ lang.orderHistoryCountPost }}
+              {{ lang.orderHistoryCountPre }} {{ orderHistoryList().length }}
+              {{ lang.orderHistoryCountPost }}
             </p>
           </header>
 
@@ -2280,27 +3150,46 @@
                   </div>
 
                   <!-- 訂單品項文字 -->
-                  <div class="ord-card-items">{{ getLocalizedOrderItems(order) }}</div>
+                  <div class="ord-card-items">
+                    {{ getLocalizedOrderItems(order) }}
+                  </div>
 
                   <!-- 虛線分隔 -->
                   <div class="ord-card-dash"></div>
 
                   <!-- 底部：合計標籤 + 金額（大字） + 退款按鈕（已完成才顯示） -->
                   <div class="ord-card-foot">
-                    <span class="ord-card-total-label">{{ lang.totalLabel }}</span>
+                    <span class="ord-card-total-label">{{
+                      lang.totalLabel
+                    }}</span>
                     <div class="ord-card-foot-right">
                       <div class="ord-card-total-wrap">
-                        <span class="ord-card-currency">{{ branchService.config.currency }}</span>
+                        <span class="ord-card-currency">{{
+                          branchService.config.currency
+                        }}</span>
                         <span class="ord-card-price">{{ order.total }}</span>
                       </div>
-                      @if (order.status === 'completed') {
+                      @if (order.status === "completed") {
                         <button
                           class="ord-refund-btn"
                           (click)="openRefundModal(order)"
                         >
-                          <svg viewBox="0 0 20 20" fill="none" class="ord-refund-icon">
-                            <path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2z" stroke="currentColor" stroke-width="1.5"/>
-                            <path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                          <svg
+                            viewBox="0 0 20 20"
+                            fill="none"
+                            class="ord-refund-icon"
+                          >
+                            <path
+                              d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2z"
+                              stroke="currentColor"
+                              stroke-width="1.5"
+                            />
+                            <path
+                              d="M10 6v4l2.5 2.5"
+                              stroke="currentColor"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                            />
                           </svg>
                           {{ lang.requestRefund }}
                         </button>
@@ -2333,21 +3222,51 @@
           <!-- Activity Card List -->
           <div class="promo-zone-list">
             @for (promo of PROMO_DISPLAY; track promo.name; let i = $index) {
-              <div class="pz-card" [ngClass]="'pz-bg-' + promo.colorScheme" (click)="openPromoDetail(i)">
+              <div
+                class="pz-card"
+                [ngClass]="'pz-bg-' + promo.colorScheme"
+                (click)="openPromoDetail(i)"
+              >
                 <!-- 左側：文字內容 -->
                 <div class="pz-card-body">
-                  <span class="pz-card-tag" [ngClass]="'pzt-' + promo.colorScheme">{{ promo.tagType === 'new' ? lang.promoTagNew : promo.tagType === 'promo' ? lang.promoTagPromo : lang.promoTagPremium }}</span>
+                  <span
+                    class="pz-card-tag"
+                    [ngClass]="'pzt-' + promo.colorScheme"
+                    >{{
+                      promo.tagType === "new"
+                        ? lang.promoTagNew
+                        : promo.tagType === "promo"
+                          ? lang.promoTagPromo
+                          : lang.promoTagPremium
+                    }}</span
+                  >
                   <h3 class="pz-card-title">{{ getLocalizedName(promo) }}</h3>
                   <div class="pz-card-date">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      style="width: 13px; height: 13px; flex-shrink: 0"
+                    >
+                      <rect
+                        x="3"
+                        y="4"
+                        width="18"
+                        height="18"
+                        rx="2"
+                        ry="2"
+                      ></rect>
                       <line x1="16" y1="2" x2="16" y2="6"></line>
                       <line x1="8" y1="2" x2="8" y2="6"></line>
                       <line x1="3" y1="10" x2="21" y2="10"></line>
                     </svg>
                     {{ promo.startDate }} ～ {{ promo.endDate }}
                   </div>
-                  <p class="pz-card-desc">{{ lang.promoSpendPre }}{{ branchService.config.currency }}{{ promo.minSpend }}{{ lang.promoSpendPost }}</p>
+                  <p class="pz-card-desc">
+                    {{ lang.promoSpendPre }}{{ branchService.config.currency
+                    }}{{ promo.minSpend }}{{ lang.promoSpendPost }}
+                  </p>
                   <span class="pz-card-more">{{ lang.viewDetails }}</span>
                 </div>
                 <!-- 右側：圖片 -->
@@ -2364,13 +3283,17 @@
             }
           </div>
 
-          <div style="height:88px;"></div>
+          <div style="height: 88px"></div>
         </section>
 
         <!-- Detail Modal (centered) -->
         @if (selectedPromoDetail) {
           <div class="pz-overlay" (click)="closePromoDetail()">
-            <div class="pz-sheet" [ngClass]="'pzst-' + selectedPromoDetail.tagType" (click)="$event.stopPropagation()">
+            <div
+              class="pz-sheet"
+              [ngClass]="'pzst-' + selectedPromoDetail.tagType"
+              (click)="$event.stopPropagation()"
+            >
               <!-- Header: 全寬圖片 + 漸層疊加 -->
               <div class="pz-sheet-header">
                 <img
@@ -2381,11 +3304,32 @@
                   height="200"
                 />
                 <div class="pz-sheet-header-body">
-                  <span class="pz-sheet-tag" [ngClass]="'pzt-' + selectedPromoDetail.colorScheme">{{ selectedPromoDetail.tagType === 'new' ? lang.promoTagNew : selectedPromoDetail.tagType === 'promo' ? lang.promoTagPromo : lang.promoTagPremium }}</span>
-                  <h2 class="pz-sheet-header-name">{{ getLocalizedName(selectedPromoDetail) }}</h2>
+                  <span
+                    class="pz-sheet-tag"
+                    [ngClass]="'pzt-' + selectedPromoDetail.colorScheme"
+                    >{{
+                      selectedPromoDetail.tagType === "new"
+                        ? lang.promoTagNew
+                        : selectedPromoDetail.tagType === "promo"
+                          ? lang.promoTagPromo
+                          : lang.promoTagPremium
+                    }}</span
+                  >
+                  <h2 class="pz-sheet-header-name">
+                    {{ getLocalizedName(selectedPromoDetail) }}
+                  </h2>
                 </div>
-                <button class="pz-sheet-close" (click)="closePromoDetail()" aria-label="關閉">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <button
+                  class="pz-sheet-close"
+                  (click)="closePromoDetail()"
+                  aria-label="關閉"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
@@ -2396,8 +3340,21 @@
               <div class="pz-sheet-content">
                 <!-- Date row -->
                 <div class="pz-sheet-date">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    style="width: 16px; height: 16px; flex-shrink: 0"
+                  >
+                    <rect
+                      x="3"
+                      y="4"
+                      width="18"
+                      height="18"
+                      rx="2"
+                      ry="2"
+                    ></rect>
                     <line x1="16" y1="2" x2="16" y2="6"></line>
                     <line x1="8" y1="2" x2="8" y2="6"></line>
                     <line x1="3" y1="10" x2="21" y2="10"></line>
@@ -2409,17 +3366,28 @@
 
                 <!-- Spend threshold -->
                 <div class="pz-sheet-spend">
-                  {{ lang.promoSpendPre }}<strong>{{ branchService.config.currency }}{{ selectedPromoDetail.minSpend }}</strong>{{ lang.promoJoinPost }}
+                  {{ lang.promoSpendPre
+                  }}<strong
+                    >{{ branchService.config.currency
+                    }}{{ selectedPromoDetail.minSpend }}</strong
+                  >{{ lang.promoJoinPost }}
                 </div>
 
                 <!-- Description -->
-                <p class="pz-sheet-desc">{{ getLocalizedDesc(selectedPromoDetail) }}</p>
+                <p class="pz-sheet-desc">
+                  {{ getLocalizedDesc(selectedPromoDetail) }}
+                </p>
 
                 <!-- Highlights -->
                 <div class="pz-sheet-section">
-                  <h4 class="pz-sheet-section-title">{{ lang.activityDesc }}</h4>
+                  <h4 class="pz-sheet-section-title">
+                    {{ lang.activityDesc }}
+                  </h4>
                   <ul class="pz-highlight-list">
-                    @for (h of getLocalizedHighlights(selectedPromoDetail); track h) {
+                    @for (
+                      h of getLocalizedHighlights(selectedPromoDetail);
+                      track h
+                    ) {
                       <li class="pz-highlight-item">{{ h }}</li>
                     }
                   </ul>
@@ -2427,16 +3395,31 @@
 
                 <!-- Gifts -->
                 <div class="pz-sheet-section">
-                  <h4 class="pz-sheet-section-title">{{ lang.availableGifts }}</h4>
+                  <h4 class="pz-sheet-section-title">
+                    {{ lang.availableGifts }}
+                  </h4>
                   <div class="pz-gift-list">
-                    @for (gift of getLocalizedGifts(selectedPromoDetail); track gift) {
+                    @for (
+                      gift of getLocalizedGifts(selectedPromoDetail);
+                      track gift
+                    ) {
                       <div class="pz-gift-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          style="width: 16px; height: 16px; flex-shrink: 0"
+                        >
                           <polyline points="20 12 20 22 4 22 4 12"></polyline>
                           <rect x="2" y="7" width="20" height="5"></rect>
                           <line x1="12" y1="22" x2="12" y2="7"></line>
-                          <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
-                          <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+                          <path
+                            d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"
+                          ></path>
+                          <path
+                            d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"
+                          ></path>
                         </svg>
                         {{ gift }}
                       </div>
@@ -2445,7 +3428,10 @@
                 </div>
 
                 <!-- CTA -->
-                <button class="pz-sheet-cta" (click)="closePromoDetail(); setTab('menu')">
+                <button
+                  class="pz-sheet-cta"
+                  (click)="closePromoDetail(); setTab('menu')"
+                >
                   {{ lang.goOrderNow }}
                 </button>
               </div>
@@ -2546,7 +3532,9 @@
               stroke="currentColor"
               stroke-width="2"
             >
-              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+              <path
+                d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"
+              />
               <line x1="7" y1="7" x2="7.01" y2="7" />
             </svg>
           }
@@ -2563,7 +3551,10 @@
    ─ 點擊遮罩關閉（僅在未完成付款時）
 ═══════════════════════════════════════════════════════════ -->
 @if (showMobilePayModal()) {
-  <div class="mobile-pay-overlay" (click)="!mobilePayCompleted() && closeMobilePayModal()">
+  <div
+    class="mobile-pay-overlay"
+    (click)="!mobilePayCompleted() && closeMobilePayModal()"
+  >
     <div class="mobile-phone-frame" (click)="$event.stopPropagation()">
       <!-- 手機頂部瀏海 -->
       <div class="phone-notch"></div>
@@ -2578,7 +3569,9 @@
 
           <div class="mp-screen-amount">
             <span class="mp-screen-amount-label">{{ lang.payAmount }}</span>
-            <span class="mp-screen-amount-value">{{ branchService.config.currency }} {{ discountedTotal() }}</span>
+            <span class="mp-screen-amount-value"
+              >{{ branchService.config.currency }} {{ discountedTotal() }}</span
+            >
           </div>
 
           <div class="mp-screen-divider"></div>
@@ -2587,45 +3580,86 @@
             <p class="mp-screen-items-title">{{ lang.orderDetail }}</p>
             @for (item of cartItems(); track item.id) {
               <div class="mp-screen-item">
-                <span class="mp-screen-item-name">{{ getLocalizedName(item) }} × {{ item.quantity }}</span>
-                <span class="mp-screen-item-price">{{ branchService.config.currency }} {{ item.price * item.quantity }}</span>
+                <span class="mp-screen-item-name"
+                  >{{ getLocalizedName(item) }} × {{ item.quantity }}</span
+                >
+                <span class="mp-screen-item-price"
+                  >{{ branchService.config.currency }}
+                  {{ item.price * item.quantity }}</span
+                >
               </div>
             }
-            @if (selectedPromoGift() && selectedPromoName() !== '不參加活動優惠') {
+            @if (
+              selectedPromoGift() && selectedPromoName() !== "不參加活動優惠"
+            ) {
               <div class="mp-screen-item mp-screen-item-gift">
-                <span class="mp-screen-item-name">🎁 {{ selectedPromoGiftLocalized() }}</span>
-                <span class="mp-screen-item-price">{{ branchService.config.currency }} 0</span>
+                <span class="mp-screen-item-name"
+                  >🎁 {{ selectedPromoGiftLocalized() }}</span
+                >
+                <span class="mp-screen-item-price"
+                  >{{ branchService.config.currency }} 0</span
+                >
               </div>
             }
             @if (useDiscountCoupon()) {
               <div class="mp-screen-item mp-screen-item-discount">
-                <span class="mp-screen-item-name">{{ lang.couponDiscount }}</span>
-                <span class="mp-screen-item-price">－ {{ branchService.config.currency }} {{ discountAmount() }}</span>
+                <span class="mp-screen-item-name">{{
+                  lang.couponDiscount
+                }}</span>
+                <span class="mp-screen-item-price"
+                  >－ {{ branchService.config.currency }}
+                  {{ discountAmount() }}</span
+                >
               </div>
             }
           </div>
 
           <div class="mp-screen-total">
             <span>{{ lang.total }}</span>
-            <span class="mp-screen-total-amt">{{ branchService.config.currency }} {{ discountedTotal() }}</span>
+            <span class="mp-screen-total-amt"
+              >{{ branchService.config.currency }} {{ discountedTotal() }}</span
+            >
           </div>
 
           <button class="mp-confirm-pay-btn" (click)="completeMobilePayment()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
-              <polyline points="20 6 9 17 4 12"/>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              width="18"
+              height="18"
+            >
+              <polyline points="20 6 9 17 4 12" />
             </svg>
             {{ lang.confirmPayment }}
           </button>
-          <button class="mp-cancel-btn" (click)="closeMobilePayModal()">{{ lang.cancel }}</button>
-
+          <button class="mp-cancel-btn" (click)="closeMobilePayModal()">
+            {{ lang.cancel }}
+          </button>
         } @else {
           <!-- ── 付款成功動畫 ── -->
           <div class="mp-success-screen">
             <div class="mp-success-ripple"></div>
             <div class="mp-success-circle">
               <svg class="mp-success-check" viewBox="0 0 52 52" fill="none">
-                <circle cx="26" cy="26" r="25" stroke="#fff" stroke-width="2" fill="none"/>
-                <polyline class="mp-check-stroke" points="14,27 22,35 38,18" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <circle
+                  cx="26"
+                  cy="26"
+                  r="25"
+                  stroke="#fff"
+                  stroke-width="2"
+                  fill="none"
+                />
+                <polyline
+                  class="mp-check-stroke"
+                  points="14,27 22,35 38,18"
+                  stroke="#fff"
+                  stroke-width="3.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  fill="none"
+                />
               </svg>
             </div>
             <p class="mp-success-title">付款成功！</p>
@@ -2648,14 +3682,25 @@
 @if (refundModalOpen()) {
   <div class="refund-overlay" (click)="closeRefundModal()">
     <div class="refund-dialog" (click)="$event.stopPropagation()">
-
       <!-- 成功送出畫面 -->
       @if (refundSubmitted()) {
         <div class="refund-success">
           <div class="refund-success-icon">
             <svg viewBox="0 0 48 48" fill="none">
-              <circle cx="24" cy="24" r="22" stroke="#27AE60" stroke-width="2.5"/>
-              <path d="M14 24l7 7 13-14" stroke="#27AE60" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle
+                cx="24"
+                cy="24"
+                r="22"
+                stroke="#27AE60"
+                stroke-width="2.5"
+              />
+              <path
+                d="M14 24l7 7 13-14"
+                stroke="#27AE60"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </div>
           <p class="refund-success-title">{{ lang.refundSuccessTitle }}</p>
@@ -2665,21 +3710,34 @@
 
       <!-- 申請表單 -->
       @if (!refundSubmitted()) {
-
         <!-- 標題列 -->
         <div class="refund-header">
           <div class="refund-title-wrap">
             <svg class="refund-title-icon" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z" stroke="#D95C1A" stroke-width="1.8"/>
-              <path d="M12 8v5" stroke="#D95C1A" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="12" cy="16" r="1" fill="#D95C1A"/>
+              <path
+                d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"
+                stroke="#D95C1A"
+                stroke-width="1.8"
+              />
+              <path
+                d="M12 8v5"
+                stroke="#D95C1A"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <circle cx="12" cy="16" r="1" fill="#D95C1A" />
             </svg>
             <span class="refund-title">{{ lang.refundTitle }}</span>
           </div>
           <div class="refund-order-id">{{ refundTargetOrder()?.id }}</div>
           <button class="refund-close-btn" (click)="closeRefundModal()">
             <svg viewBox="0 0 20 20" fill="none">
-              <path d="M5 5l10 10M15 5l-10 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path
+                d="M5 5l10 10M15 5l-10 10"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
             </svg>
           </button>
         </div>
@@ -2698,7 +3756,13 @@
               <span class="refund-checkbox" [class.checked]="reason.checked">
                 @if (reason.checked) {
                   <svg viewBox="0 0 14 14" fill="none">
-                    <path d="M2.5 7l3.5 3.5 5.5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path
+                      d="M2.5 7l3.5 3.5 5.5-6"
+                      stroke="#fff"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
                   </svg>
                 }
               </span>
@@ -2733,7 +3797,6 @@
             {{ lang.refundSubmitBtn }}
           </button>
         </div>
-
       }
     </div>
   </div>
@@ -2746,7 +3809,9 @@
       <div class="session-expired-icon">⏱️</div>
       <h3 class="session-expired-title">{{ lang.sessionExpiredTitle }}</h3>
       <p class="session-expired-desc">{{ lang.sessionExpiredDesc }}</p>
-      <button class="session-expired-btn" (click)="goToLogin()">{{ lang.sessionExpiredBtn }}</button>
+      <button class="session-expired-btn" (click)="goToLogin()">
+        {{ lang.sessionExpiredBtn }}
+      </button>
     </div>
   </div>
 }

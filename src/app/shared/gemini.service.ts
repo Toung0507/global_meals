@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 /* ⚠️ Demo 用途：API Key 請勿提交至公開 repo。 */
-const AI_API_KEY = 'sk-vS9otASWtxTpeUaqE758Fb343411476cA8E5Fb41Fc3a1597';
-const AI_ENDPOINT = 'https://free.v36.cm/v1/chat/completions';
+const AI_API_KEY = 'AIzaSyCi-UB0EvSp5ne1UNljJKxTOT-87oZIvQg';
+const AI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${AI_API_KEY}`;
 
 export interface GeminiPromoCopyParams {
   name: string;
@@ -29,18 +29,10 @@ export class GeminiService {
       `活動名稱：${params.name}\n活動期間：${params.startDate} 至 ${params.endDate}` +
       `${minText}${giftText}\n\n直接輸出文案內容，不要加標題、編號或說明文字。`;
 
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${AI_API_KEY}`
-    });
-
     return this.http.post<any>(AI_ENDPOINT, {
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 300,
-      temperature: 0.85
-    }, { headers }).pipe(
-      map(res => res?.choices?.[0]?.message?.content?.trim() ?? '生成失敗，請稍後再試')
+      contents: [{ parts: [{ text: prompt }] }]
+    }).pipe(
+      map(res => res?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '生成失敗，請稍後再試')
     );
   }
 }

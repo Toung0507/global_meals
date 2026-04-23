@@ -28,9 +28,22 @@ import { AuthService } from '../shared/auth.service';
 import { LoadingService } from '../shared/loading.service';
 import { OrderService, OrderStatus } from '../shared/order.service';
 import { firstValueFrom } from 'rxjs';
-import { ApiService, GetOrdersVo, CartSyncReq, CreateOrdersReq, PayReq, CartRemoveReq, CartClearReq, PromotionDetailVo } from '../shared/api.service';
+import {
+  ApiService,
+  GetOrdersVo,
+  CartSyncReq,
+  CreateOrdersReq,
+  PayReq,
+  CartRemoveReq,
+  CartClearReq,
+  PromotionDetailVo,
+} from '../shared/api.service';
 import { DEMO_BASE_URL } from '../shared/demo.config';
-import { BranchService, CountryCode, CountryConfig } from '../shared/branch.service';
+import {
+  BranchService,
+  CountryCode,
+  CountryConfig,
+} from '../shared/branch.service';
 
 /* ── 購物車品項型別 ─────────────────────────────────── */
 export interface CartItem {
@@ -69,7 +82,7 @@ export interface MenuItem {
 export interface TrackingOrder {
   id: string;
   number: string;
-  status: 'pending-cash' | 'waiting' | 'cooking' | 'ready' | 'done';
+  status: 'pending-cash' | 'waiting' | 'cooking' | 'ready' | 'done' | 'cancelled';
   estimatedMinutes: number;
   items: string[];
   total: number;
@@ -171,29 +184,188 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   });
 
   /* ── 多語翻譯對照表（依中文名稱 key，供 API 回傳後合併用）── */
-  private static readonly MENU_I18N: Record<string, Pick<MenuItem, 'nameEn' | 'nameJP' | 'nameKR' | 'descriptionJP' | 'descriptionKR'>> = {
-    '招牌滷肉飯':   { nameEn: 'Braised Pork Rice',     nameJP: '魯肉飯（台湾風豚角煮丼）',              nameKR: '루러우판（대만식 돼지고기 덮밥）',          descriptionJP: '豚バラ肉をじっくり煮込んだ濃厚タレ、半熟煮卵とさっぱりキムチ添え',     descriptionKR: '천천히 조린 삼겹살, 진한 간장 소스, 반숙 달걀과 아삭한 겉절이 곁들임' },
-    '古早味排骨飯': { nameEn: 'Pork Chop Rice',        nameJP: '台湾風ポークカツ丼（懐かし風）',         nameKR: '전통식 돼지갈비 덮밥',                     descriptionJP: '台湾式の揚げポークチョップ、大根の煮物と白ご飯',                        descriptionKR: '대만식 튀긴 돼지갈비, 무 조림과 흰 쌀밥' },
-    '牛排':         { nameEn: 'Beef Steak',            nameJP: 'ビーフステーキ',                        nameKR: '비프 스테이크',                            descriptionJP: 'オーストラリア産牛肉、炭火焼きで旨みを閉じ込め、季節野菜とソース添え', descriptionKR: '호주산 소고기, 직화구이로 육즙 봉인, 제철 채소와 소스 곁들임' },
-    '三杯雞':       { nameEn: 'Three Cup Chicken',     nameJP: '三杯鶏（台湾風醤油バジル煮）',          nameKR: '삼배계（대만식 간장 바질 닭요리）',         descriptionJP: 'ごま油・醤油・紹興酒で炒め煮、バジルの香り豊か',                        descriptionKR: '참기름·간장·쌀술 삼배 조리, 바질 향이 가득' },
-    '蚵仔煎':       { nameEn: 'Oyster Pancake',        nameJP: '牡蠣オムレツ（台湾風）',                nameKR: '대만식 굴전',                              descriptionJP: '新鮮な牡蠣を使ったさつまいも粉のパンケーキ、特製甘辛ソースがけ',     descriptionKR: '신선한 굴을 넣은 고구마 전분 전, 특제 매콤달콤 소스 곁들임' },
-    '蚵仔麵線':     { nameEn: 'Oyster Vermicelli',     nameJP: '牡蠣そうめん（台湾風とろみ麺）',        nameKR: '굴 국수（대만식 걸쭉한 면）',              descriptionJP: '新鮮な牡蠣と細麺のスープ、甘辛ソースで味付けした夜市の定番',          descriptionKR: '신선한 굴과 가는 국수의 조화, 매콤달콤 소스의 야시장 명물' },
-    '阿三陽春麵':   { nameEn: 'Traditional Noodle',   nameJP: 'アサン陽春麺（台湾式あっさり麺）',      nameKR: '아산 양춘면（담백한 대만식 국수）',         descriptionJP: '昔ながら製法のクリアスープ、手打ち麺のもちもち食感',                   descriptionKR: '전통 방식으로 우린 맑은 육수, 수제 면의 탱글탱글한 식감' },
-    '黑糖珍珠奶茶': { nameEn: 'Brown Sugar Boba',      nameJP: '黒糖タピオカミルクティー',              nameKR: '흑당 버블 밀크티',                         descriptionJP: '出来たてタピオカ、手作り黒糖タイガーストライプ',                       descriptionKR: '갓 삶은 타피오카, 수제 흑당 호랑이 무늬' },
-    '仙草奶茶':     { nameEn: 'Grass Jelly Milk Tea', nameJP: '仙草ミルクティー',                      nameKR: '선초 밀크티',                              descriptionJP: '台湾産仙草ゼリー入り、濃厚ミルクティーとの絶妙な組み合わせ',          descriptionKR: '대만산 선초 젤리, 진한 밀크티와의 절묘한 조합' },
+  private static readonly MENU_I18N: Record<
+    string,
+    Pick<
+      MenuItem,
+      'nameEn' | 'nameJP' | 'nameKR' | 'descriptionJP' | 'descriptionKR'
+    >
+  > = {
+    招牌滷肉飯: {
+      nameEn: 'Braised Pork Rice',
+      nameJP: '魯肉飯（台湾風豚角煮丼）',
+      nameKR: '루러우판（대만식 돼지고기 덮밥）',
+      descriptionJP:
+        '豚バラ肉をじっくり煮込んだ濃厚タレ、半熟煮卵とさっぱりキムチ添え',
+      descriptionKR:
+        '천천히 조린 삼겹살, 진한 간장 소스, 반숙 달걀과 아삭한 겉절이 곁들임',
+    },
+    古早味排骨飯: {
+      nameEn: 'Pork Chop Rice',
+      nameJP: '台湾風ポークカツ丼（懐かし風）',
+      nameKR: '전통식 돼지갈비 덮밥',
+      descriptionJP: '台湾式の揚げポークチョップ、大根の煮物と白ご飯',
+      descriptionKR: '대만식 튀긴 돼지갈비, 무 조림과 흰 쌀밥',
+    },
+    牛排: {
+      nameEn: 'Beef Steak',
+      nameJP: 'ビーフステーキ',
+      nameKR: '비프 스테이크',
+      descriptionJP:
+        'オーストラリア産牛肉、炭火焼きで旨みを閉じ込め、季節野菜とソース添え',
+      descriptionKR:
+        '호주산 소고기, 직화구이로 육즙 봉인, 제철 채소와 소스 곁들임',
+    },
+    三杯雞: {
+      nameEn: 'Three Cup Chicken',
+      nameJP: '三杯鶏（台湾風醤油バジル煮）',
+      nameKR: '삼배계（대만식 간장 바질 닭요리）',
+      descriptionJP: 'ごま油・醤油・紹興酒で炒め煮、バジルの香り豊か',
+      descriptionKR: '참기름·간장·쌀술 삼배 조리, 바질 향이 가득',
+    },
+    蚵仔煎: {
+      nameEn: 'Oyster Pancake',
+      nameJP: '牡蠣オムレツ（台湾風）',
+      nameKR: '대만식 굴전',
+      descriptionJP:
+        '新鮮な牡蠣を使ったさつまいも粉のパンケーキ、特製甘辛ソースがけ',
+      descriptionKR:
+        '신선한 굴을 넣은 고구마 전분 전, 특제 매콤달콤 소스 곁들임',
+    },
+    蚵仔麵線: {
+      nameEn: 'Oyster Vermicelli',
+      nameJP: '牡蠣そうめん（台湾風とろみ麺）',
+      nameKR: '굴 국수（대만식 걸쭉한 면）',
+      descriptionJP:
+        '新鮮な牡蠣と細麺のスープ、甘辛ソースで味付けした夜市の定番',
+      descriptionKR:
+        '신선한 굴과 가는 국수의 조화, 매콤달콤 소스의 야시장 명물',
+    },
+    阿三陽春麵: {
+      nameEn: 'Traditional Noodle',
+      nameJP: 'アサン陽春麺（台湾式あっさり麺）',
+      nameKR: '아산 양춘면（담백한 대만식 국수）',
+      descriptionJP: '昔ながら製法のクリアスープ、手打ち麺のもちもち食感',
+      descriptionKR: '전통 방식으로 우린 맑은 육수, 수제 면의 탱글탱글한 식감',
+    },
+    黑糖珍珠奶茶: {
+      nameEn: 'Brown Sugar Boba',
+      nameJP: '黒糖タピオカミルクティー',
+      nameKR: '흑당 버블 밀크티',
+      descriptionJP: '出来たてタピオカ、手作り黒糖タイガーストライプ',
+      descriptionKR: '갓 삶은 타피오카, 수제 흑당 호랑이 무늬',
+    },
+    仙草奶茶: {
+      nameEn: 'Grass Jelly Milk Tea',
+      nameJP: '仙草ミルクティー',
+      nameKR: '선초 밀크티',
+      descriptionJP:
+        '台湾産仙草ゼリー入り、濃厚ミルクティーとの絶妙な組み合わせ',
+      descriptionKR: '대만산 선초 젤리, 진한 밀크티와의 절묘한 조합',
+    },
   };
 
   /* ── 菜單品項（API 載入後動態填充；MOCK_MODE 下使用靜態 Demo 資料）── */
   menuItems = signal<MenuItem[]>([
-    { id: 1, name: '招牌滷肉飯',   ...CustomerHomeComponent.MENU_I18N['招牌滷肉飯'],   price: 120, image: '', category: '飯食', categoryEn: 'Rice',    description: '慢燉豬五花，滷汁濃醇入味，配半熟滷蛋與爽脆泡菜', stock: 20 },
-    { id: 2, name: '古早味排骨飯', ...CustomerHomeComponent.MENU_I18N['古早味排骨飯'], price: 145, image: '', category: '飯食', categoryEn: 'Rice',    description: '台式醃製炸排骨，滷汁菜頭配白飯', stock: 15 },
-    { id: 8, name: '牛排',         ...CustomerHomeComponent.MENU_I18N['牛排'],         price: 130, image: '', category: '飯食', categoryEn: 'Rice',    description: '精選澳洲牛肉，炭烤鎖汁，附時蔬與醬汁', stock: 10 },
-    { id: 9, name: '三杯雞',       ...CustomerHomeComponent.MENU_I18N['三杯雞'],       price: 150, image: '', category: '飯食', categoryEn: 'Rice',    description: '麻油、醬油、米酒三杯燒製，九層塔香氣四溢', stock: 15 },
-    { id: 3, name: '蚵仔煎',       ...CustomerHomeComponent.MENU_I18N['蚵仔煎'],       price: 80,  image: '', category: '小吃', categoryEn: 'Snacks',  description: '鮮蚵地瓜粉煎餅，淋上特製甜辣醬', stock: 18 },
-    { id: 7, name: '蚵仔麵線',     ...CustomerHomeComponent.MENU_I18N['蚵仔麵線'],     price: 70,  image: '', category: '小吃', categoryEn: 'Snacks',  description: '鮮蚵燴入麵線，甜辣醬提味，道地夜市風味', stock: 20 },
-    { id: 4, name: '阿三陽春麵',   ...CustomerHomeComponent.MENU_I18N['阿三陽春麵'],   price: 120, image: '', category: '麵食', categoryEn: 'Noodles', description: '古法熬製清湯底，手工製麵條彈牙有嚼勁', stock: 15 },
-    { id: 5, name: '黑糖珍珠奶茶', ...CustomerHomeComponent.MENU_I18N['黑糖珍珠奶茶'], price: 75,  image: '', category: '飲品', categoryEn: 'Drinks',  description: '現煮珍珠，手工黑糖虎紋', stock: 50 },
-    { id: 6, name: '仙草奶茶',     ...CustomerHomeComponent.MENU_I18N['仙草奶茶'],     price: 65,  image: '', category: '飲品', categoryEn: 'Drinks',  description: '台灣本產仙草凍，搭配濃醇鮮奶茶', stock: 30 },
+    {
+      id: 1,
+      name: '招牌滷肉飯',
+      ...CustomerHomeComponent.MENU_I18N['招牌滷肉飯'],
+      price: 120,
+      image: '',
+      category: '飯食',
+      categoryEn: 'Rice',
+      description: '慢燉豬五花，滷汁濃醇入味，配半熟滷蛋與爽脆泡菜',
+      stock: 20,
+    },
+    {
+      id: 2,
+      name: '古早味排骨飯',
+      ...CustomerHomeComponent.MENU_I18N['古早味排骨飯'],
+      price: 145,
+      image: '',
+      category: '飯食',
+      categoryEn: 'Rice',
+      description: '台式醃製炸排骨，滷汁菜頭配白飯',
+      stock: 15,
+    },
+    {
+      id: 8,
+      name: '牛排',
+      ...CustomerHomeComponent.MENU_I18N['牛排'],
+      price: 130,
+      image: '',
+      category: '飯食',
+      categoryEn: 'Rice',
+      description: '精選澳洲牛肉，炭烤鎖汁，附時蔬與醬汁',
+      stock: 10,
+    },
+    {
+      id: 9,
+      name: '三杯雞',
+      ...CustomerHomeComponent.MENU_I18N['三杯雞'],
+      price: 150,
+      image: '',
+      category: '飯食',
+      categoryEn: 'Rice',
+      description: '麻油、醬油、米酒三杯燒製，九層塔香氣四溢',
+      stock: 15,
+    },
+    {
+      id: 3,
+      name: '蚵仔煎',
+      ...CustomerHomeComponent.MENU_I18N['蚵仔煎'],
+      price: 80,
+      image: '',
+      category: '小吃',
+      categoryEn: 'Snacks',
+      description: '鮮蚵地瓜粉煎餅，淋上特製甜辣醬',
+      stock: 18,
+    },
+    {
+      id: 7,
+      name: '蚵仔麵線',
+      ...CustomerHomeComponent.MENU_I18N['蚵仔麵線'],
+      price: 70,
+      image: '',
+      category: '小吃',
+      categoryEn: 'Snacks',
+      description: '鮮蚵燴入麵線，甜辣醬提味，道地夜市風味',
+      stock: 20,
+    },
+    {
+      id: 4,
+      name: '阿三陽春麵',
+      ...CustomerHomeComponent.MENU_I18N['阿三陽春麵'],
+      price: 120,
+      image: '',
+      category: '麵食',
+      categoryEn: 'Noodles',
+      description: '古法熬製清湯底，手工製麵條彈牙有嚼勁',
+      stock: 15,
+    },
+    {
+      id: 5,
+      name: '黑糖珍珠奶茶',
+      ...CustomerHomeComponent.MENU_I18N['黑糖珍珠奶茶'],
+      price: 75,
+      image: '',
+      category: '飲品',
+      categoryEn: 'Drinks',
+      description: '現煮珍珠，手工黑糖虎紋',
+      stock: 50,
+    },
+    {
+      id: 6,
+      name: '仙草奶茶',
+      ...CustomerHomeComponent.MENU_I18N['仙草奶茶'],
+      price: 65,
+      image: '',
+      category: '飲品',
+      categoryEn: 'Drinks',
+      description: '台灣本產仙草凍，搭配濃醇鮮奶茶',
+      stock: 30,
+    },
   ]);
 
   /** 從 menuItems 衍生的分類清單（去重，保持插入順序） */
@@ -201,15 +373,19 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     const seen = new Set<string>();
     const cats: string[] = [];
     for (const item of this.menuItems()) {
-      if (!seen.has(item.category)) { seen.add(item.category); cats.push(item.category); }
+      if (!seen.has(item.category)) {
+        seen.add(item.category);
+        cats.push(item.category);
+      }
     }
     return cats;
   });
 
   /** 取得指定分類中通過搜尋/篩選的品項 */
   getItemsByCategory(cat: string): MenuItem[] {
-    return this.menuItems().filter(item =>
-      item.category === cat && this.isMenuItemShown(item.name, item.category)
+    return this.menuItems().filter(
+      (item) =>
+        item.category === cat && this.isMenuItemShown(item.name, item.category),
     );
   }
 
@@ -217,16 +393,22 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   getCategoryLabel(cat: string): string {
     const cc = this.branchService.country;
     const MAP_TW: Record<string, string> = {
-      '飯食': '🍱 飯食料理', '小吃': '🦪 台灣小吃',
-      '麵食': '🍜 麵食',     '飲品': '🧋 特調飲品',
+      飯食: '🍱 飯食料理',
+      小吃: '🦪 台灣小吃',
+      麵食: '🍜 麵食',
+      飲品: '🧋 特調飲品',
     };
     const MAP_JP: Record<string, string> = {
-      '飯食': '🍱 ご飯料理', '小吃': '🦪 台湾スナック',
-      '麵食': '🍜 麺料理',   '飲品': '🧋 ドリンク',
+      飯食: '🍱 ご飯料理',
+      小吃: '🦪 台湾スナック',
+      麵食: '🍜 麺料理',
+      飲品: '🧋 ドリンク',
     };
     const MAP_KR: Record<string, string> = {
-      '飯食': '🍱 밥 요리', '小吃': '🦪 대만 간식',
-      '麵食': '🍜 면 요리', '飲品': '🧋 음료',
+      飯食: '🍱 밥 요리',
+      小吃: '🦪 대만 간식',
+      麵食: '🍜 면 요리',
+      飲品: '🧋 음료',
     };
     if (cc === 'JP') return MAP_JP[cat] ?? `🍽 ${cat}`;
     if (cc === 'KR') return MAP_KR[cat] ?? `🍽 ${cat}`;
@@ -237,11 +419,15 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   getMenuImageClass(item: MenuItem): string {
     if (item.image) return '';
     const MAP: Record<string, string> = {
-      '招牌滷肉飯': 'mi-braised-pork', '古早味排骨飯': 'mi-pork-chop',
-      '蚵仔煎': 'mi-oyster-pancake',   '阿三陽春麵': 'mi-beef',
-      '黑糖珍珠奶茶': 'mi-bbt',        '仙草奶茶': 'mi-grass-jelly',
-      '蚵仔麵線': 'mi-oyster-noodle',  '牛排': 'mi-steak',
-      '三杯雞': 'mi-3cup-chicken',
+      招牌滷肉飯: 'mi-braised-pork',
+      古早味排骨飯: 'mi-pork-chop',
+      蚵仔煎: 'mi-oyster-pancake',
+      阿三陽春麵: 'mi-beef',
+      黑糖珍珠奶茶: 'mi-bbt',
+      仙草奶茶: 'mi-grass-jelly',
+      蚵仔麵線: 'mi-oyster-noodle',
+      牛排: 'mi-steak',
+      三杯雞: 'mi-3cup-chicken',
     };
     return MAP[item.name] ?? '';
   }
@@ -301,11 +487,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   /* ── 信用卡表單 ─────────────────────────────────────────
    * Demo 假卡：4532 1234 5678 9012 / 12/28 / CVV:123
    * ─────────────────────────────────────────────────── */
-  cardNumber  = signal('');
-  cardExpiry  = signal('');
-  cardCvv     = signal('');
-  cardHolder  = signal('');
-  cardFlipped = signal(false);   /* true = 顯示卡背面（CVV 輸入中） */
+  cardNumber = signal('');
+  cardExpiry = signal('');
+  cardCvv = signal('');
+  cardHolder = signal('');
+  cardFlipped = signal(false); /* true = 顯示卡背面（CVV 輸入中） */
 
   /** 四欄均完整才視為有效 */
   isCreditCardValid = computed(() => {
@@ -328,17 +514,23 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   onCardExpiryInput(val: string): void {
     const clean = val.replace(/\D/g, '').slice(0, 4);
     this.cardExpiry.set(
-      clean.length >= 3 ? clean.slice(0, 2) + '/' + clean.slice(2) : clean
+      clean.length >= 3 ? clean.slice(0, 2) + '/' + clean.slice(2) : clean,
     );
   }
 
-  onCardCvvFocus(): void  { this.cardFlipped.set(true);  }
-  onCardCvvBlur(): void   { this.cardFlipped.set(false); }
-  onCvvInput(value: string): void { this.cardCvv.set(value.replace(/\D/g, '').slice(0, 4)); }
+  onCardCvvFocus(): void {
+    this.cardFlipped.set(true);
+  }
+  onCardCvvBlur(): void {
+    this.cardFlipped.set(false);
+  }
+  onCvvInput(value: string): void {
+    this.cardCvv.set(value.replace(/\D/g, '').slice(0, 4));
+  }
 
   /* ── 行動支付 QR Modal ──────────────────────────────── */
-  showMobilePayModal  = signal(false);
-  mobilePayCompleted  = signal(false);
+  showMobilePayModal = signal(false);
+  mobilePayCompleted = signal(false);
   private mobilePayTimer: ReturnType<typeof setTimeout> | null = null;
 
   openMobilePayModal(): void {
@@ -408,6 +600,15 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     el.scrollBy({ left: -252, behavior: 'smooth' });
   }
 
+  scrollToFeatured(): void {
+    this.setTab('home');
+    // 等 Angular 渲染完 home tab 後再捲動
+    setTimeout(() => {
+      const el = document.getElementById('featured-section');
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  }
+
   /* ── 活動優惠選擇（每個活動有獨立贈品清單）─────────── */
   PROMO_ACTIVITIES = [
     {
@@ -415,7 +616,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       nameJP: '新規会員初回注文特典',
       nameKR: '신규 회원 첫 주문 선물',
       minSpend: 150,
-      gifts:   ['招牌豆漿 × 1', '仙草奶茶 × 1'],
+      gifts: ['招牌豆漿 × 1', '仙草奶茶 × 1'],
       giftsJP: ['看板豆乳 × 1', '仙草ミルクティー × 1'],
       giftsKR: ['시그니처 두유 × 1', '선초 밀크티 × 1'],
     },
@@ -424,7 +625,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       nameJP: '週末お買い上げ特典',
       nameKR: '주말 구매 달성 선물',
       minSpend: 300,
-      gifts:   ['古早味豆腐塊 × 2', '特製泡菜 × 1', '滷蛋 × 2'],
+      gifts: ['古早味豆腐塊 × 2', '特製泡菜 × 1', '滷蛋 × 2'],
       giftsJP: ['昔ながらの豆腐 × 2', '特製キムチ × 1', '煮卵 × 2'],
       giftsKR: ['전통 두부 × 2', '특제 김치 × 1', '조림 계란 × 2'],
     },
@@ -433,9 +634,15 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       nameJP: 'グルメ達人特大ギフトセット',
       nameKR: '소비 달인 대형 선물 세트',
       minSpend: 500,
-      gifts:   ['仙草奶茶 × 1 + 滷蛋 × 2', '特製泡菜 × 1 + 古早味豆腐塊 × 2'],
-      giftsJP: ['仙草ミルクティー × 1 + 煮卵 × 2', '特製キムチ × 1 + 昔ながらの豆腐 × 2'],
-      giftsKR: ['선초 밀크티 × 1 + 조림 계란 × 2', '특제 김치 × 1 + 전통 두부 × 2'],
+      gifts: ['仙草奶茶 × 1 + 滷蛋 × 2', '特製泡菜 × 1 + 古早味豆腐塊 × 2'],
+      giftsJP: [
+        '仙草ミルクティー × 1 + 煮卵 × 2',
+        '特製キムチ × 1 + 昔ながらの豆腐 × 2',
+      ],
+      giftsKR: [
+        '선초 밀크티 × 1 + 조림 계란 × 2',
+        '특제 김치 × 1 + 전통 두부 × 2',
+      ],
     },
   ];
 
@@ -447,19 +654,39 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       nameJP: '新規会員様限定・初回ご注文特典',
       nameKR: '신규 회원 한정！첫 주문 웰컴 혜택',
       tag: '新會員限定',
-      tagType: 'new', colorScheme: 'forest',
+      tagType: 'new',
+      colorScheme: 'forest',
       image: '/assets/主頁輪播圖1.jpg',
-      startDate: '2026-04-01', endDate: '2026-06-30',
+      startDate: '2026-04-01',
+      endDate: '2026-06-30',
       minSpend: 150,
-      gifts:   ['招牌豆漿 × 1', '仙草奶茶 × 1'],
+      gifts: ['招牌豆漿 × 1', '仙草奶茶 × 1'],
       giftsJP: ['看板豆乳 × 1', '仙草ミルクティー × 1'],
       giftsKR: ['시그니처 두유 × 1', '선초 밀크티 × 1'],
-      description:   '首次在懶飽飽下單的新會員，單筆消費滿 $150 即可獲得精選贈品！台灣在地風味與跨國美食任您探索，這份專屬歡迎禮是我們最誠摯的招待。',
-      descriptionJP: '懶飽飽でのはじめてのご注文で、指定金額以上お買い上げいただいた新規会員様に厳選ギフトを1点プレゼント！台湾グルメからグローバル料理まで、ウェルカムギフトとともに最高のひとときをお楽しみください。',
-      descriptionKR: '懶飽飽에서 처음 주문하시는 신규 회원님께 지정 금액 이상 구매 시 엄선된 선물을 1개 증정합니다！대만 현지 맛부터 글로벌 퀴진까지, 이 웰컴 선물로 특별한 첫 경험을 시작해 보세요。',
-      highlights:   ['首次消費即享', '任選一項贈品', '限首筆訂單使用', '可與折扣券並用'],
-      highlightsJP: ['初回ご注文でプレゼント進呈', '1つのギフトをお選びいただけます', '初回注文のみ適用', '割引クーポンとの併用OK'],
-      highlightsKR: ['첫 주문 시 즉시 증정', '선물 1개 선택 가능', '첫 번째 주문에만 적용', '할인 쿠폰과 중복 가능'],
+      description:
+        '首次在懶飽飽下單的新會員，單筆消費滿 $150 即可獲得精選贈品！台灣在地風味與跨國美食任您探索，這份專屬歡迎禮是我們最誠摯的招待。',
+      descriptionJP:
+        '懶飽飽でのはじめてのご注文で、指定金額以上お買い上げいただいた新規会員様に厳選ギフトを1点プレゼント！台湾グルメからグローバル料理まで、ウェルカムギフトとともに最高のひとときをお楽しみください。',
+      descriptionKR:
+        '懶飽飽에서 처음 주문하시는 신규 회원님께 지정 금액 이상 구매 시 엄선된 선물을 1개 증정합니다！대만 현지 맛부터 글로벌 퀴진까지, 이 웰컴 선물로 특별한 첫 경험을 시작해 보세요。',
+      highlights: [
+        '首次消費即享',
+        '任選一項贈品',
+        '限首筆訂單使用',
+        '可與折扣券並用',
+      ],
+      highlightsJP: [
+        '初回ご注文でプレゼント進呈',
+        '1つのギフトをお選びいただけます',
+        '初回注文のみ適用',
+        '割引クーポンとの併用OK',
+      ],
+      highlightsKR: [
+        '첫 주문 시 즉시 증정',
+        '선물 1개 선택 가능',
+        '첫 번째 주문에만 적용',
+        '할인 쿠폰과 중복 가능',
+      ],
     },
     /* ── 全球活動 2：週末滿額禮 ── */
     {
@@ -467,19 +694,39 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       nameJP: '週末限定！お買い上げプレゼント',
       nameKR: '주말 한정！구매 금액 달성 혜택',
       tag: '期間限定',
-      tagType: 'promo', colorScheme: 'burgundy',
+      tagType: 'promo',
+      colorScheme: 'burgundy',
       image: '/assets/主頁輪播圖2.jpg',
-      startDate: '2026-04-05', endDate: '2026-05-31',
+      startDate: '2026-04-05',
+      endDate: '2026-05-31',
       minSpend: 300,
-      gifts:   ['古早味豆腐塊 × 2', '特製泡菜 × 1', '滷蛋 × 2'],
+      gifts: ['古早味豆腐塊 × 2', '特製泡菜 × 1', '滷蛋 × 2'],
       giftsJP: ['懐かしの豆腐ブロック × 2', '特製キムチ × 1', '煮卵 × 2'],
       giftsKR: ['전통식 두부블럭 × 2', '특제 김치 × 1', '조린 계란 × 2'],
-      description:   '每逢週末，單筆消費滿 $300 即可選一份豐盛贈品！懶飽飽為您準備最道地的台灣小吃作為感謝，讓每個週末都更加美味。',
-      descriptionJP: '毎週末、指定金額以上お買い上げで豪華プレゼントをひとつお選びいただけます！ご家族との食事にも、自分へのご褒美にも、懶飽飽の本格台湾グルメとともに素敵な週末を。',
-      descriptionKR: '매주 주말, 지정 금액 이상 구매 시 풍성한 선물 1개를 선택하세요！가족 식사나 나만의 보상에, 懶飽飽가 최고의 대만 음식으로 주말을 더욱 맛있게 만들어 드립니다。',
-      highlights:   ['僅限週六、日適用', '消費滿 $300', '三款贈品任選一', '每筆訂單限贈一次'],
-      highlightsJP: ['毎週土・日のみ適用', '指定金額以上のご購入', '3種のギフトからお選び', '1注文につき1回限り'],
-      highlightsKR: ['매주 토·일요일만 적용', '지정 금액 이상 구매', '3종 선물 중 1개 선택', '주문당 1회 한정'],
+      description:
+        '每逢週末，單筆消費滿 $300 即可選一份豐盛贈品！懶飽飽為您準備最道地的台灣小吃作為感謝，讓每個週末都更加美味。',
+      descriptionJP:
+        '毎週末、指定金額以上お買い上げで豪華プレゼントをひとつお選びいただけます！ご家族との食事にも、自分へのご褒美にも、懶飽飽の本格台湾グルメとともに素敵な週末を。',
+      descriptionKR:
+        '매주 주말, 지정 금액 이상 구매 시 풍성한 선물 1개를 선택하세요！가족 식사나 나만의 보상에, 懶飽飽가 최고의 대만 음식으로 주말을 더욱 맛있게 만들어 드립니다。',
+      highlights: [
+        '僅限週六、日適用',
+        '消費滿 $300',
+        '三款贈品任選一',
+        '每筆訂單限贈一次',
+      ],
+      highlightsJP: [
+        '毎週土・日のみ適用',
+        '指定金額以上のご購入',
+        '3種のギフトからお選び',
+        '1注文につき1回限り',
+      ],
+      highlightsKR: [
+        '매주 토·일요일만 적용',
+        '지정 금액 이상 구매',
+        '3종 선물 중 1개 선택',
+        '주문당 1회 한정',
+      ],
     },
     /* ── 全球活動 3：消費達人大禮包 ── */
     {
@@ -487,19 +734,45 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       nameJP: 'グルメ達人限定！特大ダブルギフトセット',
       nameKR: '소비 달인 한정！더블 대형 선물 세트',
       tag: '限時豪禮',
-      tagType: 'premium', colorScheme: 'navy',
+      tagType: 'premium',
+      colorScheme: 'navy',
       image: '/assets/主頁輪播圖3.jpg',
-      startDate: '2026-04-01', endDate: '2026-04-30',
+      startDate: '2026-04-01',
+      endDate: '2026-04-30',
       minSpend: 500,
-      gifts:   ['仙草奶茶 × 1 + 滷蛋 × 2', '特製泡菜 × 1 + 古早味豆腐塊 × 2'],
-      giftsJP: ['仙草ミルクティー × 1 + 煮卵 × 2', '特製キムチ × 1 + 懐かしの豆腐 × 2'],
-      giftsKR: ['선초 밀크티 × 1 + 조린 계란 × 2', '특제 김치 × 1 + 전통식 두부 × 2'],
-      description:   '單筆消費滿 $500，立享豪華雙重組合贈品！懶飽飽為美食達人精心準備超值回饋，豐盛組合讓您一次享受多種在地風味，本月限定不容錯過。',
-      descriptionJP: '指定金額以上お買い上げで、豪華ダブル特典セットをすぐにプレゼント！美食家のための超お得な感謝ギフト、豊富な組み合わせで台湾本場の味を一度に楽しめます。今月限定、お見逃しなく！',
-      descriptionKR: '지정 금액 이상 구매 시 즉시 더블 선물 세트 증정！미식가를 위한 초대박 감사 선물로, 다양한 현지의 맛을 한 번에 즐기세요. 이달 한정 특별 혜택입니다！',
-      highlights:   ['本月限定活動', '消費滿 $500', '兩款組合禮任選一', '可搭配折扣券使用'],
-      highlightsJP: ['今月限定キャンペーン', '指定金額以上のご購入', '2種の組み合わせギフトからお選び', '割引クーポンとの併用OK'],
-      highlightsKR: ['이달 한정 이벤트', '지정 금액 이상 구매', '2종 콤보 선물 중 1개 선택', '할인 쿠폰 중복 사용 가능'],
+      gifts: ['仙草奶茶 × 1 + 滷蛋 × 2', '特製泡菜 × 1 + 古早味豆腐塊 × 2'],
+      giftsJP: [
+        '仙草ミルクティー × 1 + 煮卵 × 2',
+        '特製キムチ × 1 + 懐かしの豆腐 × 2',
+      ],
+      giftsKR: [
+        '선초 밀크티 × 1 + 조린 계란 × 2',
+        '특제 김치 × 1 + 전통식 두부 × 2',
+      ],
+      description:
+        '單筆消費滿 $500，立享豪華雙重組合贈品！懶飽飽為美食達人精心準備超值回饋，豐盛組合讓您一次享受多種在地風味，本月限定不容錯過。',
+      descriptionJP:
+        '指定金額以上お買い上げで、豪華ダブル特典セットをすぐにプレゼント！美食家のための超お得な感謝ギフト、豊富な組み合わせで台湾本場の味を一度に楽しめます。今月限定、お見逃しなく！',
+      descriptionKR:
+        '지정 금액 이상 구매 시 즉시 더블 선물 세트 증정！미식가를 위한 초대박 감사 선물로, 다양한 현지의 맛을 한 번에 즐기세요. 이달 한정 특별 혜택입니다！',
+      highlights: [
+        '本月限定活動',
+        '消費滿 $500',
+        '兩款組合禮任選一',
+        '可搭配折扣券使用',
+      ],
+      highlightsJP: [
+        '今月限定キャンペーン',
+        '指定金額以上のご購入',
+        '2種の組み合わせギフトからお選び',
+        '割引クーポンとの併用OK',
+      ],
+      highlightsKR: [
+        '이달 한정 이벤트',
+        '지정 금액 이상 구매',
+        '2종 콤보 선물 중 1개 선택',
+        '할인 쿠폰 중복 사용 가능',
+      ],
     },
   ];
 
@@ -520,7 +793,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   /** 根據目前語言取得品項名稱 */
-  getLocalizedName(item: { name: string; nameJP?: string; nameKR?: string }): string {
+  getLocalizedName(item: {
+    name: string;
+    nameJP?: string;
+    nameKR?: string;
+  }): string {
     const cc = this.branchService.country;
     if (cc === 'JP') return item.nameJP ?? item.name;
     if (cc === 'KR') return item.nameKR ?? item.name;
@@ -528,7 +805,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   /** 根據目前語言取得品項描述 */
-  getLocalizedDesc(item: { description: string; descriptionJP?: string; descriptionKR?: string }): string {
+  getLocalizedDesc(item: {
+    description: string;
+    descriptionJP?: string;
+    descriptionKR?: string;
+  }): string {
     const cc = this.branchService.country;
     if (cc === 'JP') return item.descriptionJP ?? item.description;
     if (cc === 'KR') return item.descriptionKR ?? item.description;
@@ -536,7 +817,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   /** 根據目前語言取得活動贈品清單 */
-  getLocalizedGifts(promo: { gifts: string[]; giftsJP?: string[]; giftsKR?: string[] }): string[] {
+  getLocalizedGifts(promo: {
+    gifts: string[];
+    giftsJP?: string[];
+    giftsKR?: string[];
+  }): string[] {
     const cc = this.branchService.country;
     if (cc === 'JP') return promo.giftsJP ?? promo.gifts;
     if (cc === 'KR') return promo.giftsKR ?? promo.gifts;
@@ -544,7 +829,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   /** 根據目前語言取得活動亮點清單 */
-  getLocalizedHighlights(promo: { highlights: string[]; highlightsJP?: string[]; highlightsKR?: string[] }): string[] {
+  getLocalizedHighlights(promo: {
+    highlights: string[];
+    highlightsJP?: string[];
+    highlightsKR?: string[];
+  }): string[] {
     const cc = this.branchService.country;
     if (cc === 'JP') return promo.highlightsJP ?? promo.highlights;
     if (cc === 'KR') return promo.highlightsKR ?? promo.highlights;
@@ -553,18 +842,22 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   /** 根據中文名稱查找 menuItems 並取得本地化名稱 */
   getLocalizedMenuName(chineseName: string): string {
-    const item = this.menuItems().find(i => i.name === chineseName);
+    const item = this.menuItems().find((i) => i.name === chineseName);
     return item ? this.getLocalizedName(item) : chineseName;
   }
 
   /** 根據中文名稱查找 menuItems 並取得本地化描述 */
   getLocalizedMenuDesc(chineseName: string): string {
-    const item = this.menuItems().find(i => i.name === chineseName);
+    const item = this.menuItems().find((i) => i.name === chineseName);
     return item ? this.getLocalizedDesc(item) : '';
   }
 
   /** 根據目前語言取得訂單品項文字 */
-  getLocalizedOrderItems(order: { items: string; itemsJP?: string; itemsKR?: string }): string {
+  getLocalizedOrderItems(order: {
+    items: string;
+    itemsJP?: string;
+    itemsKR?: string;
+  }): string {
     const cc = this.branchService.country;
     if (cc === 'JP') return order.itemsJP ?? order.items;
     if (cc === 'KR') return order.itemsKR ?? order.items;
@@ -572,9 +865,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   /* 已選活動名稱（'' = 未選, '不參加活動優惠' = 放棄） */
-  selectedPromoName  = signal<string>('');
+  selectedPromoName = signal<string>('');
   /* 已選活動內的贈品 */
-  selectedPromoGift  = signal<string>('');
+  selectedPromoGift = signal<string>('');
   /* 結帳頁綠色贈品面板是否展開 */
   promoGiftPanelOpen = signal(false);
   /* 菜單頁各活動進度條的展開狀態（key = 活動名稱） */
@@ -584,19 +877,24 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   /* 根據目前小計，篩出已達門檻的活動 */
   unlockedPromos = computed(() =>
-    this.PROMO_ACTIVITIES.filter(p => this.cartTotal() >= p.minSpend)
+    this.PROMO_ACTIVITIES.filter((p) => this.cartTotal() >= p.minSpend),
   );
 
   /* 目前選中的活動物件 */
   get selectedPromoActivity() {
-    return this.PROMO_ACTIVITIES.find(p => p.name === this.selectedPromoName()) ?? null;
+    return (
+      this.PROMO_ACTIVITIES.find((p) => p.name === this.selectedPromoName()) ??
+      null
+    );
   }
 
   /** 已選贈品的本地化顯示名稱 */
   selectedPromoGiftLocalized = computed(() => {
     const gift = this.selectedPromoGift();
     if (!gift) return '';
-    const activity = this.PROMO_ACTIVITIES.find(p => p.name === this.selectedPromoName());
+    const activity = this.PROMO_ACTIVITIES.find(
+      (p) => p.name === this.selectedPromoName(),
+    );
     if (!activity) return gift;
     const idx = activity.gifts.indexOf(gift);
     if (idx === -1) return gift;
@@ -606,12 +904,12 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   /* 菜單頁：整個活動抽屜展開/收折 */
   togglePromoDrawer(): void {
-    this.promoDrawerOpen.update(v => !v);
+    this.promoDrawerOpen.update((v) => !v);
   }
 
   /* 菜單頁：切換特定活動進度條的展開/收折（抽屜內部） */
   togglePromoProgressBar(name: string): void {
-    this.promoProgressExpanded.update(v => ({ ...v, [name]: !v[name] }));
+    this.promoProgressExpanded.update((v) => ({ ...v, [name]: !v[name] }));
   }
 
   isPromoBarExpanded(name: string): boolean {
@@ -620,17 +918,18 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   /* 菜單頁：已達門檻的活動數量 */
   get promoCompletedCount(): number {
-    return this.PROMO_ACTIVITIES.filter(p => this.cartTotal() >= p.minSpend).length;
+    return this.PROMO_ACTIVITIES.filter((p) => this.cartTotal() >= p.minSpend)
+      .length;
   }
 
   /* 結帳頁：切換綠色贈品面板 */
   togglePromoGiftPanel(): void {
-    this.promoGiftPanelOpen.update(v => !v);
+    this.promoGiftPanelOpen.update((v) => !v);
   }
 
   selectPromo(name: string): void {
     this.selectedPromoName.set(name);
-    this.selectedPromoGift.set('');   /* 切換活動時重置贈品選擇 */
+    this.selectedPromoGift.set(''); /* 切換活動時重置贈品選擇 */
     this.promoGiftPanelOpen.set(true); /* 自動展開贈品面板 */
   }
 
@@ -649,7 +948,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     this.showOrderPreview.set(true);
   }
 
-  closeOrderPreview(): void { this.showOrderPreview.set(false); }
+  closeOrderPreview(): void {
+    this.showOrderPreview.set(false);
+  }
 
   goToPayment(): void {
     this.showOrderPreview.set(false);
@@ -671,6 +972,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     this.cardFlipped.set(false);
     /* 重置行動支付 Modal */
     this.closeMobilePayModal();
+    localStorage.removeItem('lbb_tracking_order');
     this.setTab('home');
   }
 
@@ -710,7 +1012,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   /* 行動支付 QR Code URL（手機掃碼後開啟的付款確認頁） */
   mobilePayUrl = computed(() => {
-    const items = this.cartItems().map(i => ({ name: i.name, qty: i.quantity, price: i.price }));
+    const items = this.cartItems().map((i) => ({
+      name: i.name,
+      qty: i.quantity,
+      price: i.price,
+    }));
     const params = new URLSearchParams({
       store: '懶飽飽 Lazy BaoBao',
       amount: this.discountedTotal().toString(),
@@ -739,14 +1045,14 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   navTabs = computed<NavTab[]>(() => {
     const l = this.branchService.lang();
     const ALL: NavTab[] = [
-      { id: 'home',       label: l.navHome,    icon: 'home'       },
-      { id: 'menu',       label: l.navMenu,    icon: 'menu'       },
-      { id: 'checkout',   label: l.navCart,    icon: 'checkout'   },
-      { id: 'tracker',    label: l.navTracker, icon: 'tracker'    },
-      { id: 'orders',     label: l.navOrders,  icon: 'orders'     },
-      { id: 'promotions', label: l.navPromos,  icon: 'promotions' },
+      { id: 'home', label: l.navHome, icon: 'home' },
+      { id: 'menu', label: l.navMenu, icon: 'menu' },
+      { id: 'checkout', label: l.navCart, icon: 'checkout' },
+      { id: 'tracker', label: l.navTracker, icon: 'tracker' },
+      { id: 'orders', label: l.navOrders, icon: 'orders' },
+      { id: 'promotions', label: l.navPromos, icon: 'promotions' },
     ];
-    return this.isGuest() ? ALL.filter(t => t.id !== 'orders') : ALL;
+    return this.isGuest() ? ALL.filter((t) => t.id !== 'orders') : ALL;
   });
 
   /* ── 訂單管理資料 ──────────────────────────────────── */
@@ -757,7 +1063,15 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   refundTargetOrder = signal<{ id: string; total: number } | null>(null);
   refundSubmitted = signal(false);
 
-  refundChecked = signal<Record<string, boolean>>({ r1: false, r2: false, r3: false, r4: false, r5: false, r6: false, r7: false });
+  refundChecked = signal<Record<string, boolean>>({
+    r1: false,
+    r2: false,
+    r3: false,
+    r4: false,
+    r5: false,
+    r6: false,
+    r7: false,
+  });
 
   refundReasons = computed(() => {
     const l = this.branchService.lang();
@@ -774,13 +1088,54 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   });
   refundOtherText = signal('');
 
-  hasRefundSelection = computed(() =>
-    Object.values(this.refundChecked()).some(v => v) || this.refundOtherText().trim().length > 0
+  hasRefundSelection = computed(
+    () =>
+      Object.values(this.refundChecked()).some((v) => v) ||
+      this.refundOtherText().trim().length > 0,
   );
+
+  /* ── 取消追蹤中訂單（方案 A：tracker tab）────────── */
+  cancelConfirmOpen = signal(false);
+
+  openCancelConfirm(): void {
+    this.cancelConfirmOpen.set(true);
+  }
+
+  closeCancelConfirm(): void {
+    this.cancelConfirmOpen.set(false);
+  }
+
+  confirmCancelOrder(): void {
+    const dbId = this._activeOrderDbId;
+    if (!dbId) { this.cancelConfirmOpen.set(false); return; }
+    this.apiService.updateOrderStatus({
+      id: dbId.id,
+      orderDateId: dbId.orderDateId,
+      status: 'CANCELLED',
+    }).subscribe({
+      next: () => {
+        this.orderService.removeOrder(dbId.id);
+        this._activeOrderDbId = null;
+        this.cancelConfirmOpen.set(false);
+      },
+      error: () => {
+        this.cancelConfirmOpen.set(false);
+        alert('取消失敗，請稍後再試');
+      },
+    });
+  }
 
   openRefundModal(order: { id: string; total: number }): void {
     this.refundTargetOrder.set(order);
-    this.refundChecked.set({ r1: false, r2: false, r3: false, r4: false, r5: false, r6: false, r7: false });
+    this.refundChecked.set({
+      r1: false,
+      r2: false,
+      r3: false,
+      r4: false,
+      r5: false,
+      r6: false,
+      r7: false,
+    });
     this.refundOtherText.set('');
     this.refundSubmitted.set(false);
     this.refundModalOpen.set(true);
@@ -792,7 +1147,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   toggleRefundReason(id: string): void {
-    this.refundChecked.update(c => ({ ...c, [id]: !c[id] }));
+    this.refundChecked.update((c) => ({ ...c, [id]: !c[id] }));
   }
 
   updateRefundOther(value: string): void {
@@ -801,13 +1156,36 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   submitRefund(): void {
     if (!this.hasRefundSelection()) return;
-    const orderId = this.refundTargetOrder()?.id;
-    // ⚠ TODO [API串接點]：呼叫 apiService.requestRefund({ orderId, reasons, other })
-    console.log('[退款申請]', orderId, this.refundReasons().filter(r => r.checked).map(r => r.label), this.refundOtherText());
-    this.refundSubmitted.set(true);
-    setTimeout(() => {
-      this.closeRefundModal();
-    }, 2000);
+    const order = this.refundTargetOrder();
+    if (!order) return;
+
+    // 從 id 解析出 orderDateId（格式 LBB-YYYYMMDD-XXXX）
+    const parts = order.id.split('-');
+    const orderDateId = parts[1] ?? '';
+
+    this.apiService
+      .updateOrderStatus({
+        id: order.id,
+        orderDateId,
+        status: 'REFUNDED',
+      })
+      .subscribe({
+        next: () => {
+          // 本地狀態更新
+          this.orderHistoryList.set(
+            this.orderHistoryList().map((o) =>
+              o.id === order.id ? { ...o, status: 'refunded' as const } : o,
+            ),
+          );
+          this.refundSubmitted.set(true);
+          setTimeout(() => this.closeRefundModal(), 2000);
+        },
+        error: () => {
+          // API 失敗仍顯示成功（Demo 用）
+          this.refundSubmitted.set(true);
+          setTimeout(() => this.closeRefundModal(), 2000);
+        },
+      });
   }
 
   orderHistoryList = signal([
@@ -908,7 +1286,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   activeCountry = signal<CountryCode>('TW');
 
   /** 語言字典快捷 getter（供 HTML 直接使用） */
-  get lang() { return this.branchService.lang(); }
+  get lang() {
+    return this.branchService.lang();
+  }
 
   constructor(
     private router: Router,
@@ -940,7 +1320,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
     /* 啟動促銷橫幅自動輪播（3 秒換一則活動） */
     this.promoBannerTimer = setInterval(() => {
-      this.promoBannerIndex.update((i) => (i + 1) % this.PROMO_ACTIVITIES.length);
+      this.promoBannerIndex.update(
+        (i) => (i + 1) % this.PROMO_ACTIVITIES.length,
+      );
     }, 3000);
 
     /* 會員自動填入電話號碼（訪客保持空白，為必填） */
@@ -952,29 +1334,89 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     /* 載入促銷活動（API 成功則覆蓋靜態 Demo 資料，只顯示 active 的活動） */
     this.loadPromotions();
 
+    // 從 localStorage 重建追蹤中訂單
+    const savedTracking = localStorage.getItem('lbb_tracking_order');
+    if (savedTracking) {
+      try {
+        const t = JSON.parse(savedTracking);
+        // 先用存檔資料還原到 OrderService
+        this.orderService.addOrder({
+          id: t.orderId,
+          number: t.number,
+          status: t.status,
+          estimatedMinutes: t.estimatedMinutes,
+          items: t.items,
+          total: t.total,
+          createdAt: t.createdAt,
+          payMethod: t.payMethod,
+          source: 'customer',
+        });
+        // 啟動輪詢取得最新狀態
+        if (t.orderDateId) {
+          this._activeOrderDbId = { id: t.orderId, orderDateId: t.orderDateId };
+          this.statusPollInterval = setInterval(() => {
+            if (!this._activeOrderDbId) return;
+            this.apiService
+              .getOrderStatus(
+                this._activeOrderDbId.id,
+                this._activeOrderDbId.orderDateId,
+              )
+              .subscribe({
+                next: (res) => {
+                  if (res?.code !== 200) return;
+                  const statusMap: Record<string, OrderStatus> = {
+                    PENDING_CASH: 'pending-cash',
+                    WAITING: 'waiting',
+                    COOKING: 'cooking',
+                    READY: 'done',
+                  };
+                  const newStatus = statusMap[res.message] ?? 'waiting';
+                  this.orderService.updateStatus(t.orderId, newStatus);
+                  // 完成或取消時清除 localStorage 並停止輪詢
+                  if (newStatus === 'done') {
+                    localStorage.removeItem('lbb_tracking_order');
+                    if (this.statusPollInterval)
+                      clearInterval(this.statusPollInterval);
+                    this.statusPollInterval = null;
+                  }
+                },
+                error: () => {},
+              });
+          }, 5000);
+        }
+      } catch {
+        localStorage.removeItem('lbb_tracking_order');
+      }
+    }
+
     /* 載入菜單商品（API 載入後動態填充；API 失敗則保留靜態 Demo 資料） */
-    const areaId = 1;
+    const areaId = 4;
     this.apiService.getActiveProducts(areaId).subscribe({
       next: (res) => {
         if (res?.products?.length) {
-          this.menuItems.set(res.products.map(p => {
-            const i18n = CustomerHomeComponent.MENU_I18N[p.name] ?? {};
-            return {
-              id: p.id, name: p.name,
-              nameEn: i18n.nameEn ?? p.name,
-              nameJP: i18n.nameJP,
-              nameKR: i18n.nameKR,
-              price: p.basePrice, image: '',
-              category: p.category, categoryEn: p.category,
-              description: p.description ?? '',
-              descriptionJP: i18n.descriptionJP,
-              descriptionKR: i18n.descriptionKR,
-              stock: p.stockQuantity,
-            };
-          }));
+          this.menuItems.set(
+            res.products.map((p) => {
+              const i18n = CustomerHomeComponent.MENU_I18N[p.name] ?? {};
+              return {
+                id: p.id,
+                name: p.name,
+                nameEn: i18n.nameEn ?? p.name,
+                nameJP: i18n.nameJP,
+                nameKR: i18n.nameKR,
+                price: p.basePrice,
+                image: '',
+                category: p.category,
+                categoryEn: p.category,
+                description: p.description ?? '',
+                descriptionJP: i18n.descriptionJP,
+                descriptionKR: i18n.descriptionKR,
+                stock: p.stockQuantity,
+              };
+            }),
+          );
         }
       },
-      error: () => console.warn('[Customer] 菜單 API 連線失敗，使用 Demo 資料')
+      error: () => console.warn('[Customer] 菜單 API 連線失敗，使用 Demo 資料'),
     });
 
     /* 載入真實歷史訂單（僅會員，訪客跳過）
@@ -985,24 +1427,31 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       this.apiService.getAllOrders({ memberId: userForOrders.id }).subscribe({
         next: (res) => {
           if (res?.getOrderVoList?.length) {
-            this.orderHistoryList.set(res.getOrderVoList.map((o: GetOrdersVo) => ({
-              id: o.id,
-              date: o.completedAt?.slice(0, 10) ?? '',
-              items: (o.getOrdersDetailVoList ?? [])
-                .map(d => `${d.productName} × ${d.quantity}`)
-                .join('、'),
-              itemsJP: '',
-              itemsKR: '',
-              total: +o.totalAmount,
-              status: o.status === 'COMPLETED' ? 'completed' as const
-                    : o.status === 'CANCELLED' ? 'cancelled' as const
-                    : o.status === 'REFUNDED'  ? 'refunded'  as const
-                    : 'completed' as const
-            })));
+            this.orderHistoryList.set(
+              res.getOrderVoList.map((o: GetOrdersVo) => ({
+                id: o.id,
+                date: o.completedAt?.slice(0, 10) ?? '',
+                items: (o.getOrdersDetailVoList ?? [])
+                  .map((d) => `${d.productName} × ${d.quantity}`)
+                  .join('、'),
+                itemsJP: '',
+                itemsKR: '',
+                total: +o.totalAmount,
+                status:
+                  o.status === 'COMPLETED'
+                    ? ('completed' as const)
+                    : o.status === 'CANCELLED'
+                      ? ('cancelled' as const)
+                      : o.status === 'REFUNDED'
+                        ? ('refunded' as const)
+                        : ('completed' as const),
+              })),
+            );
           }
           /* 若後端回空清單，保留 mock 歷史訂單供 Demo 使用 */
         },
-        error: () => console.warn('[Customer] 訂單歷史 API 連線失敗，使用 Demo 資料')
+        error: () =>
+          console.warn('[Customer] 訂單歷史 API 連線失敗，使用 Demo 資料'),
       });
     }
   }
@@ -1059,14 +1508,20 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   private loadPromotions(): void {
-    const BANNER_IMAGES = ['/assets/主頁輪播圖1.jpg', '/assets/主頁輪播圖2.jpg', '/assets/主頁輪播圖3.jpg'];
+    const BANNER_IMAGES = [
+      '/assets/主頁輪播圖1.jpg',
+      '/assets/主頁輪播圖2.jpg',
+      '/assets/主頁輪播圖3.jpg',
+    ];
     // 國碼 → globalAreaId 對應（依 global_area 表 branch_id）
-    const areaIdMap: Record<string, number> = { TW: 1, JP: 2, KR: 4 };
+    const areaIdMap: Record<string, number> = { TW: 4, JP: 5, KR: 2 };
     const globalAreaId = areaIdMap[this.branchService.country] ?? 1;
 
     this.apiService.getPromotionsList(globalAreaId).subscribe({
       next: (res) => {
-        const active = (res?.data ?? []).filter((p: PromotionDetailVo) => p.active);
+        const active = (res?.data ?? []).filter(
+          (p: PromotionDetailVo) => p.active && p.gifts && p.gifts.length > 0,
+        );
         if (!active.length) return;
 
         // 根據目前分店語言選取正確的活動名稱
@@ -1079,66 +1534,111 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
         this.PROMO_ACTIVITIES = active.map((p: PromotionDetailVo) => {
           const minSpend = p.gifts.length
-            ? Math.min(...p.gifts.map(g => g.fullAmount))
+            ? Math.min(...p.gifts.map((g) => g.fullAmount))
             : 0;
-          const giftNames = p.gifts.map(g =>
-            `${g.productName} × ${g.quantity === -1 ? 1 : g.quantity}`
+          const giftNames = p.gifts.map(
+            (g) => `${g.productName} × ${g.quantity === -1 ? 1 : g.quantity}`,
           );
           const lName = localName(p);
-          return { name: lName, nameJP: p.nameJP || lName, nameKR: p.nameKR || lName,
-            minSpend, gifts: giftNames, giftsJP: giftNames, giftsKR: giftNames };
+          return {
+            name: lName,
+            nameJP: p.nameJP || lName,
+            nameKR: p.nameKR || lName,
+            minSpend,
+            gifts: giftNames,
+            giftsJP: giftNames,
+            giftsKR: giftNames,
+          };
         });
 
         this.PROMO_DISPLAY = active.map((p: PromotionDetailVo, i: number) => {
           const minSpend = p.gifts.length
-            ? Math.min(...p.gifts.map(g => g.fullAmount))
+            ? Math.min(...p.gifts.map((g) => g.fullAmount))
             : 0;
-          const giftNames = p.gifts.map(g =>
-            `${g.productName} × ${g.quantity === -1 ? 1 : g.quantity}`
+          const giftNames = p.gifts.map(
+            (g) => `${g.productName} × ${g.quantity === -1 ? 1 : g.quantity}`,
           );
-          const TAG_TYPES     = ['new', 'promo', 'premium'] as const;
-          const COLOR_SCHEMES = ['forest', 'burgundy', 'navy', 'bronze', 'plum', 'slate'] as const;
-          const id       = Math.abs(p.id ?? i);
-          const tagIdx   = id % TAG_TYPES.length;
+          const TAG_TYPES = ['new', 'promo', 'premium'] as const;
+          const COLOR_SCHEMES = [
+            'forest',
+            'burgundy',
+            'navy',
+            'bronze',
+            'plum',
+            'slate',
+          ] as const;
+          const id = Math.abs(p.id ?? i);
+          const tagIdx = id % TAG_TYPES.length;
           const colorIdx = id % COLOR_SCHEMES.length;
-          const lName    = localName(p);
+          const lName = localName(p);
           return {
-            name:      p.name,
-            nameJP:    p.nameJP || p.name,
-            nameKR:    p.nameKR || p.name,
-            tag: '期間限定', tagType: TAG_TYPES[tagIdx], colorScheme: COLOR_SCHEMES[colorIdx],
+            name: p.name,
+            nameJP: p.nameJP || p.name,
+            nameKR: p.nameKR || p.name,
+            tag: '期間限定',
+            tagType: TAG_TYPES[tagIdx],
+            colorScheme: COLOR_SCHEMES[colorIdx],
             image: BANNER_IMAGES[tagIdx % BANNER_IMAGES.length],
-            startDate: p.startTime, endDate: p.endTime,
+            startDate: p.startTime,
+            endDate: p.endTime,
             minSpend,
-            gifts: giftNames, giftsJP: giftNames, giftsKR: giftNames,
-            description:   p.description || `消費滿 $${minSpend} 即可獲得贈品，把握活動期間限定好禮！`,
-            descriptionJP: p.description || `$${minSpend}以上のご購入でプレゼント！期間限定をお見逃しなく。`,
-            descriptionKR: p.description || `$${minSpend} 이상 구매 시 선물 증정！기간 한정 혜택을 놓치지 마세요。`,
-            highlights:    [`消費滿 $${minSpend}`, '可選贈品', `${p.startTime} ～ ${p.endTime}`],
-            highlightsJP:  [`$${minSpend}以上のご購入`, 'プレゼントをお選びください', `${p.startTime} ～ ${p.endTime}`],
-            highlightsKR:  [`$${minSpend} 이상 구매`, '선물 선택 가능', `${p.startTime} ～ ${p.endTime}`],
+            gifts: giftNames,
+            giftsJP: giftNames,
+            giftsKR: giftNames,
+            description:
+              p.description ||
+              `消費滿 $${minSpend} 即可獲得贈品，把握活動期間限定好禮！`,
+            descriptionJP:
+              p.description ||
+              `$${minSpend}以上のご購入でプレゼント！期間限定をお見逃しなく。`,
+            descriptionKR:
+              p.description ||
+              `$${minSpend} 이상 구매 시 선물 증정！기간 한정 혜택을 놓치지 마세요。`,
+            highlights: [
+              `消費滿 $${minSpend}`,
+              '可選贈品',
+              `${p.startTime} ～ ${p.endTime}`,
+            ],
+            highlightsJP: [
+              `$${minSpend}以上のご購入`,
+              'プレゼントをお選びください',
+              `${p.startTime} ～ ${p.endTime}`,
+            ],
+            highlightsKR: [
+              `$${minSpend} 이상 구매`,
+              '선물 선택 가능',
+              `${p.startTime} ～ ${p.endTime}`,
+            ],
           };
         });
       },
-      error: () => { /* API 失敗時保留靜態 Demo 資料 */ }
+      error: () => {
+        /* API 失敗時保留靜態 Demo 資料 */
+      },
     });
   }
 
+  private _syncQueue: Promise<void> = Promise.resolve();
+
   private _syncCartItemToBackend(productId: number, quantity: number): void {
-    const user = this.authService.currentUser;
-    const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
-    const req: CartSyncReq = {
-      cartId: this.currentCartId(),
-      globalAreaId: 1,
-      productId,
-      quantity,
-      operationType: 'CUSTOMER',
-      memberId,
-    };
-    this.apiService.syncCart(req).subscribe({
-      next: (res) => this.currentCartId.set(res.cartId),
-      error: (err) => console.warn('[Cart] sync_item 失敗', err),
-    });
+    this._syncQueue = this._syncQueue
+      .then(async () => {
+        const user = this.authService.currentUser;
+        const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
+        const req: CartSyncReq = {
+          cartId: this.currentCartId(),
+          globalAreaId: 4,
+          productId,
+          quantity,
+          operationType: 'CUSTOMER',
+          memberId,
+        };
+        const res = await firstValueFrom(this.apiService.syncCart(req));
+        if (res.cartId && res.cartId > 0) {
+          this.currentCartId.set(res.cartId);
+        }
+      })
+      .catch((err) => console.warn('[Cart] sync 失敗', err));
   }
 
   /* ── 更新購物車數量 ──────────────────────────────── */
@@ -1153,9 +1653,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       if (cartId !== null) {
         const user = this.authService.currentUser;
         const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
-        this.apiService.removeCartItem({ cartId, productId: id, memberId }).subscribe({
-          error: (err) => console.warn('[Cart] remove_item 失敗', err),
-        });
+        this.apiService
+          .removeCartItem({ cartId, productId: id, memberId })
+          .subscribe({
+            error: (err) => console.warn('[Cart] remove_item 失敗', err),
+          });
       }
     } else {
       this.cartItems.set(
@@ -1171,9 +1673,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     if (cartId !== null) {
       const user = this.authService.currentUser;
       const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
-      this.apiService.removeCartItem({ cartId, productId: id, memberId }).subscribe({
-        error: (err) => console.warn('[Cart] remove_item 失敗', err),
-      });
+      this.apiService
+        .removeCartItem({ cartId, productId: id, memberId })
+        .subscribe({
+          error: (err) => console.warn('[Cart] remove_item 失敗', err),
+        });
     }
     this.cartItems.set(this.cartItems().filter((c) => c.id !== id));
   }
@@ -1226,18 +1730,26 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   private _doPlaceOrder(): void {
-    this._doPlaceOrderAsync().catch(err => {
+    this._doPlaceOrderAsync().catch((err) => {
       console.error('[Order] 下單失敗', err);
       this.isPlacingOrder.set(false);
+      const msg: string = err?.error?.message ?? err?.message ?? '';
+      if (msg.includes('逾時') || msg.includes('登入')) {
+        alert('登入連線已逾時，請重新登入後再結帳');
+        this.authService.logout();
+        this.router.navigate(['/customer-login']);
+      } else {
+        alert('結帳失敗，請稍後再試');
+      }
     });
   }
 
   private async _doPlaceOrderAsync(): Promise<void> {
     const items = this.cartItems();
-    const user  = this.authService.currentUser;
+    const user = this.authService.currentUser;
     const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
-    const phone    = this.phoneNumber();
-    const isCash   = this.paymentMethod() === 'cash';
+    const phone = this.phoneNumber();
+    const isCash = this.paymentMethod() === 'cash';
 
     /* ── Step 1：取得後端購物車 ID
      * eager sync 已完成 → 直接用；否則 fallback 逐筆同步 */
@@ -1246,7 +1758,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       for (const item of items) {
         const syncReq: CartSyncReq = {
           cartId,
-          globalAreaId: 1,
+          globalAreaId: 4,
           productId: item.id,
           quantity: item.quantity,
           operationType: 'CUSTOMER',
@@ -1264,24 +1776,30 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
      * 其他付款方式不傳 → 後端建立 UNPAID */
     const orderReq: CreateOrdersReq = {
       orderCartId: String(cartId),
-      globalAreaId: 1,
+      globalAreaId: 4,
       memberId,
       phone,
       subtotalBeforeTax: this.cartTotal(),
       taxAmount: 0,
       totalAmount: this.cartTotal(),
-      orderCartDetailsList: items.map(i => ({
+      orderCartDetailsList: items.map((i) => ({
         productId: i.id,
         quantity: i.quantity,
         isGift: false,
       })),
       ...(isCash ? { paymentMethod: 'CASH' } : {}),
     };
-    const orderRes = await firstValueFrom(this.apiService.createOrder(orderReq));
+    const orderRes = await firstValueFrom(
+      this.apiService.createOrder(orderReq),
+    );
 
     /* ── 現金：直接進入待付款追蹤（不呼叫 pay()） ── */
     if (isCash) {
-      this._afterOrderSuccess(orderRes.id, orderRes.orderDateId, 'pending-cash');
+      this._afterOrderSuccess(
+        orderRes.id,
+        orderRes.orderDateId,
+        'pending-cash',
+      );
       return;
     }
 
@@ -1291,11 +1809,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       mobile: 'MOBILE_PAY',
     };
     const payReq: PayReq = {
-      id:            orderRes.id,
-      orderDateId:   orderRes.orderDateId,
+      id: orderRes.id,
+      orderDateId: orderRes.orderDateId,
       paymentMethod: payMethodMap[this.paymentMethod()] ?? 'CREDIT_CARD',
       transactionId: `DEMO_TXN_${Date.now()}`,
-      totalAmount:   orderRes.totalAmount,
+      totalAmount: orderRes.totalAmount,
     };
     await firstValueFrom(this.apiService.pay(payReq));
 
@@ -1306,12 +1824,12 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   private _afterOrderSuccess(
     orderId: string,
     orderDateId: string = '',
-    initialStatus: 'pending-cash' | 'waiting' = 'waiting'
+    initialStatus: 'pending-cash' | 'waiting' = 'waiting',
   ): void {
     const now = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
     const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    const orderNum = this.orderService.generateOrderNumber();
+    const orderNum = `A-${orderId}`;
 
     const itemTexts = this.cartItems().map((i) => `${i.name} × ${i.quantity}`);
     const promoGift = this.selectedPromoGift();
@@ -1320,10 +1838,12 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       itemTexts.push(`${promoName} - ${promoGift}`);
     }
     const totalQty = this.cartItems().reduce((s, i) => s + i.quantity, 0);
-    const estMin   = Math.max(5, Math.ceil(totalQty * 2));
+    const estMin = Math.max(5, Math.ceil(totalQty * 2));
 
     const payLabels: Record<string, string> = {
-      credit: '信用卡', mobile: '行動支付', cash: '現金',
+      credit: '信用卡',
+      mobile: '行動支付',
+      cash: '現金',
     };
     const payLabel = payLabels[this.paymentMethod()] ?? '現金';
 
@@ -1341,37 +1861,60 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       customerName: this.authService.currentUser?.name,
     });
 
+    // 寫入 localStorage，頁面重整後可重建追蹤狀態
+    localStorage.setItem(
+      'lbb_tracking_order',
+      JSON.stringify({
+        orderId,
+        orderDateId,
+        number: orderNum,
+        status: initialStatus,
+        estimatedMinutes: estMin,
+        items: itemTexts,
+        total: this.cartTotal(),
+        createdAt: timeStr,
+        payMethod: payLabel,
+      }),
+    );
+
     /* 儲存 DB 訂單識別碼，啟動廚房狀態輪詢（跨裝置同步） */
     if (orderDateId) {
       this._activeOrderDbId = { id: orderId, orderDateId };
       if (this.statusPollInterval) clearInterval(this.statusPollInterval);
       this.statusPollInterval = setInterval(() => {
         if (!this._activeOrderDbId) return;
-        this.apiService.getOrderStatus(
-          this._activeOrderDbId.id,
-          this._activeOrderDbId.orderDateId
-        ).subscribe({
-          next: (res) => {
-            if (res?.code !== 200) return;
-            const statusMap: Record<string, OrderStatus> = {
-              PENDING_CASH: 'pending-cash',
-              WAITING:      'waiting',
-              COOKING:      'cooking',
-              READY:        'done',
-            };
-            const newStatus = statusMap[res.message] ?? 'waiting';
-            const current = this.orderService.orders().find(o => o.id === orderId);
-            if (current && current.status !== newStatus) {
-              this.orderService.updateStatus(orderId, newStatus);
-            }
-            /* 已完成則停止輪詢 */
-            if (newStatus === 'done') {
-              if (this.statusPollInterval) clearInterval(this.statusPollInterval);
-              this.statusPollInterval = null;
-            }
-          },
-          error: () => { /* 靜默失敗 */ }
-        });
+        this.apiService
+          .getOrderStatus(
+            this._activeOrderDbId.id,
+            this._activeOrderDbId.orderDateId,
+          )
+          .subscribe({
+            next: (res) => {
+              if (res?.code !== 200) return;
+              const statusMap: Record<string, OrderStatus> = {
+                PENDING_CASH: 'pending-cash',
+                WAITING: 'waiting',
+                COOKING: 'cooking',
+                READY: 'done',
+              };
+              const newStatus = statusMap[res.message] ?? 'waiting';
+              const current = this.orderService
+                .orders()
+                .find((o) => o.id === orderId);
+              if (current && current.status !== newStatus) {
+                this.orderService.updateStatus(orderId, newStatus);
+              }
+              /* 已完成則停止輪詢 */
+              if (newStatus === 'done') {
+                if (this.statusPollInterval)
+                  clearInterval(this.statusPollInterval);
+                this.statusPollInterval = null;
+              }
+            },
+            error: () => {
+              /* 靜默失敗 */
+            },
+          });
       }, 5000);
     }
 

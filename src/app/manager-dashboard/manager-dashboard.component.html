@@ -163,7 +163,22 @@
       [class.active]="activeTab() === 'finance'"
       (click)="setTab('finance')"
     >
-      <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span> 財務報表
+      <span class="nav-icon"
+        ><svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="12" y1="1" x2="12" y2="23" />
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg
+      ></span>
+      財務報表
     </div>
     <div
       class="nav-item"
@@ -682,17 +697,40 @@
           </div>
           <div class="d-flex gap-2">
             @if (bulkDeleteMode()) {
-              <button class="btn btn-sm btn-ghost-red" style="font-size:0.78rem" (click)="requestBulkDelete()" [disabled]="!selectedCount()">
-                🗑️ 確認刪除 @if (selectedCount() > 0) { ({{ selectedCount() }}) }
+              <button
+                class="btn btn-sm btn-ghost-red"
+                style="font-size: 0.78rem"
+                (click)="requestBulkDelete()"
+                [disabled]="!selectedCount()"
+              >
+                🗑️ 確認刪除
+                @if (selectedCount() > 0) {
+                  ({{ selectedCount() }})
+                }
               </button>
-              <button class="btn btn-sm" style="font-size:0.78rem;background:rgba(255,255,255,0.07);color:#8a9ab0;border:1px solid rgba(255,255,255,0.1)" (click)="toggleBulkDeleteMode()">
+              <button
+                class="btn btn-sm"
+                style="
+                  font-size: 0.78rem;
+                  background: rgba(255, 255, 255, 0.07);
+                  color: #8a9ab0;
+                  border: 1px solid rgba(255, 255, 255, 0.1);
+                "
+                (click)="toggleBulkDeleteMode()"
+              >
                 ✕ 取消
               </button>
             } @else {
-              <button class="btn btn-sm btn-ghost-red" style="font-size:0.78rem" (click)="toggleBulkDeleteMode()">
+              <button
+                class="btn btn-sm btn-ghost-red"
+                style="font-size: 0.78rem"
+                (click)="toggleBulkDeleteMode()"
+              >
                 🗑️ 一併刪除已結束活動
               </button>
-              <button class="btn btn-sm btn-gold" (click)="openAddPromo()">+ 新增活動</button>
+              <button class="btn btn-sm btn-gold" (click)="openAddPromo()">
+                + 新增活動
+              </button>
             }
           </div>
         </div>
@@ -703,21 +741,43 @@
             class="promo-row"
             [style.border-left-color]="promo.badgeColor || promo.color"
             [style.opacity]="promo.ended ? '0.55' : '1'"
-            style="cursor:pointer"
+            style="cursor: pointer"
             (click)="openPromoDetail(promo)"
           >
             <div class="d-flex justify-content-between align-items-start gap-2">
               <!-- 批次刪除 checkbox（只在 bulkDeleteMode + 已結束才顯示） -->
               @if (bulkDeleteMode() && promo.ended) {
-                <div style="align-self:center;flex-shrink:0;padding-right:4px" (click)="$event.stopPropagation()">
-                  <input type="checkbox" [checked]="isPromoSelected(promo.id)" (change)="togglePromoSelection(promo.id)"
-                    style="width:18px;height:18px;cursor:pointer;accent-color:#c49756" />
+                <div
+                  style="align-self: center; flex-shrink: 0; padding-right: 4px"
+                  (click)="$event.stopPropagation()"
+                >
+                  <input
+                    type="checkbox"
+                    [checked]="isPromoSelected(promo.id)"
+                    (change)="togglePromoSelection(promo.id)"
+                    style="
+                      width: 18px;
+                      height: 18px;
+                      cursor: pointer;
+                      accent-color: #c49756;
+                    "
+                  />
                 </div>
               }
               <!-- 縮圖 -->
               @if (promo.image) {
-                <img [src]="promo.image" alt="封面"
-                  style="width:72px;height:52px;object-fit:cover;border-radius:6px;flex-shrink:0;border:1px solid rgba(0,0,0,0.08)" />
+                <img
+                  [src]="promo.image"
+                  alt="封面"
+                  style="
+                    width: 72px;
+                    height: 52px;
+                    object-fit: cover;
+                    border-radius: 6px;
+                    flex-shrink: 0;
+                    border: 1px solid rgba(0, 0, 0, 0.08);
+                  "
+                />
               }
               <div style="flex: 1; min-width: 0">
                 <!-- 標題列 -->
@@ -730,7 +790,9 @@
                 }
                 <!-- 日期 + 低消 -->
                 <div class="promo-meta">
-                  <span>{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span>
+                  <span
+                    >{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span
+                  >
                   @if (promo.minAmount) {
                     <span class="promo-meta-sep">·</span>
                     <span>滿 NT${{ promo.minAmount }}</span>
@@ -760,7 +822,10 @@
             <!-- 底部操作列：編輯資訊 + 新增門檻 + 刪除（阻止冒泡到詳情） -->
             <div
               class="d-flex gap-2 justify-content-end mt-2"
-              style="border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 10px;"
+              style="
+                border-top: 1px solid rgba(255, 255, 255, 0.06);
+                padding-top: 10px;
+              "
               (click)="$event.stopPropagation()"
             >
               <button
@@ -934,7 +999,7 @@
                     <th>帳號</th>
                     <th>所屬分店</th>
                     <th>國家</th>
-                    <th>入職時間</th>
+                    <th>入職日期</th>
                     <th>狀態</th>
                     <th>操作</th>
                   </tr>
@@ -1000,6 +1065,7 @@
                     <th>所屬分店</th>
                     <th>班別</th>
                     <th>狀態</th>
+                    <th>角色</th>
                     <th>操作</th>
                   </tr>
                 </thead>
@@ -1019,13 +1085,24 @@
                           <span class="badge-err">停權</span>
                         }
                       </td>
+                      <td>
+                        @if (acc.backendRole === "STAFF") {
+                          <span class="badge-warn">員工</span>
+                        } @else if (acc.backendRole === "MANAGER_AGENT") {
+                          <span class="badge-ok">副店長</span>
+                        } @else {
+                          <span class="badge-info">{{ acc.backendRole }}</span>
+                        }
+                      </td>
                       <td class="d-flex gap-1">
-                        <button
-                          class="btn btn-sm btn-ghost-gold"
-                          (click)="openEditAccount(acc.id)"
-                        >
-                          編輯
-                        </button>
+                        @if (acc.backendRole === "STAFF") {
+                          <button
+                            class="btn btn-sm btn-ghost-gold"
+                            (click)="promoteAccount(acc.id)"
+                          >
+                            晉升副店長
+                          </button>
+                        }
                         @if (acc.isActive) {
                           <button
                             class="btn btn-sm btn-ghost-red"
@@ -1151,13 +1228,17 @@
             @for (tax of taxes(); track tax.id) {
               <div class="tax-row">
                 <div class="tax-row-info">
-                  <div class="tax-region-code">{{ tax.countryCode || tax.currency.slice(0, 2) }}</div>
+                  <div class="tax-region-code">
+                    {{ tax.countryCode || tax.currency.slice(0, 2) }}
+                  </div>
                   <div class="tax-country-name">{{ tax.country }}</div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                  <span style="color:#8892b0;font-size:0.8rem">上限</span>
+                  <span style="color: #8892b0; font-size: 0.8rem">上限</span>
                   <div class="tax-rate-badge">
-                    <span class="tax-rate-num mono">{{ tax.discountLimit ?? '—' }}</span>
+                    <span class="tax-rate-num mono">{{
+                      tax.discountLimit ?? "—"
+                    }}</span>
                   </div>
                   <span class="tax-currency-badge">{{ tax.currency }}</span>
                 </div>
@@ -1184,11 +1265,13 @@
         <!-- 月份選擇器 -->
         <div class="content-card mb-4">
           <div class="d-flex align-items-center gap-3 flex-wrap">
-            <div style="color:#8a9ab0;font-size:0.85rem;font-weight:500">選擇月份</div>
+            <div style="color: #8a9ab0; font-size: 0.85rem; font-weight: 500">
+              選擇月份
+            </div>
             <input
               type="month"
               class="form-control form-ctrl"
-              style="width:160px"
+              style="width: 160px"
               [(ngModel)]="reportMonthValue"
               [max]="currentYearMonth"
             />
@@ -1198,7 +1281,8 @@
               (click)="loadMonthlyReport()"
             >
               @if (reportLoading()) {
-                <span class="mgr-export-spinner" aria-hidden="true"></span> 載入中...
+                <span class="mgr-export-spinner" aria-hidden="true"></span>
+                載入中...
               } @else {
                 🔍 查詢報表
               }
@@ -1210,7 +1294,8 @@
         @if (monthlyReport(); as report) {
           @let currentTotal = sumReportTotal(report.currentData);
           @let lastTotal = sumReportTotal(report.lastData);
-          @let growth = lastTotal > 0 ? ((currentTotal - lastTotal) / lastTotal * 100) : 0;
+          @let growth =
+            lastTotal > 0 ? ((currentTotal - lastTotal) / lastTotal) * 100 : 0;
 
           <div class="row g-3 mb-4">
             <div class="col-sm-4">
@@ -1218,8 +1303,12 @@
                 <div class="stat-label">本月總營收</div>
                 <div class="finance-num">{{ currentTotal | number }}</div>
                 @if (lastTotal > 0) {
-                  <div class="stat-sub" [style.color]="growth >= 0 ? '#3ecf8e' : '#f87171'">
-                    {{ growth >= 0 ? '↑' : '↓' }} {{ growth | number:'1.1-1' }}% 較上月
+                  <div
+                    class="stat-sub"
+                    [style.color]="growth >= 0 ? '#3ecf8e' : '#f87171'"
+                  >
+                    {{ growth >= 0 ? "↑" : "↓" }}
+                    {{ growth | number: "1.1-1" }}% 較上月
                   </div>
                 }
               </div>
@@ -1242,7 +1331,9 @@
 
           <!-- 本月分店明細 -->
           <div class="content-card mb-4">
-            <div class="card-title mb-3">本月各店明細（{{ reportMonth() }}）</div>
+            <div class="card-title mb-3">
+              本月各店明細（{{ reportMonth() }}）
+            </div>
             <div class="table-wrapper">
               <table class="table table-borderless table-dark-custom mb-0">
                 <thead>
@@ -1254,13 +1345,22 @@
                 </thead>
                 <tbody>
                   @if (report.currentData.length === 0) {
-                    <tr><td colspan="3" style="text-align:center;color:#8a9ab0">本月尚無報表資料</td></tr>
+                    <tr>
+                      <td
+                        colspan="3"
+                        style="text-align: center; color: #8a9ab0"
+                      >
+                        本月尚無報表資料
+                      </td>
+                    </tr>
                   }
                   @for (d of report.currentData; track d.branchName) {
                     <tr>
                       <td>{{ d.branchName }}</td>
-                      <td style="color:#8a9ab0">{{ d.regionsName }}</td>
-                      <td class="mono" style="color:#b08540">{{ d.totalAmount | number }}</td>
+                      <td style="color: #8a9ab0">{{ d.regionsName }}</td>
+                      <td class="mono" style="color: #b08540">
+                        {{ d.totalAmount | number }}
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -1285,8 +1385,10 @@
                     @for (d of report.lastData; track d.branchName) {
                       <tr>
                         <td>{{ d.branchName }}</td>
-                        <td style="color:#8a9ab0">{{ d.regionsName }}</td>
-                        <td class="mono" style="color:#8a9ab0">{{ d.totalAmount | number }}</td>
+                        <td style="color: #8a9ab0">{{ d.regionsName }}</td>
+                        <td class="mono" style="color: #8a9ab0">
+                          {{ d.totalAmount | number }}
+                        </td>
                       </tr>
                     }
                   </tbody>
@@ -1295,7 +1397,10 @@
             </div>
           }
         } @else if (!reportLoading()) {
-          <div class="content-card" style="text-align:center;padding:40px;color:#8a9ab0">
+          <div
+            class="content-card"
+            style="text-align: center; padding: 40px; color: #8a9ab0"
+          >
             請選擇月份後點擊「查詢報表」
           </div>
         }
@@ -1358,7 +1463,12 @@
                         </button>
                         <button
                           class="btn btn-sm"
-                          style="font-size:0.75rem;background:rgba(62,207,142,0.1);color:#3ecf8e;border:1px solid rgba(62,207,142,0.3)"
+                          style="
+                            font-size: 0.75rem;
+                            background: rgba(62, 207, 142, 0.1);
+                            color: #3ecf8e;
+                            border: 1px solid rgba(62, 207, 142, 0.3);
+                          "
                           (click)="toggleQr(b.id)"
                         >
                           QR
@@ -1374,13 +1484,52 @@
                   </tr>
                   @if (qrBranchId() === b.id) {
                     <tr>
-                      <td colspan="7" style="background:rgba(62,207,142,0.04);padding:20px;text-align:center;">
-                        <div style="display:inline-flex;flex-direction:column;align-items:center;gap:12px">
-                          <div style="font-size:0.8rem;color:#3ecf8e;font-weight:600">{{ b.name }} — 點餐 QR Code</div>
-                          <div style="background:#fff;padding:12px;border-radius:8px">
-                            <qrcode [qrdata]="getTableQrUrl(b.id)" [width]="180" [errorCorrectionLevel]="'M'"></qrcode>
+                      <td
+                        colspan="7"
+                        style="
+                          background: rgba(62, 207, 142, 0.04);
+                          padding: 20px;
+                          text-align: center;
+                        "
+                      >
+                        <div
+                          style="
+                            display: inline-flex;
+                            flex-direction: column;
+                            align-items: center;
+                            gap: 12px;
+                          "
+                        >
+                          <div
+                            style="
+                              font-size: 0.8rem;
+                              color: #3ecf8e;
+                              font-weight: 600;
+                            "
+                          >
+                            {{ b.name }} — 點餐 QR Code
                           </div>
-                          <div style="font-size:0.72rem;color:#8a9ab0;word-break:break-all;max-width:280px">
+                          <div
+                            style="
+                              background: #fff;
+                              padding: 12px;
+                              border-radius: 8px;
+                            "
+                          >
+                            <qrcode
+                              [qrdata]="getTableQrUrl(b.id)"
+                              [width]="180"
+                              [errorCorrectionLevel]="'M'"
+                            ></qrcode>
+                          </div>
+                          <div
+                            style="
+                              font-size: 0.72rem;
+                              color: #8a9ab0;
+                              word-break: break-all;
+                              max-width: 280px;
+                            "
+                          >
                             {{ getTableQrUrl(b.id) }}
                           </div>
                         </div>
@@ -1402,24 +1551,80 @@
        ════════════════════════ -->
   @if (selectedPromo(); as promo) {
     <div class="modal-overlay" (click)="closePromoDetail()">
-      <div class="modal-box" style="max-width:580px;overflow:hidden;padding:0;max-height:92vh;display:flex;flex-direction:column" (click)="$event.stopPropagation()">
-        <div class="modal-hd" style="padding:16px 20px;flex-shrink:0">
+      <div
+        class="modal-box"
+        style="
+          max-width: 580px;
+          overflow: hidden;
+          padding: 0;
+          max-height: 92vh;
+          display: flex;
+          flex-direction: column;
+        "
+        (click)="$event.stopPropagation()"
+      >
+        <div class="modal-hd" style="padding: 16px 20px; flex-shrink: 0">
           <div class="modal-hd-title">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-2px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              style="margin-right: 6px; vertical-align: -2px"
+            >
+              <path
+                d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"
+              />
+              <line x1="7" y1="7" x2="7.01" y2="7" />
+            </svg>
             活動詳情
           </div>
-          <button class="modal-close-btn" (click)="closePromoDetail()">✕</button>
+          <button class="modal-close-btn" (click)="closePromoDetail()">
+            ✕
+          </button>
         </div>
-        <div class="modal-bd" style="padding:0;overflow-y:auto;flex:1;min-height:0">
+        <div
+          class="modal-bd"
+          style="padding: 0; overflow-y: auto; flex: 1; min-height: 0"
+        >
           <!-- 封面大圖 -->
           @if (promo.image) {
-            <div style="position:relative;width:100%;height:200px;overflow:hidden">
-              <img [src]="promo.image" alt="封面"
-                style="width:100%;height:100%;object-fit:cover;display:block" />
+            <div
+              style="
+                position: relative;
+                width: 100%;
+                height: 200px;
+                overflow: hidden;
+              "
+            >
+              <img
+                [src]="promo.image"
+                alt="封面"
+                style="
+                  width: 100%;
+                  height: 100%;
+                  object-fit: cover;
+                  display: block;
+                "
+              />
               <!-- 漸層遮罩 -->
-              <div style="position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(transparent,rgba(0,0,0,0.55))"></div>
+              <div
+                style="
+                  position: absolute;
+                  bottom: 0;
+                  left: 0;
+                  right: 0;
+                  height: 80px;
+                  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+                "
+              ></div>
               <!-- 狀態 badge 浮於圖上 -->
-              <div style="position:absolute;bottom:12px;left:16px">
+              <div style="position: absolute; bottom: 12px; left: 16px">
                 @if (promo.isActive && !promo.ended) {
                   <span class="badge-ok">進行中</span>
                 } @else if (promo.ended) {
@@ -1430,20 +1635,39 @@
               </div>
             </div>
           }
-          <div style="padding:20px">
+          <div style="padding: 20px">
             <!-- 標題 -->
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-              <div style="width:5px;height:40px;border-radius:3px;flex-shrink:0" [style.background]="promo.badgeColor || promo.color"></div>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 14px;
+              "
+            >
+              <div
+                style="
+                  width: 5px;
+                  height: 40px;
+                  border-radius: 3px;
+                  flex-shrink: 0;
+                "
+                [style.background]="promo.badgeColor || promo.color"
+              ></div>
               <div>
-                <div style="font-size:1.1rem;font-weight:700;color:#1a2840">{{ promo.title }}</div>
+                <div
+                  style="font-size: 1.1rem; font-weight: 700; color: #1a2840"
+                >
+                  {{ promo.title }}
+                </div>
                 @if (!promo.image) {
-                  <div style="font-size:0.75rem;margin-top:3px">
+                  <div style="font-size: 0.75rem; margin-top: 3px">
                     @if (promo.isActive && !promo.ended) {
-                      <span style="color:#3ecf8e">● 進行中</span>
+                      <span style="color: #3ecf8e">● 進行中</span>
                     } @else if (promo.ended) {
-                      <span style="color:#f87171">● 已結束</span>
+                      <span style="color: #f87171">● 已結束</span>
                     } @else {
-                      <span style="color:#f59e0b">● 已暫停</span>
+                      <span style="color: #f59e0b">● 已暫停</span>
                     }
                   </div>
                 }
@@ -1451,46 +1675,158 @@
             </div>
             <!-- AI 文案 -->
             @if (promo.description) {
-              <div style="margin-bottom:16px">
-                <div style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;color:#c49756;text-transform:uppercase;margin-bottom:6px">✦ AI 文案</div>
-                <p style="font-size:0.88rem;color:#4a5a70;line-height:1.7;margin:0;padding:12px 14px;background:rgba(196,151,86,0.06);border-left:3px solid #c49756;border-radius:0 6px 6px 0">{{ promo.description }}</p>
+              <div style="margin-bottom: 16px">
+                <div
+                  style="
+                    font-size: 0.7rem;
+                    font-weight: 600;
+                    letter-spacing: 0.08em;
+                    color: #c49756;
+                    text-transform: uppercase;
+                    margin-bottom: 6px;
+                  "
+                >
+                  ✦ AI 文案
+                </div>
+                <p
+                  style="
+                    font-size: 0.88rem;
+                    color: #4a5a70;
+                    line-height: 1.7;
+                    margin: 0;
+                    padding: 12px 14px;
+                    background: rgba(196, 151, 86, 0.06);
+                    border-left: 3px solid #c49756;
+                    border-radius: 0 6px 6px 0;
+                  "
+                >
+                  {{ promo.description }}
+                </p>
               </div>
             }
             <!-- 活動說明 -->
-            <div style="margin-bottom:14px">
-              <div style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;color:#8a9ab0;text-transform:uppercase;margin-bottom:8px">▸ 活動說明</div>
-              <div style="display:flex;flex-direction:column;gap:6px;font-size:0.82rem">
-                <div style="display:flex;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.03);border-radius:6px">
-                  <span style="color:#8a9ab0">活動日期</span>
-                  <span style="color:#1a2840;font-weight:500">{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span>
+            <div style="margin-bottom: 14px">
+              <div
+                style="
+                  font-size: 0.7rem;
+                  font-weight: 600;
+                  letter-spacing: 0.08em;
+                  color: #8a9ab0;
+                  text-transform: uppercase;
+                  margin-bottom: 8px;
+                "
+              >
+                ▸ 活動說明
+              </div>
+              <div
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 6px;
+                  font-size: 0.82rem;
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 8px 12px;
+                    background: rgba(0, 0, 0, 0.03);
+                    border-radius: 6px;
+                  "
+                >
+                  <span style="color: #8a9ab0">活動日期</span>
+                  <span style="color: #1a2840; font-weight: 500"
+                    >{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span
+                  >
                 </div>
                 @if (promo.minAmount) {
-                  <div style="display:flex;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.03);border-radius:6px">
-                    <span style="color:#8a9ab0">最低消費</span>
-                    <span style="color:#c49756;font-weight:600">NT$ {{ promo.minAmount }}</span>
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      padding: 8px 12px;
+                      background: rgba(0, 0, 0, 0.03);
+                      border-radius: 6px;
+                    "
+                  >
+                    <span style="color: #8a9ab0">最低消費</span>
+                    <span style="color: #c49756; font-weight: 600"
+                      >NT$ {{ promo.minAmount }}</span
+                    >
                   </div>
                 }
               </div>
             </div>
             <!-- 贈品清單 -->
             @if (promo.gifts && promo.gifts.length > 0) {
-              <div style="margin-bottom:14px">
-                <div style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;color:#8a9ab0;text-transform:uppercase;margin-bottom:8px">🎁 贈品規則</div>
-                <div style="display:flex;flex-direction:column;gap:5px">
+              <div style="margin-bottom: 14px">
+                <div
+                  style="
+                    font-size: 0.7rem;
+                    font-weight: 600;
+                    letter-spacing: 0.08em;
+                    color: #8a9ab0;
+                    text-transform: uppercase;
+                    margin-bottom: 8px;
+                  "
+                >
+                  🎁 贈品規則
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 5px">
                   @for (gift of promo.gifts; track gift.id) {
-                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.03);border-radius:6px;font-size:0.82rem">
-                      <div style="display:flex;align-items:center;gap:8px">
-                        <span style="color:#c49756;font-size:0.75rem;white-space:nowrap">滿 NT${{ gift.fullAmount }}</span>
-                        <span style="color:#1a2840;font-weight:500">{{ gift.productName }}</span>
+                    <div
+                      style="
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        padding: 8px 12px;
+                        background: rgba(0, 0, 0, 0.03);
+                        border-radius: 6px;
+                        font-size: 0.82rem;
+                      "
+                    >
+                      <div style="display: flex; align-items: center; gap: 8px">
+                        <span
+                          style="
+                            color: #c49756;
+                            font-size: 0.75rem;
+                            white-space: nowrap;
+                          "
+                          >滿 NT${{ gift.fullAmount }}</span
+                        >
+                        <span style="color: #1a2840; font-weight: 500">{{
+                          gift.productName
+                        }}</span>
                       </div>
-                      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                      <div
+                        style="
+                          display: flex;
+                          align-items: center;
+                          gap: 6px;
+                          flex-shrink: 0;
+                        "
+                      >
                         @if (gift.quantity === -1) {
-                          <span style="font-size:0.72rem;color:#3ecf8e">無限供應</span>
+                          <span style="font-size: 0.72rem; color: #3ecf8e"
+                            >無限供應</span
+                          >
                         } @else {
-                          <span style="font-size:0.72rem;color:#f59e0b">剩 {{ gift.quantity }} 份</span>
+                          <span style="font-size: 0.72rem; color: #f59e0b"
+                            >剩 {{ gift.quantity }} 份</span
+                          >
                         }
                         @if (!gift.active) {
-                          <span style="font-size:0.7rem;padding:1px 6px;background:rgba(248,113,113,0.12);color:#f87171;border-radius:4px">已停用</span>
+                          <span
+                            style="
+                              font-size: 0.7rem;
+                              padding: 1px 6px;
+                              background: rgba(248, 113, 113, 0.12);
+                              color: #f87171;
+                              border-radius: 4px;
+                            "
+                            >已停用</span
+                          >
                         }
                       </div>
                     </div>
@@ -1500,9 +1836,16 @@
             }
           </div>
         </div>
-        <div class="modal-ft" style="padding:14px 20px;flex-shrink:0">
-          <button class="btn btn-sm btn-ghost-red" (click)="requestDeletePromo(promo)">刪除活動</button>
-          <button class="btn btn-sm btn-gold" (click)="closePromoDetail()">關閉</button>
+        <div class="modal-ft" style="padding: 14px 20px; flex-shrink: 0">
+          <button
+            class="btn btn-sm btn-ghost-red"
+            (click)="requestDeletePromo(promo)"
+          >
+            刪除活動
+          </button>
+          <button class="btn btn-sm btn-gold" (click)="closePromoDetail()">
+            關閉
+          </button>
         </div>
       </div>
     </div>
@@ -1511,16 +1854,36 @@
   <!-- ════════════════════════════════════════════════════
        Modal：活動進行中警告
        ════════════════════════════════════════════════════ -->
-  @if (deleteConfirmState()?.type === 'active-warning') {
+  @if (deleteConfirmState()?.type === "active-warning") {
     <div class="modal-overlay" (click)="cancelDeleteConfirm()">
-      <div class="modal-box" style="max-width:360px;text-align:center" (click)="$event.stopPropagation()">
-        <div class="modal-bd" style="padding:32px 24px 20px">
-          <div style="font-size:2.2rem;margin-bottom:14px">⚠️</div>
-          <div style="font-size:1.02rem;font-weight:700;color:#1a2840;margin-bottom:10px">活動進行中</div>
-          <div style="font-size:0.88rem;color:#4a5a70;line-height:1.7">現在活動還在進行中<br><strong>請先暫停活動 !!</strong></div>
+      <div
+        class="modal-box"
+        style="max-width: 360px; text-align: center"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="modal-bd" style="padding: 32px 24px 20px">
+          <div style="font-size: 2.2rem; margin-bottom: 14px">⚠️</div>
+          <div
+            style="
+              font-size: 1.02rem;
+              font-weight: 700;
+              color: #1a2840;
+              margin-bottom: 10px;
+            "
+          >
+            活動進行中
+          </div>
+          <div style="font-size: 0.88rem; color: #4a5a70; line-height: 1.7">
+            現在活動還在進行中<br /><strong>請先暫停活動 !!</strong>
+          </div>
         </div>
-        <div class="modal-ft" style="justify-content:center;padding:14px 20px">
-          <button class="btn btn-sm btn-gold" (click)="cancelDeleteConfirm()">關閉</button>
+        <div
+          class="modal-ft"
+          style="justify-content: center; padding: 14px 20px"
+        >
+          <button class="btn btn-sm btn-gold" (click)="cancelDeleteConfirm()">
+            關閉
+          </button>
         </div>
       </div>
     </div>
@@ -1529,23 +1892,55 @@
   <!-- ════════════════════════════════════════════════════
        Modal：確認刪除（單一 / 批次）
        ════════════════════════════════════════════════════ -->
-  @if (deleteConfirmState()?.type === 'confirm' || deleteConfirmState()?.type === 'bulk') {
+  @if (
+    deleteConfirmState()?.type === "confirm" ||
+    deleteConfirmState()?.type === "bulk"
+  ) {
     <div class="modal-overlay" (click)="cancelDeleteConfirm()">
-      <div class="modal-box" style="max-width:360px;text-align:center" (click)="$event.stopPropagation()">
-        <div class="modal-bd" style="padding:32px 24px 20px">
-          <div style="font-size:2.2rem;margin-bottom:14px">🗑️</div>
-          <div style="font-size:1.02rem;font-weight:700;color:#1a2840;margin-bottom:10px">確認刪除</div>
-          @if (deleteConfirmState()!.type === 'bulk') {
-            <div style="font-size:0.88rem;color:#4a5a70;line-height:1.7">
-              確定刪除 <strong style="color:#f87171">{{ deleteConfirmState()!.ids.length }}</strong> 個已結束活動？<br>此操作無法復原。
+      <div
+        class="modal-box"
+        style="max-width: 360px; text-align: center"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="modal-bd" style="padding: 32px 24px 20px">
+          <div style="font-size: 2.2rem; margin-bottom: 14px">🗑️</div>
+          <div
+            style="
+              font-size: 1.02rem;
+              font-weight: 700;
+              color: #1a2840;
+              margin-bottom: 10px;
+            "
+          >
+            確認刪除
+          </div>
+          @if (deleteConfirmState()!.type === "bulk") {
+            <div style="font-size: 0.88rem; color: #4a5a70; line-height: 1.7">
+              確定刪除
+              <strong style="color: #f87171">{{
+                deleteConfirmState()!.ids.length
+              }}</strong>
+              個已結束活動？<br />此操作無法復原。
             </div>
           } @else {
-            <div style="font-size:0.88rem;color:#4a5a70;line-height:1.7">請問是否要刪除活動？<br>此操作無法復原。</div>
+            <div style="font-size: 0.88rem; color: #4a5a70; line-height: 1.7">
+              請問是否要刪除活動？<br />此操作無法復原。
+            </div>
           }
         </div>
-        <div class="modal-ft" style="justify-content:center;gap:12px;padding:14px 20px">
-          <button class="btn btn-sm btn-ghost-red" (click)="cancelDeleteConfirm()">取消</button>
-          <button class="btn btn-sm btn-gold" (click)="confirmDelete()">是，確認刪除</button>
+        <div
+          class="modal-ft"
+          style="justify-content: center; gap: 12px; padding: 14px 20px"
+        >
+          <button
+            class="btn btn-sm btn-ghost-red"
+            (click)="cancelDeleteConfirm()"
+          >
+            取消
+          </button>
+          <button class="btn btn-sm btn-gold" (click)="confirmDelete()">
+            是，確認刪除
+          </button>
         </div>
       </div>
     </div>
@@ -1869,7 +2264,9 @@
   <div class="promo-panel">
     <div class="promo-panel-hd">
       <span class="promo-panel-title">✏️ 編輯活動資訊</span>
-      <button class="promo-panel-close" (click)="closeEditPromoInfo()">✕</button>
+      <button class="promo-panel-close" (click)="closeEditPromoInfo()">
+        ✕
+      </button>
     </div>
     <div class="promo-panel-body">
       <!-- 封面圖片 -->
@@ -1878,29 +2275,99 @@
         @if (editPromoInfoDraft.image) {
           <div class="pp-img-preview">
             <img [src]="editPromoInfoDraft.image" alt="封面預覽" />
-            <button class="pp-img-replace" (click)="editPromoFileInput.click()">更換圖片</button>
+            <button class="pp-img-replace" (click)="editPromoFileInput.click()">
+              更換圖片
+            </button>
           </div>
         } @else {
           <div class="pp-dropzone" (click)="editPromoFileInput.click()">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
             <span class="pp-dropzone-label">拖曳圖片或點擊上傳</span>
             <span class="pp-dropzone-hint">支援 JPG、PNG，建議 1200×675px</span>
           </div>
         }
-        <input type="file" accept="image/*" style="display:none" #editPromoFileInput (change)="onEditPromoImageChange($event)" />
+        <input
+          type="file"
+          accept="image/*"
+          style="display: none"
+          #editPromoFileInput
+          (change)="onEditPromoImageChange($event)"
+        />
       </div>
       <!-- AI 文案 / 活動說明 -->
+      <!-- 活動名稱 -->
       <div class="pp-field">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-          <label class="pp-label" style="margin:0">AI 文案 / 活動說明</label>
-          <button class="btn btn-sm" style="font-size:0.75rem;padding:3px 10px;background:linear-gradient(135deg,#c49756,#e8b86d);color:#fff;border:none;border-radius:6px;display:flex;align-items:center;gap:5px"
-            [disabled]="generatingAiCopy()" (click)="generateAiCopy()">
+        <label class="pp-label">活動名稱 <span class="required">*</span></label>
+        <input
+          type="text"
+          class="form-control form-ctrl"
+          [(ngModel)]="editPromoInfoDraft.name"
+          placeholder="例：滿額優惠、夏季上新公告"
+        />
+      </div>
+
+      <!-- 開始日期 -->
+      <div class="pp-field">
+        <label class="pp-label">開始日期 <span class="required">*</span></label>
+        <input
+          type="date"
+          class="form-control form-ctrl pp-date"
+          [(ngModel)]="editPromoInfoDraft.startTime"
+        />
+      </div>
+
+      <!-- 結束日期 -->
+      <div class="pp-field">
+        <label class="pp-label">結束日期 <span class="required">*</span></label>
+        <input
+          type="date"
+          class="form-control form-ctrl pp-date"
+          [(ngModel)]="editPromoInfoDraft.endTime"
+          [min]="editPromoInfoDraft.startTime"
+        />
+      </div>
+
+      <div class="pp-field">
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+          "
+        >
+          <label class="pp-label" style="margin: 0">AI 文案 / 活動說明</label>
+          <button
+            class="btn btn-sm"
+            style="
+              font-size: 0.75rem;
+              padding: 3px 10px;
+              background: linear-gradient(135deg, #c49756, #e8b86d);
+              color: #fff;
+              border: none;
+              border-radius: 6px;
+              display: flex;
+              align-items: center;
+              gap: 5px;
+            "
+            [disabled]="generatingAiCopy()"
+            (click)="generateAiCopy()"
+          >
             @if (generatingAiCopy()) {
-              <span class="mgr-export-spinner" aria-hidden="true"></span> 生成中...
+              <span class="mgr-export-spinner" aria-hidden="true"></span>
+              生成中...
             } @else {
               ✨ 一鍵 AI 生成
             }
@@ -1912,12 +2379,21 @@
           rows="5"
           placeholder="點擊「✨ 一鍵 AI 生成」自動產生文案，或手動輸入"
         ></textarea>
-        <div style="font-size:0.72rem;color:#8a9ab0;margin-top:4px">此文字將顯示在活動詳情的「AI 文案」區塊</div>
+        <div style="font-size: 0.72rem; color: #8a9ab0; margin-top: 4px">
+          此文字將顯示在活動詳情的「AI 文案」區塊
+        </div>
       </div>
     </div>
     <div class="promo-panel-ft">
-      <button class="btn btn-sm btn-ghost-red" (click)="closeEditPromoInfo()">取消</button>
-      <button class="btn btn-sm btn-gold" [disabled]="editPromoInfoSaving() || (editPromoInfoId() ?? 0) < 0" [title]="(editPromoInfoId() ?? 0) < 0 ? 'Demo 活動無法儲存' : ''" (click)="saveEditPromoInfo()">
+      <button class="btn btn-sm btn-ghost-red" (click)="closeEditPromoInfo()">
+        取消
+      </button>
+      <button
+        class="btn btn-sm btn-gold"
+        [disabled]="editPromoInfoSaving() || (editPromoInfoId() ?? 0) < 0"
+        [title]="(editPromoInfoId() ?? 0) < 0 ? 'Demo 活動無法儲存' : ''"
+        (click)="saveEditPromoInfo()"
+      >
         @if (editPromoInfoSaving()) {
           <span class="mgr-export-spinner" aria-hidden="true"></span> 儲存中...
         } @else {
@@ -2022,21 +2498,54 @@
             <label class="modal-label">
               帳號 <span class="required">*</span>
               @if (editingAccountId() !== null) {
-                <span style="font-size:0.7rem;color:#8a9ab0;margin-left:4px">🔒 建立後不可更改</span>
+                <span
+                  style="font-size: 0.7rem; color: #8a9ab0; margin-left: 4px"
+                  >🔒 建立後不可更改</span
+                >
               }
             </label>
             @if (editingAccountId() !== null) {
-              <div class="form-control form-ctrl" style="background:rgba(255,255,255,0.03);color:#8a9ab0;cursor:not-allowed;display:flex;align-items:center;gap:6px">
-                <span style="font-size:13px">🔒</span>
+              <div
+                class="form-control form-ctrl"
+                style="
+                  background: rgba(255, 255, 255, 0.03);
+                  color: #8a9ab0;
+                  cursor: not-allowed;
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                "
+              >
+                <span style="font-size: 13px">🔒</span>
                 <span>{{ accountDraft.account }}</span>
               </div>
             } @else {
-              <input
-                type="text"
-                class="form-control form-ctrl"
-                [(ngModel)]="accountDraft.account"
-                placeholder="例：wang.xm"
-              />
+              <div class="input-group">
+                <input
+                  type="text"
+                  class="form-control form-ctrl"
+                  [(ngModel)]="accountDraft.account"
+                  placeholder="留空，由系統自動產生"
+                  [disabled]="true"
+                  style="background: rgba(255, 255, 255, 0.03); color: #8a9ab0"
+                />
+                <span
+                  class="input-group-text"
+                  style="
+                    background: rgba(196, 151, 86, 0.12);
+                    border: 1px solid rgba(196, 151, 86, 0.3);
+                    color: #c49756;
+                    font-size: 0.75rem;
+                    cursor: default;
+                    white-space: nowrap;
+                  "
+                >
+                  系統自動產生
+                </span>
+              </div>
+              <div style="font-size: 0.7rem; color: #8a9ab0; margin-top: 4px">
+                帳號將由後端依角色自動產生（如 RM0001、ST0001）
+              </div>
             }
           </div>
         </div>
@@ -2065,9 +2574,11 @@
         <div class="row g-2 mb-3">
           <div class="col-4">
             <label class="modal-label">國家</label>
-            <select class="form-select form-ctrl"
+            <select
+              class="form-select form-ctrl"
               [(ngModel)]="accountDraft.country"
-              (ngModelChange)="onAccountCountryChange($event)">
+              (ngModelChange)="onAccountCountryChange($event)"
+            >
               @for (b of branches(); track b.id) {
                 <option [value]="b.country">{{ b.country }}</option>
               }
@@ -2075,14 +2586,28 @@
           </div>
           <div class="col-4">
             <label class="modal-label">角色</label>
-            <select class="form-select form-ctrl" [(ngModel)]="accountDraft.role">
+            <select
+              class="form-select form-ctrl"
+              [(ngModel)]="accountDraft.role"
+              [disabled]="editingAccountId() !== null"
+            >
               <option value="bm">分店長</option>
-              <option value="staff">員工</option>
+              @if (!isAdmin) {
+                <option value="staff">員工</option>
+              }
             </select>
+            @if (editingAccountId() !== null) {
+              <div style="font-size: 0.7rem; color: #8a9ab0; margin-top: 3px">
+                🔒 編輯模式下不可更改角色
+              </div>
+            }
           </div>
           <div class="col-4">
             <label class="modal-label">所屬分店</label>
-            <select class="form-select form-ctrl" [(ngModel)]="accountDraft.branch">
+            <select
+              class="form-select form-ctrl"
+              [(ngModel)]="accountDraft.branch"
+            >
               @for (b of branches(); track b.id) {
                 <option>{{ b.name }}</option>
               }
@@ -2328,7 +2853,8 @@
             "
           >
             分店名稱將自動設為：<strong
-              >{{ getBranchCountryName(branchDraft.regionsId) }}{{ branchDraft.city }}店</strong
+              >{{ getBranchCountryName(branchDraft.regionsId)
+              }}{{ branchDraft.city }}店</strong
             >
           </div>
         }
@@ -2423,7 +2949,9 @@
                 <option>清邁</option>
                 <option>普吉</option>
               }
-              @if (getBranchCountryName(editBranchDraft.regionsId) === "新加坡") {
+              @if (
+                getBranchCountryName(editBranchDraft.regionsId) === "新加坡"
+              ) {
                 <option>新加坡</option>
               }
               @if (!editBranchDraft.regionsId) {
@@ -2444,7 +2972,8 @@
             "
           >
             分店名稱將自動設為：<strong
-              >{{ getBranchCountryName(editBranchDraft.regionsId) }}{{ editBranchDraft.city }}店</strong
+              >{{ getBranchCountryName(editBranchDraft.regionsId)
+              }}{{ editBranchDraft.city }}店</strong
             >
           </div>
         }
