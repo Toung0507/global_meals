@@ -26,9 +26,9 @@ import { QRCodeComponent } from 'angularx-qrcode';
 // import { RouterLink } from '@angular/router';
 import { AuthService } from '../shared/auth.service';
 import { LoadingService } from '../shared/loading.service';
-import { OrderService } from '../shared/order.service';
+import { OrderService, OrderStatus } from '../shared/order.service';
 import { firstValueFrom } from 'rxjs';
-import { ApiService, GetOrdersVo, CartSyncReq, CreateOrdersReq, PayReq, CartRemoveReq, CartClearReq } from '../shared/api.service';
+import { ApiService, GetOrdersVo, CartSyncReq, CreateOrdersReq, PayReq, CartRemoveReq, CartClearReq, PromotionDetailVo } from '../shared/api.service';
 import { DEMO_BASE_URL } from '../shared/demo.config';
 import { BranchService, CountryCode, CountryConfig } from '../shared/branch.service';
 
@@ -69,7 +69,7 @@ export interface MenuItem {
 export interface TrackingOrder {
   id: string;
   number: string;
-  status: 'waiting' | 'cooking' | 'ready' | 'done';
+  status: 'pending-cash' | 'waiting' | 'cooking' | 'ready' | 'done';
   estimatedMinutes: number;
   items: string[];
   total: number;
@@ -172,15 +172,15 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   /* ── 多語翻譯對照表（依中文名稱 key，供 API 回傳後合併用）── */
   private static readonly MENU_I18N: Record<string, Pick<MenuItem, 'nameEn' | 'nameJP' | 'nameKR' | 'descriptionJP' | 'descriptionKR'>> = {
-    '招牌滷肉飯':   { nameEn: 'Braised Pork Rice',     nameJP: 'ルーローハン（魯肉飯）',         nameKR: '루로우판（대만식 돼지고기 조림밥）', descriptionJP: '豚バラ肉をじっくり煮込んだ濃厚タレ、半熟煮卵とさっぱりキムチ添え',                    descriptionKR: '천천히 조린 삼겹살, 진한 간장 소스, 반숙 달걀과 아삭한 겉절이 곁들임' },
-    '古早味排骨飯': { nameEn: 'Pork Chop Rice',        nameJP: '昔ながらのポークチョップライス', nameKR: '옛날식 돼지갈비 덮밥',               descriptionJP: '台湾式の揚げポークチョップ、大根の煮物と白ご飯',                                      descriptionKR: '대만식 튀긴 돼지갈비, 무 조림과 흰 쌀밥' },
-    '牛排':         { nameEn: 'Beef Steak',            nameJP: 'ビーフステーキ',                nameKR: '비프스테이크',                       descriptionJP: 'オーストラリア産牛肉、炭火焼きで旨みを閉じ込め、季節野菜とソース添え',                descriptionKR: '호주산 소고기, 직화구이로 육즙 봉인, 제철 채소와 소스 곁들임' },
-    '三杯雞':       { nameEn: 'Three Cup Chicken',     nameJP: '三杯鶏（サンベイジー）',          nameKR: '삼배닭（산베이지）',                  descriptionJP: 'ごま油・醤油・紹興酒で炒め煮、バジルの香り豊か',                                      descriptionKR: '참기름·간장·쌀술 삼배 조리, 바질 향이 가득' },
-    '蚵仔煎':       { nameEn: 'Oyster Pancake',        nameJP: 'カキのお好み焼き（蚵仔煎）',      nameKR: '굴전（대만식 오아체）',               descriptionJP: '新鮮な牡蠣を使ったさつまいも粉のパンケーキ、特製甘辛ソースがけ',                    descriptionKR: '신선한 굴을 넣은 고구마 전분 전, 특제 매콤달콤 소스 곁들임' },
-    '蚵仔麵線':     { nameEn: 'Oyster Vermicelli',     nameJP: 'カキのそうめん（蚵仔麵線）',      nameKR: '굴 국수（오아체미엔시엔）',           descriptionJP: '新鮮な牡蠣と細麺のスープ、甘辛ソースで味付けした夜市の定番',                        descriptionKR: '신선한 굴과 가는 국수의 조화, 매콤달콤 소스의 야시장 명물' },
-    '阿三陽春麵':   { nameEn: 'Traditional Noodle',   nameJP: '陽春麺（台湾スタイル）',           nameKR: '아싼 양춘면（대만식）',               descriptionJP: '昔ながら製法のクリアスープ、手打ち麺のもちもち食感',                                  descriptionKR: '전통 방식으로 우린 맑은 육수, 수제 면의 탱글탱글한 식감' },
-    '黑糖珍珠奶茶': { nameEn: 'Brown Sugar Boba',      nameJP: '黒糖タピオカミルクティー',         nameKR: '흑당 버블티',                        descriptionJP: '出来たてタピオカ、手作り黒糖タイガーストライプ',                                      descriptionKR: '갓 삶은 타피오카, 수제 흑당 호랑이 무늬' },
-    '仙草奶茶':     { nameEn: 'Grass Jelly Milk Tea', nameJP: '仙草ミルクティー',                nameKR: '선초 밀크티',                        descriptionJP: '台湾産仙草ゼリー入り、濃厚ミルクティーとの絶妙な組み合わせ',                          descriptionKR: '대만산 선초 젤리, 진한 밀크티와의 절묘한 조합' },
+    '招牌滷肉飯':   { nameEn: 'Braised Pork Rice',     nameJP: '魯肉飯（台湾風豚角煮丼）',              nameKR: '루러우판（대만식 돼지고기 덮밥）',          descriptionJP: '豚バラ肉をじっくり煮込んだ濃厚タレ、半熟煮卵とさっぱりキムチ添え',     descriptionKR: '천천히 조린 삼겹살, 진한 간장 소스, 반숙 달걀과 아삭한 겉절이 곁들임' },
+    '古早味排骨飯': { nameEn: 'Pork Chop Rice',        nameJP: '台湾風ポークカツ丼（懐かし風）',         nameKR: '전통식 돼지갈비 덮밥',                     descriptionJP: '台湾式の揚げポークチョップ、大根の煮物と白ご飯',                        descriptionKR: '대만식 튀긴 돼지갈비, 무 조림과 흰 쌀밥' },
+    '牛排':         { nameEn: 'Beef Steak',            nameJP: 'ビーフステーキ',                        nameKR: '비프 스테이크',                            descriptionJP: 'オーストラリア産牛肉、炭火焼きで旨みを閉じ込め、季節野菜とソース添え', descriptionKR: '호주산 소고기, 직화구이로 육즙 봉인, 제철 채소와 소스 곁들임' },
+    '三杯雞':       { nameEn: 'Three Cup Chicken',     nameJP: '三杯鶏（台湾風醤油バジル煮）',          nameKR: '삼배계（대만식 간장 바질 닭요리）',         descriptionJP: 'ごま油・醤油・紹興酒で炒め煮、バジルの香り豊か',                        descriptionKR: '참기름·간장·쌀술 삼배 조리, 바질 향이 가득' },
+    '蚵仔煎':       { nameEn: 'Oyster Pancake',        nameJP: '牡蠣オムレツ（台湾風）',                nameKR: '대만식 굴전',                              descriptionJP: '新鮮な牡蠣を使ったさつまいも粉のパンケーキ、特製甘辛ソースがけ',     descriptionKR: '신선한 굴을 넣은 고구마 전분 전, 특제 매콤달콤 소스 곁들임' },
+    '蚵仔麵線':     { nameEn: 'Oyster Vermicelli',     nameJP: '牡蠣そうめん（台湾風とろみ麺）',        nameKR: '굴 국수（대만식 걸쭉한 면）',              descriptionJP: '新鮮な牡蠣と細麺のスープ、甘辛ソースで味付けした夜市の定番',          descriptionKR: '신선한 굴과 가는 국수의 조화, 매콤달콤 소스의 야시장 명물' },
+    '阿三陽春麵':   { nameEn: 'Traditional Noodle',   nameJP: 'アサン陽春麺（台湾式あっさり麺）',      nameKR: '아산 양춘면（담백한 대만식 국수）',         descriptionJP: '昔ながら製法のクリアスープ、手打ち麺のもちもち食感',                   descriptionKR: '전통 방식으로 우린 맑은 육수, 수제 면의 탱글탱글한 식감' },
+    '黑糖珍珠奶茶': { nameEn: 'Brown Sugar Boba',      nameJP: '黒糖タピオカミルクティー',              nameKR: '흑당 버블 밀크티',                         descriptionJP: '出来たてタピオカ、手作り黒糖タイガーストライプ',                       descriptionKR: '갓 삶은 타피오카, 수제 흑당 호랑이 무늬' },
+    '仙草奶茶':     { nameEn: 'Grass Jelly Milk Tea', nameJP: '仙草ミルクティー',                      nameKR: '선초 밀크티',                              descriptionJP: '台湾産仙草ゼリー入り、濃厚ミルクティーとの絶妙な組み合わせ',          descriptionKR: '대만산 선초 젤리, 진한 밀크티와의 절묘한 조합' },
   };
 
   /* ── 菜單品項（API 載入後動態填充；MOCK_MODE 下使用靜態 Demo 資料）── */
@@ -409,14 +409,14 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   /* ── 活動優惠選擇（每個活動有獨立贈品清單）─────────── */
-  readonly PROMO_ACTIVITIES = [
+  PROMO_ACTIVITIES = [
     {
       name: '新會員首單禮',
       nameJP: '新規会員初回注文特典',
       nameKR: '신규 회원 첫 주문 선물',
       minSpend: 150,
       gifts:   ['招牌豆漿 × 1', '仙草奶茶 × 1'],
-      giftsJP: ['自慢の豆乳 × 1', '仙草ミルクティー × 1'],
+      giftsJP: ['看板豆乳 × 1', '仙草ミルクティー × 1'],
       giftsKR: ['시그니처 두유 × 1', '선초 밀크티 × 1'],
     },
     {
@@ -424,76 +424,82 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       nameJP: '週末お買い上げ特典',
       nameKR: '주말 구매 달성 선물',
       minSpend: 300,
-      gifts:   ['古早味豆干 × 2', '特製泡菜 × 1', '招牌滷蛋 × 2'],
-      giftsJP: ['昔ながら豆腐干 × 2', '特製キムチ × 1', '特製煮卵 × 2'],
-      giftsKR: ['옛날식 두부간 × 2', '특제 김치 × 1', '특제 조림달걀 × 2'],
+      gifts:   ['古早味豆腐塊 × 2', '特製泡菜 × 1', '滷蛋 × 2'],
+      giftsJP: ['昔ながらの豆腐 × 2', '特製キムチ × 1', '煮卵 × 2'],
+      giftsKR: ['전통 두부 × 2', '특제 김치 × 1', '조림 계란 × 2'],
     },
     {
       name: '消費達人大禮包',
       nameJP: 'グルメ達人特大ギフトセット',
       nameKR: '소비 달인 대형 선물 세트',
       minSpend: 500,
-      gifts:   ['仙草奶茶 × 1 + 招牌滷蛋 × 2', '特製泡菜 × 1 + 古早味豆干 × 2'],
-      giftsJP: ['仙草ミルクティー × 1 + 特製煮卵 × 2', '特製キムチ × 1 + 昔ながら豆腐干 × 2'],
-      giftsKR: ['선초 밀크티 × 1 + 특제 조림달걀 × 2', '특제 김치 × 1 + 옛날식 두부간 × 2'],
+      gifts:   ['仙草奶茶 × 1 + 滷蛋 × 2', '特製泡菜 × 1 + 古早味豆腐塊 × 2'],
+      giftsJP: ['仙草ミルクティー × 1 + 煮卵 × 2', '特製キムチ × 1 + 昔ながらの豆腐 × 2'],
+      giftsKR: ['선초 밀크티 × 1 + 조림 계란 × 2', '특제 김치 × 1 + 전통 두부 × 2'],
     },
   ];
 
   /* 活動專區展示資料（含完整圖片、日期、文案） */
-  readonly PROMO_DISPLAY = [
+  PROMO_DISPLAY = [
+    /* ── 全球活動 1：新會員首單禮 ── */
     {
-      name: '新會員首單禮', nameJP: '新規会員初回注文特典', nameKR: '신규 회원 첫 주문 선물',
+      name: '新會員首單禮',
+      nameJP: '新規会員様限定・初回ご注文特典',
+      nameKR: '신규 회원 한정！첫 주문 웰컴 혜택',
       tag: '新會員限定',
-      tagType: 'new',
+      tagType: 'new', colorScheme: 'forest',
       image: '/assets/主頁輪播圖1.jpg',
-      startDate: '2026-04-01',
-      endDate: '2026-06-30',
+      startDate: '2026-04-01', endDate: '2026-06-30',
       minSpend: 150,
       gifts:   ['招牌豆漿 × 1', '仙草奶茶 × 1'],
-      giftsJP: ['自慢の豆乳 × 1', '仙草ミルクティー × 1'],
+      giftsJP: ['看板豆乳 × 1', '仙草ミルクティー × 1'],
       giftsKR: ['시그니처 두유 × 1', '선초 밀크티 × 1'],
-      description: '首次在懶飽飽下單的新會員，單筆消費滿 NT$150 即可獲得精選贈品一份！不論您喜歡台灣在地風味還是跨國美食，這份專屬歡迎禮都是我們對您最誠摯的招待，讓您第一口就愛上懶飽飽。',
-      descriptionJP: 'はじめて懶飽飽でご注文いただく新規会員様へ、1回の購入で指定金額以上お買い上げいただくと、厳選プレゼントを1つプレゼント！台湾の地元グルメからインターナショナル料理まで、このウェルカムギフトが最高のおもてなしです。最初のひと口から懶飽飽の虜に。',
-      descriptionKR: '懶飽飽에서 처음 주문하시는 신규 회원님께, 1회 구매 지정 금액 이상 시 엄선된 선물을 1개 증정！대만 현지 맛부터 글로벌 푸드까지, 이 환영 선물이 저희의 진심 어린 대접입니다. 첫 입부터 懶飽飽에 빠져보세요。',
-      highlights:   ['首次消費即享', '任選一項贈品', '限首筆訂單使用', '可與菜單折扣並用'],
-      highlightsJP: ['初回ご注文でプレゼント', '1つのギフトをお選びいただけます', '初回注文のみ適用', 'メニュー割引との併用可'],
-      highlightsKR: ['첫 주문 시 즉시 증정', '선물 1개 선택 가능', '첫 번째 주문에만 적용', '메뉴 할인과 중복 사용 가능'],
+      description:   '首次在懶飽飽下單的新會員，單筆消費滿 $150 即可獲得精選贈品！台灣在地風味與跨國美食任您探索，這份專屬歡迎禮是我們最誠摯的招待。',
+      descriptionJP: '懶飽飽でのはじめてのご注文で、指定金額以上お買い上げいただいた新規会員様に厳選ギフトを1点プレゼント！台湾グルメからグローバル料理まで、ウェルカムギフトとともに最高のひとときをお楽しみください。',
+      descriptionKR: '懶飽飽에서 처음 주문하시는 신규 회원님께 지정 금액 이상 구매 시 엄선된 선물을 1개 증정합니다！대만 현지 맛부터 글로벌 퀴진까지, 이 웰컴 선물로 특별한 첫 경험을 시작해 보세요。',
+      highlights:   ['首次消費即享', '任選一項贈品', '限首筆訂單使用', '可與折扣券並用'],
+      highlightsJP: ['初回ご注文でプレゼント進呈', '1つのギフトをお選びいただけます', '初回注文のみ適用', '割引クーポンとの併用OK'],
+      highlightsKR: ['첫 주문 시 즉시 증정', '선물 1개 선택 가능', '첫 번째 주문에만 적용', '할인 쿠폰과 중복 가능'],
     },
+    /* ── 全球活動 2：週末滿額禮 ── */
     {
-      name: '週末滿額禮', nameJP: '週末お買い上げ特典', nameKR: '주말 구매 달성 선물',
+      name: '週末滿額禮',
+      nameJP: '週末限定！お買い上げプレゼント',
+      nameKR: '주말 한정！구매 금액 달성 혜택',
       tag: '期間限定',
-      tagType: 'promo',
+      tagType: 'promo', colorScheme: 'burgundy',
       image: '/assets/主頁輪播圖2.jpg',
-      startDate: '2026-04-05',
-      endDate: '2026-05-31',
+      startDate: '2026-04-05', endDate: '2026-05-31',
       minSpend: 300,
-      gifts:   ['古早味豆干 × 2', '特製泡菜 × 1', '招牌滷蛋 × 2'],
-      giftsJP: ['昔ながら豆腐干 × 2', '特製キムチ × 1', '特製煮卵 × 2'],
-      giftsKR: ['옛날식 두부간 × 2', '특제 김치 × 1', '특제 조림달걀 × 2'],
-      description: '每逢週末，單筆消費滿 NT$300 即可選一份豐盛贈品！不論是和家人一起享用還是獨自犒賞自己，懶飽飽都準備了最道地的台灣小吃作為感謝禮，讓每個週末都過得更加美味。',
-      descriptionJP: '毎週末、1回の購入で指定金額以上お買い上げいただくと、豪華プレゼントをひとつお選びいただけます！ご家族とのお食事にも、ご自身へのご褒美にも、懶飽飽が最高の台湾グルメをご用意して感謝をお伝えします。',
-      descriptionKR: '매주 주말, 1회 구매 지정 금액 이상 시 풍성한 선물 1개를 선택하실 수 있습니다！가족과 함께하는 식사나 혼자만의 보상에, 懶飽飽가 최고의 대만 음식으로 감사를 전합니다。',
-      highlights:   ['僅限週六、日適用', '消費滿 NT$300', '三款贈品任選一', '每筆訂單限贈一次'],
-      highlightsJP: ['土曜・日曜のみ適用', '指定金額以上のご購入', '3種のギフトからお選び', '1注文につき1回限り'],
-      highlightsKR: ['토·일요일에만 적용', '지정 금액 이상 구매', '3종 선물 중 1개 선택', '주문당 1회 한정'],
+      gifts:   ['古早味豆腐塊 × 2', '特製泡菜 × 1', '滷蛋 × 2'],
+      giftsJP: ['懐かしの豆腐ブロック × 2', '特製キムチ × 1', '煮卵 × 2'],
+      giftsKR: ['전통식 두부블럭 × 2', '특제 김치 × 1', '조린 계란 × 2'],
+      description:   '每逢週末，單筆消費滿 $300 即可選一份豐盛贈品！懶飽飽為您準備最道地的台灣小吃作為感謝，讓每個週末都更加美味。',
+      descriptionJP: '毎週末、指定金額以上お買い上げで豪華プレゼントをひとつお選びいただけます！ご家族との食事にも、自分へのご褒美にも、懶飽飽の本格台湾グルメとともに素敵な週末を。',
+      descriptionKR: '매주 주말, 지정 금액 이상 구매 시 풍성한 선물 1개를 선택하세요！가족 식사나 나만의 보상에, 懶飽飽가 최고의 대만 음식으로 주말을 더욱 맛있게 만들어 드립니다。',
+      highlights:   ['僅限週六、日適用', '消費滿 $300', '三款贈品任選一', '每筆訂單限贈一次'],
+      highlightsJP: ['毎週土・日のみ適用', '指定金額以上のご購入', '3種のギフトからお選び', '1注文につき1回限り'],
+      highlightsKR: ['매주 토·일요일만 적용', '지정 금액 이상 구매', '3종 선물 중 1개 선택', '주문당 1회 한정'],
     },
+    /* ── 全球活動 3：消費達人大禮包 ── */
     {
-      name: '消費達人大禮包', nameJP: 'グルメ達人特大ギフトセット', nameKR: '소비 달인 대형 선물 세트',
+      name: '消費達人大禮包',
+      nameJP: 'グルメ達人限定！特大ダブルギフトセット',
+      nameKR: '소비 달인 한정！더블 대형 선물 세트',
       tag: '限時豪禮',
-      tagType: 'premium',
+      tagType: 'premium', colorScheme: 'navy',
       image: '/assets/主頁輪播圖3.jpg',
-      startDate: '2026-04-01',
-      endDate: '2026-04-30',
+      startDate: '2026-04-01', endDate: '2026-04-30',
       minSpend: 500,
-      gifts:   ['仙草奶茶 × 1 + 招牌滷蛋 × 2', '特製泡菜 × 1 + 古早味豆干 × 2'],
-      giftsJP: ['仙草ミルクティー × 1 + 特製煮卵 × 2', '特製キムチ × 1 + 昔ながら豆腐干 × 2'],
-      giftsKR: ['선초 밀크티 × 1 + 특제 조림달걀 × 2', '특제 김치 × 1 + 옛날식 두부간 × 2'],
-      description: '單筆消費滿 NT$500，立享雙重組合贈品！這是懶飽飽為美食達人精心準備的超值回饋，豐盛組合讓您一次享受多種在地好味道，越吃越過癮，本月限定不容錯過。',
-      descriptionJP: '1回の購入で指定金額以上お買い上げいただくと、豪華ダブル特典セットがすぐもらえる！美食家のための超お得な感謝プレゼント、豊富な組み合わせで台湾の本場の味を一度に楽しめます。今月限定、お見逃しなく。',
-      descriptionKR: '1회 구매 지정 금액 이상 시 즉시 더블 콤보 선물 세트를 받으세요！미식가를 위한 초대박 감사 선물, 풍성한 조합으로 다양한 현지의 맛을 한번에 즐기세요. 이달 한정, 놓치지 마세요。',
-      highlights:   ['本月限定活動', '消費滿 NT$500', '兩款組合禮任選一', '可搭配折扣券使用'],
-      highlightsJP: ['今月限定キャンペーン', '指定金額以上のご購入', '2種の組み合わせギフトからお選び', '割引クーポンとの併用可'],
-      highlightsKR: ['이달 한정 이벤트', '지정 금액 이상 구매', '2종 콤보 선물 중 1개 선택', '할인 쿠폰과 중복 사용 가능'],
+      gifts:   ['仙草奶茶 × 1 + 滷蛋 × 2', '特製泡菜 × 1 + 古早味豆腐塊 × 2'],
+      giftsJP: ['仙草ミルクティー × 1 + 煮卵 × 2', '特製キムチ × 1 + 懐かしの豆腐 × 2'],
+      giftsKR: ['선초 밀크티 × 1 + 조린 계란 × 2', '특제 김치 × 1 + 전통식 두부 × 2'],
+      description:   '單筆消費滿 $500，立享豪華雙重組合贈品！懶飽飽為美食達人精心準備超值回饋，豐盛組合讓您一次享受多種在地風味，本月限定不容錯過。',
+      descriptionJP: '指定金額以上お買い上げで、豪華ダブル特典セットをすぐにプレゼント！美食家のための超お得な感謝ギフト、豊富な組み合わせで台湾本場の味を一度に楽しめます。今月限定、お見逃しなく！',
+      descriptionKR: '지정 금액 이상 구매 시 즉시 더블 선물 세트 증정！미식가를 위한 초대박 감사 선물로, 다양한 현지의 맛을 한 번에 즐기세요. 이달 한정 특별 혜택입니다！',
+      highlights:   ['本月限定活動', '消費滿 $500', '兩款組合禮任選一', '可搭配折扣券使用'],
+      highlightsJP: ['今月限定キャンペーン', '指定金額以上のご購入', '2種の組み合わせギフトからお選び', '割引クーポンとの併用OK'],
+      highlightsKR: ['이달 한정 이벤트', '지정 금액 이상 구매', '2종 콤보 선물 중 1개 선택', '할인 쿠폰 중복 사용 가능'],
     },
   ];
 
@@ -943,7 +949,10 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       this.phoneNumber.set(user.phone);
     }
 
-    /* 載入菜單商品（MOCK_MODE=true 時 ApiService 直接回傳假資料，不發 HTTP） */
+    /* 載入促銷活動（API 成功則覆蓋靜態 Demo 資料，只顯示 active 的活動） */
+    this.loadPromotions();
+
+    /* 載入菜單商品（API 載入後動態填充；API 失敗則保留靜態 Demo 資料） */
     const areaId = 1;
     this.apiService.getActiveProducts(areaId).subscribe({
       next: (res) => {
@@ -1047,6 +1056,72 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     }
     if (navigator.vibrate) navigator.vibrate(30);
     this._syncCartItemToBackend(item.id, newQty);
+  }
+
+  private loadPromotions(): void {
+    const BANNER_IMAGES = ['/assets/主頁輪播圖1.jpg', '/assets/主頁輪播圖2.jpg', '/assets/主頁輪播圖3.jpg'];
+    // 國碼 → globalAreaId 對應（依 global_area 表 branch_id）
+    const areaIdMap: Record<string, number> = { TW: 1, JP: 2, KR: 4 };
+    const globalAreaId = areaIdMap[this.branchService.country] ?? 1;
+
+    this.apiService.getPromotionsList(globalAreaId).subscribe({
+      next: (res) => {
+        const active = (res?.data ?? []).filter((p: PromotionDetailVo) => p.active);
+        if (!active.length) return;
+
+        // 根據目前分店語言選取正確的活動名稱
+        const cc = this.branchService.country;
+        const localName = (p: PromotionDetailVo) => {
+          if (cc === 'JP') return p.nameJP || p.name;
+          if (cc === 'KR') return p.nameKR || p.name;
+          return p.name;
+        };
+
+        this.PROMO_ACTIVITIES = active.map((p: PromotionDetailVo) => {
+          const minSpend = p.gifts.length
+            ? Math.min(...p.gifts.map(g => g.fullAmount))
+            : 0;
+          const giftNames = p.gifts.map(g =>
+            `${g.productName} × ${g.quantity === -1 ? 1 : g.quantity}`
+          );
+          const lName = localName(p);
+          return { name: lName, nameJP: p.nameJP || lName, nameKR: p.nameKR || lName,
+            minSpend, gifts: giftNames, giftsJP: giftNames, giftsKR: giftNames };
+        });
+
+        this.PROMO_DISPLAY = active.map((p: PromotionDetailVo, i: number) => {
+          const minSpend = p.gifts.length
+            ? Math.min(...p.gifts.map(g => g.fullAmount))
+            : 0;
+          const giftNames = p.gifts.map(g =>
+            `${g.productName} × ${g.quantity === -1 ? 1 : g.quantity}`
+          );
+          const TAG_TYPES     = ['new', 'promo', 'premium'] as const;
+          const COLOR_SCHEMES = ['forest', 'burgundy', 'navy', 'bronze', 'plum', 'slate'] as const;
+          const id       = Math.abs(p.id ?? i);
+          const tagIdx   = id % TAG_TYPES.length;
+          const colorIdx = id % COLOR_SCHEMES.length;
+          const lName    = localName(p);
+          return {
+            name:      p.name,
+            nameJP:    p.nameJP || p.name,
+            nameKR:    p.nameKR || p.name,
+            tag: '期間限定', tagType: TAG_TYPES[tagIdx], colorScheme: COLOR_SCHEMES[colorIdx],
+            image: BANNER_IMAGES[tagIdx % BANNER_IMAGES.length],
+            startDate: p.startTime, endDate: p.endTime,
+            minSpend,
+            gifts: giftNames, giftsJP: giftNames, giftsKR: giftNames,
+            description:   p.description || `消費滿 $${minSpend} 即可獲得贈品，把握活動期間限定好禮！`,
+            descriptionJP: p.description || `$${minSpend}以上のご購入でプレゼント！期間限定をお見逃しなく。`,
+            descriptionKR: p.description || `$${minSpend} 이상 구매 시 선물 증정！기간 한정 혜택을 놓치지 마세요。`,
+            highlights:    [`消費滿 $${minSpend}`, '可選贈品', `${p.startTime} ～ ${p.endTime}`],
+            highlightsJP:  [`$${minSpend}以上のご購入`, 'プレゼントをお選びください', `${p.startTime} ～ ${p.endTime}`],
+            highlightsKR:  [`$${minSpend} 이상 구매`, '선물 선택 가능', `${p.startTime} ～ ${p.endTime}`],
+          };
+        });
+      },
+      error: () => { /* API 失敗時保留靜態 Demo 資料 */ }
+    });
   }
 
   private _syncCartItemToBackend(productId: number, quantity: number): void {
@@ -1162,6 +1237,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     const user  = this.authService.currentUser;
     const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
     const phone    = this.phoneNumber();
+    const isCash   = this.paymentMethod() === 'cash';
 
     /* ── Step 1：取得後端購物車 ID
      * eager sync 已完成 → 直接用；否則 fallback 逐筆同步 */
@@ -1183,7 +1259,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       this.currentCartId.set(cartId);
     }
 
-    /* ── Step 2：建立訂單（UNPAID） ── */
+    /* ── Step 2：建立訂單
+     * 現金傳 paymentMethod:'CASH' → 後端建立 PENDING_CASH（不立即付款）
+     * 其他付款方式不傳 → 後端建立 UNPAID */
     const orderReq: CreateOrdersReq = {
       orderCartId: String(cartId),
       globalAreaId: 1,
@@ -1197,31 +1275,39 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
         quantity: i.quantity,
         isGift: false,
       })),
+      ...(isCash ? { paymentMethod: 'CASH' } : {}),
     };
     const orderRes = await firstValueFrom(this.apiService.createOrder(orderReq));
 
-    /* ── Step 3：付款（→ COMPLETED） ── */
+    /* ── 現金：直接進入待付款追蹤（不呼叫 pay()） ── */
+    if (isCash) {
+      this._afterOrderSuccess(orderRes.id, orderRes.orderDateId, 'pending-cash');
+      return;
+    }
+
+    /* ── Step 3：非現金付款（→ COMPLETED） ── */
     const payMethodMap: Record<string, string> = {
       credit: 'CREDIT_CARD',
       mobile: 'MOBILE_PAY',
-      cash:   'CASH',
     };
     const payReq: PayReq = {
       id:            orderRes.id,
       orderDateId:   orderRes.orderDateId,
-      paymentMethod: payMethodMap[this.paymentMethod()] ?? 'CASH',
-      transactionId: this.paymentMethod() === 'cash'
-        ? 'CASH_PAYMENT'
-        : `DEMO_TXN_${Date.now()}`,
+      paymentMethod: payMethodMap[this.paymentMethod()] ?? 'CREDIT_CARD',
+      transactionId: `DEMO_TXN_${Date.now()}`,
       totalAmount:   orderRes.totalAmount,
     };
     await firstValueFrom(this.apiService.pay(payReq));
 
     /* ── 成功後更新本地狀態 ── */
-    this._afterOrderSuccess(orderRes.id, orderRes.orderDateId);
+    this._afterOrderSuccess(orderRes.id, orderRes.orderDateId, 'waiting');
   }
 
-  private _afterOrderSuccess(orderId: string, orderDateId: string = ''): void {
+  private _afterOrderSuccess(
+    orderId: string,
+    orderDateId: string = '',
+    initialStatus: 'pending-cash' | 'waiting' = 'waiting'
+  ): void {
     const now = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
     const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
@@ -1245,7 +1331,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     this.orderService.addOrder({
       id: orderId,
       number: orderNum,
-      status: 'waiting',
+      status: initialStatus,
       estimatedMinutes: estMin,
       items: itemTexts,
       total: this.cartTotal(),
@@ -1267,8 +1353,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
         ).subscribe({
           next: (res) => {
             if (res?.code !== 200) return;
-            const statusMap: Record<string, 'waiting' | 'cooking' | 'ready' | 'done'> = {
-              WAITING: 'waiting', COOKING: 'cooking', READY: 'done',
+            const statusMap: Record<string, OrderStatus> = {
+              PENDING_CASH: 'pending-cash',
+              WAITING:      'waiting',
+              COOKING:      'cooking',
+              READY:        'done',
             };
             const newStatus = statusMap[res.message] ?? 'waiting';
             const current = this.orderService.orders().find(o => o.id === orderId);

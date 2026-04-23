@@ -186,3 +186,82 @@
   .qr-ring, .qr-logo { animation: none; }
   .qr-dots::after    { animation: none; content: '...'; }
 }
+
+
+/* ══════════════════════════════════════════════════════
+   RWD — 確保圈環與 Logo 在各種尺寸螢幕上不被截斷
+   ══════════════════════════════════════════════════════ */
+
+/* 視窗高度 ≤ 864px（筆電縮放後）：縮小圈環避免超出 */
+@media (max-height: 864px) {
+  .qr-shell {
+    gap: 14px;
+    padding: 28px 24px;
+  }
+  .qr-rings {
+    width: 150px;
+    height: 150px;
+  }
+  .qr-ring--outer {
+    width: 182px;
+    height: 182px;
+  }
+  .qr-ring--mid {
+    width: 158px;
+    height: 158px;
+  }
+  .qr-ring--inner {
+    width: 132px;
+    height: 132px;
+  }
+  .qr-logo {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+/* 視窗更矮時（手機橫向）進一步壓縮 */
+@media (max-height: 640px) {
+  .qr-shell {
+    gap: 10px;
+    padding: 18px 24px;
+  }
+  .qr-rings {
+    width: 120px;
+    height: 120px;
+  }
+  .qr-ring--outer {
+    width: 148px;
+    height: 148px;
+  }
+  .qr-ring--mid {
+    width: 128px;
+    height: 128px;
+  }
+  .qr-ring--inner {
+    width: 106px;
+    height: 106px;
+  }
+  .qr-logo {
+    width: 82px;
+    height: 82px;
+  }
+  .qr-brand-zh {
+    font-size: clamp(18px, 5vw, 26px);
+    letter-spacing: 4px;
+  }
+  .qr-copy {
+    bottom: 10px;
+    font-size: 10px;
+  }
+}
+
+/* 超窄螢幕（手機 ≤ 360px）橫向保護 */
+@media (max-width: 360px) {
+  .qr-shell {
+    padding: 20px 16px;
+  }
+  .qr-brand-zh {
+    letter-spacing: 4px;
+  }
+}

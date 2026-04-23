@@ -150,3 +150,69 @@
   color: #c0562a;
   margin-top: 4px;
 }
+
+
+/* ══════════════════════════════════════════════════════
+   RWD — 確保在任何視窗尺寸下卡片不超出畫面
+   ══════════════════════════════════════════════════════ */
+
+/* 卡片寬度安全防護：max-width 不超過視窗可用寬度 */
+.mp-card {
+  max-width: min(380px, calc(100vw - 40px));
+}
+
+/* 視窗高度 ≤ 864px（如 1536×864 縮放後的筆電）：縮減垂直間距 */
+@media (max-height: 864px) {
+  .mp-card {
+    padding: 22px 20px;
+  }
+  .mp-header {
+    margin-bottom: 18px;
+  }
+  .mp-amount-section {
+    margin-bottom: 20px;
+  }
+  .mp-amount-value {
+    font-size: 30px;
+  }
+  .mp-items {
+    padding: 12px;
+    margin-bottom: 18px;
+  }
+  .mp-confirm-btn {
+    padding: 13px;
+  }
+  .mp-cancel-btn {
+    padding: 11px;
+  }
+}
+
+/* 視窗高度更緊時（如手機橫向）進一步壓縮 */
+@media (max-height: 680px) {
+  .mp-card {
+    padding: 16px 18px;
+  }
+  .mp-amount-value {
+    font-size: 26px;
+  }
+  .mp-header {
+    margin-bottom: 12px;
+  }
+  .mp-amount-section {
+    margin-bottom: 14px;
+  }
+  .mp-items {
+    margin-bottom: 12px;
+  }
+}
+
+/* 超窄螢幕保護 */
+@media (max-width: 400px) {
+  .mp-card {
+    border-radius: 14px;
+    padding: 20px 16px;
+  }
+  .mp-brand-name {
+    font-size: 14px;
+  }
+}

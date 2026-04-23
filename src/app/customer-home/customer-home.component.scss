@@ -4201,6 +4201,56 @@
   margin: 0 auto;
 }
 
+/* 現金待付款橫幅 */
+.pending-cash-banner {
+  background: linear-gradient(135deg, #1a3a2a 0%, #0f2a1e 100%);
+  border: 2px solid #4ade80;
+  border-radius: 24px;
+  padding: 32px 24px;
+  text-align: center;
+  margin-bottom: 24px;
+  box-shadow: 0 6px 28px rgba(74, 222, 128, 0.2);
+  animation: pcb-pulse 2s ease-in-out infinite;
+
+  .pcb-icon {
+    font-size: 2.4rem;
+    margin-bottom: 10px;
+  }
+
+  .pcb-title {
+    color: #d1fae5;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  .pcb-order-num {
+    color: #4ade80;
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: 4px;
+    margin-bottom: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pcb-hint {
+    color: #86efac;
+    font-size: 0.8rem;
+    margin-bottom: 16px;
+  }
+
+  .pcb-amount {
+    color: #fde68a;
+    font-size: 1.3rem;
+    font-weight: 700;
+  }
+}
+
+@keyframes pcb-pulse {
+  0%, 100% { box-shadow: 0 6px 28px rgba(74, 222, 128, 0.2); }
+  50%       { box-shadow: 0 6px 40px rgba(74, 222, 128, 0.45); }
+}
+
 /* 取餐號碼卡 */
 .tracker-number-card {
   background: linear-gradient(135deg, var(--orange), var(--orange-deep));
@@ -7468,10 +7518,40 @@
   &:active { transform: scale(0.985); }
 }
 
-/* 背景色 per tagType */
-.pz-bg-new     { background: linear-gradient(130deg, #b84a14 0%, #3d1204 100%); }
-.pz-bg-promo   { background: linear-gradient(130deg, #fff3d4 0%, #ffe4a0 100%); }
-.pz-bg-premium { background: linear-gradient(130deg, #3d2010 0%, #7a3a00 100%); }
+/* ── 卡片背景：六種暖棕色系（由 promotionId % 6 自動分配）──────
+   原始 3 色：深巧克力棕 / 淡香檳米黃 / 中焦糖棕
+   全部在同一暖棕色族內做深淺變化
+   forest   = 深巧克力棕   (原 Card 1)
+   burgundy = 淡香檳米黃   (原 Card 2)
+   navy     = 中焦糖棕     (原 Card 3)
+   bronze   = 深琥珀棕     (深色變體)
+   plum     = 中駝色棕     (中色變體)
+   slate    = 淺奶茶金     (淺色變體)
+──────────────────────────────────────────────────── */
+.pz-bg-forest {
+  background: linear-gradient(135deg, #5e2a14 0%, #3e1a0a 55%, #522410 100%);
+  box-shadow: 0 4px 22px rgba(94, 42, 20, 0.35);
+}
+.pz-bg-burgundy {
+  background: linear-gradient(135deg, #f5e8c0 0%, #eed8a0 55%, #f0e0b0 100%);
+  box-shadow: 0 4px 22px rgba(180, 150, 80, 0.22);
+}
+.pz-bg-navy {
+  background: linear-gradient(135deg, #8a4520 0%, #6a3214 55%, #7c3e1c 100%);
+  box-shadow: 0 4px 22px rgba(138, 69, 32, 0.35);
+}
+.pz-bg-bronze {
+  background: linear-gradient(135deg, #7a3818 0%, #5a2810 55%, #6c3014 100%);
+  box-shadow: 0 4px 22px rgba(122, 56, 24, 0.35);
+}
+.pz-bg-plum {
+  background: linear-gradient(135deg, #a05828 0%, #7c4018 55%, #8e4c22 100%);
+  box-shadow: 0 4px 22px rgba(160, 88, 40, 0.35);
+}
+.pz-bg-slate {
+  background: linear-gradient(135deg, #f0dca8 0%, #e8cc90 55%, #ecda9c 100%);
+  box-shadow: 0 4px 22px rgba(170, 140, 70, 0.22);
+}
 
 /* 左側文字區 */
 .pz-card-body {
@@ -7510,13 +7590,18 @@
   border-radius: 100px;
   font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   margin-bottom: 2px;
+  text-transform: uppercase;
 }
 
-.pzt-new     { background: rgba(255,255,255,0.22); color: #fff; }
-.pzt-promo   { background: rgba(200,120,20,0.2);  color: rgba(120,60,10,0.9); }
-.pzt-premium { background: rgba(240,198,140,0.2); color: #F0C68C; }
+/* 深色背景 → 淺金色 tag；淺色背景 → 深棕色 tag */
+.pzt-forest   { background: rgba(255, 220, 160, 0.18); color: #f0c878; border: 1px solid rgba(240,200,120,0.35); }
+.pzt-burgundy { background: rgba(140,  80,  30, 0.14); color: #7a4818; border: 1px solid rgba(140, 80, 30, 0.30); }
+.pzt-navy     { background: rgba(255, 220, 160, 0.18); color: #f0c878; border: 1px solid rgba(240,200,120,0.35); }
+.pzt-bronze   { background: rgba(255, 220, 160, 0.18); color: #f0c878; border: 1px solid rgba(240,200,120,0.35); }
+.pzt-plum     { background: rgba(255, 220, 160, 0.18); color: #f0c878; border: 1px solid rgba(240,200,120,0.35); }
+.pzt-slate    { background: rgba(140,  80,  30, 0.14); color: #7a4818; border: 1px solid rgba(140, 80, 30, 0.30); }
 
 /* 卡片標題 */
 .pz-card-title {
@@ -7526,9 +7611,13 @@
   line-height: 1.2;
 }
 
-.pz-bg-new     .pz-card-title { color: #fff; }
-.pz-bg-promo   .pz-card-title { color: #5c2e00; }
-.pz-bg-premium .pz-card-title { color: #F0C68C; }
+/* 深色背景 → 淺奶油字；淺色背景 → 深棕字 */
+.pz-bg-forest   .pz-card-title { color: #faebd0; }
+.pz-bg-burgundy .pz-card-title { color: #3e1c08; }
+.pz-bg-navy     .pz-card-title { color: #faebd0; }
+.pz-bg-bronze   .pz-card-title { color: #faebd0; }
+.pz-bg-plum     .pz-card-title { color: #faebd0; }
+.pz-bg-slate    .pz-card-title { color: #3e1c08; }
 
 /* 日期行 */
 .pz-card-date {
@@ -7538,9 +7627,12 @@
   font-size: 0.75rem;
 }
 
-.pz-bg-new     .pz-card-date { color: rgba(255,255,255,0.75); }
-.pz-bg-promo   .pz-card-date { color: rgba(80,40,0,0.65); }
-.pz-bg-premium .pz-card-date { color: rgba(240,198,140,0.75); }
+.pz-bg-forest   .pz-card-date { color: rgba(250, 220, 170, 0.80); }
+.pz-bg-burgundy .pz-card-date { color: rgba( 90,  48,  16, 0.72); }
+.pz-bg-navy     .pz-card-date { color: rgba(250, 220, 170, 0.80); }
+.pz-bg-bronze   .pz-card-date { color: rgba(250, 220, 170, 0.80); }
+.pz-bg-plum     .pz-card-date { color: rgba(250, 220, 170, 0.80); }
+.pz-bg-slate    .pz-card-date { color: rgba( 90,  48,  16, 0.72); }
 
 /* 說明文字 */
 .pz-card-desc {
@@ -7548,9 +7640,12 @@
   font-size: 0.82rem;
 }
 
-.pz-bg-new     .pz-card-desc { color: rgba(255,255,255,0.8); }
-.pz-bg-promo   .pz-card-desc { color: rgba(80,40,0,0.75); }
-.pz-bg-premium .pz-card-desc { color: rgba(240,198,140,0.8); }
+.pz-bg-forest   .pz-card-desc { color: rgba(250, 220, 170, 0.72); }
+.pz-bg-burgundy .pz-card-desc { color: rgba( 90,  48,  16, 0.65); }
+.pz-bg-navy     .pz-card-desc { color: rgba(250, 220, 170, 0.72); }
+.pz-bg-bronze   .pz-card-desc { color: rgba(250, 220, 170, 0.72); }
+.pz-bg-plum     .pz-card-desc { color: rgba(250, 220, 170, 0.72); }
+.pz-bg-slate    .pz-card-desc { color: rgba( 90,  48,  16, 0.65); }
 
 /* 查看詳情箭頭 */
 .pz-card-more {
@@ -7559,9 +7654,12 @@
   margin-top: 4px;
 }
 
-.pz-bg-new     .pz-card-more { color: rgba(255,255,255,0.9); }
-.pz-bg-promo   .pz-card-more { color: #D95C1A; }
-.pz-bg-premium .pz-card-more { color: #F0A500; }
+.pz-bg-forest   .pz-card-more { color: #f0c878; }
+.pz-bg-burgundy .pz-card-more { color: #7a4818; }
+.pz-bg-navy     .pz-card-more { color: #f0c878; }
+.pz-bg-bronze   .pz-card-more { color: #f0c878; }
+.pz-bg-plum     .pz-card-more { color: #f0c878; }
+.pz-bg-slate    .pz-card-more { color: #7a4818; }
 
 /* Detail Modal (centered) */
 .pz-overlay {

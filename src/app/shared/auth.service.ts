@@ -249,12 +249,13 @@ export class AuthService {
           this.currentMember = res;
           sessionStorage.setItem('currentMember', JSON.stringify(res));
           // 同步更新 currentUser 以維持向後相容（舊元件讀 currentUser）
-          if (res.memberId) {
+          const m = res.members;
+          if (m?.id) {
             this.currentUser = {
-              id: res.memberId,
+              id: m.id,
               role: 'customer',
-              name: res.name ?? '',
-              phone: res.phone ?? phone,
+              name: m.name ?? '',
+              phone: m.phone ?? phone,
               email: '',
               password: ''
             };

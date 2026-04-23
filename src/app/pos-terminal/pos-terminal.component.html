@@ -984,6 +984,47 @@
       即時廚房出餐進度（含客戶端點餐），可標記製作完成
     </div>
 
+    <!-- ── 待付款現金訂單區塊 ── -->
+    @if (pendingCashOrders().length > 0) {
+      <div class="pending-cash-section mb-4">
+        <div class="pcs-header">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;flex-shrink:0">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+          </svg>
+          待付款 ({{ pendingCashOrders().length }})
+        </div>
+        <div class="pcs-cards">
+          @for (order of pendingCashOrders(); track order.posId) {
+            <div class="pcs-card">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="ob-num">{{ order.number }}</span>
+                <span class="badge-unpaid">未付款</span>
+              </div>
+              @for (item of order.items; track item) {
+                <div class="ob-item">{{ item }}</div>
+              }
+              <div class="ob-meta">
+                <span>{{ order.createdAt }}</span>
+                <span>{{ order.phone }}</span>
+                <span class="mono">${{ order.total }}</span>
+              </div>
+              <button
+                class="btn btn-sm btn-confirm-cash mt-2"
+                [disabled]="confirmingCashId() === order.posId"
+                (click)="confirmCashPayment(order)"
+              >
+                @if (confirmingCashId() === order.posId) {
+                  處理中...
+                } @else {
+                  收款確認 ${{ order.total }}
+                }
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
     <div class="row g-3">
       <!-- ── 待製作欄 ── -->
       <div class="col-md-4">

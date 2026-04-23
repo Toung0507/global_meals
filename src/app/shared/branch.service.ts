@@ -123,6 +123,9 @@ export interface LangDict {
   heroChefItemName: string; heroChefPricePre: string;
   /* ── Session expired ── */
   sessionExpiredTitle: string; sessionExpiredDesc: string; sessionExpiredBtn: string;
+  /* ── Guest login page ── */
+  guestOrderBadge: string; guestPageTitle: string; guestPageSubtitle: string;
+  guestLoginPhonePlaceholder: string; guestPhoneInputError: string; guestEnterBtn: string;
 }
 
 const TW: LangDict = {
@@ -224,6 +227,12 @@ const TW: LangDict = {
   sessionExpiredDesc: '您的登入狀態已逾時，請重新登入後繼續操作。',
   heroChefItemName: '日式烤雞串', heroChefPricePre: '只要 ',
   sessionExpiredBtn: '重新登入',
+  guestOrderBadge: '訪客點餐',
+  guestPageTitle: '快速點餐，免帳號登入',
+  guestPageSubtitle: '輸入手機號碼即可立即進入點餐，不需要註冊',
+  guestLoginPhonePlaceholder: '請輸入手機號碼（至少 8 碼）',
+  guestPhoneInputError: '⚠ 請輸入正確的手機號碼（至少 8 碼）',
+  guestEnterBtn: '進入點餐',
 };
 
 const JP: LangDict = {
@@ -327,6 +336,12 @@ const JP: LangDict = {
   sessionExpiredDesc: 'セッションの有効期限が切れました。再度ログインしてください。',
   heroChefItemName: '日本風チキン串焼き', heroChefPricePre: '',
   sessionExpiredBtn: '再ログイン',
+  guestOrderBadge: 'ゲスト注文',
+  guestPageTitle: 'ゲスト注文・アカウント不要',
+  guestPageSubtitle: '電話番号を入力するだけで注文できます。登録不要。',
+  guestLoginPhonePlaceholder: '電話番号を入力してください（8桁以上）',
+  guestPhoneInputError: '⚠ 正しい電話番号を入力してください（8桁以上）',
+  guestEnterBtn: '注文へ進む',
 };
 
 const KR: LangDict = {
@@ -430,6 +445,12 @@ const KR: LangDict = {
   sessionExpiredDesc: '로그인 상태가 만료되었습니다. 다시 로그인해 주세요。',
   heroChefItemName: '일본식 닭꼬치', heroChefPricePre: '',
   sessionExpiredBtn: '다시 로그인',
+  guestOrderBadge: '게스트 주문',
+  guestPageTitle: '빠른 주문・계정 없이 이용 가능',
+  guestPageSubtitle: '전화번호만 입력하면 바로 주문할 수 있습니다. 가입 불필요.',
+  guestLoginPhonePlaceholder: '전화번호를 입력하세요（8자리 이상）',
+  guestPhoneInputError: '⚠ 올바른 전화번호를 입력하세요（8자리 이상）',
+  guestEnterBtn: '주문으로 이동',
 };
 
 const TRANSLATIONS: Record<CountryCode, LangDict> = { TW, JP, KR };

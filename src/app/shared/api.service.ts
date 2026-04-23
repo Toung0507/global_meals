@@ -154,7 +154,8 @@ export interface TodayOrderVo {
   id: string;
   orderDateId: string;
   totalAmount: number;
-  kitchenStatus: string; // WAITING / COOKING / READY
+  kitchenStatus: string;   // WAITING / COOKING / READY
+  paymentStatus: string;   // COMPLETED | PENDING_CASH
   phone: string;
   items: TodayOrderDetailVo[];
 }
@@ -179,6 +180,7 @@ export interface CreateOrdersReq {
   taxAmount: number;
   totalAmount: number;
   orderCartDetailsList: OrderCartDetailItem[];  /* 必填，不能為空陣列 */
+  paymentMethod?: string;           /* 傳 'CASH' → 後端建立 PENDING_CASH 訂單（不立即付款） */
 }
 
 export interface OrderCartDetailItem {
@@ -256,7 +258,19 @@ export interface LoginMembersReq {
   password: string;
 }
 
+export interface MembersInfo {
+  id: number;
+  name: string;
+  phone: string;
+  country?: string;
+  orderCount?: number;
+  discount?: boolean;
+  createdAt?: string;
+}
+
 export interface MembersRes extends BasicRes {
+  members?: MembersInfo;
+  /* 保留舊欄位相容（未來清除） */
   memberId?: number;
   name?: string;
   phone?: string;
@@ -500,6 +514,17 @@ export interface UpdateBranchInventoryReq {
   maxOrderQuantity?: number;
 }
 
+/* ── Payment（支付）──────────────────────────────── */
+
+export interface PaymentInitReq {
+  orderDateId: string;
+  id: string;
+}
+
+export interface LinePayRes extends BasicRes {
+  paymentUrl: string;
+}
+
 /* ── Promotions（促銷活動）────────────────────────── */
 
 /* POST /promotions/calculate 的請求
@@ -558,10 +583,21 @@ export interface PromotionsListRes {
 export interface PromotionDetailVo {
   id: number;
   name: string;
+  nameJP?: string;         /* 日文活動名稱（null 時前端 fallback 至 name） */
+  nameKR?: string;         /* 韓文活動名稱 */
+  globalAreaId?: number;   /* null = 全球活動；有值 = 分店專屬 */
   startTime: string;
   endTime: string;
   active: boolean;
   gifts: GiftDetailVo[];
+  description?: string;
+  promotionImg?: string;
+}
+
+export interface UpdatePromotionInfoReq {
+  promotionsId: number;
+  description?: string;
+  promotionImg?: string;  /* Base64 或 data URL */
 }
 
 export interface GiftDetailVo {
@@ -720,9 +756,15 @@ export class ApiService {
     );
   }
 
-  /** 取得全部活動及贈品清單（管理端列表頁）*/
-  getPromotionsList(): Observable<PromotionsListRes> {
-    return this.http.get<PromotionsListRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.LIST}`);
+  /** 取得活動及贈品清單
+   * globalAreaId 有值 → 客戶端：全球活動 + 分店專屬活動（已篩選 active + 時間範圍）
+   * 不傳 → 管理端：回傳全部活動（含停用）
+   */
+  getPromotionsList(globalAreaId?: number): Observable<PromotionsListRes> {
+    const url = globalAreaId
+      ? `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.LIST}?globalAreaId=${globalAreaId}`
+      : `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.LIST}`;
+    return this.http.get<PromotionsListRes>(url);
   }
 
   /** 建立促銷活動（可附帶建立一筆贈品規則）*/
@@ -738,6 +780,11 @@ export class ApiService {
   /** 對既有活動新增一條贈品規則 */
   addGift(req: PromotionsManageReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.ADD_GIFT}`, req);
+  }
+
+  /** 更新活動文案（description）與封面圖片 */
+  updatePromotionInfo(req: UpdatePromotionInfoReq): Observable<BasicRes> {
+    return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.UPDATE_INFO}`, req);
   }
 
   /* ══════════════════════════════════════════════════
@@ -1007,5 +1054,17 @@ export class ApiService {
   updateBranchInventory(req: UpdateBranchInventoryReq): Observable<BasicRes> {
     if (this.isMock) return of({ code: 200, message: 'ok' });
     return this.http.post<BasicRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.BRANCH_INVENTORY.UPDATE}`, req);
+  }
+
+  /** 取得 LINE Pay 付款連結 */
+  getLinePayUrl(req: PaymentInitReq): Observable<LinePayRes> {
+    if (this.isMock) return of({ code: 200, message: 'ok', paymentUrl: 'https://sandbox-web-pay.line.me/web/payment/wait?transactionReserveId=mock' });
+    return this.http.post<LinePayRes>(`${this.BASE}/${API_CONFIG.ENDPOINTS.PAYMENT.LINEPAY_REQUEST}`, req);
+  }
+
+  /** 取得 ECPay 自動提交 HTML 表單（字串） */
+  getEcpayForm(req: PaymentInitReq): Observable<string> {
+    if (this.isMock) return of('<p>ECPay Mock</p>');
+    return this.http.post(`${this.BASE}/${API_CONFIG.ENDPOINTS.PAYMENT.ECPAY_REQUEST}`, req, { responseType: 'text' });
   }
 }

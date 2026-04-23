@@ -24,7 +24,8 @@ import { FormsModule } from '@angular/forms';
 import { QRCodeComponent } from 'angularx-qrcode';
 
 import { AuthService } from '../shared/auth.service';
-import { ApiService, GlobalAreaVO, RegionVO, PromotionDetailVo, ProductVO, BranchInventoryVO, MonthlyReportRes } from '../shared/api.service';
+import { ApiService, GlobalAreaVO, RegionVO, PromotionDetailVo, GiftDetailVo, ProductVO, BranchInventoryVO, MonthlyReportRes, StaffVO, UpdatePromotionInfoReq } from '../shared/api.service';
+import { GeminiService } from '../shared/gemini.service';
 
 /* ── 側邊欄頁籤型別 ─────────────────────────────────── */
 export type DashTab = 'dashboard' | 'orders' | 'products' | 'promotions' | 'inventory' | 'users' | 'tax' | 'finance' | 'branches';
@@ -60,6 +61,8 @@ interface DashPromo {
   image?: string;
   badgeColor?: string;
   minAmount?: number;
+  gifts?: GiftDetailVo[];
+  isDemoOnly?: boolean;
 }
 
 /* ── 庫存型別 ──────────────────────────────────────── */
@@ -266,11 +269,145 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   }
 
+  /* ── 批次刪除模式 ───────────────────────────────── */
+  bulkDeleteMode  = signal(false);
+  selectedPromoIds = signal<Set<number>>(new Set());
+  /** 刪除確認狀態：active-warning / confirm / bulk */
+  deleteConfirmState = signal<null | { type: 'active-warning' | 'confirm' | 'bulk'; ids: number[] }>(null);
+
+  toggleBulkDeleteMode(): void {
+    const next = !this.bulkDeleteMode();
+    this.bulkDeleteMode.set(next);
+    if (!next) this.selectedPromoIds.set(new Set());
+  }
+
+  isPromoSelected(id: number): boolean {
+    return this.selectedPromoIds().has(id);
+  }
+
+  togglePromoSelection(id: number): void {
+    this.selectedPromoIds.update(s => {
+      const next = new Set(s);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  selectedCount(): number { return this.selectedPromoIds().size; }
+
+  requestBulkDelete(): void {
+    if (!this.selectedPromoIds().size) { this.showToast('請先勾選要刪除的活動'); return; }
+    this.deleteConfirmState.set({ type: 'bulk', ids: Array.from(this.selectedPromoIds()) });
+  }
+
+  /** 點刪除按鈕時呼叫，依狀態顯示對應 modal */
+  requestDeletePromo(promo: DashPromo): void {
+    if (promo.isActive && !promo.ended) {
+      this.deleteConfirmState.set({ type: 'active-warning', ids: [promo.id] });
+    } else {
+      this.deleteConfirmState.set({ type: 'confirm', ids: [promo.id] });
+    }
+  }
+
+  confirmDelete(): void {
+    const state = this.deleteConfirmState();
+    if (!state) return;
+    state.ids.forEach(id => this.promos.update(list => list.filter(p => p.id !== id)));
+    this.showToast(state.ids.length > 1 ? `🗑️ 已刪除 ${state.ids.length} 個活動` : '🗑️ 活動已刪除');
+    this.deleteConfirmState.set(null);
+    this.bulkDeleteMode.set(false);
+    this.selectedPromoIds.set(new Set());
+    this.selectedPromo.set(null);
+  }
+
+  cancelDeleteConfirm(): void { this.deleteConfirmState.set(null); }
+
   /* ── 活動詳情 ────────────────────────────────────── */
   selectedPromo = signal<DashPromo | null>(null);
 
   openPromoDetail(promo: DashPromo): void { this.selectedPromo.set(promo); }
   closePromoDetail(): void { this.selectedPromo.set(null); }
+
+  /* ── 編輯活動資訊（文案 + 封面圖）────────────────── */
+  editPromoInfoId  = signal<number | null>(null);
+  editPromoInfoDraft = { description: '', image: '' };
+  editPromoInfoSaving = signal(false);
+
+  openEditPromoInfo(promo: DashPromo): void {
+    this.editPromoInfoDraft = { description: promo.description ?? '', image: promo.image ?? '' };
+    this.editPromoInfoId.set(promo.id);
+  }
+
+  closeEditPromoInfo(): void {
+    this.editPromoInfoId.set(null);
+  }
+
+  onEditPromoImageChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    const reader = new FileReader();
+    reader.onload = (e) => { this.editPromoInfoDraft.image = e.target?.result as string; };
+    reader.readAsDataURL(input.files[0]);
+  }
+
+  /* ── 一鍵 AI 文案生成 ───────────────────────────── */
+  generatingAiCopy = signal(false);
+
+  generateAiCopy(): void {
+    const id = this.editPromoInfoId();
+    if (id === null) return;
+    const promo = this.promos().find(p => p.id === id);
+    if (!promo) return;
+    this.generatingAiCopy.set(true);
+    const gifts = promo.gifts?.filter(g => g.active).map(g => g.productName) ?? [];
+    this.geminiService.generatePromoCopy({
+      name:       promo.rawName,
+      startDate:  promo.rawStartTime,
+      endDate:    promo.rawEndTime,
+      minAmount:  promo.minAmount,
+      gifts,
+    }).subscribe({
+      next: (text) => {
+        this.editPromoInfoDraft.description = text;
+        this.generatingAiCopy.set(false);
+      },
+      error: () => {
+        this.generatingAiCopy.set(false);
+        this.showToast('❌ AI 生成失敗，請確認網路或 API Key');
+      }
+    });
+  }
+
+  saveEditPromoInfo(): void {
+    const id = this.editPromoInfoId();
+    if (id === null || id < 0) return;
+    this.editPromoInfoSaving.set(true);
+    const req: UpdatePromotionInfoReq = {
+      promotionsId: id,
+      description: this.editPromoInfoDraft.description,
+      promotionImg: this.editPromoInfoDraft.image || undefined,
+    };
+    this.apiService.updatePromotionInfo(req).subscribe({
+      next: () => {
+        const saved = { ...this.editPromoInfoDraft };
+        this.promos.update(list => list.map(p => p.id === id
+          ? { ...p, description: saved.description, image: saved.image }
+          : p));
+        /* 如果詳情 modal 也打開著，同步更新 */
+        const sel = this.selectedPromo();
+        if (sel?.id === id) {
+          this.selectedPromo.update(s => s ? { ...s, description: saved.description, image: saved.image } : null);
+        }
+        this.editPromoInfoSaving.set(false);
+        this.closeEditPromoInfo();
+        this.showToast('✅ 活動資訊已更新');
+      },
+      error: () => {
+        this.editPromoInfoSaving.set(false);
+        this.showToast('❌ 更新失敗，請確認後端連線');
+      }
+    });
+  }
 
   /* ── QR Code 分店 ───────────────────────────────── */
   qrBranchId = signal<number | null>(null);
@@ -289,6 +426,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     { id: 1, name: '台灣台北店', city: '台北', country: '台灣', regionsId: 1, address: '台北市中山區南京東路一段 88 號', phone: '02-2345-6789' },
     { id: 2, name: '日本東京店', city: '東京', country: '日本', regionsId: 2, address: '東京都新宿区新宿3-10-1',          phone: '+81-3-1234-5678' },
     { id: 3, name: '泰國曼谷店', city: '曼谷', country: '泰國', regionsId: 3, address: '101 Sukhumvit Rd, Bangkok',       phone: '+66-2-987-6543' },
+    { id: 4, name: '韓國首爾店', city: '首爾', country: '韓國', regionsId: 4, address: '서울특별시 강남구 테헤란로 152',    phone: '+82-2-3456-7890' },
   ]);
 
   /* ── Modal 狀態 ─────────────────────────────────────── */
@@ -303,7 +441,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   showPromoPanel = signal(false);
   giftDraft    = { promoId: 0, rawName: '', rawStartTime: '', rawEndTime: '', fullAmount: 300, giftProductId: null as number | null, quantity: -1 };
   accountDraft: { name: string; account: string; password: string; branch: string; shift: string; role: 'bm' | 'staff'; isActive: boolean; country: string } =
-    { name: '', account: '', password: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true, country: 'TW' };
+    { name: '', account: '', password: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true, country: '台灣' };
   taxDraft: { country: string; countryCode: string; currency: string; taxType: 'INCLUSIVE' | 'EXCLUSIVE'; rate: number; effectiveDate: string; discountLimit: number } =
     { country: '', countryCode: '', currency: '', taxType: 'INCLUSIVE', rate: 5, effectiveDate: '', discountLimit: 0 };
   branchDraft     = { regionsId: 0, city: '', address: '', phone: '' };
@@ -386,6 +524,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     private router: Router,
     public authService: AuthService,
     private apiService: ApiService,
+    private geminiService: GeminiService,
   ) {}
 
   ngOnInit(): void {
@@ -401,6 +540,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.loadPromos();
     this.loadProducts();
     this.loadInventory();
+    this.loadStaff();
   }
 
   ngOnDestroy(): void {
@@ -426,7 +566,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       next: (res) => {
         if (res?.globalAreaList?.length) {
           this.branches.set(res.globalAreaList.map((b: GlobalAreaVO) => ({
-            id: b.id, name: b.branch, city: '',
+            id: b.id, name: b.branch,
+            city: b.branch?.replace(b.country ?? '', '').replace(/店$/, '') ?? '',
             country: b.country, regionsId: b.regionsId ?? 0,
             address: b.address, phone: b.phone
           })));
@@ -458,26 +599,56 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  /* ── Demo 結束活動（永遠附加在 API 資料後，id 為負數）── */
+  private readonly DEMO_ENDED: DashPromo[] = [
+    { id: -1, isDemoOnly: true, title: '春節限定大禮包', scope: '全部分店', isActive: false, color: '#6b7280', ended: true, rawName: '春節限定大禮包', rawStartTime: '2026-01-15', rawEndTime: '2026-02-14', type: 'promotion', description: '春節期間單筆消費滿 NT$400 即享豐盛大禮包，感謝顧客一整年的支持與厚愛。', badgeColor: '#6b7280', minAmount: 400, gifts: [] },
+    { id: -2, isDemoOnly: true, title: '週年慶全館8折', scope: '全部分店', isActive: false, color: '#6b7280', ended: true, rawName: '週年慶全館8折', rawStartTime: '2025-10-01', rawEndTime: '2025-10-31', type: 'promotion', description: '週年慶期間全品項享八折優惠，限時一個月，感謝所有支持懶飽飽的朋友。', badgeColor: '#6b7280', minAmount: undefined, gifts: [] },
+    { id: -3, isDemoOnly: true, title: '冬季滿額送暖禮', scope: '台灣台北店', isActive: false, color: '#6b7280', ended: true, rawName: '冬季滿額送暖禮', rawStartTime: '2025-12-01', rawEndTime: '2026-01-10', type: 'promotion', description: '寒冬時節，消費滿 NT$250 即可兌換冬季限定熱飲，讓您在寒冬中感受懶飽飽的溫暖。', badgeColor: '#6b7280', minAmount: 250, gifts: [] },
+  ];
+
   /* ── 從後端重新載入促銷活動清單 ─────────────────── */
   private loadPromos(): void {
     this.apiService.getPromotionsList().subscribe({
       next: (res) => {
         if (res?.data?.length) {
-          this.promos.set(res.data.map((p: PromotionDetailVo) => ({
-            id: p.id,
-            title: p.name + (p.gifts?.length ? `（${p.gifts.length} 項贈品）` : ''),
-            scope: `${p.startTime} ～ ${p.endTime}`,
-            isActive: p.active,
-            color: p.active ? '#c49756' : 'rgba(255,255,255,0.18)',
-            ended: !!p.endTime && new Date(p.endTime) < new Date(),
-            rawName:      p.name,
-            rawStartTime: p.startTime,
-            rawEndTime:   p.endTime,
-            type:         'promotion' as const,
-          })));
+          this.promos.set([...res.data.map((p: PromotionDetailVo) => {
+            /* 封面圖：後端回傳純 Base64，補上 data URL 前綴 */
+            const imageStr = p.promotionImg
+              ? (p.promotionImg.startsWith('data:') ? p.promotionImg : `data:image/jpeg;base64,${p.promotionImg}`)
+              : '';
+            /* 最低消費：取贈品規則中最小的 fullAmount */
+            const minAmount = p.gifts?.length
+              ? Math.min(...p.gifts.map((g: { fullAmount: number }) => +g.fullAmount))
+              : undefined;
+            return {
+              id: p.id,
+              title: p.name + (p.gifts?.length ? `（${p.gifts.length} 項贈品）` : ''),
+              scope: `${p.startTime} ～ ${p.endTime}`,
+              isActive: p.active,
+              color:     p.active ? '#c49756' : 'rgba(255,255,255,0.18)',
+              badgeColor: p.active ? '#c49756' : '#6b7280',
+              ended:     !!p.endTime && new Date(p.endTime) < new Date(),
+              rawName:      p.name,
+              rawStartTime: p.startTime,
+              rawEndTime:   p.endTime,
+              type:         'promotion' as const,
+              description:  p.description ?? '',
+              image:        imageStr,
+              minAmount,
+              gifts:        p.gifts ?? [],
+            };
+          }), ...this.DEMO_ENDED]);
+        } else {
+          this.promos.update(list => [...list.filter(p => !p.isDemoOnly), ...this.DEMO_ENDED]);
         }
       },
-      error: () => console.warn('[Manager] 活動 API 連線失敗，使用 Demo 資料')
+      error: () => {
+        console.warn('[Manager] 活動 API 連線失敗，使用 Demo 資料');
+        this.promos.update(list => {
+          const already = list.some(p => p.isDemoOnly);
+          return already ? list : [...list, ...this.DEMO_ENDED];
+        });
+      }
     });
   }
 
@@ -531,6 +702,34 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         /* 若後端回空清單，保留 mock 初始值供 Demo 使用 */
       },
       error: () => console.warn('[Manager] 庫存 API 連線失敗，使用 Demo 資料')
+    });
+  }
+
+  private loadStaff(): void {
+    this.apiService.getAllStaff().subscribe({
+      next: (res) => {
+        if (res?.staffList?.length) {
+          this.accounts.set(res.staffList
+            .filter((s: StaffVO) => s.role !== 'ADMIN')
+            .map((s: StaffVO) => {
+              const branchData = this.branches().find(b => b.id === s.globalAreaId);
+              const branchName = branchData?.name ?? `分店 ${s.globalAreaId}`;
+              const role: 'bm' | 'staff' = s.role === 'REGION_MANAGER' ? 'bm' : 'staff';
+              return {
+                id:       s.id,
+                name:     s.name,
+                account:  s.account,
+                branch:   branchName,
+                joinedAt: s.hireAt?.slice(0, 10) ?? '',
+                isActive: s.isStatus,
+                role,
+                country:  branchData?.country ?? ''
+              };
+            })
+          );
+        }
+      },
+      error: () => console.warn('[Manager] 員工 API 連線失敗，使用 Demo 資料')
     });
   }
 
@@ -595,13 +794,10 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     return new Date().toISOString().slice(0, 10);
   }
 
-  /* ── 活動：刪除 ─────────────────────────────────── */
+  /* ── 活動：刪除（由 confirmDelete 執行，不直接呼叫）── */
   deletePromo(id: number): void {
     const promo = this.promos().find(p => p.id === id);
-    if (!promo) return;
-    if (!confirm(`確定刪除活動「${promo.rawName}」？此操作無法復原。`)) return;
-    this.promos.update(list => list.filter(p => p.id !== id));
-    this.showToast(`🗑️ 活動「${promo.rawName}」已刪除`);
+    if (promo) this.requestDeletePromo(promo);
   }
 
   /* ── 活動：啟用/停用切換 ─────────────────────────── */
@@ -711,9 +907,17 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 帳號：停/復權 ─────────────────────────────── */
   toggleAccount(id: number): void {
-    this.accounts.update(list =>
-      list.map(a => a.id === id ? { ...a, isActive: !a.isActive } : a)
-    );
+    const target = this.accounts().find(a => a.id === id);
+    if (!target) return;
+    const newStatus = !target.isActive;
+    this.accounts.update(list => list.map(a => a.id === id ? { ...a, isActive: newStatus } : a));
+    this.apiService.updateStaffStatus(id, { isStatus: newStatus }).subscribe({
+      next: () => this.showToast(newStatus ? `✅ 帳號「${target.name}」已復權` : `🔒 帳號「${target.name}」已停權`),
+      error: () => {
+        this.accounts.update(list => list.map(a => a.id === id ? { ...a, isActive: !newStatus } : a));
+        this.showToast('⚠️ 更新失敗，請確認後端連線');
+      }
+    });
   }
 
   /* ── 稅率：啟動編輯 ─────────────────────────────── */
@@ -929,8 +1133,14 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   /* ── 新增 / 編輯帳號 Modal ─────────────────────────── */
   openAddAccount(): void {
     this.editingAccountId.set(null);
-    this.accountDraft = { name: '', account: '', password: '', branch: '台灣台北店', shift: '早班', role: 'bm', isActive: true, country: 'TW' };
+    const firstBranch = this.branches()[0];
+    this.accountDraft = { name: '', account: '', password: '', branch: firstBranch?.name ?? '台灣台北店', shift: '早班', role: 'bm', isActive: true, country: firstBranch?.country ?? '台灣' };
     this.activeModal.set('addAccount');
+  }
+
+  onAccountCountryChange(country: string): void {
+    const match = this.branches().find(b => b.country === country);
+    if (match) this.accountDraft.branch = match.name;
   }
 
   openEditAccount(id: number): void {
@@ -973,22 +1183,22 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       this.closeModal();
       this.showToast(`✅ 帳號「${savedName}」已更新`);
     } else {
-      const ids = this.accounts().map(a => a.id);
-      const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
-      const today = new Date().toISOString().slice(0, 10);
-      this.accounts.update(list => [...list, {
-        id: newId,
+      const globalAreaId = this.branches().find(b => b.name === this.accountDraft.branch)?.id ?? 1;
+      const backendRole = this.accountDraft.role === 'bm' ? 'REGION_MANAGER' : 'STAFF';
+      this.apiService.createStaff({
         name: this.accountDraft.name,
         account: this.accountDraft.account,
-        branch: this.accountDraft.branch,
-        shift: this.accountDraft.role === 'staff' ? this.accountDraft.shift : undefined,
-        joinedAt: today,
-        isActive: this.accountDraft.isActive,
-        role: this.accountDraft.role,
-        country: this.accountDraft.country
-      }]);
-      this.closeModal();
-      this.showToast(`✅ 帳號「${savedName}」已新增`);
+        password: this.accountDraft.password,
+        role: backendRole,
+        globalAreaId
+      }).subscribe({
+        next: () => {
+          this.closeModal();
+          this.showToast(`✅ 帳號「${savedName}」已新增`);
+          this.loadStaff();
+        },
+        error: () => this.showToast('⚠️ 新增失敗，請確認後端連線')
+      });
     }
   }
 

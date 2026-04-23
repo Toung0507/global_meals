@@ -10,6 +10,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../shared/auth.service';
 import { LoadingService } from '../../shared/loading.service';
 import { BranchService } from '../../shared/branch.service';
+import { ApiService } from '../../shared/api.service';
 
 @Component({
   selector: 'app-customer-guest',
@@ -26,11 +27,15 @@ export class CustomerGuestComponent implements OnInit {
   /** 是否顯示格式錯誤 */
   phoneError: boolean = false;
 
+  /** 目前語系翻譯字典（響應式 signal，自動隨國家切換更新） */
+  get lang() { return this.branchService.lang(); }
+
   constructor(
     private router: Router,
     private authService: AuthService,
     private loadingService: LoadingService,
-    private branchService: BranchService
+    public branchService: BranchService,
+    private apiService: ApiService
   ) {}
 
   ngOnInit(): void {
@@ -48,16 +53,19 @@ export class CustomerGuestComponent implements OnInit {
     }
     this.phoneError = false;
 
-    /* 以訪客身份登入（不需密碼） */
-    this.authService.loginAsGuest(this.phone.trim());
+    const proceed = () => {
+      this.authService.loginAsGuest(this.phone.trim());
+      this.loadingService.showCustomerLoading();
+      setTimeout(() => {
+        this.router.navigate(['/customer-home']).then(() => this.loadingService.hide());
+      }, 6200);
+    };
 
-    /* 顯示橘色 Loading 後導向主頁 */
-    this.loadingService.showCustomerLoading();
-    setTimeout(() => {
-      this.router.navigate(['/customer-home']).then(() => {
-        this.loadingService.hide();
-      });
-    }, 6200);
+    this.apiService.registerGuest({
+      name: '訪客',
+      phone: this.phone.trim(),
+      country: this.branchService.country
+    }).subscribe({ next: proceed, error: proceed });
   }
 
   /** 清除錯誤狀態 */

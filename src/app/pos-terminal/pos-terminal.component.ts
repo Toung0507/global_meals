@@ -26,7 +26,8 @@ import { CommonModule } from '@angular/common';
 
 import { AuthService } from '../shared/auth.service';
 import { OrderService, LiveOrder } from '../shared/order.service';
-import { ApiService } from '../shared/api.service';
+import { ApiService, CartSyncReq, CreateOrdersReq, PayReq } from '../shared/api.service';
+import { firstValueFrom } from 'rxjs';
 
 /* ── 頁籤型別 ──────────────────────────────────────── */
 export type PosTab = 'pos' | 'board' | 'stock' | 'promo' | 'staff' | 'report';
@@ -68,6 +69,18 @@ interface PosPromo {
   image?: string;
   badgeColor?: string;
   minAmount?: number;
+}
+
+/* ── 待付款現金訂單型別 ─────────────────────────────── */
+interface PendingCashOrder {
+  posId:       string;   /* DB-YYYYMMDD-XXXX */
+  dbId:        string;   /* 0001 */
+  orderDateId: string;   /* YYYYMMDD */
+  number:      string;   /* A-0001 */
+  total:       number;
+  phone:       string;
+  items:       string[];
+  createdAt:   string;
 }
 
 /* ── 員工帳號型別 ───────────────────────────────────── */
@@ -175,6 +188,10 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   posPromoDraft = { name: '', description: '', startTime: '', endTime: '', badgeColor: '#c49756', minAmount: null as number | null, image: '', currency: 'NT$' };
   posToastMsg = signal('');
   private posToastTimer: any = null;
+
+  /* ── 待付款現金訂單（客戶端現金下單，尚未至櫃台付款）── */
+  pendingCashOrders = signal<PendingCashOrder[]>([]);
+  confirmingCashId  = signal<string | null>(null); /* 收款中的訂單 posId */
 
   /* ── 會員/訪客模式 ─────────────────────────────────
    * 'none'   = 未選擇（顯示選擇按鈕）
@@ -431,25 +448,25 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     this._fetchTodayOrders();
     this.boardPollInterval = setInterval(() => this._fetchTodayOrders(), 5000);
 
-    // ⚠ TODO [API串接點 - 載入商品清單]
-    // 後端 ProductsController 建立後，取消下方區塊，
-    // 並將 products signal 初始值改為空陣列 []：
-    // this.apiService.getAllActiveProducts().subscribe({
-    //   next: (res) => {
-    //     this.products.set(res.products.map(p => ({
-    //       id: p.id,
-    //       name: p.name,
-    //       eng: p.name,                    // 後端若有英文欄位則帶入
-    //       price: p.basePrice,
-    //       emoji: '',
-    //       bg: 'linear-gradient(135deg,#1e1a14,#3a2e20)',
-    //       imgSrc: `/api/products/${p.id}/image`,  // BLOB 圖片
-    //       stock: p.stockQuantity,
-    //       category: p.category
-    //     })));
-    //   },
-    //   error: (err) => console.error('[POS] 載入商品失敗', err)
-    // });
+    const globalAreaId = this.authService.currentStaff?.globalAreaId ?? 1;
+    this.apiService.getActiveProducts(globalAreaId).subscribe({
+      next: (res) => {
+        if (res?.products?.length) {
+          this.products.set(res.products.map(p => ({
+            id:       p.id,
+            name:     p.name,
+            eng:      p.name,
+            price:    p.basePrice,
+            emoji:    '',
+            bg:       'linear-gradient(135deg,#1e1a14,#3a2e20)',
+            stock:    p.stockQuantity,
+            category: p.category,
+            badge:    p.stockQuantity <= 5 ? 'low' as const : undefined
+          })));
+        }
+      },
+      error: (err) => console.warn('[POS] 商品 API 失敗，使用本機 Demo 資料', err)
+    });
   }
 
   ngAfterViewInit(): void {
@@ -463,26 +480,50 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.boardPollInterval !== null) clearInterval(this.boardPollInterval);
   }
 
-  /* 從後端拉今日訂單，同步至 OrderService */
+  /* 從後端拉今日訂單，同步至 OrderService（已付款）或 pendingCashOrders（待付款） */
   private _fetchTodayOrders(): void {
     this.apiService.getTodayOrders().subscribe({
       next: (res) => {
         if (!res?.orders) return;
         const pad = (n: number) => String(n).padStart(2, '0');
+        const now = new Date();
+        const nowStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+        /* 本次拉到的 PENDING_CASH posId 集合，用來清除已不在後端的舊項目 */
+        const freshPendingIds = new Set<string>();
+
         res.orders.forEach(o => {
           const existingId = `DB-${o.orderDateId}-${o.id}`;
+          const itemTexts = (o.items ?? [])
+            .filter(i => !i.gift)
+            .map(i => `${i.productName} × ${i.quantity}`);
+
+          /* ── PENDING_CASH：分流至待付款看板 ── */
+          if (o.paymentStatus === 'PENDING_CASH') {
+            freshPendingIds.add(existingId);
+            const alreadyPending = this.pendingCashOrders().some(p => p.posId === existingId);
+            if (!alreadyPending) {
+              this.pendingCashOrders.update(list => [...list, {
+                posId:       existingId,
+                dbId:        o.id,
+                orderDateId: o.orderDateId,
+                number:      `A-${o.id}`,
+                total:       Number(o.totalAmount),
+                phone:       o.phone,
+                items:       itemTexts,
+                createdAt:   nowStr,
+              }]);
+            }
+            return; /* 不加入廚房看板 */
+          }
+
+          /* ── COMPLETED：一般廚房看板流程 ── */
           const existing = this.orderService.orders().find(x => x.id === existingId);
-          /* 狀態對應：WAITING→waiting, COOKING→cooking, READY→done */
           const statusMap: Record<string, 'waiting' | 'cooking' | 'ready' | 'done'> = {
             WAITING: 'waiting', COOKING: 'cooking', READY: 'done'
           };
           const status = statusMap[o.kitchenStatus] ?? 'waiting';
-          const itemTexts = (o.items ?? [])
-            .filter(i => !i.gift)
-            .map(i => `${i.productName} × ${i.quantity}`);
           if (!existing) {
-            /* 新訂單：加入看板 */
-            const now = new Date();
             this.orderService.addOrder({
               id: existingId,
               number: `A-${o.id}`,
@@ -490,16 +531,20 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
               estimatedMinutes: 10,
               items: itemTexts,
               total: Number(o.totalAmount),
-              createdAt: `${pad(now.getHours())}:${pad(now.getMinutes())}`,
+              createdAt: nowStr,
               payMethod: '線上付款',
               source: 'customer',
               customerName: o.phone,
             } as LiveOrder);
           } else if (existing.status !== status) {
-            /* 已存在但狀態有變 → 同步更新 */
             this.orderService.updateStatus(existingId, status);
           }
         });
+
+        /* 清除後端已不存在（已付款）的 PENDING_CASH 項目 */
+        this.pendingCashOrders.update(list =>
+          list.filter(p => freshPendingIds.has(p.posId))
+        );
       },
       error: () => { /* 靜默失敗，下次再重試 */ }
     });
@@ -665,36 +710,59 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cashInput.set('');
   }
 
-  /* ── 確認結帳：推送至 OrderService ─────────────────── */
-  confirmCheckout(): void {
+  /* ── 確認結帳：推送至後端 + OrderService ────────────── */
+  async confirmCheckout(): Promise<void> {
     if (this.cartItems().length === 0) return;
 
-    // ⚠ TODO [API串接點 - POS 下單與結帳]
-    // 串接後，在此處加入後端 createOrder → pay 流程：
-    // const user = this.authService.currentUser;
-    // const member = this.foundMember();
-    // this.apiService.createOrder({
-    //   cartId: 0,                               // 0 = 讓後端建立新購物車
-    //   globalAreaId: 1,                         // 需從登入資訊取得 global_area_id
-    //   memberId: member ? /* member.id */ 0 : 0,
-    //   phone: this.orderMode() === 'guest'
-    //            ? this.guestPhone()
-    //            : (member?.phone ?? ''),
-    //   paymentMethod: this.payMethod() === 'cash'   ? 'CASH'
-    //                : this.payMethod() === 'card'   ? 'CREDIT_CARD'
-    //                : 'MOBILE_PAY'
-    // }).subscribe({
-    //   next: (orderRes) => {
-    //     this.apiService.pay({
-    //       orderId: orderRes.orderId,
-    //       orderDateId: orderRes.orderDateId
-    //     }).subscribe({
-    //       next: () => { /* 清空購物車 + 顯示成功 */ },
-    //       error: () => console.error('[POS] 結帳失敗')
-    //     });
-    //   },
-    //   error: () => console.error('[POS] 建立訂單失敗')
-    // });
+    const staff        = this.authService.currentStaff;
+    const globalAreaId = staff?.globalAreaId ?? 1;
+    const memberId     = 1;
+    const phone        = this.orderMode() === 'guest'
+                           ? this.guestPhone()
+                           : (this.foundMember()?.phone ?? '');
+    const total        = this.discountedTotal;
+    const items        = this.cartItems();
+    const payMethodMap: Record<string, string> = { cash: 'CASH', card: 'CREDIT_CARD', mobile: 'MOBILE_PAY' };
+    const payMethod    = payMethodMap[this.payMethod()] ?? 'CASH';
+
+    try {
+      let cartId: number | null = null;
+      for (const item of items) {
+        const syncReq: CartSyncReq = {
+          cartId,
+          globalAreaId,
+          productId:     item.id,
+          quantity:      item.qty,
+          operationType: 'STAFF',
+          memberId,
+          staffId:       staff?.id
+        };
+        const syncRes = await firstValueFrom(this.apiService.syncCart(syncReq));
+        cartId = syncRes.cartId;
+      }
+
+      const orderRes = await firstValueFrom(this.apiService.createOrder({
+        orderCartId:          String(cartId!),
+        globalAreaId,
+        memberId,
+        phone,
+        subtotalBeforeTax:    total,
+        taxAmount:            0,
+        totalAmount:          total,
+        orderCartDetailsList: items.map(i => ({ productId: i.id, quantity: i.qty, isGift: false }))
+      } as CreateOrdersReq));
+
+      await firstValueFrom(this.apiService.pay({
+        id:            orderRes.id,
+        orderDateId:   orderRes.orderDateId,
+        paymentMethod: payMethod,
+        transactionId: payMethod === 'CASH' ? 'CASH_PAYMENT' : `POS_${Date.now()}`,
+        totalAmount:   total
+      } as PayReq));
+    } catch (err) {
+      console.error('[POS] 結帳 API 失敗', err);
+      this.posShowToast('⚠️ 訂單送出失敗，請確認後端連線');
+    }
 
     const now = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
@@ -761,6 +829,32 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   /* 搜尋關鍵字更新 */
   onSearch(event: Event): void {
     this.searchQuery.set((event.target as HTMLInputElement).value);
+  }
+
+  /* ── 現金收款確認（PENDING_CASH → COMPLETED → WAITING）── */
+  async confirmCashPayment(order: PendingCashOrder): Promise<void> {
+    if (this.confirmingCashId() === order.posId) return; /* 防重複點擊 */
+    this.confirmingCashId.set(order.posId);
+    try {
+      const res = await firstValueFrom(this.apiService.pay({
+        id:            order.dbId,
+        orderDateId:   order.orderDateId,
+        paymentMethod: 'CASH',
+        transactionId: 'CASH_PAYMENT',
+        totalAmount:   order.total,
+      }));
+      if (res?.code === 200) {
+        /* 移出待付款列表，下次輪詢會自動帶進廚房看板 */
+        this.pendingCashOrders.update(list => list.filter(p => p.posId !== order.posId));
+        this.posShowToast(`收款完成：${order.number}`);
+      } else {
+        this.posShowToast('收款失敗，請重試');
+      }
+    } catch {
+      this.posShowToast('收款失敗，請確認後端連線');
+    } finally {
+      this.confirmingCashId.set(null);
+    }
   }
 
   /* ── 訂單看板：狀態流轉 ───────────────────────────── */

@@ -17,7 +17,7 @@
 export const API_CONFIG = {
   /** ⚠ Demo 離線模式：true = 不發 HTTP 請求，直接回傳假資料（不需開 Eclipse / DB）
    *  切換真實後端時改為 false 即可，其餘程式碼不需異動。 */
-  MOCK_MODE: true,
+  MOCK_MODE: false,
 
   BASE_URL: '', // ⚠ 透過 Angular proxy 轉發，相對路徑即可（proxy.conf.json → localhost:8080）
   TIMEOUT: 10000, // 10 秒逾時
@@ -54,6 +54,7 @@ export const API_CONFIG = {
       CALCULATE: 'lazybaobao/promotions/calculate', // POST 結帳時計算促銷
       AVAILABLE_GIFTS: 'lazybaobao/promotions/get_available_gifts', // POST 取得可選贈品（?amount=xxx）
       ADD_GIFT: 'lazybaobao/promotions/add_gift', // POST 新增贈品規則至活動
+      UPDATE_INFO: 'lazybaobao/promotions/update_info', // POST 更新活動文案與封面圖
     },
 
     // 分店（GlobalAreaController，@RequestMapping("lazybaobao/global_area")）
@@ -119,6 +120,14 @@ export const API_CONFIG = {
     BRANCH_INVENTORY: {
       GET_BY_AREA: 'lazybaobao/branch_inventory/:areaId', // GET
       UPDATE:      'lazybaobao/branch_inventory/update',  // POST
+    },
+
+    // 支付（PaymentController，lazybaobao 前綴，透過 Angular proxy 轉發）
+    PAYMENT: {
+      LINEPAY_REQUEST: 'lazybaobao/payment/linepay/request', // POST 取得 LINE Pay 付款 URL
+      LINEPAY_CONFIRM: 'lazybaobao/payment/linepay/confirm', // GET  LINE Pay 回調（後端處理）
+      ECPAY_REQUEST:   'lazybaobao/payment/ecpay/request',   // POST 取得 ECPay HTML 表單
+      ECPAY_CALLBACK:  'lazybaobao/payment/ecpay/callback',  // POST ECPay 付款結果通知
     },
   },
 };

@@ -163,7 +163,7 @@
       [class.active]="activeTab() === 'finance'"
       (click)="setTab('finance')"
     >
-      <span class="nav-icon">💰</span> 財務報表
+      <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span> 財務報表
     </div>
     <div
       class="nav-item"
@@ -680,20 +680,21 @@
               設定滿額優惠、折扣活動與公告，切換開關即時啟用/停用
             </div>
           </div>
-          <button class="btn btn-sm btn-gold" (click)="openAddPromo()">
-            + 新增活動
-          </button>
-        </div>
-
-        <!-- 類型篩選 Tab -->
-        <div class="promo-type-tabs mb-3">
-          @for (tab of [['all','全部'],['promotion','活動'],['announcement','公告']] ; track tab[0]) {
-            <button
-              class="promo-type-tab"
-              [class.active]="promoTypeTab() === tab[0]"
-              (click)="promoTypeTab.set($any(tab[0]))"
-            >{{ tab[1] }}</button>
-          }
+          <div class="d-flex gap-2">
+            @if (bulkDeleteMode()) {
+              <button class="btn btn-sm btn-ghost-red" style="font-size:0.78rem" (click)="requestBulkDelete()" [disabled]="!selectedCount()">
+                🗑️ 確認刪除 @if (selectedCount() > 0) { ({{ selectedCount() }}) }
+              </button>
+              <button class="btn btn-sm" style="font-size:0.78rem;background:rgba(255,255,255,0.07);color:#8a9ab0;border:1px solid rgba(255,255,255,0.1)" (click)="toggleBulkDeleteMode()">
+                ✕ 取消
+              </button>
+            } @else {
+              <button class="btn btn-sm btn-ghost-red" style="font-size:0.78rem" (click)="toggleBulkDeleteMode()">
+                🗑️ 一併刪除已結束活動
+              </button>
+              <button class="btn btn-sm btn-gold" (click)="openAddPromo()">+ 新增活動</button>
+            }
+          </div>
         </div>
 
         <!-- 活動卡片列表 -->
@@ -706,15 +707,22 @@
             (click)="openPromoDetail(promo)"
           >
             <div class="d-flex justify-content-between align-items-start gap-2">
+              <!-- 批次刪除 checkbox（只在 bulkDeleteMode + 已結束才顯示） -->
+              @if (bulkDeleteMode() && promo.ended) {
+                <div style="align-self:center;flex-shrink:0;padding-right:4px" (click)="$event.stopPropagation()">
+                  <input type="checkbox" [checked]="isPromoSelected(promo.id)" (change)="togglePromoSelection(promo.id)"
+                    style="width:18px;height:18px;cursor:pointer;accent-color:#c49756" />
+                </div>
+              }
+              <!-- 縮圖 -->
+              @if (promo.image) {
+                <img [src]="promo.image" alt="封面"
+                  style="width:72px;height:52px;object-fit:cover;border-radius:6px;flex-shrink:0;border:1px solid rgba(0,0,0,0.08)" />
+              }
               <div style="flex: 1; min-width: 0">
-                <!-- 標題列：名稱 + 類型 badge -->
+                <!-- 標題列 -->
                 <div class="d-flex align-items-center gap-2 mb-1">
                   <span class="promo-title">{{ promo.title }}</span>
-                  @if (promo.type === 'announcement') {
-                    <span class="badge" style="background:rgba(192,132,252,0.15);color:#c084fc;font-size:0.68rem;padding:2px 7px;border-radius:4px">📢 公告</span>
-                  } @else {
-                    <span class="badge" style="background:rgba(196,151,86,0.15);color:#c49756;font-size:0.68rem;padding:2px 7px;border-radius:4px">🎯 活動</span>
-                  }
                 </div>
                 <!-- 描述 -->
                 @if (promo.description) {
@@ -722,9 +730,7 @@
                 }
                 <!-- 日期 + 低消 -->
                 <div class="promo-meta">
-                  <span
-                    >{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span
-                  >
+                  <span>{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span>
                   @if (promo.minAmount) {
                     <span class="promo-meta-sep">·</span>
                     <span>滿 NT${{ promo.minAmount }}</span>
@@ -751,12 +757,19 @@
                 </div>
               </div>
             </div>
-            <!-- 底部操作列：門檻 + 刪除（阻止冒泡到詳情） -->
+            <!-- 底部操作列：編輯資訊 + 新增門檻 + 刪除（阻止冒泡到詳情） -->
             <div
               class="d-flex gap-2 justify-content-end mt-2"
               style="border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 10px;"
               (click)="$event.stopPropagation()"
             >
+              <button
+                class="btn btn-sm btn-ghost-gold"
+                style="font-size: 0.72rem"
+                (click)="openEditPromoInfo(promo)"
+              >
+                ✏️ 編輯資訊
+              </button>
               @if (promo.type === "promotion") {
                 <button
                   class="btn btn-sm btn-ghost-gold"
@@ -1389,65 +1402,150 @@
        ════════════════════════ -->
   @if (selectedPromo(); as promo) {
     <div class="modal-overlay" (click)="closePromoDetail()">
-      <div class="modal-box" style="max-width:520px" (click)="$event.stopPropagation()">
-        <div class="modal-hd">
+      <div class="modal-box" style="max-width:580px;overflow:hidden;padding:0;max-height:92vh;display:flex;flex-direction:column" (click)="$event.stopPropagation()">
+        <div class="modal-hd" style="padding:16px 20px;flex-shrink:0">
           <div class="modal-hd-title">
-            {{ promo.type === 'announcement' ? '📢' : '🎯' }} 活動詳情
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:-2px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            活動詳情
           </div>
           <button class="modal-close-btn" (click)="closePromoDetail()">✕</button>
         </div>
-        <div class="modal-bd">
-          <!-- 封面圖片 -->
+        <div class="modal-bd" style="padding:0;overflow-y:auto;flex:1;min-height:0">
+          <!-- 封面大圖 -->
           @if (promo.image) {
-            <img [src]="promo.image" alt="封面" style="width:100%;border-radius:8px;margin-bottom:16px;max-height:200px;object-fit:cover" />
-          }
-          <!-- 左側色條 + 標題 -->
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-            <div style="width:5px;height:40px;border-radius:3px" [style.background]="promo.badgeColor || promo.color"></div>
-            <div>
-              <div style="font-size:1.05rem;font-weight:700;color:#1a2840">{{ promo.title }}</div>
-              <div style="font-size:0.75rem;color:#8a9ab0;margin-top:2px">
-                @if (promo.type === 'announcement') {
-                  <span style="color:#c084fc">📢 公告</span>
-                } @else {
-                  <span style="color:#c49756">🎯 活動優惠</span>
-                }
-                &nbsp;·&nbsp;
+            <div style="position:relative;width:100%;height:200px;overflow:hidden">
+              <img [src]="promo.image" alt="封面"
+                style="width:100%;height:100%;object-fit:cover;display:block" />
+              <!-- 漸層遮罩 -->
+              <div style="position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(transparent,rgba(0,0,0,0.55))"></div>
+              <!-- 狀態 badge 浮於圖上 -->
+              <div style="position:absolute;bottom:12px;left:16px">
                 @if (promo.isActive && !promo.ended) {
-                  <span style="color:#3ecf8e">進行中</span>
+                  <span class="badge-ok">進行中</span>
                 } @else if (promo.ended) {
-                  <span style="color:#f87171">已結束</span>
+                  <span class="badge-err">已結束</span>
                 } @else {
-                  <span style="color:#f59e0b">已暫停</span>
+                  <span class="badge-warn">已暫停</span>
                 }
               </div>
             </div>
-          </div>
-          <!-- 描述 -->
-          @if (promo.description) {
-            <p style="font-size:0.85rem;color:#4a5a70;line-height:1.6;margin-bottom:14px">{{ promo.description }}</p>
           }
-          <!-- 詳細資訊列表 -->
-          <div style="display:flex;flex-direction:column;gap:8px;font-size:0.82rem">
-            <div style="display:flex;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.03);border-radius:6px">
-              <span style="color:#8a9ab0">適用範圍</span>
-              <span style="color:#1a2840;font-weight:500">{{ promo.scope }}</span>
+          <div style="padding:20px">
+            <!-- 標題 -->
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+              <div style="width:5px;height:40px;border-radius:3px;flex-shrink:0" [style.background]="promo.badgeColor || promo.color"></div>
+              <div>
+                <div style="font-size:1.1rem;font-weight:700;color:#1a2840">{{ promo.title }}</div>
+                @if (!promo.image) {
+                  <div style="font-size:0.75rem;margin-top:3px">
+                    @if (promo.isActive && !promo.ended) {
+                      <span style="color:#3ecf8e">● 進行中</span>
+                    } @else if (promo.ended) {
+                      <span style="color:#f87171">● 已結束</span>
+                    } @else {
+                      <span style="color:#f59e0b">● 已暫停</span>
+                    }
+                  </div>
+                }
+              </div>
             </div>
-            <div style="display:flex;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.03);border-radius:6px">
-              <span style="color:#8a9ab0">活動日期</span>
-              <span style="color:#1a2840;font-weight:500">{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span>
+            <!-- AI 文案 -->
+            @if (promo.description) {
+              <div style="margin-bottom:16px">
+                <div style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;color:#c49756;text-transform:uppercase;margin-bottom:6px">✦ AI 文案</div>
+                <p style="font-size:0.88rem;color:#4a5a70;line-height:1.7;margin:0;padding:12px 14px;background:rgba(196,151,86,0.06);border-left:3px solid #c49756;border-radius:0 6px 6px 0">{{ promo.description }}</p>
+              </div>
+            }
+            <!-- 活動說明 -->
+            <div style="margin-bottom:14px">
+              <div style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;color:#8a9ab0;text-transform:uppercase;margin-bottom:8px">▸ 活動說明</div>
+              <div style="display:flex;flex-direction:column;gap:6px;font-size:0.82rem">
+                <div style="display:flex;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.03);border-radius:6px">
+                  <span style="color:#8a9ab0">活動日期</span>
+                  <span style="color:#1a2840;font-weight:500">{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span>
+                </div>
+                @if (promo.minAmount) {
+                  <div style="display:flex;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.03);border-radius:6px">
+                    <span style="color:#8a9ab0">最低消費</span>
+                    <span style="color:#c49756;font-weight:600">NT$ {{ promo.minAmount }}</span>
+                  </div>
+                }
+              </div>
             </div>
-            @if (promo.minAmount) {
-              <div style="display:flex;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.03);border-radius:6px">
-                <span style="color:#8a9ab0">最低消費</span>
-                <span style="color:#c49756;font-weight:600">NT$ {{ promo.minAmount }}</span>
+            <!-- 贈品清單 -->
+            @if (promo.gifts && promo.gifts.length > 0) {
+              <div style="margin-bottom:14px">
+                <div style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;color:#8a9ab0;text-transform:uppercase;margin-bottom:8px">🎁 贈品規則</div>
+                <div style="display:flex;flex-direction:column;gap:5px">
+                  @for (gift of promo.gifts; track gift.id) {
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.03);border-radius:6px;font-size:0.82rem">
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <span style="color:#c49756;font-size:0.75rem;white-space:nowrap">滿 NT${{ gift.fullAmount }}</span>
+                        <span style="color:#1a2840;font-weight:500">{{ gift.productName }}</span>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                        @if (gift.quantity === -1) {
+                          <span style="font-size:0.72rem;color:#3ecf8e">無限供應</span>
+                        } @else {
+                          <span style="font-size:0.72rem;color:#f59e0b">剩 {{ gift.quantity }} 份</span>
+                        }
+                        @if (!gift.active) {
+                          <span style="font-size:0.7rem;padding:1px 6px;background:rgba(248,113,113,0.12);color:#f87171;border-radius:4px">已停用</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
               </div>
             }
           </div>
         </div>
-        <div class="modal-ft">
-          <button class="btn btn-sm btn-ghost-red" (click)="deletePromo(promo.id); closePromoDetail()">刪除活動</button>
+        <div class="modal-ft" style="padding:14px 20px;flex-shrink:0">
+          <button class="btn btn-sm btn-ghost-red" (click)="requestDeletePromo(promo)">刪除活動</button>
           <button class="btn btn-sm btn-gold" (click)="closePromoDetail()">關閉</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ════════════════════════════════════════════════════
+       Modal：活動進行中警告
+       ════════════════════════════════════════════════════ -->
+  @if (deleteConfirmState()?.type === 'active-warning') {
+    <div class="modal-overlay" (click)="cancelDeleteConfirm()">
+      <div class="modal-box" style="max-width:360px;text-align:center" (click)="$event.stopPropagation()">
+        <div class="modal-bd" style="padding:32px 24px 20px">
+          <div style="font-size:2.2rem;margin-bottom:14px">⚠️</div>
+          <div style="font-size:1.02rem;font-weight:700;color:#1a2840;margin-bottom:10px">活動進行中</div>
+          <div style="font-size:0.88rem;color:#4a5a70;line-height:1.7">現在活動還在進行中<br><strong>請先暫停活動 !!</strong></div>
+        </div>
+        <div class="modal-ft" style="justify-content:center;padding:14px 20px">
+          <button class="btn btn-sm btn-gold" (click)="cancelDeleteConfirm()">關閉</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ════════════════════════════════════════════════════
+       Modal：確認刪除（單一 / 批次）
+       ════════════════════════════════════════════════════ -->
+  @if (deleteConfirmState()?.type === 'confirm' || deleteConfirmState()?.type === 'bulk') {
+    <div class="modal-overlay" (click)="cancelDeleteConfirm()">
+      <div class="modal-box" style="max-width:360px;text-align:center" (click)="$event.stopPropagation()">
+        <div class="modal-bd" style="padding:32px 24px 20px">
+          <div style="font-size:2.2rem;margin-bottom:14px">🗑️</div>
+          <div style="font-size:1.02rem;font-weight:700;color:#1a2840;margin-bottom:10px">確認刪除</div>
+          @if (deleteConfirmState()!.type === 'bulk') {
+            <div style="font-size:0.88rem;color:#4a5a70;line-height:1.7">
+              確定刪除 <strong style="color:#f87171">{{ deleteConfirmState()!.ids.length }}</strong> 個已結束活動？<br>此操作無法復原。
+            </div>
+          } @else {
+            <div style="font-size:0.88rem;color:#4a5a70;line-height:1.7">請問是否要刪除活動？<br>此操作無法復原。</div>
+          }
+        </div>
+        <div class="modal-ft" style="justify-content:center;gap:12px;padding:14px 20px">
+          <button class="btn btn-sm btn-ghost-red" (click)="cancelDeleteConfirm()">取消</button>
+          <button class="btn btn-sm btn-gold" (click)="confirmDelete()">是，確認刪除</button>
         </div>
       </div>
     </div>
@@ -1663,22 +1761,6 @@
       </div>
 
       <!-- 活動名稱 -->
-      <!-- 活動類型 -->
-      <div class="pp-field">
-        <label class="pp-label">類型 <span class="required">*</span></label>
-        <div class="d-flex gap-2">
-          @for (opt of [['promotion','🎯 活動優惠'],['announcement','📢 公告訊息']]; track opt[0]) {
-            <button
-              class="btn btn-sm"
-              style="flex:1;font-size:0.8rem;"
-              [style.background]="promoDraft.type === opt[0] ? 'rgba(196,151,86,0.2)' : 'rgba(255,255,255,0.04)'"
-              [style.border]="promoDraft.type === opt[0] ? '1px solid #c49756' : '1px solid rgba(255,255,255,0.1)'"
-              [style.color]="promoDraft.type === opt[0] ? '#c49756' : '#8a9ab0'"
-              (click)="promoDraft.type = $any(opt[0])"
-            >{{ opt[1] }}</button>
-          }
-        </div>
-      </div>
 
       <div class="pp-field">
         <label class="pp-label">名稱 <span class="required">*</span></label>
@@ -1775,6 +1857,73 @@
         取消
       </button>
       <button class="btn btn-sm btn-gold" (click)="savePromo()">儲存</button>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════
+     Slide-in Panel：編輯活動資訊（文案 + 封面圖）
+     ════════════════════════════════════════════════════ -->
+@if (editPromoInfoId() !== null) {
+  <div class="promo-panel-backdrop" (click)="closeEditPromoInfo()"></div>
+  <div class="promo-panel">
+    <div class="promo-panel-hd">
+      <span class="promo-panel-title">✏️ 編輯活動資訊</span>
+      <button class="promo-panel-close" (click)="closeEditPromoInfo()">✕</button>
+    </div>
+    <div class="promo-panel-body">
+      <!-- 封面圖片 -->
+      <div class="pp-field">
+        <label class="pp-label">封面圖片</label>
+        @if (editPromoInfoDraft.image) {
+          <div class="pp-img-preview">
+            <img [src]="editPromoInfoDraft.image" alt="封面預覽" />
+            <button class="pp-img-replace" (click)="editPromoFileInput.click()">更換圖片</button>
+          </div>
+        } @else {
+          <div class="pp-dropzone" (click)="editPromoFileInput.click()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span class="pp-dropzone-label">拖曳圖片或點擊上傳</span>
+            <span class="pp-dropzone-hint">支援 JPG、PNG，建議 1200×675px</span>
+          </div>
+        }
+        <input type="file" accept="image/*" style="display:none" #editPromoFileInput (change)="onEditPromoImageChange($event)" />
+      </div>
+      <!-- AI 文案 / 活動說明 -->
+      <div class="pp-field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <label class="pp-label" style="margin:0">AI 文案 / 活動說明</label>
+          <button class="btn btn-sm" style="font-size:0.75rem;padding:3px 10px;background:linear-gradient(135deg,#c49756,#e8b86d);color:#fff;border:none;border-radius:6px;display:flex;align-items:center;gap:5px"
+            [disabled]="generatingAiCopy()" (click)="generateAiCopy()">
+            @if (generatingAiCopy()) {
+              <span class="mgr-export-spinner" aria-hidden="true"></span> 生成中...
+            } @else {
+              ✨ 一鍵 AI 生成
+            }
+          </button>
+        </div>
+        <textarea
+          class="form-control form-ctrl pp-textarea"
+          [(ngModel)]="editPromoInfoDraft.description"
+          rows="5"
+          placeholder="點擊「✨ 一鍵 AI 生成」自動產生文案，或手動輸入"
+        ></textarea>
+        <div style="font-size:0.72rem;color:#8a9ab0;margin-top:4px">此文字將顯示在活動詳情的「AI 文案」區塊</div>
+      </div>
+    </div>
+    <div class="promo-panel-ft">
+      <button class="btn btn-sm btn-ghost-red" (click)="closeEditPromoInfo()">取消</button>
+      <button class="btn btn-sm btn-gold" [disabled]="editPromoInfoSaving() || (editPromoInfoId() ?? 0) < 0" [title]="(editPromoInfoId() ?? 0) < 0 ? 'Demo 活動無法儲存' : ''" (click)="saveEditPromoInfo()">
+        @if (editPromoInfoSaving()) {
+          <span class="mgr-export-spinner" aria-hidden="true"></span> 儲存中...
+        } @else {
+          儲存
+        }
+      </button>
     </div>
   </div>
 }
@@ -1916,32 +2065,24 @@
         <div class="row g-2 mb-3">
           <div class="col-4">
             <label class="modal-label">國家</label>
-            <select
-              class="form-select form-ctrl"
+            <select class="form-select form-ctrl"
               [(ngModel)]="accountDraft.country"
-            >
-              <option value="TW">台灣</option>
-              <option value="JP">日本</option>
-              <option value="KR">韓國</option>
-              <option value="TH">泰國</option>
+              (ngModelChange)="onAccountCountryChange($event)">
+              @for (b of branches(); track b.id) {
+                <option [value]="b.country">{{ b.country }}</option>
+              }
             </select>
           </div>
           <div class="col-4">
             <label class="modal-label">角色</label>
-            <select
-              class="form-select form-ctrl"
-              [(ngModel)]="accountDraft.role"
-            >
+            <select class="form-select form-ctrl" [(ngModel)]="accountDraft.role">
               <option value="bm">分店長</option>
               <option value="staff">員工</option>
             </select>
           </div>
           <div class="col-4">
             <label class="modal-label">所屬分店</label>
-            <select
-              class="form-select form-ctrl"
-              [(ngModel)]="accountDraft.branch"
-            >
+            <select class="form-select form-ctrl" [(ngModel)]="accountDraft.branch">
               @for (b of branches(); track b.id) {
                 <option>{{ b.name }}</option>
               }

@@ -1812,7 +1812,21 @@
         <section class="tab-tracker" aria-label="訂單追蹤">
           @if (trackingOrder()) {
             <div class="tracker-container">
-              <!-- 取餐號碼大牌 -->
+              <!-- ── 現金待付款橫幅（PENDING_CASH 狀態）── -->
+              @if (trackingOrder()!.status === 'pending-cash') {
+                <div class="pending-cash-banner">
+                  <div class="pcb-icon">💵</div>
+                  <div class="pcb-title">訂單已成立，請前往櫃台付款</div>
+                  <div class="pcb-order-num">{{ trackingOrder()!.number }}</div>
+                  <div class="pcb-hint">收銀員掃描此號碼後即開始備餐</div>
+                  <div class="pcb-amount">
+                    {{ branchService.config.currency }} {{ trackingOrder()!.total }}
+                  </div>
+                </div>
+              }
+
+              <!-- 取餐號碼大牌（非待付款時顯示） -->
+              @if (trackingOrder()!.status !== 'pending-cash') {
               <div class="tracker-number-card">
                 <span class="tracker-number-label">{{ lang.pickupNumber }}</span>
                 <div class="tracker-number">{{ trackingOrder()!.number }}</div>
@@ -1822,8 +1836,10 @@
                   {{ lang.minutes }}</span
                 >
               </div>
+              }
 
-              <!-- 製作進度條 -->
+              <!-- 製作進度條（非待付款時顯示） -->
+              @if (trackingOrder()!.status !== 'pending-cash') {
               <div class="tracker-steps">
                 <div
                   class="tracker-step"
@@ -1898,6 +1914,7 @@
                   <span class="step-label">{{ lang.ready }} 🎉</span>
                 </div>
               </div>
+              } <!-- end @if status !== pending-cash -->
 
               <!-- 訂單明細 -->
               <div class="tracker-order-card">
@@ -2316,10 +2333,10 @@
           <!-- Activity Card List -->
           <div class="promo-zone-list">
             @for (promo of PROMO_DISPLAY; track promo.name; let i = $index) {
-              <div class="pz-card" [ngClass]="'pz-bg-' + promo.tagType" (click)="openPromoDetail(i)">
+              <div class="pz-card" [ngClass]="'pz-bg-' + promo.colorScheme" (click)="openPromoDetail(i)">
                 <!-- 左側：文字內容 -->
                 <div class="pz-card-body">
-                  <span class="pz-card-tag" [ngClass]="'pzt-' + promo.tagType">{{ promo.tagType === 'new' ? lang.promoTagNew : promo.tagType === 'promo' ? lang.promoTagPromo : lang.promoTagPremium }}</span>
+                  <span class="pz-card-tag" [ngClass]="'pzt-' + promo.colorScheme">{{ promo.tagType === 'new' ? lang.promoTagNew : promo.tagType === 'promo' ? lang.promoTagPromo : lang.promoTagPremium }}</span>
                   <h3 class="pz-card-title">{{ getLocalizedName(promo) }}</h3>
                   <div class="pz-card-date">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;">
@@ -2364,7 +2381,7 @@
                   height="200"
                 />
                 <div class="pz-sheet-header-body">
-                  <span class="pz-sheet-tag" [ngClass]="'pzt-' + selectedPromoDetail.tagType">{{ selectedPromoDetail.tagType === 'new' ? lang.promoTagNew : selectedPromoDetail.tagType === 'promo' ? lang.promoTagPromo : lang.promoTagPremium }}</span>
+                  <span class="pz-sheet-tag" [ngClass]="'pzt-' + selectedPromoDetail.colorScheme">{{ selectedPromoDetail.tagType === 'new' ? lang.promoTagNew : selectedPromoDetail.tagType === 'promo' ? lang.promoTagPromo : lang.promoTagPremium }}</span>
                   <h2 class="pz-sheet-header-name">{{ getLocalizedName(selectedPromoDetail) }}</h2>
                 </div>
                 <button class="pz-sheet-close" (click)="closePromoDetail()" aria-label="關閉">

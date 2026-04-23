@@ -993,7 +993,7 @@ $pos-blue:        #4f8ef7;   // 員工藍色
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
-.table-wrapper { background-color: #161b22; border-radius: 8px; overflow: hidden; }
+.table-wrapper { background-color: #161b22; border-radius: 8px; overflow-x: auto; overflow-y: hidden; }
 
 /* 自訂表格（非 Bootstrap .table）：明確設定 td 文字色避免繼承失效 */
 .tbl { color: #e2e8f8; font-size: 0.855rem; width: 100%; border-collapse: collapse; }
@@ -1134,9 +1134,62 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 
 /* 狀態徽章 */
 .badge-ok   { background-color: rgba(62,207,142,0.15); color: #34d399; border: 1px solid rgba(62,207,142,0.32); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
-.badge-warn { background-color: rgba(251,191,36,0.15);  color: #fbbf24; border: 1px solid rgba(251,191,36,0.32); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
-.badge-err  { background-color: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.32); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
-.badge-blue { background-color: rgba(129,140,248,0.15); color: #a5b4fc; border: 1px solid rgba(129,140,248,0.32); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+.badge-warn   { background-color: rgba(251,191,36,0.15);  color: #fbbf24; border: 1px solid rgba(251,191,36,0.32); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+.badge-err    { background-color: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.32); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+.badge-blue   { background-color: rgba(129,140,248,0.15); color: #a5b4fc; border: 1px solid rgba(129,140,248,0.32); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+.badge-unpaid { background-color: rgba(248,113,113,0.18); color: #fca5a5; border: 1px solid rgba(248,113,113,0.4);  font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 700; white-space: nowrap; animation: unpaid-blink 1.6s ease-in-out infinite; }
+@keyframes unpaid-blink { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+/* 待付款現金訂單區塊 */
+.pending-cash-section {
+  background: rgba(248, 113, 113, 0.06);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: 14px;
+  padding: 16px 16px 12px;
+
+  .pcs-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #fca5a5;
+    margin-bottom: 12px;
+  }
+
+  .pcs-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .pcs-card {
+    background: rgba(30, 20, 20, 0.85);
+    border: 1px solid rgba(248, 113, 113, 0.22);
+    border-radius: 10px;
+    padding: 12px 14px;
+    min-width: 200px;
+    flex: 1 1 200px;
+    max-width: 280px;
+  }
+}
+
+/* 收款確認按鈕 */
+.btn-confirm-cash {
+  width: 100%;
+  background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.82rem;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 0;
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:hover:not([disabled]) { opacity: 0.88; }
+  &[disabled] { opacity: 0.5; cursor: not-allowed; }
+}
 
 /* 金色實心按鈕 */
 .btn-gold {
@@ -2183,4 +2236,67 @@ select.modal-input option {
     padding: 14px 20px;
     border-top: 1px solid rgba(255,255,255,0.09);
     flex-shrink: 0;
+}
+
+
+/* ══════════════════════════════════════════════════════
+   RWD — 目標裝置：15.6" 筆電 1920×1080 @ 125% 縮放
+   CSS 有效視窗：1536×864 px
+   ══════════════════════════════════════════════════════ */
+
+/* ── 商品網格：視窗變窄時自動減欄 ─────────────────── */
+@media (max-width: 1280px) {
+    .product-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .pos-left {
+        flex: 0 0 60%;
+    }
+    .product-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 680px) {
+    .pos-main {
+        flex-direction: column;
+    }
+    .pos-left {
+        flex: 0 0 55%;
+        border-right: none;
+        border-bottom: 1px solid rgba(255,255,255,0.09);
+    }
+    .pos-right {
+        flex: 1;
+        min-width: 0;
+    }
+    .product-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* ── 高度壓縮（864px 以下）：緊縮各區固定高度 ──────── */
+@media (max-height: 864px) {
+    .pos-topbar {
+        height: 46px;
+    }
+    .pos-tabs {
+        padding: 0 12px;
+    }
+    .pos-tab-btn {
+        padding: 7px 12px;
+    }
+    .page-panel {
+        padding: 16px 20px;
+    }
+}
+
+/* ── slide-in 面板在窄視窗改全寬 ─────────────────────── */
+@media (max-width: 500px) {
+    .pos-promo-panel {
+        width: 100vw;
+    }
 }

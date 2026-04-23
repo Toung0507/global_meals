@@ -21,6 +21,7 @@ export class CustomerLoginComponent implements OnInit {
   account = '';
   password = '';
   loginError = false;
+  loginErrorMsg = '帳號或密碼錯誤，請再試一次';
 
   get allCountries(): CountryConfig[] { return this.branchService.allCountries; }
   get activeCountry(): CountryCode    { return this.branchService.country; }
@@ -54,15 +55,26 @@ export class CustomerLoginComponent implements OnInit {
 
   onLogin(): void {
     this.loginError = false;
-    const success = this.authService.login(this.account.trim(), this.password);
-    if (success) {
-      this.loadingService.showCustomerLoading();
-      setTimeout(() => {
-        this.router.navigate(['/customer-home']).then(() => this.loadingService.hide());
-      }, 6200);
-    } else {
+    if (!this.account.trim()) {
+      this.loginErrorMsg = '請輸入手機號碼或電子郵件';
       this.loginError = true;
+      return;
     }
+this.authService.loginMember(this.account.trim(), this.password).subscribe({
+      next: (res) => {
+        if (res.code === 200) {
+          this.loadingService.showCustomerLoading();
+          setTimeout(() => {
+            this.router.navigate(['/customer-home']).then(() => this.loadingService.hide());
+          }, 6200);
+        } else {
+          this.loginError = true;
+        }
+      },
+      error: () => {
+        this.loginError = true;
+      }
+    });
   }
 
   goToStaff(): void {

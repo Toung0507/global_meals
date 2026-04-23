@@ -301,8 +301,8 @@ $admin-purple:     #c084fc;   // 側邊欄副標題紫色
     background-color: rgba(30, 58, 95, 0.04);
 }
 
-/* 表格外框容器：淺灰背景 */
-.table-wrapper { background-color: #F4F6FA; border-radius: 8px; overflow: hidden; border: 1px solid #D4DCE8; }
+/* 表格外框容器：淺灰背景；overflow-x:auto 確保寬表格可橫向捲動而非被截斷 */
+.table-wrapper { background-color: #F4F6FA; border-radius: 8px; overflow-x: auto; overflow-y: hidden; border: 1px solid #D4DCE8; }
 
 
 /* ── 狀態徽章 (Status Badges) ───────────────────────── */
@@ -1242,4 +1242,108 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
   border-radius: 6px;
   border: 1px solid #D4DCE8;
   transition: background $transition-base;
+}
+
+
+/* ══════════════════════════════════════════════════════
+   RWD — 目標裝置：15.6" 筆電 1920×1080 @ 125% 縮放
+   CSS 有效視窗：1536×864 px
+   ══════════════════════════════════════════════════════ */
+
+/* ── 側邊欄在 1536px 以下略為縮窄，釋放主內容空間 ──── */
+@media (max-width: 1536px) {
+  .sidebar {
+    width: 220px;
+  }
+  .main-wrapper {
+    margin-left: 220px;
+  }
+}
+
+/* ── 更窄視窗（如視窗縮小、側面板並排）────────────── */
+@media (max-width: 1280px) {
+  .sidebar {
+    width: 200px;
+  }
+  .main-wrapper {
+    margin-left: 200px;
+  }
+  .main-content {
+    padding: 18px 20px;
+  }
+}
+
+/* ── 高度壓縮時（864px 以下）緊縮垂直間距 ─────────── */
+@media (max-height: 864px) {
+  .topbar {
+    height: 50px;
+  }
+  .stat-card {
+    padding: 14px 16px;
+  }
+  .stat-value {
+    font-size: 1.5rem;
+  }
+  .main-content {
+    padding: 16px 26px 20px;
+  }
+  .page-sub {
+    margin-bottom: 14px;
+  }
+  .content-card {
+    padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+}
+
+/* ── 高度更緊時（768px 以下，如縮小視窗）────────────── */
+@media (max-height: 768px) {
+  .topbar {
+    height: 46px;
+  }
+  .stat-value {
+    font-size: 1.35rem;
+  }
+  .main-content {
+    padding: 12px 22px 16px;
+  }
+  .content-card {
+    padding: 13px 15px;
+    margin-bottom: 10px;
+  }
+  .finance-num {
+    font-size: 1.55rem;
+  }
+}
+
+/* ── slide-in 面板在窄視窗改全寬 ─────────────────────── */
+@media (max-width: 540px) {
+  .promo-panel {
+    width: 100vw;
+  }
+}
+
+/* ── Modal 在窄視窗全寬並確保不超出視窗高度 ──────────── */
+@media (max-height: 864px) {
+  .modal-overlay {
+    align-items: flex-start;
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+  .modal-box {
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-box {
+    max-width: calc(100vw - 24px);
+  }
+  .modal-tax {
+    max-width: calc(100vw - 24px);
+  }
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
 }

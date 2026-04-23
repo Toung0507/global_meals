@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BranchService } from '../../shared/branch.service';
+import { ApiService } from '../../shared/api.service';
 
 @Component({
   selector: 'app-customer-register',
@@ -24,8 +25,14 @@ export class CustomerRegisterComponent implements OnInit {
   phoneErrorMsg = '';
   passwordError = false;
   confirmError = false;
+  registering = false;
+  registerError = '';
 
-  constructor(public branchService: BranchService) {}
+  constructor(
+    public branchService: BranchService,
+    private apiService: ApiService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.branchService.init();
@@ -63,12 +70,32 @@ export class CustomerRegisterComponent implements OnInit {
       valid = false;
     }
 
-    if (this.password.length < 6) { this.passwordError = true; valid = false; }
+    if (this.password.length < 8) { this.passwordError = true; valid = false; }
     if (this.password !== this.confirmPassword) { this.confirmError = true; valid = false; }
 
     if (!valid) return;
 
     const fullPhone = `${this.dialCode}${this.phone.trim()}`;
-    console.log('[Register]', { name: this.name.trim(), phone: fullPhone, country: this.branchService.country });
+    this.registering = true;
+    this.registerError = '';
+    this.apiService.registerMember({
+      name: this.name.trim(),
+      phone: fullPhone,
+      country: this.branchService.country,
+      password: this.password
+    }).subscribe({
+      next: (res) => {
+        this.registering = false;
+        if (res.code === 200) {
+          this.router.navigate(['/customer-login']);
+        } else {
+          this.registerError = res.message ?? '註冊失敗，請稍後再試';
+        }
+      },
+      error: () => {
+        this.registering = false;
+        this.registerError = '連線失敗，請確認網路後再試';
+      }
+    });
   }
 }

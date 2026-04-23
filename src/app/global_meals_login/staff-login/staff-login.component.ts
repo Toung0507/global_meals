@@ -57,30 +57,29 @@ export class StaffLoginComponent {
       return;
     }
 
-    const user = this.authService.staffLogin(this.email.trim(), this.password.trim());
-
-    if (!user) {
-      this.errorMsg = '帳號或密碼錯誤，請確認後重試';
-      return;
-    }
-
-    /* 依帳號 role 顯示對應 Loading 動畫，再導向對應頁面 */
-    if (user.role === 'boss') {
-      this.loadingService.showStaffLoading();
-      setTimeout(() => {
-        this.router.navigate(['/manager-dashboard']).then(() => {
-          this.loadingService.hide();
-        });
-      }, 1400);
-    } else {
-      /* branch_manager / deputy_manager / staff 都進 POS 終端機 */
-      this.loadingService.showPosLoading();
-      setTimeout(() => {
-        this.router.navigate(['/pos-terminal']).then(() => {
-          this.loadingService.hide();
-        });
-      }, 1400);
-    }
+    this.authService.loginStaffApi(this.email.trim(), this.password.trim()).subscribe({
+      next: (res) => {
+        if (res.code === 200 && this.authService.currentUser) {
+          const role = this.authService.currentUser.role;
+          if (role === 'boss') {
+            this.loadingService.showStaffLoading();
+            setTimeout(() => {
+              this.router.navigate(['/manager-dashboard']).then(() => this.loadingService.hide());
+            }, 1400);
+          } else {
+            this.loadingService.showPosLoading();
+            setTimeout(() => {
+              this.router.navigate(['/pos-terminal']).then(() => this.loadingService.hide());
+            }, 1400);
+          }
+        } else {
+          this.errorMsg = '帳號或密碼錯誤，請確認後重試';
+        }
+      },
+      error: () => {
+        this.errorMsg = '登入失敗，請確認後端連線是否正常';
+      }
+    });
   }
 
   /*
