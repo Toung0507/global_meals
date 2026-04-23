@@ -12,8 +12,8 @@
    頂部導覽列
    =================================================== -->
 <nav class="mode-nav">
-  <a class="nav-staff" [routerLink]="['/staff-login']">⚙ 管理系統</a>
-  <a class="nav-customer" [routerLink]="['/customer-login']">🍜 客戶入口</a>
+  <a class="nav-staff" [routerLink]="['/staff-login']">⚙ {{ lang.managementSystem }}</a>
+  <a class="nav-customer" [routerLink]="['/customer-login']">🍜 {{ lang.customerEntrance }}</a>
 </nav>
 
 
@@ -58,7 +58,7 @@
         </div>
 
         <div class="c-tagline">
-          <span class="c-tagline-pill">✦ 懶懶吃，飽飽樂 ✦</span>
+          <span class="c-tagline-pill">✦ {{ lang.tagline }} ✦</span>
         </div>
 
       </div>
@@ -74,17 +74,17 @@
 
       <!-- 表單頂部標題 -->
       <div class="c-form-header">
-        <div class="c-welcome">👤 訪客點餐</div>
-        <h3>快速點餐，免帳號登入</h3>
-        <p>輸入手機號碼即可立即進入點餐，不需要註冊</p>
+        <div class="c-welcome">👤 {{ lang.guestOrderBadge }}</div>
+        <h3>{{ lang.guestPageTitle }}</h3>
+        <p>{{ lang.guestPageSubtitle }}</p>
       </div>
 
       <!-- 手機號碼輸入欄位（必填） -->
       <div class="c-field" [class.c-field--error]="phoneError">
-        <label>手機號碼 <span class="c-required-mark">*</span></label>
+        <label>{{ lang.phoneLbl }} <span class="c-required-mark">*</span></label>
         <input
           type="tel"
-          placeholder="請輸入手機號碼（至少 8 碼）"
+          [placeholder]="lang.guestLoginPhonePlaceholder"
           autocomplete="tel"
           maxlength="15"
           [(ngModel)]="phone"
@@ -92,19 +92,19 @@
           (keyup.enter)="enterMenu()"
         />
         @if (phoneError) {
-          <span class="c-field-error-msg">⚠ 請輸入正確的手機號碼（至少 8 碼）</span>
+          <span class="c-field-error-msg">{{ lang.guestPhoneInputError }}</span>
         }
       </div>
 
       <!-- 進入點餐按鈕 -->
       <button class="c-guest-submit-btn" (click)="enterMenu()">
-        <span>🛒</span> 進入點餐
+        <span>🛒</span> {{ lang.guestEnterBtn }}
       </button>
 
       <!-- 返回登入連結 -->
       <div class="c-back-login">
-        已有帳號？
-        <a class="c-back-link" [routerLink]="['/customer-login']">返回登入</a>
+        {{ lang.hasAccount }}
+        <a class="c-back-link" [routerLink]="['/customer-login']">{{ lang.backToLogin }}</a>
       </div>
 
     </section>

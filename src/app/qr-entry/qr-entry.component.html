@@ -1,0 +1,39 @@
+<div class="qr-shell">
+
+  <!-- 背景裝飾色塊 -->
+  <div class="qr-blob qr-blob--top"></div>
+  <div class="qr-blob qr-blob--bottom"></div>
+
+  <!-- 旋轉外圈組 -->
+  <div class="qr-rings">
+    <div class="qr-ring qr-ring--outer"></div>
+    <div class="qr-ring qr-ring--mid"></div>
+    <div class="qr-ring qr-ring--inner"></div>
+    <!-- Logo -->
+    <img class="qr-logo" src="/assets/logo圓形.png" alt="懶飽飽 Logo" width="120" height="120" />
+  </div>
+
+  <!-- 品牌文字 -->
+  <div class="qr-brand-area">
+    <div class="qr-brand-zh">懶 飽 飽</div>
+    <div class="qr-brand-en">LazyBaoBao</div>
+  </div>
+
+  <!-- 桌號標籤（有值才顯示） -->
+  @if (tableId) {
+    <div class="qr-table-badge">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13">
+        <rect x="2" y="3" width="12" height="10" rx="2"/>
+        <path d="M5 3V2M11 3V2M2 7h12"/>
+      </svg>
+      桌位 {{ tableId }}
+    </div>
+  }
+
+  <!-- 載入提示 -->
+  <p class="qr-hint">正在載入您的桌位<span class="qr-dots" aria-hidden="true"></span></p>
+
+  <!-- 版權 -->
+  <span class="qr-copy">© 懶飽飽 Global Meals</span>
+
+</div>

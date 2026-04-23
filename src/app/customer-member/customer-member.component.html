@@ -21,11 +21,8 @@
   =====================================================
 -->
 
-
 <!-- 主框架：包住整個頁面 -->
 <div class="cm-shell">
-
-
   <!-- ===================================================
      頂部模式切換導覽列
      (click)="goToStaff()" 先播 Loading 再切換到管理系統
@@ -35,20 +32,16 @@
     <a class="nav-customer">🍜 客戶入口</a>
   </nav>
 
-
   <!-- ===================================================
      主內容容器（限制最大寬度、水平置中）
      =================================================== -->
   <div class="cm-container">
-
-
     <!-- ===================================================
        使用者資訊橫幅
        @if(authService.currentUser) 確保使用者資料存在才渲染
        =================================================== -->
     @if (authService.currentUser) {
       <div class="cm-profile-header">
-
         <!-- 頭像：以名稱第一個字組成的文字頭像 -->
         <div class="cm-avatar">{{ getAvatarLetter() }}</div>
 
@@ -65,11 +58,9 @@
 
         <!-- 登出按鈕 -->
         <button class="cm-logout-btn" (click)="logout()">登出</button>
-
       </div>
     }
     <!-- 使用者資訊橫幅結束 -->
-
 
     <!-- ===================================================
        雙欄內容區
@@ -78,37 +69,31 @@
        CSS Grid / Flexbox 的排版由 SCSS 的 media query 控制
        =================================================== -->
     <div class="cm-panels">
-
-
       <!-- ═══════════════════════════════════════════════
          左欄 / 上區：個人資料
          ═══════════════════════════════════════════════ -->
       <div class="cm-panel-left">
-
         <!-- 區塊標題 -->
         <div class="cm-panel-title">👤 個人資料</div>
-
 
         <!-- ─────────────────────────────────────────
            檢視模式（isEditing = false 時顯示）
            ───────────────────────────────────────── -->
         @if (!isEditing) {
           <div class="cm-view-mode">
-
             <!-- 資料列：標籤 + 值 -->
             <div class="cm-field-row">
               <span class="cm-field-label">會員名稱</span>
-              <span class="cm-field-value">{{ authService.currentUser?.name }}</span>
+              <span class="cm-field-value">{{
+                authService.currentUser?.name
+              }}</span>
             </div>
 
             <div class="cm-field-row">
               <span class="cm-field-label">手機號碼</span>
-              <span class="cm-field-value">{{ authService.currentUser?.phone }}</span>
-            </div>
-
-            <div class="cm-field-row">
-              <span class="cm-field-label">電子郵件</span>
-              <span class="cm-field-value">{{ authService.currentUser?.email }}</span>
+              <span class="cm-field-value">{{
+                authService.currentUser?.phone
+              }}</span>
             </div>
 
             <div class="cm-field-row">
@@ -121,11 +106,9 @@
             <button class="cm-edit-btn" (click)="startEdit()">
               ✎ 修改資料
             </button>
-
           </div>
         }
         <!-- 檢視模式結束 -->
-
 
         <!-- ─────────────────────────────────────────
            編輯模式（isEditing = true 時顯示）
@@ -134,7 +117,6 @@
            ───────────────────────────────────────── -->
         @if (isEditing) {
           <div class="cm-edit-mode">
-
             <!-- 會員名稱輸入欄 -->
             <div class="cm-input-field">
               <label>會員名稱</label>
@@ -152,51 +134,39 @@
               <input
                 type="text"
                 name="editPhone"
-                [(ngModel)]="editPhone"
-                placeholder="請輸入手機號碼"
+                [value]="authService.currentUser?.phone"
+                readonly
+                class="cm-input-readonly"
               />
             </div>
 
-            <!-- 新密碼輸入欄（含顯示 / 隱藏切換） -->
+            <!-- 新增在新密碼欄位上方 -->
+            <div class="cm-input-field">
+              <label>
+                目前密碼
+                <span class="cm-optional">（修改密碼時必填）</span>
+              </label>
+              <input
+                type="password"
+                name="editOldPassword"
+                [(ngModel)]="editOldPassword"
+                placeholder="請輸入目前密碼"
+              />
+            </div>
+
+            <!-- 新密碼輸入欄（固定 type=password，無眼睛切換） -->
             <div class="cm-input-field">
               <label>
                 新密碼
                 <span class="cm-optional">（不修改請留空）</span>
               </label>
               <div class="cm-password-wrap">
-                <!-- [type] 動態切換 text / password -->
                 <input
-                  [type]="showEditPassword ? 'text' : 'password'"
+                  type="password"
                   name="editPassword"
                   [(ngModel)]="editPassword"
                   placeholder="輸入新密碼，留空則不變更"
                 />
-                <!-- 眼睛切換按鈕 -->
-                <button
-                  type="button"
-                  class="cm-eye-btn"
-                  (click)="showEditPassword = !showEditPassword"
-                  [attr.aria-label]="showEditPassword ? '隱藏密碼' : '顯示密碼'"
-                >
-                  @if (!showEditPassword) {
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor"
-                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                  }
-                  @if (showEditPassword) {
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor"
-                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                      <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
-                      <line x1="1" y1="1" x2="23" y2="23"/>
-                    </svg>
-                  }
-                </button>
               </div>
             </div>
 
@@ -209,21 +179,16 @@
                 ✗ 取消
               </button>
             </div>
-
           </div>
         }
         <!-- 編輯模式結束 -->
-
-
       </div>
       <!-- 左欄 / 上區結束 -->
-
 
       <!-- ═══════════════════════════════════════════════
          右欄 / 下區：訂單紀錄
          ═══════════════════════════════════════════════ -->
       <div class="cm-panel-right">
-
         <!-- 區塊標題 -->
         <div class="cm-panel-title">📋 訂單紀錄</div>
 
@@ -240,7 +205,6 @@
              track order.id：Angular 用來識別每個項目的唯一值（效能最佳化用） -->
         @for (order of orders; track order.id) {
           <div class="cm-order-card">
-
             <!-- 卡片頂部：訂單編號 + 狀態標籤 -->
             <div class="cm-order-top">
               <span class="cm-order-id">{{ order.id }}</span>
@@ -266,22 +230,14 @@
               <span class="cm-total-label">合計</span>
               <span class="cm-total-amount">NT$ {{ order.total }}</span>
             </div>
-
           </div>
         }
         <!-- 訂單卡片列表結束 -->
-
       </div>
       <!-- 右欄 / 下區結束 -->
-
-
     </div>
     <!-- 雙欄內容區結束 -->
-
-
   </div>
   <!-- 主內容容器結束 -->
-
-
 </div>
 <!-- 主框架結束 -->

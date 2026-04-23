@@ -14,7 +14,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 
 /* ── 訂單狀態型別 ───────────────────────────────────── */
-export type OrderStatus = 'waiting' | 'cooking' | 'ready' | 'done';
+export type OrderStatus = 'pending-cash' | 'waiting' | 'cooking' | 'ready' | 'done' | 'cancelled';
 
 /* ── 即時訂單型別 ───────────────────────────────────── */
 export interface LiveOrder {
@@ -28,6 +28,8 @@ export interface LiveOrder {
   payMethod: string;
   source: 'pos' | 'customer';
   customerName?: string;
+  orderType?: string;   /* '內用' | '外帶'，POS 下單時帶入 */
+  note?: string;        /* 備註，選填 */
 }
 
 @Injectable({ providedIn: 'root' })
@@ -97,10 +99,11 @@ export class OrderService {
   readonly orders = this._orders.asReadonly();
 
   /* ── 依狀態分組（供看板使用） ───────────────────── */
-  waiting = computed(() => this._orders().filter(o => o.status === 'waiting'));
-  cooking = computed(() => this._orders().filter(o => o.status === 'cooking'));
-  ready   = computed(() => this._orders().filter(o => o.status === 'ready'));
-  done    = computed(() => this._orders().filter(o => o.status === 'done'));
+  pendingCash = computed(() => this._orders().filter(o => o.status === 'pending-cash'));
+  waiting     = computed(() => this._orders().filter(o => o.status === 'waiting'));
+  cooking     = computed(() => this._orders().filter(o => o.status === 'cooking'));
+  ready       = computed(() => this._orders().filter(o => o.status === 'ready'));
+  done        = computed(() => this._orders().filter(o => o.status === 'done'));
 
   /* ── 最新一筆客戶端訂單（供追蹤頁） ────────────── */
   latestCustomerOrder = computed<LiveOrder | null>(() => {
@@ -118,6 +121,10 @@ export class OrderService {
     this._orders.update(list =>
       list.map(o => o.id === id ? { ...o, status } : o)
     );
+  }
+
+  removeOrder(id: string): void {
+    this._orders.update(list => list.filter(o => o.id !== id));
   }
 
   /* ── 產生下一個訂單號 ───────────────────────────── */
