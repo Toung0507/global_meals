@@ -744,114 +744,113 @@
             style="cursor: pointer"
             (click)="openPromoDetail(promo)"
           >
-            <div class="d-flex justify-content-between align-items-start gap-2">
-              <!-- 批次刪除 checkbox（只在 bulkDeleteMode + 已結束才顯示） -->
-              @if (bulkDeleteMode() && promo.ended) {
-                <div
-                  style="align-self: center; flex-shrink: 0; padding-right: 4px"
-                  (click)="$event.stopPropagation()"
-                >
-                  <input
-                    type="checkbox"
-                    [checked]="isPromoSelected(promo.id)"
-                    (change)="togglePromoSelection(promo.id)"
+            <div class="d-flex justify-content-between align-items-stretch gap-3">
+              <!-- 左欄：checkbox + 縮圖 + 文字 -->
+              <div class="d-flex align-items-center gap-2" style="flex: 1; min-width: 0">
+                <!-- 批次刪除 checkbox（只在 bulkDeleteMode + 已結束才顯示） -->
+                @if (bulkDeleteMode() && promo.ended) {
+                  <div
+                    style="flex-shrink: 0"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <input
+                      type="checkbox"
+                      [checked]="isPromoSelected(promo.id)"
+                      (change)="togglePromoSelection(promo.id)"
+                      style="
+                        width: 18px;
+                        height: 18px;
+                        cursor: pointer;
+                        accent-color: #c49756;
+                      "
+                    />
+                  </div>
+                }
+                <!-- 縮圖 -->
+                @if (promo.image) {
+                  <img
+                    [src]="promo.image"
+                    alt="封面"
                     style="
-                      width: 18px;
-                      height: 18px;
-                      cursor: pointer;
-                      accent-color: #c49756;
+                      width: 100px;
+                      height: 80px;
+                      object-fit: cover;
+                      border-radius: 6px;
+                      flex-shrink: 0;
+                      display: block;
+                      border: 1px solid rgba(0, 0, 0, 0.08);
                     "
                   />
-                </div>
-              }
-              <!-- 縮圖 -->
-              @if (promo.image) {
-                <img
-                  [src]="promo.image"
-                  alt="封面"
-                  style="
-                    width: 72px;
-                    height: 52px;
-                    object-fit: cover;
-                    border-radius: 6px;
-                    flex-shrink: 0;
-                    border: 1px solid rgba(0, 0, 0, 0.08);
-                  "
-                />
-              }
-              <div style="flex: 1; min-width: 0">
-                <!-- 標題列 -->
-                <div class="d-flex align-items-center gap-2 mb-1">
-                  <span class="promo-title">{{ promo.title }}</span>
-                </div>
-                <!-- 描述 -->
-                @if (promo.description) {
-                  <div class="promo-desc">{{ promo.description }}</div>
                 }
-                <!-- 日期 + 低消 -->
-                <div class="promo-meta">
-                  <span
-                    >{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span
-                  >
-                  @if (promo.minAmount) {
-                    <span class="promo-meta-sep">·</span>
-                    <span>滿 NT${{ promo.minAmount }}</span>
+                <!-- 文字 -->
+                <div style="min-width: 0">
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="promo-title">{{ promo.title }}</span>
+                  </div>
+                  @if (promo.description) {
+                    <div class="promo-desc">{{ promo.description }}</div>
                   }
+                  <div class="promo-meta">
+                    <span>{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span>
+                    @if (promo.minAmount) {
+                      <span class="promo-meta-sep">·</span>
+                      <span>滿 NT${{ promo.minAmount }}</span>
+                    }
+                  </div>
                 </div>
               </div>
-              <!-- 操作區 -->
-              <div class="d-flex gap-2 align-items-center flex-shrink-0">
-                @if (promo.ended) {
-                  <span class="badge-err">已結束</span>
-                } @else if (promo.isActive) {
-                  <span class="badge-ok">進行中</span>
-                } @else {
-                  <span class="badge-warn">已暫停</span>
-                }
-                <div class="form-check form-switch mb-0">
-                  <input
-                    class="form-check-input"
-                    type="checkbox"
-                    [checked]="promo.isActive"
-                    [disabled]="promo.ended"
-                    (change)="togglePromo(promo.id)"
-                  />
+              <!-- 右欄：badge + 開關（上）、操作按鈕（下） -->
+              <div
+                class="d-flex flex-column justify-content-between align-items-end flex-shrink-0"
+                (click)="$event.stopPropagation()"
+              >
+                <!-- badge + 開關 -->
+                <div class="d-flex gap-2 align-items-center">
+                  @if (promo.ended) {
+                    <span class="badge-err">已結束</span>
+                  } @else if (promo.isActive) {
+                    <span class="badge-ok">進行中</span>
+                  } @else {
+                    <span class="badge-warn">已暫停</span>
+                  }
+                  <div class="form-check form-switch mb-0">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      [checked]="promo.isActive"
+                      [disabled]="promo.ended"
+                      (change)="togglePromo(promo.id)"
+                    />
+                  </div>
+                </div>
+                <!-- 操作按鈕 -->
+                <div class="d-flex gap-2">
+                  <button
+                    class="btn btn-sm btn-ghost-gold"
+                    style="font-size: 0.72rem"
+                    (click)="openEditPromoInfo(promo)"
+                  >
+                    ✏️ 編輯資訊
+                  </button>
+                  @if (promo.type === "promotion") {
+                    <button
+                      class="btn btn-sm btn-ghost-gold"
+                      style="font-size: 0.72rem"
+                      (click)="openAddGift(promo.id)"
+                    >
+                      ＋ 新增門檻
+                    </button>
+                  }
+                  <button
+                    class="btn btn-sm btn-ghost-red"
+                    style="font-size: 0.72rem"
+                    [class.promo-delete-pulse]="promo.ended"
+                    (click)="deletePromo(promo.id)"
+                  >
+                    刪除
+                  </button>
                 </div>
               </div>
-            </div>
-            <!-- 底部操作列：編輯資訊 + 新增門檻 + 刪除（阻止冒泡到詳情） -->
-            <div
-              class="d-flex gap-2 justify-content-end mt-2"
-              style="
-                border-top: 1px solid rgba(255, 255, 255, 0.06);
-                padding-top: 10px;
-              "
-              (click)="$event.stopPropagation()"
-            >
-              <button
-                class="btn btn-sm btn-ghost-gold"
-                style="font-size: 0.72rem"
-                (click)="openEditPromoInfo(promo)"
-              >
-                ✏️ 編輯資訊
-              </button>
-              @if (promo.type === "promotion") {
-                <button
-                  class="btn btn-sm btn-ghost-gold"
-                  style="font-size: 0.72rem"
-                  (click)="openAddGift(promo.id)"
-                >
-                  ＋ 新增門檻
-                </button>
-              }
-              <button
-                class="btn btn-sm btn-ghost-red"
-                style="font-size: 0.72rem"
-                [class.promo-delete-pulse]="promo.ended"
-                (click)="deletePromo(promo.id)"
-              >
-                刪除
-              </button>
             </div>
           </div>
         }
