@@ -44,3 +44,6 @@ Thumbs.db
 .skills_repo/
 
 .env
+
+# API Key 環境設定（各自填入自己的 key，不 commit）
+src/environments/environment.ts

@@ -2,10 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
-/* ⚠️ Demo 用途：API Key 請勿提交至公開 repo。 */
-const AI_API_KEY = 'AIzaSyCi-UB0EvSp5ne1UNljJKxTOT-87oZIvQg';
-const AI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${AI_API_KEY}`;
+const AI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${environment.geminiApiKey}`;
 
 export interface GeminiPromoCopyParams {
   name: string;
