@@ -4,35 +4,5 @@
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"
-  },
-  "/api": {
-    "target": "http://localhost:8080",
-    "secure": false,
-    "changeOrigin": true,
-    "logLevel": "debug"
-  },
-  "/members": {
-    "target": "http://localhost:8080",
-    "secure": false,
-    "changeOrigin": true,
-    "logLevel": "debug"
-  },
-  "/find_monthly_reports": {
-    "target": "http://localhost:8080",
-    "secure": false,
-    "changeOrigin": true,
-    "logLevel": "debug"
-  },
-  "/find_monthly_reports_by_date_range": {
-    "target": "http://localhost:8080",
-    "secure": false,
-    "changeOrigin": true,
-    "logLevel": "debug"
-  },
-  "/get_revenue_reports": {
-    "target": "http://localhost:8080",
-    "secure": false,
-    "changeOrigin": true,
-    "logLevel": "debug"
   }
 }

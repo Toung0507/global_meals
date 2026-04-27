@@ -117,39 +117,28 @@
                 <span class="pr-label">{{ lang.passwordLbl }}</span>
                 <div class="pr-input-group">
                   @if (isEditingProfile()) {
+                    <!-- 舊密碼 -->
                     <input
-                      [type]="showPassword() ? 'text' : 'password'"
+                      [type]="showOldPassword() ? 'text' : 'password'"
                       class="pr-input"
-                      value=""
-                      [placeholder]="lang.newPwdPlaceholder"
+                      [value]="editOldPwd()"
+                      (input)="editOldPwd.set($any($event.target).value)"
+                      [placeholder]="lang.oldPwdPlaceholder"
                     />
                     <button
                       class="pr-eye-btn"
-                      (click)="togglePasswordVisibility()"
-                      aria-label="顯示/隱藏密碼"
+                      (click)="toggleOldPasswordVisibility()"
+                      aria-label="顯示/隱藏舊密碼"
+                      type="button"
                     >
-                      @if (showPassword()) {
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                        >
-                          <path
-                            d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
-                          ></path>
+                      @if (showOldPassword()) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
                           <line x1="1" y1="1" x2="23" y2="23"></line>
                         </svg>
                       } @else {
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                        >
-                          <path
-                            d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
-                          ></path>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                           <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                       }
@@ -163,50 +152,73 @@
                 </div>
               </div>
 
-              <!-- 確認密碼 (僅編輯模式顯示) -->
+              <!-- 新密碼 / 確認密碼 (僅編輯模式顯示) -->
               @if (isEditingProfile()) {
                 <div class="pr-row">
-                  <span class="pr-label">{{ lang.confirmPasswordLbl }}</span>
+                  <span class="pr-label">{{ lang.newPwdPlaceholder }}</span>
                   <div class="pr-input-group">
                     <input
-                      [type]="showConfirmPassword() ? 'text' : 'password'"
+                      [type]="showPassword() ? 'text' : 'password'"
                       class="pr-input"
-                      value=""
-                      [placeholder]="lang.confirmNewPwdPlaceholder"
+                      [value]="editNewPwd()"
+                      (input)="editNewPwd.set($any($event.target).value)"
+                      [placeholder]="lang.newPwdPlaceholder"
                     />
                     <button
                       class="pr-eye-btn"
-                      (click)="toggleConfirmPasswordVisibility()"
+                      (click)="togglePasswordVisibility()"
                       aria-label="顯示/隱藏密碼"
+                      type="button"
                     >
-                      @if (showConfirmPassword()) {
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                        >
-                          <path
-                            d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
-                          ></path>
+                      @if (showPassword()) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
                           <line x1="1" y1="1" x2="23" y2="23"></line>
                         </svg>
                       } @else {
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                        >
-                          <path
-                            d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
-                          ></path>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                           <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                       }
                     </button>
                   </div>
                 </div>
+                <div class="pr-row">
+                  <span class="pr-label">{{ lang.confirmPasswordLbl }}</span>
+                  <div class="pr-input-group">
+                    <input
+                      [type]="showConfirmPassword() ? 'text' : 'password'"
+                      class="pr-input"
+                      [value]="editConfirmPwd()"
+                      (input)="editConfirmPwd.set($any($event.target).value)"
+                      [placeholder]="lang.confirmNewPwdPlaceholder"
+                    />
+                    <button
+                      class="pr-eye-btn"
+                      (click)="toggleConfirmPasswordVisibility()"
+                      aria-label="顯示/隱藏密碼"
+                      type="button"
+                    >
+                      @if (showConfirmPassword()) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                          <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                      } @else {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      }
+                    </button>
+                  </div>
+                </div>
+                @if (profileSaveMsg()) {
+                  <p class="pr-save-msg" [class.ok]="profileSaveMsg()!.ok">
+                    {{ profileSaveMsg()!.text }}
+                  </p>
+                }
               }
             </div>
 
@@ -246,7 +258,7 @@
             <button
               class="pr-edit-btn"
               [class.editing]="isEditingProfile()"
-              (click)="toggleEditProfile()"
+              (click)="isEditingProfile() ? saveProfile() : toggleEditProfile()"
               aria-label="修改資料"
             >
               @if (isEditingProfile()) {
@@ -1712,146 +1724,7 @@
                   <!-- 活動優惠選擇（accordion 設計）-->
                   @if (unlockedPromos().length > 0) {
                     <div class="checkout-promo-section">
-                      <!-- 上方：綠色贈品面板（按此選擇免費餐點） -->
-                      <div
-                        class="promo-gift-panel"
-                        [class.panel-open]="promoGiftPanelOpen()"
-                        [class.has-gift]="!!selectedPromoGift()"
-                      >
-                        <button
-                          class="pgp-header"
-                          (click)="togglePromoGiftPanel()"
-                          type="button"
-                        >
-                          <!-- 贈品 SVG 圖示 -->
-                          <div
-                            class="pgp-icon"
-                            [class.pgp-icon-done]="!!selectedPromoGift()"
-                          >
-                            <svg
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              stroke-width="1.8"
-                              stroke-linecap="round"
-                            >
-                              <path
-                                d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"
-                              />
-                              <rect x="2" y="6" width="20" height="6" rx="1" />
-                              <path d="M12 12v9" />
-                              <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6" />
-                              <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3" />
-                            </svg>
-                          </div>
-                          <div class="pgp-text">
-                            @if (selectedPromoGift()) {
-                              <span class="pgp-label pgp-label-done"
-                                >{{ lang.giftSelectedPre
-                                }}{{ selectedPromoGiftLocalized() }}</span
-                              >
-                              <span class="pgp-hint">{{
-                                lang.giftChangeLbl
-                              }}</span>
-                            } @else if (
-                              selectedPromoName() &&
-                              selectedPromoName() !== "不參加活動優惠"
-                            ) {
-                              <span class="pgp-label">{{
-                                lang.selectFreeItem
-                              }}</span>
-                              <span class="pgp-hint">{{
-                                selectedPromoActivity
-                                  ? getLocalizedName(selectedPromoActivity)
-                                  : selectedPromoName()
-                              }}</span>
-                            } @else {
-                              <span class="pgp-label">{{
-                                lang.selectFreeItem
-                              }}</span>
-                              <span class="pgp-hint">{{
-                                lang.selectPromoFirst
-                              }}</span>
-                            }
-                          </div>
-                          @if (selectedPromoGift()) {
-                            <span class="pgp-free-tag">{{ lang.free }}</span>
-                          }
-                          <svg
-                            class="pgp-chevron"
-                            [class.open]="promoGiftPanelOpen()"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2.5"
-                          >
-                            <polyline points="6 9 12 15 18 9" />
-                          </svg>
-                        </button>
-
-                        <!-- 展開：贈品選項列表 -->
-                        @if (promoGiftPanelOpen()) {
-                          <div class="pgp-options">
-                            @if (selectedPromoActivity) {
-                              @for (
-                                g of selectedPromoActivity.gifts;
-                                track g;
-                                let gi = $index
-                              ) {
-                                <button
-                                  class="pgp-gift-opt"
-                                  [class.selected]="selectedPromoGift() === g"
-                                  (click)="selectPromoGift(g)"
-                                  type="button"
-                                >
-                                  <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.8"
-                                    stroke-linecap="round"
-                                    style="
-                                      width: 16px;
-                                      height: 16px;
-                                      flex-shrink: 0;
-                                    "
-                                  >
-                                    <circle cx="12" cy="12" r="10" />
-                                    <path d="M12 8v4l3 3" />
-                                  </svg>
-                                  <span>{{
-                                    getLocalizedGifts(selectedPromoActivity!)[
-                                      gi
-                                    ] || g
-                                  }}</span>
-                                  @if (selectedPromoGift() === g) {
-                                    <svg
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      stroke-width="2.5"
-                                      style="
-                                        width: 14px;
-                                        height: 14px;
-                                        flex-shrink: 0;
-                                        margin-left: auto;
-                                      "
-                                    >
-                                      <polyline points="20 6 9 17 4 12" />
-                                    </svg>
-                                  }
-                                </button>
-                              }
-                            } @else {
-                              <p class="pgp-no-select-hint">
-                                {{ lang.selectPromoFirst }}
-                              </p>
-                            }
-                          </div>
-                        }
-                      </div>
-
-                      <!-- 下方：活動選擇列表 -->
+                      <!-- 活動選擇列表 -->
                       <div class="promo-activity-list">
                         <!-- 放棄參加 -->
                         <button
@@ -1894,54 +1767,88 @@
 
                         <!-- 各活動（accordion 項目） -->
                         @for (act of unlockedPromos(); track act.name) {
-                          <button
-                            class="promo-act-row"
-                            [class.selected]="selectedPromoName() === act.name"
-                            (click)="selectPromo(act.name)"
-                            type="button"
-                          >
-                            <!-- 活動圖示 -->
-                            <svg
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              stroke-width="1.8"
-                              stroke-linecap="round"
-                              style="width: 16px; height: 16px; flex-shrink: 0"
+                          <div class="promo-act-item">
+                            <button
+                              class="promo-act-row"
+                              [class.selected]="selectedPromoName() === act.name"
+                              (click)="selectPromo(act.name)"
+                              type="button"
                             >
-                              <path
-                                d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"
-                              />
-                            </svg>
-                            <div class="par-text">
-                              <span class="par-name">{{
-                                getLocalizedName(act)
-                              }}</span>
-                              <span class="par-hint">{{
-                                lang.selectThisPromo
-                              }}</span>
-                            </div>
-                            <span class="par-min-tag"
-                              >{{ lang.promoMinSpendPre
-                              }}{{ branchService.config.currency }}
-                              {{ act.minSpend }}</span
-                            >
-                            @if (selectedPromoName() === act.name) {
+                              <!-- 活動圖示 -->
                               <svg
                                 viewBox="0 0 24 24"
                                 fill="none"
                                 stroke="currentColor"
-                                stroke-width="2.5"
-                                style="
-                                  width: 14px;
-                                  height: 14px;
-                                  flex-shrink: 0;
-                                "
+                                stroke-width="1.8"
+                                stroke-linecap="round"
+                                style="width: 16px; height: 16px; flex-shrink: 0"
                               >
-                                <polyline points="20 6 9 17 4 12" />
+                                <path
+                                  d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"
+                                />
                               </svg>
+                              <div class="par-text">
+                                <span class="par-name">{{
+                                  getLocalizedName(act)
+                                }}</span>
+                                <span class="par-hint">{{
+                                  lang.selectThisPromo
+                                }}</span>
+                              </div>
+                              <span class="par-min-tag"
+                                >{{ lang.promoMinSpendPre
+                                }}{{ branchService.config.currency }}
+                                {{ act.minSpend }}</span
+                              >
+                              <svg
+                                class="par-chevron"
+                                [class.open]="selectedPromoName() === act.name"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.5"
+                                style="width: 14px; height: 14px; flex-shrink: 0"
+                              >
+                                <polyline points="6 9 12 15 18 9" />
+                              </svg>
+                            </button>
+                            @if (selectedPromoName() === act.name) {
+                              <div class="promo-act-gifts">
+                                @for (g of act.gifts; track g; let gi = $index) {
+                                  <button
+                                    class="pgp-gift-opt"
+                                    [class.selected]="selectedPromoGift() === g"
+                                    (click)="selectPromoGift(g)"
+                                    type="button"
+                                  >
+                                    <svg
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="1.8"
+                                      stroke-linecap="round"
+                                      style="width: 16px; height: 16px; flex-shrink: 0"
+                                    >
+                                      <circle cx="12" cy="12" r="10" />
+                                      <path d="M12 8v4l3 3" />
+                                    </svg>
+                                    <span>{{ getLocalizedGifts(act)[gi] || g }}</span>
+                                    @if (selectedPromoGift() === g) {
+                                      <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2.5"
+                                        style="width: 14px; height: 14px; flex-shrink: 0; margin-left: auto"
+                                      >
+                                        <polyline points="20 6 9 17 4 12" />
+                                      </svg>
+                                    }
+                                  </button>
+                                }
+                              </div>
                             }
-                          </button>
+                          </div>
                         }
                       </div>
                     </div>
@@ -1998,6 +1905,26 @@
               </div>
               <!-- /checkout-grid -->
 
+              <!-- 電話號碼欄位（訪客必填，供識別取餐用） -->
+              <div class="checkout-note" style="margin: 16px 0">
+                <label class="checkout-note-label">
+                  取餐電話號碼
+                  <span class="checkout-required-mark">* 必填</span>
+                </label>
+                <input
+                  type="tel"
+                  class="checkout-note-input checkout-phone-input"
+                  placeholder="請輸入電話號碼"
+                  [value]="phoneNumber()"
+                  (input)="phoneNumber.set($any($event.target).value)"
+                />
+                @if (!isPhoneValid() && phoneNumber().length === 0) {
+                  <span class="checkout-phone-hint"
+                    >請填入電話號碼才能結帳</span
+                  >
+                }
+              </div>
+
               <!-- 金額明細 + 操作按鈕（獨立置中區塊） -->
               <div class="checkout-footer-block">
                 <div class="checkout-summary">
@@ -2026,7 +1953,12 @@
                   </div>
                 </div>
 
-                <button class="checkout-submit" (click)="openOrderPreview()">
+                <button
+                  class="checkout-submit"
+                  [disabled]="!isPhoneValid()"
+                  [class.disabled]="!isPhoneValid()"
+                  (click)="isPhoneValid() && openOrderPreview()"
+                >
                   {{ lang.checkout }} — {{ branchService.config.currency }}
                   {{ discountedTotal() }}
                 </button>
@@ -2263,12 +2195,6 @@
                 [value]="phoneNumber()"
                 (input)="phoneNumber.set($any($event.target).value)"
               />
-              <!-- 訪客未填時顯示提示 -->
-              @if (isGuest() && !isPhoneValid()) {
-                <span class="checkout-phone-hint">{{
-                  lang.phoneRequired
-                }}</span>
-              }
             </div>
 
             <!-- 付款方式選擇列 -->
@@ -2595,11 +2521,13 @@
                 class="checkout-submit"
                 [class.is-placing]="isPlacingOrder()"
                 [class.disabled]="
-                  paymentMethod() === 'credit' && !isCreditCardValid()
+                  (paymentMethod() === 'credit' && !isCreditCardValid()) ||
+                  (isGuest() && !isPhoneValid())
                 "
                 [disabled]="
                   isPlacingOrder() ||
-                  (paymentMethod() === 'credit' && !isCreditCardValid())
+                  (paymentMethod() === 'credit' && !isCreditCardValid()) ||
+                  (isGuest() && !isPhoneValid())
                 "
                 (click)="placeOrder()"
               >
@@ -2651,52 +2579,108 @@
         <section class="tab-tracker" aria-label="訂單追蹤">
           @if (trackingOrder()) {
             <div class="tracker-container">
-              <!-- ── 現金待付款橫幅（PENDING_CASH 狀態）── -->
-              @if (trackingOrder()!.status === "pending-cash") {
-                <div class="pending-cash-banner">
-                  <div class="pcb-icon">💵</div>
-                  <div class="pcb-title">訂單已成立，請前往櫃台付款</div>
-                  <div class="pcb-order-num">{{ trackingOrder()!.number }}</div>
-                  <div class="pcb-hint">收銀員掃描此號碼後即開始備餐</div>
-                  <div class="pcb-amount">
-                    {{ branchService.config.currency }}
-                    {{ trackingOrder()!.total }}
-                  </div>
+              <!-- 取餐號碼大牌 -->
+              <div class="tracker-number-card">
+                <span class="tracker-number-label">{{
+                  lang.pickupNumber
+                }}</span>
+                <div class="tracker-number">
+                  {{ trackingOrder()!.number }}
                 </div>
-              }
+                <span class="tracker-time-label"
+                  >{{ lang.estimatedWait }}
+                  <strong>{{ trackingOrder()!.estimatedMinutes }}</strong>
+                  {{ lang.minutes }}</span
+                >
+              </div>
 
-              <!-- 取餐號碼大牌（非待付款時顯示） -->
-              @if (trackingOrder()!.status !== "pending-cash") {
-                <div class="tracker-number-card">
-                  <span class="tracker-number-label">{{
-                    lang.pickupNumber
-                  }}</span>
-                  <div class="tracker-number">
-                    {{ trackingOrder()!.number }}
+              <!-- 製作進度條 -->
+              <div class="tracker-steps">
+                <!-- Step 1：等待中 -->
+                <div
+                  class="tracker-step"
+                  [class.step-done]="
+                    [
+                      'cooking',
+                      'ready',
+                      'done',
+                      'paid',
+                      'pending-cash',
+                    ].includes(trackingOrder()!.status)
+                  "
+                  [class.step-active]="trackingOrder()!.status === 'waiting'"
+                >
+                  <div class="step-dot">
+                    @if (
+                      [
+                        "cooking",
+                        "ready",
+                        "done",
+                        "paid",
+                        "pending-cash",
+                      ].includes(trackingOrder()!.status)
+                    ) {
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="3"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    }
                   </div>
-                  <span class="tracker-time-label"
-                    >{{ lang.estimatedWait }}
-                    <strong>{{ trackingOrder()!.estimatedMinutes }}</strong>
-                    {{ lang.minutes }}</span
-                  >
+                  <div class="step-line"></div>
+                  <span class="step-label">{{ lang.waiting }}</span>
                 </div>
-              }
 
-              <!-- 製作進度條（非待付款時顯示） -->
-              @if (trackingOrder()!.status !== "pending-cash") {
-                <div class="tracker-steps">
+                <!-- Step 2：製作中 -->
+                <div
+                  class="tracker-step"
+                  [class.step-done]="
+                    ['ready', 'done', 'paid', 'pending-cash'].includes(
+                      trackingOrder()!.status
+                    )
+                  "
+                  [class.step-active]="trackingOrder()!.status === 'cooking'"
+                >
+                  <div class="step-dot">
+                    @if (trackingOrder()!.status === "cooking") {
+                      <span class="step-cooking-dot"></span>
+                    }
+                    @if (
+                      ["ready", "done", "paid", "pending-cash"].includes(
+                        trackingOrder()!.status
+                      )
+                    ) {
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="3"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    }
+                  </div>
+                  <div class="step-line"></div>
+                  <span class="step-label">{{ lang.cooking }}</span>
+                </div>
+
+                @if (trackingOrder()!.isCash) {
+                  <!-- ── 現金訂單：Step 3 可取餐 + Step 4 付款 ── -->
+
+                  <!-- Step 3：可取餐 -->
                   <div
                     class="tracker-step"
                     [class.step-done]="
-                      ['cooking', 'ready', 'done'].includes(
-                        trackingOrder()!.status
-                      )
+                      ['paid', 'pending-cash'].includes(trackingOrder()!.status)
                     "
-                    [class.step-active]="trackingOrder()!.status === 'waiting'"
+                    [class.step-active]="trackingOrder()!.status === 'ready'"
                   >
                     <div class="step-dot">
                       @if (
-                        ["cooking", "ready", "done"].includes(
+                        ["paid", "pending-cash"].includes(
                           trackingOrder()!.status
                         )
                       ) {
@@ -2711,22 +2695,19 @@
                       }
                     </div>
                     <div class="step-line"></div>
-                    <span class="step-label">{{ lang.waiting }}</span>
+                    <span class="step-label">{{ lang.ready }} 🎉</span>
                   </div>
+
+                  <!-- Step 4：付款（現金專屬） -->
                   <div
                     class="tracker-step"
-                    [class.step-done]="
-                      ['ready', 'done'].includes(trackingOrder()!.status)
+                    [class.step-active]="
+                      trackingOrder()!.status === 'pending-cash'
                     "
-                    [class.step-active]="trackingOrder()!.status === 'cooking'"
+                    [class.step-done]="trackingOrder()!.status === 'paid'"
                   >
                     <div class="step-dot">
-                      @if (trackingOrder()!.status === "cooking") {
-                        <span class="step-cooking-dot"></span>
-                      }
-                      @if (
-                        ["ready", "done"].includes(trackingOrder()!.status)
-                      ) {
+                      @if (trackingOrder()!.status === "paid") {
                         <svg
                           viewBox="0 0 24 24"
                           fill="none"
@@ -2737,16 +2718,19 @@
                         </svg>
                       }
                     </div>
-                    <div class="step-line"></div>
-                    <span class="step-label">{{ lang.cooking }}</span>
+                    <span class="step-label">付款 💰</span>
                   </div>
+                } @else {
+                  <!-- ── 線上付款：Step 3 可取餐（最後一步）── -->
                   <div
                     class="tracker-step"
-                    [class.step-done]="trackingOrder()!.status === 'done'"
+                    [class.step-done]="
+                      ['done', 'paid'].includes(trackingOrder()!.status)
+                    "
                     [class.step-active]="trackingOrder()!.status === 'ready'"
                   >
                     <div class="step-dot">
-                      @if (trackingOrder()!.status === "done") {
+                      @if (["done", "paid"].includes(trackingOrder()!.status)) {
                         <svg
                           viewBox="0 0 24 24"
                           fill="none"
@@ -2759,9 +2743,8 @@
                     </div>
                     <span class="step-label">{{ lang.ready }} 🎉</span>
                   </div>
-                </div>
-              }
-              <!-- end @if status !== pending-cash -->
+                }
+              </div>
 
               <!-- 訂單明細 -->
               <div class="tracker-order-card">
@@ -2792,8 +2775,13 @@
               </button>
 
               <!-- 取消訂單（僅 waiting / pending-cash 時可取消）-->
-              @if (['waiting', 'pending-cash'].includes(trackingOrder()!.status)) {
-                <button class="tracker-cancel-btn" (click)="openCancelConfirm()">
+              @if (
+                ["waiting", "pending-cash"].includes(trackingOrder()!.status)
+              ) {
+                <button
+                  class="tracker-cancel-btn"
+                  (click)="openCancelConfirm()"
+                >
                   取消訂單
                 </button>
               }
@@ -2803,12 +2791,19 @@
           <!-- 取消訂單確認 Modal -->
           @if (cancelConfirmOpen()) {
             <div class="tracker-cancel-overlay" (click)="closeCancelConfirm()">
-              <div class="tracker-cancel-modal" (click)="$event.stopPropagation()">
+              <div
+                class="tracker-cancel-modal"
+                (click)="$event.stopPropagation()"
+              >
                 <p class="tcm-title">確定取消此訂單？</p>
                 <p class="tcm-desc">取消後無法恢復，請確認再送出。</p>
                 <div class="tcm-btns">
-                  <button class="tcm-btn-ghost" (click)="closeCancelConfirm()">返回</button>
-                  <button class="tcm-btn-danger" (click)="confirmCancelOrder()">確認取消</button>
+                  <button class="tcm-btn-ghost" (click)="closeCancelConfirm()">
+                    返回
+                  </button>
+                  <button class="tcm-btn-danger" (click)="confirmCancelOrder()">
+                    確認取消
+                  </button>
                 </div>
               </div>
             </div>

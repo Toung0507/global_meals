@@ -347,8 +347,10 @@ export class AuthService {
   handleSessionExpired(): void {
     this.currentUser = null;
     this.currentMember = null;
+    this.currentStaff = null;
     sessionStorage.removeItem('currentUser');
     sessionStorage.removeItem('currentMember');
+    sessionStorage.removeItem('currentStaff');
     this.sessionExpired.set(true);
   }
 

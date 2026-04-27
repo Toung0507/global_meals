@@ -937,6 +937,33 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     line-height: 1;
 }
 
+/* ── 財報幣別標籤 ─────────────────────────────────────── */
+.finance-currency-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    background: #2e6da4;
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: 6px;
+    vertical-align: middle;
+    letter-spacing: 0.04em;
+}
+
+/* ── Top5 排名徽章 ────────────────────────────────────── */
+.finance-rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #fff;
+}
+
 
 /* ── 等寬字體 ─────────────────────────────────────────── */
 .mono { font-family: 'IBM Plex Mono', monospace; }
@@ -1116,6 +1143,16 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
 }
 
 .required { color: #dc2626; }
+
+.product-img-preview {
+    display: block;
+    width: 100%;
+    max-height: 160px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 1px solid #D4DCE8;
+}
 
 /* ── 新增國家稅率 Modal 專屬 ─────────────────────────── */
 /* 加寬版 Modal */

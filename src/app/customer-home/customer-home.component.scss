@@ -535,6 +535,20 @@
 }
 
 /* 修改資料主按鈕 */
+.pr-save-msg {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #fee2e2;
+  color: #b91c1c;
+  margin: 4px 0 0;
+
+  &.ok {
+    background: #dcfce7;
+    color: #15803d;
+  }
+}
+
 .pr-edit-btn {
   display: flex;
   align-items: center;
@@ -4403,6 +4417,27 @@
   }
 }
 
+/* 最後一步（付款）完成：綠底黃勾 */
+.tracker-step:last-child.step-done {
+  .step-dot {
+    background: #27ae60;
+    border-color: #27ae60;
+
+    svg {
+      color: #f9e04b;
+      stroke: #f9e04b;
+    }
+  }
+
+  .step-line {
+    background: #27ae60;
+  }
+
+  .step-label {
+    color: #27ae60;
+  }
+}
+
 /* 進行中 */
 .tracker-step.step-active {
   .step-dot {
@@ -6406,6 +6441,36 @@
   gap: 5px;
 }
 
+/* 活動 accordion 包裝器 */
+.promo-act-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* chevron：選中時旋轉 180° */
+.par-chevron {
+  transition: transform 0.2s ease;
+
+  &.open {
+    transform: rotate(180deg);
+  }
+}
+
+/* 活動 inline 贈品列表 */
+.promo-act-gifts {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px 4px;
+  background: rgba(240, 253, 244, 0.6);
+  border: 1.5px solid #bbf7d0;
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  margin-top: -6px;
+  padding-top: 10px;
+}
+
 /* 活動列（通用） */
 .promo-act-row {
   display: flex;
@@ -6428,6 +6493,11 @@
   &.selected {
     border-color: #d95c1a;
     background: rgba(255, 243, 224, 0.8);
+  }
+
+  /* 選中且有 gift 展開時，底部角切直 */
+  .promo-act-item &.selected {
+    border-radius: 12px 12px 0 0;
   }
 }
 

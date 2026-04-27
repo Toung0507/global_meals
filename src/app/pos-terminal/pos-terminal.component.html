@@ -57,6 +57,13 @@
   <div class="ms-auto d-flex align-items-center gap-3">
     <span class="pos-time">{{ clockStr() }}</span>
     <button
+      class="btn btn-sm btn-outline-secondary"
+      style="font-size: 0.75rem"
+      (click)="openChangePw()"
+    >
+      修改密碼
+    </button>
+    <button
       class="btn btn-sm btn-ghost-red"
       style="font-size: 0.75rem"
       (click)="logout()"
@@ -117,7 +124,7 @@
     訂單看板
   </div>
 
-  <!-- 庫存管理（全部可見，員工僅查看） -->
+  <!-- 商品管理（全部可見，員工僅查看） -->
   <div
     class="pos-tab-btn"
     [class.active]="activeTab() === 'stock' && isBM"
@@ -139,7 +146,7 @@
       />
       <path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12" />
     </svg>
-    庫存管理
+    商品管理
   </div>
 
   <!-- 活動管理（全部可見） -->
@@ -400,12 +407,14 @@
     <div class="pos-right">
       <!-- 訂單頭部 -->
       <div class="cart-header">
-        <div class="cart-header-left">
-          <div class="cart-title">目前訂單</div>
-          <div class="cart-order-id">#TW-2061</div>
-        </div>
-        <button class="cart-clear-btn" (click)="clearCart()" title="清空訂單">
-          ✕
+        <button class="cart-clear-full" (click)="clearCart()">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            style="width:14px;height:14px;margin-right:5px">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+          </svg>
+          清除購物車
         </button>
       </div>
 
@@ -607,11 +616,11 @@
             <input
               class="omp-input"
               type="tel"
-              placeholder="手機號碼（現場外帶識別用）"
+              placeholder="手機號碼（現場外帶識別用，可不填）"
               [value]="guestPhone()"
               (input)="guestPhone.set($any($event.target).value)"
             />
-            <div class="omp-hint">填入手機號碼方便辨識現場等候外帶的客人</div>
+            <div class="omp-hint">訪客免填，可直接進行結帳</div>
           </div>
         }
       </div>
@@ -1101,7 +1110,9 @@
     </div>
 
     <!-- ── 待付款現金訂單區塊 ── -->
-    @if (pendingCashOrders().length > 0) {
+    @if (
+      pendingCashOrders().length > 0 || orderService.pendingCash().length > 0
+    ) {
       <div class="pending-cash-section mb-4">
         <div class="pcs-header">
           <svg
@@ -1117,9 +1128,12 @@
             <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
             <line x1="1" y1="10" x2="23" y2="10" />
           </svg>
-          待付款 ({{ pendingCashOrders().length }})
+          待付款 ({{
+            pendingCashOrders().length + orderService.pendingCash().length
+          }})
         </div>
         <div class="pcs-cards">
+          <!-- 後端 PENDING_CASH 訂單 -->
           @for (order of pendingCashOrders(); track order.posId) {
             <div class="pcs-card">
               <div
@@ -1149,242 +1163,219 @@
               </button>
             </div>
           }
+          <!-- 廚房完成後移來的現金訂單 -->
+          @for (order of orderService.pendingCash(); track order.id) {
+            <div class="pcs-card">
+              <div
+                class="d-flex justify-content-between align-items-center mb-2"
+              >
+                <span class="ob-num">{{ order.number }}</span>
+                <span class="badge-unpaid">待收款</span>
+              </div>
+              @for (item of order.items; track item) {
+                <div class="ob-item">{{ item }}</div>
+              }
+              <div class="ob-meta">
+                <span>{{ order.createdAt }}</span>
+                <span>{{ order.payMethod }}</span>
+                <span class="mono">${{ order.total }}</span>
+              </div>
+              <button
+                class="btn btn-sm btn-confirm-cash mt-2"
+                (click)="completeCashOrder(order)"
+              >
+                收款完成 ${{ order.total }}
+              </button>
+            </div>
+          }
         </div>
       </div>
     }
 
-    <div class="row g-3">
-      <!-- ── 待製作欄 ── -->
-      <div class="col-md-4">
-        <div
-          style="
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: #fbbf24;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-          "
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            style="width: 14px; height: 14px; flex-shrink: 0"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
+    <div class="ob-kanban">
+
+      <!-- ── 欄一：待製作 ── -->
+      <div class="ob-col">
+        <div class="ob-col-hd ob-col-hd--waiting">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               class="ob-col-icon">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
           </svg>
-          待製作 ({{ orderService.waiting().length }})
+          <span class="ob-col-title">待製作</span>
+          <span class="ob-col-badge ob-col-badge--waiting">{{ orderService.waiting().length }}</span>
         </div>
-        @if (orderService.waiting().length === 0) {
-          <div class="ob-empty">目前無待製作訂單</div>
-        }
-        @for (order of orderService.waiting(); track order.id) {
-          <div
-            class="order-board-card ob-waiting mb-2"
-            [class.ob-customer]="order.source === 'customer'"
-          >
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <span class="ob-num">{{ order.number }}</span>
-              <div class="d-flex gap-1 align-items-center">
-                @if (order.source === "customer") {
-                  <span class="badge-customer">線上</span>
-                }
-                <span class="badge-warn">等待中</span>
+        <div class="ob-col-body">
+          @if (orderService.waiting().length === 0) {
+            <div class="ob-empty">目前無待製作訂單</div>
+          }
+          @for (order of orderService.waiting(); track order.id) {
+            <div class="order-board-card ob-waiting" [class.ob-customer]="order.source === 'customer'">
+              <div class="ob-card-top">
+                <span class="ob-num">{{ order.number }}</span>
+                <div class="ob-badges">
+                  @if (order.source === 'customer') { <span class="badge-customer">線上</span> }
+                  @if (order.orderType) { <span class="ob-type-badge">{{ order.orderType }}</span> }
+                </div>
               </div>
+              <div class="ob-items-list">
+                @for (item of order.items; track item) { <div class="ob-item">{{ item }}</div> }
+              </div>
+              @if (order.note) { <div class="ob-note">📝 {{ order.note }}</div> }
+              <div class="ob-meta">
+                <span>{{ order.createdAt }}</span>
+                <span>{{ order.payMethod }}</span>
+                <span class="ob-total">${{ order.total }}</span>
+              </div>
+              <button class="ob-action-btn ob-action-btn--gold" (click)="startCooking(order.id)">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" class="ob-btn-icon">
+                  <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+                </svg>
+                開始製作
+              </button>
             </div>
-            @for (item of order.items; track item) {
-              <div class="ob-item">{{ item }}</div>
-            }
-            <div class="ob-meta">
-              <span>{{ order.createdAt }}</span>
-              <span>{{ order.payMethod }}</span>
-              <span class="mono">${{ order.total }}</span>
-            </div>
-            <button
-              class="btn btn-sm btn-ghost-gold mt-2"
-              style="
-                width: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 5px;
-              "
-              (click)="startCooking(order.id)"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                style="width: 13px; height: 13px"
-              >
-                <path
-                  d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"
-                />
-              </svg>
-              開始製作
-            </button>
-          </div>
-        }
+          }
+        </div>
       </div>
 
-      <!-- ── 製作中欄 ── -->
-      <div class="col-md-4">
-        <div
-          style="
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: #818cf8;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-          "
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            style="width: 14px; height: 14px; flex-shrink: 0"
-          >
-            <path
-              d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"
-            />
+      <!-- ── 欄二：製作中 ── -->
+      <div class="ob-col">
+        <div class="ob-col-hd ob-col-hd--cooking">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               class="ob-col-icon">
+            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
           </svg>
-          製作中 ({{ orderService.cooking().length }})
+          <span class="ob-col-title">製作中</span>
+          <span class="ob-col-badge ob-col-badge--cooking">{{ orderService.cooking().length }}</span>
         </div>
-        @if (orderService.cooking().length === 0) {
-          <div class="ob-empty">目前無製作中訂單</div>
-        }
-        @for (order of orderService.cooking(); track order.id) {
-          <div
-            class="order-board-card ob-cooking mb-2"
-            [class.ob-customer]="order.source === 'customer'"
-          >
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <span class="ob-num">{{ order.number }}</span>
-              <div class="d-flex gap-1 align-items-center">
-                @if (order.source === "customer") {
-                  <span class="badge-customer">線上</span>
-                }
-                <span class="badge-blue">製作中</span>
+        <div class="ob-col-body">
+          @if (orderService.cooking().length === 0) {
+            <div class="ob-empty">目前無製作中訂單</div>
+          }
+          @for (order of orderService.cooking(); track order.id) {
+            <div class="order-board-card ob-cooking" [class.ob-customer]="order.source === 'customer'">
+              <div class="ob-card-top">
+                <span class="ob-num">{{ order.number }}</span>
+                <div class="ob-badges">
+                  @if (order.source === 'customer') { <span class="badge-customer">線上</span> }
+                  @if (order.orderType) { <span class="ob-type-badge">{{ order.orderType }}</span> }
+                  <span class="badge-blue">製作中</span>
+                </div>
               </div>
+              <div class="ob-items-list">
+                @for (item of order.items; track item) { <div class="ob-item">{{ item }}</div> }
+              </div>
+              @if (order.note) { <div class="ob-note">📝 {{ order.note }}</div> }
+              <div class="ob-meta">
+                <span>{{ order.createdAt }}</span>
+                <span>預估 {{ order.estimatedMinutes }} 分</span>
+                <span class="ob-total">${{ order.total }}</span>
+              </div>
+              <button class="ob-action-btn ob-action-btn--green" (click)="finishOrder(order.id)">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="ob-btn-icon">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                完成出餐
+              </button>
             </div>
-            @for (item of order.items; track item) {
-              <div class="ob-item">{{ item }}</div>
-            }
-            <div class="ob-meta">
-              <span>{{ order.createdAt }}</span>
-              <span>預估 {{ order.estimatedMinutes }} 分</span>
-              <span class="mono">${{ order.total }}</span>
-            </div>
-            <button
-              class="btn btn-sm btn-ghost-green mt-2"
-              style="
-                width: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 5px;
-              "
-              (click)="finishOrder(order.id)"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                style="width: 13px; height: 13px"
-              >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              完成出餐
-            </button>
-          </div>
-        }
+          }
+        </div>
       </div>
 
-      <!-- ── 已完成欄 ── -->
-      <div class="col-md-4">
-        <div
-          style="
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: #3ecf8e;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-          "
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            style="width: 14px; height: 14px; flex-shrink: 0"
-          >
-            <polyline points="20 6 9 17 4 12" />
+      <!-- ── 欄三：可取餐 / 已完成 ── -->
+      <div class="ob-col">
+        <div class="ob-col-hd ob-col-hd--done">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+               class="ob-col-icon">
+            <polyline points="20 6 9 17 4 12"/>
           </svg>
-          已完成 ({{ orderService.done().length }})
+          <span class="ob-col-title">可取餐 / 完成</span>
+          <span class="ob-col-badge ob-col-badge--done">
+            {{ orderService.ready().length + orderService.done().length + orderService.paid().length }}
+          </span>
         </div>
-        @if (orderService.done().length === 0) {
-          <div class="ob-empty">今日暫無完成訂單</div>
-        }
-        @for (order of orderService.done(); track order.id) {
-          <div class="order-board-card ob-done mb-2" style="opacity: 0.65">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <span class="ob-num">{{ order.number }}</span>
-              <span class="badge-ok">已完成</span>
+        <div class="ob-col-body">
+          @if (orderService.ready().length === 0 && orderService.done().length === 0 && orderService.paid().length === 0) {
+            <div class="ob-empty">今日暫無完成訂單</div>
+          }
+          @for (order of orderService.ready(); track order.id) {
+            <div class="order-board-card ob-done">
+              <div class="ob-card-top">
+                <span class="ob-num">{{ order.number }}</span>
+                <span class="badge-ok ob-badge-pickup">可取餐</span>
+              </div>
+              <div class="ob-items-list">
+                @for (item of order.items; track item) { <div class="ob-item">{{ item }}</div> }
+              </div>
+              <div class="ob-meta">
+                <span>{{ order.createdAt }}</span>
+                <span>{{ order.payMethod }}</span>
+                <span class="ob-total">${{ order.total }}</span>
+              </div>
+              <button class="ob-action-btn ob-action-btn--cash" (click)="moveToCashPayment(order)">
+                💵 移至待付款
+              </button>
             </div>
-            <div class="ob-item">{{ order.items.join("、") }}</div>
-            <div class="ob-meta">
-              <span>{{ order.createdAt }}</span>
-              <span class="mono">${{ order.total }}</span>
+          }
+          @for (order of orderService.done(); track order.id) {
+            <div class="order-board-card ob-done" [style.opacity]="order.isCash ? '1' : '0.6'">
+              <div class="ob-card-top">
+                <span class="ob-num">{{ order.number }}</span>
+                <span class="badge-ok">已完成</span>
+              </div>
+              <div class="ob-items-list">
+                @for (item of order.items; track item) { <div class="ob-item">{{ item }}</div> }
+              </div>
+              <div class="ob-meta">
+                <span>{{ order.createdAt }}</span>
+                <span>{{ order.payMethod }}</span>
+                <span class="ob-total">${{ order.total }}</span>
+              </div>
+              @if (order.isCash) {
+                <button class="ob-action-btn ob-action-btn--cash" (click)="moveToCashPayment(order)">
+                  💵 移至待付款
+                </button>
+              }
             </div>
-          </div>
-        }
+          }
+          @for (order of orderService.paid(); track order.id) {
+            <div class="order-board-card ob-done" style="opacity: 0.45">
+              <div class="ob-card-top">
+                <span class="ob-num">{{ order.number }}</span>
+                <span class="badge-ok">已收款</span>
+              </div>
+              <div class="ob-items-list">
+                @for (item of order.items; track item) { <div class="ob-item">{{ item }}</div> }
+              </div>
+              <div class="ob-meta">
+                <span>{{ order.createdAt }}</span>
+                <span>{{ order.payMethod }}</span>
+                <span class="ob-total">${{ order.total }}</span>
+              </div>
+            </div>
+          }
+        </div>
       </div>
+
     </div>
   </div>
 }
 
 <!-- ════════════════════════════════════════
-     頁籤 3：庫存管理（Signal 驅動，分店長可 inline 調整）
+     頁籤 3：商品管理（庫存 + 售價 + 最大購買量）
      ════════════════════════════════════════ -->
 @if (activeTab() === "stock") {
   <div class="page-panel" style="display: block">
-    <div class="d-flex justify-content-between align-items-center mb-1">
-      <div class="panel-title" style="margin-bottom: 0">庫存管理</div>
+    <div class="panel-title" style="margin-bottom: 4px">商品管理</div>
+    <div class="panel-sub" style="margin-bottom: 14px">
       @if (isBM) {
-        <button class="btn btn-sm btn-ghost-gold">+ 新增商品</button>
-      }
-    </div>
-    <div class="panel-sub">
-      @if (isBM) {
-        點擊「調整」後直接輸入新庫存量，確認後即時生效
+        點擊「調整」可修改庫存量、售價或最大購買量，確認後即時生效
       } @else {
-        查看本分店目前庫存狀態（僅供查看）
+        查看本分店目前商品狀態（僅供查看）
       }
     </div>
 
@@ -1395,68 +1386,159 @@
             <tr>
               <th>商品名稱</th>
               <th>庫存量</th>
-              <th>狀態</th>
               @if (isBM) {
-                <th>操作</th>
+                <th>售價</th>
+                <th>最大購買量</th>
               }
             </tr>
           </thead>
           <tbody>
-            @for (p of products(); track p.id) {
+            @for (p of posStockList(); track p.productId) {
               <tr>
-                <td>{{ p.name }}</td>
-                <td
-                  class="mono"
-                  [style.color]="
-                    p.stock <= 0 ? '#f87171' : p.stock <= 10 ? '#fbbf24' : ''
-                  "
-                >
-                  {{ p.stock }}
-                </td>
+                <td>{{ p.productName }}</td>
+
+                <!-- 庫存量欄位 -->
                 <td>
-                  @if (p.stock <= 0) {
-                    <span class="badge-err">缺貨</span>
-                  } @else if (p.stock <= 10) {
-                    <span class="badge-warn">偏低</span>
+                  @if (adjustStockSavedId() === p.productId) {
+                    <span class="stock-saved-badge">✓ 已更新</span>
+                  } @else if (isBM && adjustingStockId() === p.productId) {
+                    <div class="d-flex gap-1 align-items-center">
+                      <button
+                        class="btn btn-sm btn-ghost-gold"
+                        (click)="stepStock(-10)"
+                      >
+                        －10
+                      </button>
+                      <input
+                        type="number"
+                        class="stock-input"
+                        [value]="adjustStockAmount()"
+                        (input)="onAdjustInput($event)"
+                        (keydown.arrowup)="stepStock(1)"
+                        (keydown.arrowdown)="stepStock(-1)"
+                        min="0"
+                        style="width: 64px; text-align: center"
+                      />
+                      <button
+                        class="btn btn-sm btn-ghost-gold"
+                        (click)="stepStock(10)"
+                      >
+                        ＋10
+                      </button>
+                      <button
+                        class="btn btn-sm btn-ghost-gold ms-1"
+                        (click)="confirmAdjustStock()"
+                      >
+                        確認
+                      </button>
+                      <button
+                        class="btn btn-sm btn-ghost-red"
+                        style="font-size: 0.72rem"
+                        (click)="cancelAdjustStock()"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   } @else {
-                    <span class="badge-ok">充足</span>
+                    <span class="mono">{{ p.stockQuantity }}</span>
+                    @if (isBM) {
+                      <button
+                        class="btn btn-sm btn-ghost-gold ms-2"
+                        (click)="startAdjustStock(p.productId)"
+                      >
+                        調整
+                      </button>
+                    }
                   }
                 </td>
+
+                <!-- 售價欄位（分店長可見） -->
                 @if (isBM) {
                   <td>
-                    <!-- 已儲存確認（savedPop 縮放動畫） -->
-                    @if (adjustStockSavedId() === p.id) {
+                    @if (adjustPriceSavedId() === p.productId) {
                       <span class="stock-saved-badge">✓ 已更新</span>
-                    }
-                    <!-- inline 調整輸入 -->
-                    @else if (adjustingStockId() === p.id) {
+                    } @else if (adjustingPriceId() === p.productId) {
                       <div class="d-flex gap-1 align-items-center">
                         <input
                           type="number"
                           class="stock-input"
-                          [value]="adjustStockAmount()"
-                          (input)="onAdjustInput($event)"
+                          [value]="adjustPriceDraft()"
+                          (input)="onPriceInput($event)"
                           min="0"
-                          style="width: 64px"
+                          style="width: 74px"
                         />
                         <button
                           class="btn btn-sm btn-ghost-gold"
-                          (click)="confirmAdjustStock()"
+                          (click)="confirmAdjustPrice()"
                         >
                           確認
                         </button>
                         <button
                           class="btn btn-sm btn-ghost-red"
                           style="font-size: 0.72rem"
-                          (click)="cancelAdjustStock()"
+                          (click)="cancelAdjustPrice()"
                         >
                           ✕
                         </button>
                       </div>
                     } @else {
+                      <span class="mono">NT${{ p.basePrice }}</span>
                       <button
-                        class="btn btn-sm btn-ghost-gold"
-                        (click)="startAdjustStock(p.id)"
+                        class="btn btn-sm btn-ghost-gold ms-2"
+                        (click)="startAdjustPrice(p.productId)"
+                      >
+                        調整
+                      </button>
+                    }
+                  </td>
+
+                  <!-- 最大購買量欄位（分店長可見） -->
+                  <td>
+                    @if (adjustMaxQtySavedId() === p.productId) {
+                      <span class="stock-saved-badge">✓ 已更新</span>
+                    } @else if (adjustingMaxQtyId() === p.productId) {
+                      <div class="d-flex gap-1 align-items-center">
+                        <button
+                          class="btn btn-sm btn-ghost-gold"
+                          (click)="stepMaxQty(-10)"
+                        >
+                          －10
+                        </button>
+                        <input
+                          type="number"
+                          class="stock-input"
+                          [value]="adjustMaxQtyDraft()"
+                          (input)="onMaxQtyInput($event)"
+                          (keydown.arrowup)="stepMaxQty(1)"
+                          (keydown.arrowdown)="stepMaxQty(-1)"
+                          min="1"
+                          style="width: 64px; text-align: center"
+                        />
+                        <button
+                          class="btn btn-sm btn-ghost-gold"
+                          (click)="stepMaxQty(10)"
+                        >
+                          ＋10
+                        </button>
+                        <button
+                          class="btn btn-sm btn-ghost-gold ms-1"
+                          (click)="confirmAdjustMaxQty()"
+                        >
+                          確認
+                        </button>
+                        <button
+                          class="btn btn-sm btn-ghost-red"
+                          style="font-size: 0.72rem"
+                          (click)="cancelAdjustMaxQty()"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    } @else {
+                      <span class="mono">{{ p.maxOrderQuantity }}</span>
+                      <button
+                        class="btn btn-sm btn-ghost-gold ms-2"
+                        (click)="startAdjustMaxQty(p.productId)"
                       >
                         調整
                       </button>
@@ -1482,27 +1564,11 @@
       <div class="pos-promo-toast">{{ posToastMsg() }}</div>
     }
 
-    <div class="d-flex justify-content-between align-items-start mb-4">
-      <div>
-        <div class="panel-title" style="margin-bottom: 2px">活動管理</div>
-        <div class="panel-sub" style="margin: 0">
-          設定促銷活動與公告，切換開關即時啟用／停用
-        </div>
+    <div class="mb-4">
+      <div class="panel-title" style="margin-bottom: 2px">活動管理</div>
+      <div class="panel-sub" style="margin: 0">
+        目前分店的促銷活動與公告（唯讀，如需修改請至老闆後台）
       </div>
-      @if (isBM) {
-        <button
-          class="btn btn-sm"
-          style="
-            background: #c49756;
-            color: #0d1117;
-            font-weight: 600;
-            white-space: nowrap;
-          "
-          (click)="openAddPromo()"
-        >
-          ＋ 新增活動
-        </button>
-      }
     </div>
 
     <!-- 活動卡片列表 -->
@@ -1512,7 +1578,23 @@
         [style.border-left-color]="promo.badgeColor || promo.color"
         [style.opacity]="promo.ended ? '0.72' : '1'"
       >
-        <div class="d-flex justify-content-between align-items-start gap-2">
+        <!-- 封面圖片（有圖才顯示） -->
+        @if (promo.image) {
+          <div class="pos-promo-img-wrap">
+            <img [src]="promo.image" alt="{{ promo.title }}" class="pos-promo-img" />
+            <div class="pos-promo-img-overlay">
+              @if (promo.ended) {
+                <span class="pos-promo-img-badge badge-err">已結束</span>
+              } @else if (promo.isActive) {
+                <span class="pos-promo-img-badge badge-ok">進行中</span>
+              } @else {
+                <span class="pos-promo-img-badge badge-warn">已暫停</span>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="pos-promo-body d-flex justify-content-between align-items-start gap-2">
           <div style="flex: 1; min-width: 0">
             <div class="pos-promo-title">{{ promo.title }}</div>
             @if (promo.description) {
@@ -1526,47 +1608,18 @@
               }
             </div>
           </div>
-          <div class="d-flex gap-2 align-items-center flex-shrink-0">
-            @if (promo.ended) {
-              <span class="badge-err">已結束</span>
-            } @else if (promo.isActive) {
-              <span class="badge-ok">進行中</span>
-            } @else {
-              <span class="badge-warn">已暫停</span>
-            }
-            @if (isBM && !promo.ended) {
-              <div class="form-check form-switch mb-0">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  [checked]="promo.isActive"
-                  (change)="togglePromo(promo.id)"
-                />
-              </div>
-            }
-          </div>
+          @if (!promo.image) {
+            <div class="d-flex gap-2 align-items-center flex-shrink-0">
+              @if (promo.ended) {
+                <span class="badge-err">已結束</span>
+              } @else if (promo.isActive) {
+                <span class="badge-ok">進行中</span>
+              } @else {
+                <span class="badge-warn">已暫停</span>
+              }
+            </div>
+          }
         </div>
-        <!-- 底部刪除列（分店長限定） -->
-        @if (isBM) {
-          <div
-            style="
-              border-top: 1px solid rgba(255, 255, 255, 0.07);
-              padding-top: 10px;
-              margin-top: 10px;
-              display: flex;
-              justify-content: flex-end;
-            "
-          >
-            <button
-              class="btn btn-sm btn-ghost-red"
-              style="font-size: 0.72rem"
-              [class.promo-delete-pulse]="promo.ended"
-              (click)="deletePromo(promo.id)"
-            >
-              刪除
-            </button>
-          </div>
-        }
       </div>
     }
   </div>
@@ -2123,6 +2176,75 @@
           </tbody>
         </table>
       </div>
+    </div>
+  </div>
+}
+<!-- ── 員工自改密碼 Modal ──────────────────────────── -->
+@if (changePwOpen()) {
+  <div class="modal-backdrop" (click)="changePwOpen.set(false)"></div>
+  <div class="add-staff-modal">
+    <div class="modal-header-row">
+      <span class="modal-title-text">修改密碼</span>
+      <button class="modal-close-btn" (click)="changePwOpen.set(false)">
+        ✕
+      </button>
+    </div>
+
+    <div class="modal-field">
+      <label class="modal-label">舊密碼 *</label>
+      <input
+        type="password"
+        class="modal-input"
+        placeholder="請輸入目前密碼"
+        [value]="changePwOld()"
+        (input)="changePwOld.set($any($event.target).value)"
+      />
+    </div>
+
+    <div class="modal-field">
+      <label class="modal-label">新密碼 *</label>
+      <input
+        type="password"
+        class="modal-input"
+        placeholder="請輸入新密碼（至少 6 碼）"
+        [value]="changePwNew()"
+        (input)="changePwNew.set($any($event.target).value)"
+      />
+    </div>
+
+    <div class="modal-field">
+      <label class="modal-label">確認新密碼 *</label>
+      <input
+        type="password"
+        class="modal-input"
+        placeholder="再次輸入新密碼"
+        [value]="changePwConfirm()"
+        (input)="changePwConfirm.set($any($event.target).value)"
+      />
+    </div>
+
+    @if (changePwError()) {
+      <div class="modal-field">
+        <span style="color: #f87171; font-size: 0.78rem">{{
+          changePwError()
+        }}</span>
+      </div>
+    }
+
+    <div class="modal-actions">
+      <button
+        class="btn btn-sm btn-ghost-red"
+        (click)="changePwOpen.set(false)"
+      >
+        取消
+      </button>
+      <button
+        class="btn btn-sm"
+        style="background-color: #c49756; color: #0d1117; font-weight: 600"
+        (click)="submitChangePw()"
+      >
+        確認修改
+      </button>
     </div>
   </div>
 }

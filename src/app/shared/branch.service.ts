@@ -100,6 +100,7 @@ export interface LangDict {
   profileTitle: string;
   emailLbl: string;
   emailPlaceholder: string;
+  oldPwdPlaceholder: string;
   newPwdPlaceholder: string;
   confirmNewPwdPlaceholder: string;
   couponTitle: string;
@@ -331,6 +332,7 @@ const TW: LangDict = {
   profileTitle: '個人資料',
   emailLbl: '電子郵件',
   emailPlaceholder: '輸入Email',
+  oldPwdPlaceholder: '輸入目前密碼',
   newPwdPlaceholder: '輸入新密碼',
   confirmNewPwdPlaceholder: '再次輸入新密碼',
   couponTitle: '兌換券紀錄',
@@ -367,7 +369,7 @@ const TW: LangDict = {
   orderDetail: '訂單明細',
   itemCountSuffix: '件',
   free: '免費',
-  couponDiscount: '折扣券折扣（8折）',
+  couponDiscount: '折扣券折抵最多200',
   clearCart: '清空購物車',
   couponBlockTitle: '折扣兌換券',
   couponActive: '已選擇使用，本次享 8 折優惠',
@@ -429,7 +431,7 @@ const TW: LangDict = {
   giftSelectedPre: '已選：',
   giftChangeLbl: '點此更換免費餐點',
   skipPromo: '不參加活動優惠',
-  selectThisPromo: '按此選擇此活動',
+  selectThisPromo: '按此選擇此活動，點選免費贈品。',
   promoMinSpendPre: '滿 ',
   promoZoneTitle: '活動專區',
   promoSpendPre: '消費滿 ',
@@ -547,6 +549,7 @@ const JP: LangDict = {
   profileTitle: '個人情報',
   emailLbl: 'メールアドレス',
   emailPlaceholder: 'メールアドレスを入力',
+  oldPwdPlaceholder: '現在のパスワードを入力',
   newPwdPlaceholder: '新しいパスワードを入力',
   confirmNewPwdPlaceholder: '新しいパスワードをもう一度入力',
   couponTitle: 'クーポン記録',
@@ -584,7 +587,7 @@ const JP: LangDict = {
   orderDetail: '注文内容',
   itemCountSuffix: '件',
   free: '無料',
-  couponDiscount: '割引クーポン（20%オフ）',
+  couponDiscount: 'クーポン割引（最大200円）',
   clearCart: 'カートをクリア',
   couponBlockTitle: '割引クーポン',
   couponActive: '割引クーポン使用中（20%オフ）',
@@ -649,7 +652,7 @@ const JP: LangDict = {
   giftSelectedPre: '選択済：',
   giftChangeLbl: '無料メニューを変更する',
   skipPromo: 'キャンペーン不参加',
-  selectThisPromo: 'このキャンペーンを選択',
+  selectThisPromo: 'このキャンペーンを選択して無料特典を選んでください。',
   promoMinSpendPre: '',
   promoZoneTitle: 'キャンペーン',
   promoSpendPre: '',
@@ -768,6 +771,7 @@ const KR: LangDict = {
   profileTitle: '내 정보',
   emailLbl: '이메일',
   emailPlaceholder: '이메일 입력',
+  oldPwdPlaceholder: '현재 비밀번호 입력',
   newPwdPlaceholder: '새 비밀번호 입력',
   confirmNewPwdPlaceholder: '새 비밀번호 다시 입력',
   couponTitle: '쿠폰 기록',
@@ -804,7 +808,7 @@ const KR: LangDict = {
   orderDetail: '주문 내역',
   itemCountSuffix: '건',
   free: '무료',
-  couponDiscount: '할인 쿠폰 (20% 할인)',
+  couponDiscount: '쿠폰 할인 (최대 200원)',
   clearCart: '장바구니 비우기',
   couponBlockTitle: '할인 쿠폰',
   couponActive: '할인 쿠폰 사용 중 (20% 할인)',
@@ -866,7 +870,7 @@ const KR: LangDict = {
   giftSelectedPre: '선택됨：',
   giftChangeLbl: '무료 메뉴 변경하기',
   skipPromo: '이벤트 미참여',
-  selectThisPromo: '이 이벤트 선택',
+  selectThisPromo: '이 이벤트를 선택하고 무료 사은품을 고르세요。',
   promoMinSpendPre: '',
   promoZoneTitle: '이벤트 존',
   promoSpendPre: '',

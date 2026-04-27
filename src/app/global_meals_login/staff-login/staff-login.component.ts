@@ -72,8 +72,14 @@ export class StaffLoginComponent {
               this.router.navigate(['/pos-terminal']).then(() => this.loadingService.hide());
             }, 1400);
           }
+        } else if (res.code === 403) {
+          this.errorMsg = '此帳號已停用，請聯絡管理員';
+        } else if (res.code === 404) {
+          this.errorMsg = '找不到此帳號，請確認帳號是否正確';
+        } else if (res.code === 400) {
+          this.errorMsg = '密碼錯誤，請重試';
         } else {
-          this.errorMsg = '帳號或密碼錯誤，請確認後重試';
+          this.errorMsg = '登入失敗（' + res.code + '），請確認後重試';
         }
       },
       error: () => {

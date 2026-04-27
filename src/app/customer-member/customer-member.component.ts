@@ -120,7 +120,7 @@ export class CustomerMemberComponent implements OnInit {
   saveEdit(): void {
     if (this.editName.trim().length === 0) return;
 
-    const phone = this.authService.currentUser?.phone ?? '';
+    const memberId = this.authService.currentUser?.id ?? 0;
 
     // 有填新密碼時才呼叫後端修改密碼 API
     if (this.editPassword.trim().length > 0) {
@@ -130,7 +130,7 @@ export class CustomerMemberComponent implements OnInit {
       }
       this.apiService
         .updateMemberPassword({
-          phone,
+          id: memberId,
           oldPassword: this.editOldPassword.trim(),
           newPassword: this.editPassword.trim(),
         })

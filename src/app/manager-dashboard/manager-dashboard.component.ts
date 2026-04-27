@@ -18,10 +18,10 @@
  */
 
 import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { forkJoin } from 'rxjs';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { QRCodeComponent } from 'angularx-qrcode';
 
 import { AuthService } from '../shared/auth.service';
 import {
@@ -30,12 +30,17 @@ import {
   RegionVO,
   PromotionDetailVo,
   GiftDetailVo,
-  ProductVO,
-  BranchInventoryVO,
+  ProductAdminVo,
+  InventoryDetailVo,
   MonthlyReportRes,
+  MonthlyReportDetail,
+  RevenueQueryRes,
+  MonthlyProductsSalesVo,
   StaffVO,
   UpdatePromotionInfoReq,
   CreatePromotionRes,
+  ExchangeRateVO,
+  AiRes,
 } from '../shared/api.service';
 import { GeminiService } from '../shared/gemini.service';
 
@@ -64,6 +69,7 @@ interface DashProduct {
   isActive: boolean;
   emoji: string;
   emojiBg: string;
+  foodImgBase64: string; // ← 新增這行
 }
 
 /* ── 活動型別 ──────────────────────────────────────── */
@@ -92,10 +98,11 @@ interface DashInventory {
   productId: number;
   globalAreaId: number;
   name: string;
-  category: string;
   branch: string;
   stock: number;
   safeStock: number;
+  basePrice: number;
+  maxOrderQuantity: number;
 }
 
 /* ── 帳號型別 ──────────────────────────────────────── */
@@ -131,9 +138,11 @@ interface DashTax {
   currency: string; /* 幣別代碼，例 TWD / JPY / KRW */
   taxType: string; /* 'INCLUSIVE'（內含稅）| 'EXCLUSIVE'（外加稅） */
   rate: number;
-  discountLimit?: number; /* 折扣上限金額（當地幣別） */
+  discountLimit: number; /* 折扣上限金額（當地幣別） */
   editing: boolean;
   editValue: number;
+  editingDiscount: boolean;
+  editDiscountValue: number;
 }
 
 /* ── 訂單型別 ──────────────────────────────────────── */
@@ -152,7 +161,7 @@ interface DashOrder {
 @Component({
   selector: 'app-manager-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, QRCodeComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './manager-dashboard.component.html',
   styleUrls: ['./manager-dashboard.component.scss'],
 })
@@ -178,66 +187,72 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 商品清單（Signal） ─────────────────────────── */
   products = signal<DashProduct[]>([
-    {
-      id: 1,
-      name: '紅燒牛肉麵',
-      category: '台式',
-      price: 165,
-      stock: 48,
-      isActive: true,
-      emoji: '🍜',
-      emojiBg: 'linear-gradient(135deg,#c49756,#8b5e3c)',
-    },
-    {
-      id: 2,
-      name: '印度奶油咖哩飯',
-      category: '南洋',
-      price: 175,
-      stock: 32,
-      isActive: true,
-      emoji: '🍛',
-      emojiBg: 'linear-gradient(135deg,#f59e0b,#d97706)',
-    },
-    {
-      id: 3,
-      name: '越南牛肉河粉',
-      category: '南洋',
-      price: 155,
-      stock: 5,
-      isActive: true,
-      emoji: '🍲',
-      emojiBg: 'linear-gradient(135deg,#3ecf8e,#10b981)',
-    },
-    {
-      id: 4,
-      name: '義式肉醬寬麵',
-      category: '西式',
-      price: 185,
-      stock: 0,
-      isActive: false,
-      emoji: '🍝',
-      emojiBg: 'linear-gradient(135deg,#818cf8,#6366f1)',
-    },
-    {
-      id: 5,
-      name: '墨西哥辣雞捲',
-      category: '西式',
-      price: 145,
-      stock: 18,
-      isActive: true,
-      emoji: '🌮',
-      emojiBg: 'linear-gradient(135deg,#f87171,#ef4444)',
-    },
-    {
-      id: 6,
-      name: '珍珠奶茶',
-      category: '飲品',
-      price: 65,
-      stock: 120,
-      isActive: true,
-      emoji: '🧋',
-      emojiBg: 'linear-gradient(135deg,#06b6d4,#0891b2)',
-    },
+    // {
+    //   id: 1,
+    //   name: '紅燒牛肉麵',
+    //   category: '台式',
+    //   price: 165,
+    //   stock: 48,
+    //   isActive: true,
+    //   emoji: '🍜',
+    //   emojiBg: 'linear-gradient(135deg,#c49756,#8b5e3c)',
+    //   foodImgBase64: '',
+    // },
+    // {
+    //   id: 2,
+    //   name: '印度奶油咖哩飯',
+    //   category: '南洋',
+    //   price: 175,
+    //   stock: 32,
+    //   isActive: true,
+    //   emoji: '🍛',
+    //   emojiBg: 'linear-gradient(135deg,#f59e0b,#d97706)',
+    //   foodImgBase64: '',
+    // },
+    // {
+    //   id: 3,
+    //   name: '越南牛肉河粉',
+    //   category: '南洋',
+    //   price: 155,
+    //   stock: 5,
+    //   isActive: true,
+    //   emoji: '🍲',
+    //   emojiBg: 'linear-gradient(135deg,#3ecf8e,#10b981)',
+    //   foodImgBase64: '',
+    // },
+    // {
+    //   id: 4,
+    //   name: '義式肉醬寬麵',
+    //   category: '西式',
+    //   price: 185,
+    //   stock: 0,
+    //   isActive: false,
+    //   emoji: '🍝',
+    //   emojiBg: 'linear-gradient(135deg,#818cf8,#6366f1)',
+    //   foodImgBase64: '',
+    // },
+    // {
+    //   id: 5,
+    //   name: '墨西哥辣雞捲',
+    //   category: '西式',
+    //   price: 145,
+    //   stock: 18,
+    //   isActive: true,
+    //   emoji: '🌮',
+    //   emojiBg: 'linear-gradient(135deg,#f87171,#ef4444)',
+    //   foodImgBase64: '',
+    // },
+    // {
+    //   id: 6,
+    //   name: '珍珠奶茶',
+    //   category: '飲品',
+    //   price: 65,
+    //   stock: 120,
+    //   isActive: true,
+    //   emoji: '🧋',
+    //   emojiBg: 'linear-gradient(135deg,#06b6d4,#0891b2)',
+    //   foodImgBase64: '',
+    // },
   ]);
 
   /* ── 活動清單（Signal） ─────────────────────────── */
@@ -325,52 +340,57 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     {
       id: 1,
       productId: 1,
-      globalAreaId: 1,
+      globalAreaId: 4,
       name: '紅燒牛肉麵',
-      category: '台式',
-      branch: '台北店',
+      branch: '懶飽飽台北總店',
       stock: 48,
       safeStock: 10,
+      basePrice: 165,
+      maxOrderQuantity: 10,
     },
     {
       id: 2,
       productId: 3,
       globalAreaId: 2,
       name: '越南牛肉河粉',
-      category: '南洋',
-      branch: '曼谷店',
+      branch: '韓國首爾',
       stock: 5,
       safeStock: 10,
+      basePrice: 155,
+      maxOrderQuantity: 10,
     },
     {
       id: 3,
       productId: 4,
-      globalAreaId: 3,
+      globalAreaId: 5,
       name: '義式肉醬寬麵',
-      category: '西式',
-      branch: '東京店',
+      branch: '懶飽飽東京店',
       stock: 0,
       safeStock: 10,
+      basePrice: 185,
+      maxOrderQuantity: 10,
     },
     {
       id: 4,
       productId: 2,
-      globalAreaId: 1,
+      globalAreaId: 4,
       name: '印度奶油咖哩飯',
-      category: '南洋',
-      branch: '台北店',
+      branch: '懶飽飽台北總店',
       stock: 32,
       safeStock: 10,
+      basePrice: 175,
+      maxOrderQuantity: 10,
     },
     {
       id: 5,
       productId: 6,
-      globalAreaId: 1,
+      globalAreaId: 4,
       name: '珍珠奶茶',
-      category: '飲品',
-      branch: '全部分店',
+      branch: '懶飽飽台北總店',
       stock: 120,
       safeStock: 30,
+      basePrice: 65,
+      maxOrderQuantity: 5,
     },
   ]);
 
@@ -407,7 +427,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       account: 'somchai.p',
       branch: '泰國曼谷店',
       joinedAt: '2024-09-20',
-      isActive: false,
+      isActive: true,
       role: 'bm',
       country: 'TH',
     },
@@ -451,6 +471,103 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.accounts().filter((a) => a.role === 'staff'),
   );
 
+  /* ── 帳號管理 computed ──────────────────────────── */
+  uniqueCountries = computed(() => [
+    ...new Set(
+      this.branches()
+        .map((b) => b.country)
+        .filter(Boolean),
+    ),
+  ]);
+
+  accountModalCountry = signal('');
+
+  filteredAccountBranches = computed(() => {
+    const c = this.accountModalCountry();
+    if (!c) return this.branches();
+    return this.branches().filter((b) => b.country === c);
+  });
+
+  /* ── 財務報表 computed ──────────────────────────── */
+  financeCountries = computed(() => this.taxes().map((t) => t.country));
+
+  filteredFinanceBranches = computed(() => {
+    const country = this.financeCountry();
+    if (country === '全部') return this.branches();
+    return this.branches().filter((b) => b.country === country);
+  });
+
+  financeRegionsId = computed<number | null>(() => {
+    const country = this.financeCountry();
+    if (country === '全部') return null;
+    const tax = this.taxes().find((t) => t.country === country);
+    return tax?.id ?? null;
+  });
+
+  financeCurrentData = computed(() => {
+    const report = this.financeMonthResult();
+    if (!report?.currentData) return [];
+    return this.filterFinanceData(report.currentData);
+  });
+
+  financeLastData = computed(() => {
+    const report = this.financeMonthResult();
+    if (!report?.lastData) return [];
+    return this.filterFinanceData(report.lastData);
+  });
+
+  financeLastDataMap = computed(() => {
+    const map = new Map<string, MonthlyReportDetail>();
+    this.financeLastData().forEach((d) => map.set(d.branchName, d));
+    return map;
+  });
+
+  financeCurrentTotal = computed(() => {
+    const isAll = this.financeCountry() === '全部';
+    return this.financeCurrentData().reduce(
+      (s, d) =>
+        s +
+        (isAll
+          ? this.convertToTwd(Number(d.totalAmount), d.regionsName)
+          : Number(d.totalAmount)),
+      0,
+    );
+  });
+
+  financeLastTotal = computed(() => {
+    const isAll = this.financeCountry() === '全部';
+    return this.financeLastData().reduce(
+      (s, d) =>
+        s +
+        (isAll
+          ? this.convertToTwd(Number(d.totalAmount), d.regionsName)
+          : Number(d.totalAmount)),
+      0,
+    );
+  });
+
+  financeGrowth = computed(() => {
+    const last = this.financeLastTotal();
+    if (last === 0) return 0;
+    return ((this.financeCurrentTotal() - last) / last) * 100;
+  });
+
+  financeRangeData = computed(
+    () => this.financeRangeResult()?.revenueData ?? [],
+  );
+
+  financeRangeTotal = computed(() => {
+    const isAll = this.financeCountry() === '全部';
+    return this.financeRangeData().reduce(
+      (s, d) =>
+        s +
+        (isAll
+          ? this.convertToTwd(Number(d.totalAmount), d.regionsName)
+          : Number(d.totalAmount)),
+      0,
+    );
+  });
+
   /* ── 稅率清單（Signal） ─────────────────────────── */
   taxes = signal<DashTax[]>([
     {
@@ -463,6 +580,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       discountLimit: 200,
       editing: false,
       editValue: 5,
+      editingDiscount: false,
+      editDiscountValue: 200,
     },
     {
       id: 2,
@@ -474,6 +593,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       discountLimit: 1000,
       editing: false,
       editValue: 10,
+      editingDiscount: false,
+      editDiscountValue: 1000,
     },
     {
       id: 3,
@@ -485,11 +606,20 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       discountLimit: 10000,
       editing: false,
       editValue: 10,
+      editingDiscount: false,
+      editDiscountValue: 10000,
     },
   ]);
 
   /* ── 國家設定子頁籤 ──────────────────────────────── */
-  taxSubTab = signal<'tax' | 'discount'>('tax');
+  taxSubTab = signal<'tax' | 'discount' | 'rates'>('tax');
+
+  /* ── 匯率查詢 ────────────────────────────────────── */
+  allRates = signal<ExchangeRateVO[]>([]);
+  ratesByDate = signal<ExchangeRateVO[]>([]);
+  ratesLoading = signal(false);
+  ratesQueryDate = signal('');
+  fetchingRates = signal(false);
 
   /* ── 商品篩選 ─────────────────────────────────── */
   productCategoryFilter = signal<string>('全部分類');
@@ -526,26 +656,57 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   financeOrders = signal<number>(0);
   financeAvgPrice = signal<number>(0);
 
-  /* ── 月報表 ─────────────────────────────────────── */
-  reportMonth = signal<string>(
+  /* ── 財務報表查詢狀態 ────────────────────────────── */
+  financeCountry = signal<string>('全部');
+  financeBranchId = signal<number | null>(null);
+  financeMode = signal<'month' | 'range'>('month');
+  financeMonth = signal<string>(
     (() => {
       const now = new Date();
       return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     })(),
   );
-  monthlyReport = signal<MonthlyReportRes | null>(null);
-  reportLoading = signal<boolean>(false);
-
-  get reportMonthValue(): string {
-    return this.reportMonth();
-  }
-  set reportMonthValue(v: string) {
-    this.reportMonth.set(v);
-  }
+  financeStart = signal<string>('');
+  financeEnd = signal<string>('');
+  financeLoading = signal<boolean>(false);
+  financeMonthResult = signal<MonthlyReportRes | null>(null);
+  financeRangeResult = signal<RevenueQueryRes | null>(null);
+  financeTopProducts = signal<MonthlyProductsSalesVo[]>([]);
 
   get currentYearMonth(): string {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  /* ── 財務數字動畫當前顯示值 ─────────────────────── */
+  animatedCurrentTotal = signal<number>(0);
+  animatedLastTotal = signal<number>(0);
+  animatedBranchCount = signal<number>(0);
+  private animTimer1: ReturnType<typeof setInterval> | null = null;
+  private animTimer2: ReturnType<typeof setInterval> | null = null;
+  private animTimer3: ReturnType<typeof setInterval> | null = null;
+
+  private animateValue(
+    targetSignal: ReturnType<typeof signal<number>>,
+    target: number,
+    timerRef: 'animTimer1' | 'animTimer2' | 'animTimer3',
+    duration = 1800,
+  ): void {
+    if (this[timerRef]) clearInterval(this[timerRef]!);
+    const fps = 60;
+    const steps = Math.round(duration / (1000 / fps));
+    let step = 0;
+    targetSignal.set(0);
+    this[timerRef] = setInterval(() => {
+      step++;
+      const eased = 1 - Math.pow(1 - step / steps, 3);
+      targetSignal.set(Math.round(target * eased));
+      if (step >= steps) {
+        clearInterval(this[timerRef]!);
+        this[timerRef] = null;
+        targetSignal.set(target);
+      }
+    }, 1000 / fps);
   }
 
   /* ── 批次刪除模式 ───────────────────────────────── */
@@ -602,18 +763,26 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   confirmDelete(): void {
     const state = this.deleteConfirmState();
     if (!state) return;
-    state.ids.forEach((id) =>
-      this.promos.update((list) => list.filter((p) => p.id !== id)),
-    );
-    this.showToast(
-      state.ids.length > 1
-        ? `🗑️ 已刪除 ${state.ids.length} 個活動`
-        : '🗑️ 活動已刪除',
-    );
     this.deleteConfirmState.set(null);
-    this.bulkDeleteMode.set(false);
-    this.selectedPromoIds.set(new Set());
-    this.selectedPromo.set(null);
+
+    forkJoin(
+      state.ids.map((id) => this.apiService.deletePromotion(id)),
+    ).subscribe({
+      next: () => {
+        state.ids.forEach((id) =>
+          this.promos.update((list) => list.filter((p) => p.id !== id)),
+        );
+        this.showToast(
+          state.ids.length > 1
+            ? `🗑️ 已刪除 ${state.ids.length} 個活動`
+            : '🗑️ 活動已刪除',
+        );
+        this.bulkDeleteMode.set(false);
+        this.selectedPromoIds.set(new Set());
+        this.selectedPromo.set(null);
+      },
+      error: () => this.showToast('⚠️ 刪除失敗，請確認後端連線'),
+    });
   }
 
   cancelDeleteConfirm(): void {
@@ -674,27 +843,53 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     if (id === null) return;
     const promo = this.promos().find((p) => p.id === id);
     if (!promo) return;
-    this.generatingAiCopy.set(true);
-    const gifts =
-      promo.gifts?.filter((g) => g.active).map((g) => g.productName) ?? [];
-    this.geminiService
-      .generatePromoCopy({
-        name: promo.rawName,
-        startDate: promo.rawStartTime,
-        endDate: promo.rawEndTime,
-        minAmount: promo.minAmount,
-        gifts,
-      })
-      .subscribe({
-        next: (text) => {
-          this.editPromoInfoDraft.description = text;
+
+    const imageStr = this.editPromoInfoDraft.image;
+    if (imageStr) {
+      /* 有封面圖 → 走後端（自動存 ai_generated） */
+      this.generatingAiCopy.set(true);
+      const base64 = imageStr.startsWith('data:')
+        ? imageStr.split(',')[1]
+        : imageStr;
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: 'image/jpeg' });
+
+      this.apiService.generateAiPromoCopy(id, promo.rawName, blob).subscribe({
+        next: (res: AiRes) => {
+          this.editPromoInfoDraft.description = res?.generatedDescription ?? '';
           this.generatingAiCopy.set(false);
         },
         error: () => {
           this.generatingAiCopy.set(false);
-          this.showToast('❌ AI 生成失敗，請確認網路或 API Key');
+          this.showToast('❌ AI 生成失敗，請確認後端連線');
         },
       });
+    } else {
+      /* 無封面圖 → 前端直接呼叫 Gemini（不存 ai_generated） */
+      this.generatingAiCopy.set(true);
+      const gifts =
+        promo.gifts?.filter((g) => g.active).map((g) => g.productName) ?? [];
+      this.geminiService
+        .generatePromoCopy({
+          name: promo.rawName,
+          startDate: promo.rawStartTime,
+          endDate: promo.rawEndTime,
+          minAmount: promo.minAmount,
+          gifts,
+        })
+        .subscribe({
+          next: (text) => {
+            this.editPromoInfoDraft.description = text;
+            this.generatingAiCopy.set(false);
+          },
+          error: () => {
+            this.generatingAiCopy.set(false);
+            this.showToast('❌ AI 生成失敗，請確認網路連線');
+          },
+        });
+    }
   }
 
   saveEditPromoInfo(): void {
@@ -734,18 +929,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         this.showToast('❌ 更新失敗，請確認後端連線');
       },
     });
-  }
-
-  /* ── QR Code 分店 ───────────────────────────────── */
-  qrBranchId = signal<number | null>(null);
-
-  getTableQrUrl(branchId: number): string {
-    const origin = window.location.origin;
-    return `${origin}/order?table=${branchId}`;
-  }
-
-  toggleQr(branchId: number): void {
-    this.qrBranchId.set(this.qrBranchId() === branchId ? null : branchId);
   }
 
   /* ── 分店清單（Signal，對應 global_area 資料表）─── */
@@ -811,7 +994,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     price: 165,
     stock: 0,
     emoji: '🍜',
+    description: '',
   };
+  productImageFile: File | null = null;
+  productImagePreview = signal<string>('');
+  generatingAiDesc = signal(false);
+  generatingPromoAiDesc = signal(false);
   promoDraft = {
     name: '',
     type: 'promotion' as 'promotion' | 'announcement',
@@ -834,6 +1022,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     giftProductId: null as number | null,
     quantity: -1,
   };
+  giftProductList = signal<ProductAdminVo[]>([]);
   accountDraft: {
     name: string;
     account: string;
@@ -1021,9 +1210,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     }
     this.updateClock();
     this.clockInterval = setInterval(() => this.updateClock(), 1000);
-    this.loadBranches();
-    this.loadTaxes();
+    this.loadTaxes(() => this.loadBranches());
     this.loadPromos();
+    this.loadAllRates();
     this.loadProducts();
     this.loadInventory();
     this.loadStaff();
@@ -1033,6 +1222,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     if (this.clockInterval !== null) clearInterval(this.clockInterval);
     if (this.toastTimer !== null) clearTimeout(this.toastTimer);
     if (this.toastLeaveTimer !== null) clearTimeout(this.toastLeaveTimer);
+    if (this.animTimer1) clearInterval(this.animTimer1);
+    if (this.animTimer2) clearInterval(this.animTimer2);
+    if (this.animTimer3) clearInterval(this.animTimer3);
   }
 
   /* ── 國家 → 旗幟 Emoji 對照 ─────────────────────── */
@@ -1059,21 +1251,60 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   }
 
   /* ── 從後端重新載入分店清單 ──────────────────────── */
+  private readonly KNOWN_COUNTRIES = ['台灣', '日本', '韓國', '泰國', '新加坡'];
+  private readonly KNOWN_CITIES = [
+    '台北',
+    '台中',
+    '台南',
+    '高雄',
+    '東京',
+    '大阪',
+    '京都',
+    '名古屋',
+    '首爾',
+    '釜山',
+    '濟州',
+    '曼谷',
+    '清邁',
+    '普吉',
+    '新加坡',
+  ];
+
+  private extractCity(branch: string): string {
+    let s = branch;
+    for (const c of this.KNOWN_COUNTRIES) {
+      s = s.split(c).join(''); /* replaceAll 相容寫法 */
+    }
+    s = s.replace(/店$/, '').trim();
+    /* 若剩餘字串剛好是已知城市，直接用 */
+    if (this.KNOWN_CITIES.includes(s)) return s;
+    /* 嘗試在原始 branch 名稱中找到已知城市關鍵字 */
+    const found = this.KNOWN_CITIES.find((c) => branch.includes(c));
+    return found ?? s;
+  }
+
   private loadBranches(): void {
     this.apiService.getAllBranches().subscribe({
       next: (res) => {
         if (res?.globalAreaList?.length) {
           this.branches.set(
-            res.globalAreaList.map((b: GlobalAreaVO) => ({
-              id: b.id,
-              name: b.branch,
-              city:
-                b.branch?.replace(b.country ?? '', '').replace(/店$/, '') ?? '',
-              country: b.country,
-              regionsId: b.regionsId ?? 0,
-              address: b.address,
-              phone: b.phone,
-            })),
+            res.globalAreaList.map((b: GlobalAreaVO) => {
+              const country =
+                b.country ||
+                this.taxes().find((t) => t.id === (b.regionsId ?? 0))
+                  ?.country ||
+                '';
+              const city = this.extractCity(b.branch ?? '');
+              return {
+                id: b.id,
+                name: b.branch,
+                city,
+                country,
+                regionsId: b.regionsId ?? 0,
+                address: b.address,
+                phone: b.phone,
+              };
+            }),
           );
         }
         /* 若後端回傳空清單，保留 mock 初始值供 Demo 使用 */
@@ -1083,25 +1314,42 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   }
 
   /* ── 從後端重新載入稅率清單 ──────────────────────── */
-  private loadTaxes(): void {
+  private loadTaxes(onComplete?: () => void): void {
     this.apiService.getAllTax().subscribe({
       next: (res) => {
         if (res?.regionsList?.length) {
+          const seen = new Set<string>();
+          const deduped = res.regionsList.filter((r: RegionVO) => {
+            if (seen.has(r.country)) return false;
+            seen.add(r.country);
+            return true;
+          });
           this.taxes.set(
-            res.regionsList.map((r: RegionVO) => ({
-              id: r.id,
-              country: r.country,
-              countryCode: '',
-              currency: r.currencyCode,
-              taxType: r.taxType ?? 'INCLUSIVE',
-              rate: +(+r.taxRate * 100).toFixed(2),
-              editing: false,
-              editValue: +(+r.taxRate * 100).toFixed(2),
-            })),
+            deduped.map((r: RegionVO) => {
+              const rate = +(+r.taxRate * 100).toFixed(2);
+              const cap = r.usageCap ?? 0;
+              return {
+                id: r.id,
+                country: r.country,
+                countryCode: r.countryCode ?? '',
+                currency: r.currencyCode,
+                taxType: r.taxType ?? 'INCLUSIVE',
+                rate,
+                discountLimit: cap,
+                editing: false,
+                editValue: rate,
+                editingDiscount: false,
+                editDiscountValue: cap,
+              };
+            }),
           );
         }
+        onComplete?.();
       },
-      error: () => console.warn('[Manager] 稅率 API 連線失敗，使用 Demo 資料'),
+      error: () => {
+        console.warn('[Manager] 稅率 API 連線失敗，使用 Demo 資料');
+        onComplete?.();
+      },
     });
   }
 
@@ -1224,57 +1472,97 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   }
 
   /* ── 從後端載入商品清單 ──────────────────────────── */
-  private loadProducts(globalAreaId = 1): void {
-    this.apiService.getAllProducts(globalAreaId).subscribe({
+  private loadProducts(): void {
+    this.apiService.getBranchInventory(4).subscribe({
       next: (res) => {
-        if (res?.products?.length) {
-          const emojiMap: Record<string, string> = {
-            台式: '🍜',
-            南洋: '🍛',
-            西式: '🍝',
-            飲品: '🧋',
-          };
-          const bgMap: Record<string, string> = {
-            台式: 'linear-gradient(135deg,#c49756,#8b5e3c)',
-            南洋: 'linear-gradient(135deg,#f59e0b,#d97706)',
-            西式: 'linear-gradient(135deg,#818cf8,#6366f1)',
-            飲品: 'linear-gradient(135deg,#06b6d4,#0891b2)',
-          };
-          this.products.set(
-            res.products.map((p: ProductVO) => ({
-              id: p.id,
-              name: p.name,
-              category: p.category,
-              price: p.basePrice,
-              stock: p.stockQuantity,
-              isActive: p.active,
-              emoji: emojiMap[p.category] ?? '🍽️',
-              emojiBg:
-                bgMap[p.category] ?? 'linear-gradient(135deg,#6b7280,#374151)',
-            })),
-          );
-        }
-        /* 若後端回空清單，保留 mock 初始值供 Demo 使用 */
+        const data = res?.data ?? [];
+        if (!data.length) return;
+
+        const emojiMap: Record<string, string> = {
+          台式: '🍜',
+          南洋: '🍛',
+          西式: '🍝',
+          飲品: '🧋',
+          小吃: '🍢',
+          飯食: '🍚',
+        };
+        const bgMap: Record<string, string> = {
+          台式: 'linear-gradient(135deg,#c49756,#8b5e3c)',
+          南洋: 'linear-gradient(135deg,#f59e0b,#d97706)',
+          西式: 'linear-gradient(135deg,#818cf8,#6366f1)',
+          飲品: 'linear-gradient(135deg,#06b6d4,#0891b2)',
+          小吃: 'linear-gradient(135deg,#3ecf8e,#10b981)',
+          飯食: 'linear-gradient(135deg,#c49756,#8b5e3c)',
+        };
+
+        // 先顯示商品（無圖）
+        this.products.set(
+          data.map((inv) => ({
+            id: inv.productId,
+            name: inv.productName,
+            category: '',
+            price: inv.basePrice,
+            stock: inv.stockQuantity,
+            isActive: true,
+            emoji: '🍽️',
+            emojiBg: 'linear-gradient(135deg,#6b7280,#374151)',
+            foodImgBase64: '',
+          })),
+        );
+
+        // 逐一抓詳情補齊圖片、category、active
+        data.forEach((inv) => {
+          this.apiService.getProductDetail(inv.productId).subscribe({
+            next: (detail) => {
+              const p = detail?.product;
+              if (!p) return;
+              const cat = p.category ?? '';
+              const imgRaw = p.foodImgBase64 ?? '';
+              const img = imgRaw
+                ? imgRaw.startsWith('data:')
+                  ? imgRaw
+                  : `data:image/jpeg;base64,${imgRaw}`
+                : '';
+              this.products.update((list) =>
+                list.map((item) =>
+                  item.id === inv.productId
+                    ? {
+                        ...item,
+                        category: cat,
+                        isActive: p.active,
+                        emoji: emojiMap[cat] ?? '🍽️',
+                        emojiBg:
+                          bgMap[cat] ??
+                          'linear-gradient(135deg,#6b7280,#374151)',
+                        foodImgBase64: img,
+                      }
+                    : item,
+                ),
+              );
+            },
+          });
+        });
       },
-      error: () => console.warn('[Manager] 商品 API 連線失敗，使用 Demo 資料'),
+      error: (err) => console.error('❌ getBranchInventory 失敗:', err),
     });
   }
 
   /* ── 從後端載入庫存清單 ──────────────────────────── */
-  private loadInventory(globalAreaId = 1): void {
+  private loadInventory(globalAreaId = 4): void {
     this.apiService.getBranchInventory(globalAreaId).subscribe({
       next: (res) => {
-        if (res?.inventory?.length) {
+        if (res?.data?.length) {
           this.inventory.set(
-            res.inventory.map((inv: BranchInventoryVO) => ({
-              id: inv.id,
+            res.data.map((inv: InventoryDetailVo) => ({
+              id: inv.productId,
               productId: inv.productId,
               globalAreaId: inv.globalAreaId,
               name: inv.productName,
-              category: inv.category,
-              branch: `分店 ${inv.globalAreaId}`,
+              branch: inv.branchName,
               stock: inv.stockQuantity,
               safeStock: 10,
+              basePrice: inv.basePrice,
+              maxOrderQuantity: inv.maxOrderQuantity,
             })),
           );
         }
@@ -1304,7 +1592,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
                   account: s.account,
                   branch: branchName,
                   joinedAt: s.hireAt?.slice(0, 10) ?? '',
-                  isActive: s.isStatus,
+                  isActive: s.status ?? true,
                   role,
                   country: branchData?.country ?? '',
                 };
@@ -1331,12 +1619,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   setTab(tab: DashTab): void {
     this.activeTab.set(tab);
-    if (tab === 'finance') {
-      setTimeout(() => this.runFinanceCounter(), 80);
-      if (!this.monthlyReport()) {
-        this.loadMonthlyReport();
-      }
-    }
   }
   setUserSubTab(sub: UserSubTab): void {
     this.userSubTab.set(sub);
@@ -1364,14 +1646,15 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     const p = this.products().find((x) => x.id === id);
     if (!p) return;
     const newActive = !p.isActive;
-    /* 樂觀更新 UI */
     this.products.update((list) =>
       list.map((x) => (x.id === id ? { ...x, isActive: newActive } : x)),
     );
-    this.apiService.toggleProduct({ id, active: newActive }).subscribe({
-      next: () => this.loadProducts(),
+    this.apiService.toggleProduct(id, newActive).subscribe({
+      next: () => {
+        // loadProducts() 已移除，避免覆蓋 isActive
+        this.showToast(newActive ? '✅ 商品已上架' : '⏸️ 商品已下架');
+      },
       error: () => {
-        /* 失敗時還原 */
         this.products.update((list) =>
           list.map((x) => (x.id === id ? { ...x, isActive: !newActive } : x)),
         );
@@ -1450,6 +1733,24 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       giftProductId: null,
       quantity: -1,
     };
+    if (this.giftProductList().length === 0) {
+      this.apiService.getBranchInventory(4).subscribe({
+        next: (res) =>
+          this.giftProductList.set(
+            (res?.data ?? []).map(
+              (inv: InventoryDetailVo) =>
+                ({
+                  id: inv.productId,
+                  name: inv.productName,
+                  category: '',
+                  description: '',
+                  active: true,
+                  foodImgBase64: '',
+                }) as ProductAdminVo,
+            ),
+          ),
+      });
+    }
     this.activeModal.set('addGift');
   }
 
@@ -1520,6 +1821,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
           productId: item.productId,
           globalAreaId: item.globalAreaId,
           stockQuantity: amt,
+          basePrice: item.basePrice,
+          maxOrderQuantity: item.maxOrderQuantity,
         })
         .subscribe({
           next: () => this.loadInventory(),
@@ -1536,7 +1839,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.accounts.update((list) =>
       list.map((a) => (a.id === id ? { ...a, isActive: newStatus } : a)),
     );
-    this.apiService.updateStaffStatus(id, { isStatus: newStatus }).subscribe({
+    this.apiService.updateStaffStatus(id, { newStatus: newStatus }).subscribe({
       next: () =>
         this.showToast(
           newStatus
@@ -1632,6 +1935,111 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     );
   }
 
+  /* ── 折扣上限：啟動編輯 ─────────────────────────── */
+  startEditDiscount(id: number): void {
+    this.taxes.update((list) =>
+      list.map((t) =>
+        t.id === id
+          ? { ...t, editingDiscount: true, editDiscountValue: t.discountLimit }
+          : t,
+      ),
+    );
+  }
+
+  onDiscountInput(id: number, event: Event): void {
+    const val = parseFloat((event.target as HTMLInputElement).value);
+    if (!isNaN(val) && val >= 0) {
+      this.taxes.update((list) =>
+        list.map((t) => (t.id === id ? { ...t, editDiscountValue: val } : t)),
+      );
+    }
+  }
+
+  saveDiscount(id: number): void {
+    const target = this.taxes().find((t) => t.id === id);
+    if (!target) return;
+    this.taxes.update((list) =>
+      list.map((t) =>
+        t.id === id
+          ? { ...t, discountLimit: t.editDiscountValue, editingDiscount: false }
+          : t,
+      ),
+    );
+    this.apiService
+      .updateRegionUsageCap({
+        id,
+        country: target.country,
+        countryCode: target.countryCode,
+        currencyCode: target.currency,
+        taxRate: target.rate / 100,
+        taxType: target.taxType as 'INCLUSIVE' | 'EXCLUSIVE',
+        usageCap: target.editDiscountValue,
+      })
+      .subscribe({
+        next: () => this.showToast('✅ 折扣上限已更新'),
+        error: () => this.showToast('⚠️ 更新失敗，請確認後端連線'),
+      });
+  }
+
+  cancelEditDiscount(id: number): void {
+    this.taxes.update((list) =>
+      list.map((t) => (t.id === id ? { ...t, editingDiscount: false } : t)),
+    );
+  }
+
+  /* ── 匯率：載入全部 ──────────────────────────────── */
+  loadAllRates(): void {
+    this.ratesLoading.set(true);
+    this.apiService.getAllRates().subscribe({
+      next: (res) => {
+        this.allRates.set((res as any)?.exchangeRatesList ?? []);
+        this.ratesLoading.set(false);
+      },
+      error: () => {
+        this.ratesLoading.set(false);
+        this.showToast('⚠️ 匯率載入失敗，請確認後端連線');
+      },
+    });
+  }
+
+  /* ── 匯率：依日期查詢 ────────────────────────────── */
+  queryRatesByDate(): void {
+    const date = this.ratesQueryDate();
+    if (!date) {
+      this.showToast('⚠️ 請選擇日期');
+      return;
+    }
+    this.ratesLoading.set(true);
+    this.ratesByDate.set([]);
+    this.apiService.getRatesByDate({ date }).subscribe({
+      next: (res) => {
+        this.ratesByDate.set((res as any)?.exchangeRatesList ?? []);
+        this.ratesLoading.set(false);
+      },
+      error: () => {
+        this.ratesLoading.set(false);
+        this.showToast('⚠️ 查詢失敗，請確認後端連線');
+      },
+    });
+  }
+
+  /* ── 匯率：手動立即抓取 ──────────────────────────── */
+  manualFetchRates(): void {
+    this.fetchingRates.set(true);
+    this.apiService.fetchRatesNow().subscribe({
+      next: () => {
+        this.fetchingRates.set(false);
+        this.showToast('✅ 匯率已更新');
+        this.ratesByDate.set([]);
+        this.loadAllRates();
+      },
+      error: () => {
+        this.fetchingRates.set(false);
+        this.showToast('⚠️ 匯率更新失敗，請確認後端連線');
+      },
+    });
+  }
+
   /* ── 商品篩選 ─────────────────────────────────── */
   onCategoryFilter(event: Event): void {
     this.productCategoryFilter.set((event.target as HTMLSelectElement).value);
@@ -1663,7 +2071,10 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       price: 165,
       stock: 0,
       emoji: '🍜',
+      description: '',
     };
+    this.productImageFile = null;
+    this.productImagePreview.set('');
     this.activeModal.set('addProduct');
   }
 
@@ -1673,12 +2084,93 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.editingProductId.set(id);
     this.productDraft = {
       name: p.name,
-      category: p.category,
+      category: p.category || '台式',
       price: p.price,
       stock: p.stock,
       emoji: p.emoji,
+      description: '',
     };
+    this.productImageFile = null;
+    this.productImagePreview.set('');
     this.activeModal.set('addProduct');
+
+    /* 呼叫 API 補齊後端 description 與圖片 */
+    this.apiService.getProductDetail(id).subscribe({
+      next: (res) => {
+        if (res?.product) {
+          this.productDraft = {
+            ...this.productDraft,
+            description: res.product.description ?? '',
+            category: res.product.category || this.productDraft.category,
+          };
+        }
+        if (res?.product?.foodImgBase64) {
+          const src = res.product.foodImgBase64.startsWith('data:')
+            ? res.product.foodImgBase64
+            : `data:image/jpeg;base64,${res.product.foodImgBase64}`;
+          this.productImagePreview.set(src);
+        }
+      },
+      error: () => {
+        /* 靜默失敗，保留本地資料 */
+      },
+    });
+  }
+
+  onProductImageChange(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.productImageFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) =>
+      this.productImagePreview.set(e.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  generateAiDesc(): void {
+    if (!this.productDraft.name.trim()) {
+      this.showToast('⚠️ 請先填寫商品名稱');
+      return;
+    }
+    this.generatingAiDesc.set(true);
+    this.apiService
+      .generateAiProductDesc(this.productDraft.name, this.productDraft.category)
+      .subscribe({
+        next: (res: AiRes) => {
+          this.productDraft.description = res?.generatedDescription ?? '';
+          this.generatingAiDesc.set(false);
+        },
+        error: () => {
+          this.showToast('⚠️ AI 生成失敗');
+          this.generatingAiDesc.set(false);
+        },
+      });
+  }
+
+  generatePromoAiDesc(): void {
+    if (!this.promoDraft.name.trim()) {
+      this.showToast('⚠️ 請先填寫活動名稱');
+      return;
+    }
+    this.generatingPromoAiDesc.set(true);
+    this.geminiService
+      .generatePromoCopy({
+        name: this.promoDraft.name,
+        startDate: this.promoDraft.startTime,
+        endDate: this.promoDraft.endTime,
+        minAmount: this.promoDraft.minAmount ?? undefined,
+        gifts: [],
+      })
+      .subscribe({
+        next: (text) => {
+          this.promoDraft.description = text;
+          this.generatingPromoAiDesc.set(false);
+        },
+        error: () => {
+          this.showToast('❌ AI 生成失敗，請確認網路連線');
+          this.generatingPromoAiDesc.set(false);
+        },
+      });
   }
 
   saveProduct(): void {
@@ -1713,6 +2205,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
                 stock: this.productDraft.stock,
                 emoji: this.productDraft.emoji,
                 emojiBg: emojiGradients[this.productDraft.emoji] ?? p.emojiBg,
+                foodImgBase64: '',
               }
             : p,
         ),
@@ -1720,11 +2213,15 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       this.closeModal();
       this.showToast(`✅ 商品「${savedName}」已更新`);
       this.apiService
-        .updateProduct({
-          id: editId,
-          name: this.productDraft.name,
-          category: this.productDraft.category,
-        })
+        .updateProduct(
+          {
+            id: editId,
+            name: this.productDraft.name,
+            category: this.productDraft.category,
+            description: this.productDraft.description,
+          },
+          this.productImageFile ?? undefined,
+        )
         .subscribe({
           next: () => this.loadProducts(),
           error: () => this.showToast('⚠️ 後端更新失敗，本地已儲存'),
@@ -1746,18 +2243,20 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
           emojiBg:
             emojiGradients[this.productDraft.emoji] ??
             'linear-gradient(135deg,#c49756,#8b5e3c)',
+          foodImgBase64: '',
         },
       ]);
       this.closeModal();
       this.showToast(`✅ 商品「${savedName}」已新增`);
       this.apiService
-        .createProduct({
-          name: this.productDraft.name,
-          category: this.productDraft.category,
-          globalAreaId: 1,
-          basePrice: this.productDraft.price,
-          stockQuantity: this.productDraft.stock,
-        })
+        .createProduct(
+          {
+            name: this.productDraft.name,
+            category: this.productDraft.category,
+            description: this.productDraft.description,
+          },
+          this.productImageFile ?? undefined,
+        )
         .subscribe({
           next: () => this.loadProducts(),
           error: () => this.showToast('⚠️ 後端新增失敗，本地已儲存'),
@@ -1816,17 +2315,18 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         name: saved.name.trim(),
         startTime: saved.startTime,
         endTime: saved.endTime,
+        description: saved.description || undefined,
       })
       .subscribe({
         next: (res) => {
           const newId: number | undefined = res?.id;
 
-          if (saved.image && newId) {
+          if ((saved.image || saved.description) && newId) {
             this.apiService
               .updatePromotionInfo({
                 promotionsId: newId,
                 description: saved.description ?? '',
-                promotionImg: saved.image,
+                promotionImg: saved.image || undefined,
               })
               .subscribe({
                 next: () => {
@@ -1878,20 +2378,23 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   openAddAccount(): void {
     this.editingAccountId.set(null);
     const firstBranch = this.branches()[0];
+    const country = firstBranch?.country ?? '';
+    this.accountModalCountry.set(country);
     this.accountDraft = {
       name: '',
       account: '',
       password: '',
-      branch: firstBranch?.name ?? '台灣台北店',
+      branch: firstBranch?.name ?? '',
       shift: '早班',
       role: 'bm',
       isActive: true,
-      country: firstBranch?.country ?? '台灣',
+      country,
     };
     this.activeModal.set('addAccount');
   }
 
   onAccountCountryChange(country: string): void {
+    this.accountModalCountry.set(country);
     const match = this.branches().find((b) => b.country === country);
     if (match) this.accountDraft.branch = match.name;
   }
@@ -1900,22 +2403,28 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     const acc = this.accounts().find((a) => a.id === id);
     if (!acc) return;
     this.editingAccountId.set(id);
+    const country = acc.country ?? '';
+    this.accountModalCountry.set(country);
     this.accountDraft = {
       name: acc.name,
       account: acc.account,
       password: '',
-      branch: acc.branch ?? '台灣台北店',
+      branch: acc.branch ?? '',
       shift: acc.shift ?? '早班',
       role: acc.role,
       isActive: acc.isActive,
-      country: acc.country ?? 'TW',
+      country,
     };
     this.activeModal.set('addAccount');
   }
 
   saveAccount(): void {
-    if (!this.accountDraft.name.trim() || !this.accountDraft.account.trim()) {
-      this.showToast('⚠️ 姓名與帳號為必填');
+    if (!this.accountDraft.name.trim()) {
+      this.showToast('⚠️ 姓名為必填');
+      return;
+    }
+    if (this.editingAccountId() !== null && !this.accountDraft.account.trim()) {
+      this.showToast('⚠️ 帳號為必填');
       return;
     }
     if (
@@ -2040,9 +2549,11 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
               currency: resolvedCurrency,
               taxType: saved.taxType,
               rate: saved.rate,
-              discountLimit: saved.discountLimit || undefined,
+              discountLimit: saved.discountLimit ?? 0,
               editing: false,
               editValue: saved.rate,
+              editingDiscount: false,
+              editDiscountValue: saved.discountLimit ?? 0,
             },
           ]);
           this.closeModal();
@@ -2099,28 +2610,139 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     }, 600);
   }
 
-  /* ── 月報表：合計輔助（template 不支援 arrow fn） ──── */
-  sumReportTotal(data: { totalAmount: number }[]): number {
-    let total = 0;
-    for (const d of data) total += d.totalAmount;
-    return total;
+  /* ── 財務報表：查詢入口 ─────────────────────────── */
+  onFinanceCountryChange(country: string): void {
+    this.financeCountry.set(country);
+    this.financeBranchId.set(null);
+    this.financeMonthResult.set(null);
+    this.financeRangeResult.set(null);
+    this.financeTopProducts.set([]);
   }
 
-  /* ── 月報表：查詢 ──────────────────────────────────── */
-  loadMonthlyReport(): void {
-    const month = this.reportMonth();
-    if (!month) return;
-    this.reportLoading.set(true);
+  queryFinance(): void {
+    if (this.financeMode() === 'month') {
+      this.queryFinanceMonth();
+    } else {
+      this.queryFinanceRange();
+    }
+  }
+
+  private queryFinanceMonth(): void {
+    const month = this.financeMonth();
+    if (!month) {
+      this.showToast('⚠️ 請選擇月份');
+      return;
+    }
+    this.financeLoading.set(true);
+    this.financeMonthResult.set(null);
+    this.financeTopProducts.set([]);
     this.apiService.getMonthlyReport({ reportDate: month }).subscribe({
       next: (res) => {
-        this.monthlyReport.set(res);
-        this.reportLoading.set(false);
+        this.financeMonthResult.set(res);
+        this.financeLoading.set(false);
+        this.animateValue(
+          this.animatedCurrentTotal,
+          this.financeCurrentTotal(),
+          'animTimer1',
+        );
+        this.animateValue(
+          this.animatedLastTotal,
+          this.financeLastTotal(),
+          'animTimer2',
+        );
+        this.animateValue(
+          this.animatedBranchCount,
+          this.financeCurrentData().length,
+          'animTimer3',
+          600,
+        );
+        const [year, monthNum] = month.split('-').map(Number);
+        const regionsId = this.financeRegionsId();
+        if (regionsId) {
+          this.apiService
+            .getTop5MonthlySales(year, monthNum, regionsId)
+            .subscribe({
+              next: (r) => this.financeTopProducts.set(r?.salesList ?? []),
+              error: () => this.financeTopProducts.set([]),
+            });
+        }
       },
       error: () => {
-        this.reportLoading.set(false);
-        this.showToast('⚠️ 報表載入失敗，請確認後端連線或 Session 是否有效');
+        this.financeLoading.set(false);
+        this.showToast('⚠️ 報表載入失敗，請確認後端連線');
       },
     });
+  }
+
+  private queryFinanceRange(): void {
+    const start = this.financeStart();
+    const end = this.financeEnd();
+    if (!start || !end) {
+      this.showToast('⚠️ 請選擇日期區間');
+      return;
+    }
+    if (start > end) {
+      this.showToast('⚠️ 開始日期不能晚於結束日期');
+      return;
+    }
+    this.financeLoading.set(true);
+    this.financeRangeResult.set(null);
+    const branchId = this.financeBranchId() ?? undefined;
+    const regionsId = this.financeRegionsId() ?? undefined;
+    this.apiService
+      .getRevenueReports({
+        startDate: start,
+        endDate: end,
+        branchId,
+        regionsId,
+      })
+      .subscribe({
+        next: (res) => {
+          this.financeRangeResult.set(res);
+          this.financeLoading.set(false);
+        },
+        error: () => {
+          this.financeLoading.set(false);
+          this.showToast('⚠️ 查詢失敗，請確認後端連線');
+        },
+      });
+  }
+
+  private filterFinanceData(
+    data: MonthlyReportDetail[],
+  ): MonthlyReportDetail[] {
+    const country = this.financeCountry();
+    const branchId = this.financeBranchId();
+    let filtered = data;
+    if (country !== '全部') {
+      filtered = filtered.filter((d) => d.regionsName === country);
+    }
+    if (branchId !== null) {
+      const branch = this.branches().find((b) => b.id === branchId);
+      if (branch)
+        filtered = filtered.filter((d) => d.branchName === branch.name);
+    }
+    return filtered;
+  }
+
+  private convertToTwd(amount: number, regionsName: string): number {
+    const currency = this.taxes().find(
+      (t) => t.country === regionsName,
+    )?.currency;
+    if (!currency || currency === 'TWD') return amount;
+    const rate =
+      this.allRates().find((r) => r.currencyCode === currency)?.rateToTwd ?? 1;
+    return amount * rate;
+  }
+
+  getFinanceCurrencyLabel(): string {
+    const country = this.financeCountry();
+    if (country === '全部') return 'TWD';
+    return this.taxes().find((t) => t.country === country)?.currency ?? '';
+  }
+
+  getRowCurrencyLabel(regionsName: string): string {
+    return this.taxes().find((t) => t.country === regionsName)?.currency ?? '';
   }
 
   /* ── 分店：輔助 — 依 regionsId 查國家名稱 ────────── */
@@ -2150,28 +2772,19 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         phone: saved.phone.trim(),
       })
       .subscribe({
-        next: () => {
-          this.loadBranches();
-          this.closeModal();
-          this.showToast(`✅ 分店「${autoName}」已新增`);
+        next: (res) => {
+          if (res?.code === 200) {
+            this.loadBranches();
+            this.closeModal();
+            this.showToast(`✅ 分店「${autoName}」已新增`);
+          } else {
+            this.showToast(
+              `⚠️ 新增失敗：${res?.message ?? '請確認電話格式是否正確'}`,
+            );
+          }
         },
         error: () => {
-          const ids = this.branches().map((b) => b.id);
-          const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
-          this.branches.update((list) => [
-            ...list,
-            {
-              id: newId,
-              name: autoName,
-              city: saved.city.trim(),
-              country: countryName,
-              regionsId: saved.regionsId,
-              address: saved.address.trim(),
-              phone: saved.phone.trim(),
-            },
-          ]);
-          this.closeModal();
-          this.showToast(`⚠️ 後端暫不可用，僅本地新增分店「${autoName}」`);
+          this.showToast('⚠️ 後端連線失敗，請確認伺服器是否啟動');
         },
       });
   }
@@ -2207,29 +2820,19 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         phone: saved.phone.trim(),
       })
       .subscribe({
-        next: () => {
-          this.loadBranches();
-          this.closeModal();
-          this.showToast(`✅ 分店「${autoName}」已更新`);
+        next: (res) => {
+          if (res?.code === 200) {
+            this.loadBranches();
+            this.closeModal();
+            this.showToast(`✅ 分店「${autoName}」已更新`);
+          } else {
+            this.showToast(
+              `⚠️ 更新失敗：${res?.message ?? '請確認電話格式是否正確'}`,
+            );
+          }
         },
         error: () => {
-          this.branches.update((list) =>
-            list.map((b) =>
-              b.id === saved.id
-                ? {
-                    ...b,
-                    name: autoName,
-                    city: saved.city.trim(),
-                    country: countryName,
-                    regionsId: saved.regionsId,
-                    address: saved.address.trim(),
-                    phone: saved.phone.trim(),
-                  }
-                : b,
-            ),
-          );
-          this.closeModal();
-          this.showToast(`⚠️ 後端暫不可用，僅本地更新分店「${autoName}」`);
+          this.showToast('⚠️ 後端連線失敗，請確認伺服器是否啟動');
         },
       });
   }

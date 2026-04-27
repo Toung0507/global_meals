@@ -2,134 +2,135 @@
 // 檔案名稱：api.config.ts
 // 位置說明：src/app/shared/api.config.ts
 // 用途說明：API 基礎設定（對應後端 Spring Boot 實際路由）
-//
-// ⚠ 串接說明：
-//   後端啟動後，將 BASE_URL 改為後端伺服器位址即可。
-//   例如本機開發：'http://localhost:8080'
-//   部署後：      'https://your-server.com'
-//
-// ⚠ Demo 階段：BASE_URL 留空，所有 API 呼叫皆被元件
-//   中的 TODO 區塊以 mock 資料取代，不會發出任何請求。
-//
-// 最後更新：2026-04-10（依後端 Controller 實際路由修正）
+// 最後更新：2026-04-24（WebConfig.configurePathMatch 對所有 @RestController 加 /lazybaobao 前綴）
 // =====================================================
 
 export const API_CONFIG = {
-  /** ⚠ Demo 離線模式：true = 不發 HTTP 請求，直接回傳假資料（不需開 Eclipse / DB）
-   *  切換真實後端時改為 false 即可，其餘程式碼不需異動。 */
+  /** MOCK_MODE: true = 不發 HTTP 請求，直接回傳假資料 */
   MOCK_MODE: false,
 
-  BASE_URL: '', // ⚠ 透過 Angular proxy 轉發，相對路徑即可（proxy.conf.json → localhost:8080）
+  BASE_URL: '', // 透過 Angular proxy 轉發，相對路徑即可（proxy.conf.json → localhost:8080）
   TIMEOUT: 10000, // 10 秒逾時
 
-  // ── API 端點定義（與後端 Controller 路由完全對應）────
-
   ENDPOINTS: {
-    // 購物車（CartController，@RequestMapping("/cart")）
+    // 購物車（CartController，@RequestMapping("/cart")，WebConfig 加 /lazybaobao 前綴）
     CART: {
-      VIEW: 'lazybaobao/cart/:cartId', // GET    查看購物車（?memberId=X）
-      SYNC: 'lazybaobao/cart/sync', // POST   新增/更新商品
-      REMOVE: 'lazybaobao/cart/item', // DELETE 刪除單品
-      GIFT: 'lazybaobao/cart/gift', // POST   使用者選擇贈品
-      CLEAR: 'lazybaobao/cart/clear', // DELETE 清空購物車
+      VIEW: 'lazybaobao/cart/:cartId', // GET    /lazybaobao/cart/{cartId}
+      SYNC: 'lazybaobao/cart/sync', // POST   /lazybaobao/cart/sync
+      REMOVE: 'lazybaobao/cart/item', // DELETE /lazybaobao/cart/item
+      GIFT: 'lazybaobao/cart/gift', // POST   /lazybaobao/cart/gift
+      CLEAR: 'lazybaobao/cart/clear', // DELETE /lazybaobao/cart/clear
+      SWITCH_BRANCH: 'lazybaobao/cart/cart/switch-branch', // POST /lazybaobao/cart/cart/switch-branch
     },
 
-    // 訂單（OrdersController，@RequestMapping("lazybaobao/orders")）
+    // 訂單（OrdersController，無 class-level mapping）
     ORDERS: {
-      CREATE: 'lazybaobao/orders/create_order', // POST 成立訂單（UNPAID）
-      PAY: 'lazybaobao/orders/pay', // POST 結帳（→ COMPLETED）
-      GET_ALL: 'lazybaobao/orders/get_all_orders', // POST 取得歷史訂單
-      BY_PHONE: 'lazybaobao/orders/get_order_by_phone', // GET  以電話查詢 UNPAID 訂單
-      UPDATE_STATUS: 'lazybaobao/orders/update_status', // POST 退款/取消
-      TODAY_ORDERS: 'lazybaobao/orders/today_orders', // GET  POS 看板輪詢今日訂單
-      KITCHEN_STATUS: 'lazybaobao/orders/kitchen_status', // POST POS 更新廚房狀態
-      ORDER_STATUS: 'lazybaobao/orders/order_status', // GET  客戶端輪詢廚房狀態
+      CREATE: 'lazybaobao/orders/create_orders', // POST
+      PAY: 'lazybaobao/orders/pay', // POST
+      GET_ALL: 'lazybaobao/orders/get_all_orders_list', // POST
+      BY_PHONE: 'lazybaobao/orders/get_order_by_phone', // GET
+      UPDATE_STATUS: 'lazybaobao/orders/orders_status', // POST
+      KITCHEN_STATUS: 'lazybaobao/orders/kitchen_status', // POST (POS 廚房狀態)
+      GET_STATUS: 'lazybaobao/orders/get_order_status', // GET  (顧客輪詢)
+      CASH_CONFIRM: 'lazybaobao/orders/cash_confirm', // POST (現金收款確認)
     },
 
-    // 促銷活動（PromotionsManageController，@RequestMapping("lazybaobao/promotions")）
+    // 促銷活動（PromotionsManageController，無 class-level mapping）
     PROMOTIONS: {
-      LIST: 'lazybaobao/promotions/list', // GET  取得全部活動及贈品（管理端）
-      CREATE: 'lazybaobao/promotions/create', // POST 建立活動（可附贈品規則）
-      TOGGLE: 'lazybaobao/promotions/toggle_status', // POST 啟用/停用活動
-      CALCULATE: 'lazybaobao/promotions/calculate', // POST 結帳時計算促銷
-      AVAILABLE_GIFTS: 'lazybaobao/promotions/get_available_gifts', // POST 取得可選贈品（?amount=xxx）
-      ADD_GIFT: 'lazybaobao/promotions/add_gift', // POST 新增贈品規則至活動
-      UPDATE_INFO: 'lazybaobao/promotions/update_info', // POST 更新活動文案與封面圖
-      UPDATE: 'lazybaobao/promotions/update', // ← 加這行
+      LIST: 'lazybaobao/promotions/list', // GET
+      CREATE: 'lazybaobao/promotions/create', // POST
+      TOGGLE: 'lazybaobao/promotions/toggle', // POST
+      CALCULATE: 'lazybaobao/promotions/calculate', // POST
+      AVAILABLE_GIFTS: 'lazybaobao/promotions/getAvailableGifts', // POST
+      ADD_GIFT: 'lazybaobao/promotions/addPromotionGift', // POST
+      UPLOAD_IMAGE: 'lazybaobao/promotions/uploadImage/:id', // POST (multipart)
+      UPDATE_DESCRIPTION: 'lazybaobao/promotions/updateDescription/:id', // POST
+      GET_IMAGE: 'lazybaobao/promotions/image/:id', // GET
+      DELETE: 'lazybaobao/promotions/deletePromotion/:id', // DELETE
     },
 
-    // 分店（GlobalAreaController，@RequestMapping("lazybaobao/global_area")）
+    // 分店（GlobalAreaController，無 class-level mapping）
     GLOBAL_AREA: {
-      GET_ALL: 'lazybaobao/global_area/get_all_branch', // GET  取得全部分店
-      CREATE: 'lazybaobao/global_area/create', // POST 新增分店
-      UPDATE: 'lazybaobao/global_area/update', // POST 修改分店
-      DELETE: 'lazybaobao/global_area/delete', // POST 刪除分店（支援批次）
+      GET_ALL: 'lazybaobao/global_area/get_all_branch', // GET
+      CREATE: 'lazybaobao/global_area/create', // POST
+      UPDATE: 'lazybaobao/global_area/update', // POST
+      DELETE: 'lazybaobao/global_area/delete', // POST
     },
 
-    // 稅率（RegionsController，@RequestMapping("lazybaobao/regions")）
-    // ⚠ dev-wun 已重構：create/update → upsert 統一端點，另新增 update_usage_cap
+    // 稅率（RegionsController，@RequestMapping 已移除，僅靠 WebConfig /lazybaobao 前綴）
     REGIONS: {
-      GET_ALL: 'lazybaobao/regions/get_all_tax', // GET  取得全部國家稅率
-      UPSERT: 'lazybaobao/regions/upsert', // POST 新增或更新稅率（合一端點）
-      UPDATE_USAGE_CAP: 'lazybaobao/regions/update_usage_cap', // POST 更新折扣上限
+      GET_ALL: 'lazybaobao/regions/get_all_tax', // GET
+      UPSERT: 'lazybaobao/regions/upsert', // POST
+      UPDATE_USAGE_CAP: 'lazybaobao/regions/update_usage_cap', // POST
     },
 
-    // 月報表（ReportsController，lazybaobao 前綴）
+    // 月報表（ReportsController，無 class-level mapping）
     REPORTS: {
-      MONTHLY: 'lazybaobao/find_monthly_reports', // POST 查詢單月報表（含上月對比）
-      MONTHLY_RANGE: 'lazybaobao/find_monthly_reports_by_date_range', // POST 查詢月份區間報表
-      REVENUE: 'lazybaobao/get_revenue_reports', // POST 查詢日期區間營業額
+      MONTHLY: 'lazybaobao/find_monthly_reports',
+      MONTHLY_RANGE: 'lazybaobao/find_monthly_reports_by_date_range',
+      REVENUE: 'lazybaobao/get_revenue_reports',
     },
 
-    // 匯率（ExchangeRatesController，@RequestMapping("lazybaobao/exchange_rates")）
-    // 匯率由後端排程自動更新，前端唯讀即可
+    // 匯率（ExchangeRatesController，無 class-level mapping）
     EXCHANGE_RATES: {
-      GET_ALL: 'lazybaobao/exchange_rates/get_all_rates', // GET  全部匯率
-      GET_BY_DATE: 'lazybaobao/exchange_rates/get_rates_by_date', // POST 依日期查詢
+      GET_ALL: 'lazybaobao/exchange_rates/get_all_rates', // GET
+      GET_BY_DATE: 'lazybaobao/exchange_rates/get_rates_by_date', // POST
+      FETCH: 'lazybaobao/exchange_rates/fetch', // POST（手動觸發爬取）
     },
 
-    // ── 會員（MembersController，lazybaobao 前綴）
+    // AI（AiController，@RequestMapping("/ai")）
+    AI: {
+      PROMO_COPY: 'lazybaobao/ai/promo-copy', // POST multipart（活動文案，存 ai_generated）
+      PRODUCT_DESC: 'lazybaobao/ai/product-desc', // ← 加這行
+    },
+
+    // 會員（MembersController，無 class-level mapping）
     MEMBERS: {
-      REGISTER_GUEST: 'lazybaobao/members/register_guest', // POST 訪客快速建立（不需密碼）
-      REGISTER_MEMBER: 'lazybaobao/members/register_member', // POST 正式會員註冊（需密碼）
-      LOGIN: 'lazybaobao/members/login', // POST 會員登入（phone + password）
-      LOGOUT: 'lazybaobao/members/logout', // GET  會員登出
-      UPDATE_PASSWORD: 'lazybaobao/members/update_password', // POST 修改密碼
+      REGISTER_GUEST: 'lazybaobao/members/register_guest', // POST
+      REGISTER_MEMBER: 'lazybaobao/members/register_member', // POST
+      LOGIN: 'lazybaobao/members/login', // POST
+      LOGOUT: 'lazybaobao/members/logout', // GET
+      UPDATE_PASSWORD: 'lazybaobao/members/update_password', // POST
+      GET_BY_PHONE: 'lazybaobao/members/get_by_phone', // GET ?phone= (POS 查詢正式會員)
     },
 
-    // ── 員工（StaffController，lazybaobao 前綴）
+    // 員工（StaffController，無 class-level mapping）
     STAFF: {
-      LOGIN: 'lazybaobao/api/auth/login', // POST 員工登入（account + password）
-      LOGOUT: 'lazybaobao/api/auth/logout', // GET  員工登出
-      GET_ALL: 'lazybaobao/api/admin/staff', // GET  取得員工清單（ADMIN 看全部 RM；RM 看自己分店）
-      CREATE: 'lazybaobao/api/admin/staff', // POST 新增員工（RM 或 ST）
-      UPDATE_STATUS: 'lazybaobao/api/admin/staff/:id/status', // PATCH 停權 / 復權
-      CHANGE_PASSWORD: 'lazybaobao/api/admin/staff/:id/password', // PATCH 修改密碼
-      PROMOTE: 'lazybaobao/api/admin/staff/:id/promote', // PATCH 晉升為副店長
+      LOGIN: 'lazybaobao/api/auth/login', // POST
+      LOGOUT: 'lazybaobao/api/auth/logout', // GET
+      GET_ALL: 'lazybaobao/api/admin/staff', // GET
+      CREATE: 'lazybaobao/api/admin/staff', // POST
+      UPDATE_STATUS: 'lazybaobao/api/admin/staff/:id/status', // PATCH
+      CHANGE_PASSWORD: 'lazybaobao/api/admin/staff/:id/password', // PATCH
+      PROMOTE: 'lazybaobao/api/admin/staff/:id/promote', // PATCH
+      SELF_CHANGE_PASSWORD: 'lazybaobao/api/staff/password', // PATCH
     },
 
-    // 商品（ProductsController，lazybaobao 前綴）
+    // 商品（ProductsController，@RequestMapping("/product")）
     PRODUCTS: {
-      GET_ACTIVE: 'lazybaobao/products/active', // GET  ?globalAreaId=X
-      GET_ALL: 'lazybaobao/products/get_all', // GET  ?globalAreaId=X（管理端）
-      IMAGE: 'lazybaobao/products/:id/image', // GET  回傳 Base64 字串
-      CREATE: 'lazybaobao/products/create', // POST 新增商品
-      UPDATE: 'lazybaobao/products/update', // POST 修改商品
-      TOGGLE: 'lazybaobao/products/toggle', // POST 切換上/下架
+      LIST: 'lazybaobao/product/list', // GET（管理端全部商品）
+      TRASH: 'lazybaobao/product/trash', // GET（已刪除商品）
+      DETAIL: 'lazybaobao/product/detail/:id', // GET
+      STATUS: 'lazybaobao/product/status/:id', // PATCH ?active=
+      CREATE: 'lazybaobao/product/create', // POST（multipart）
+      UPDATE: 'lazybaobao/product/update', // POST（multipart）
+      MENU: 'lazybaobao/inventory/menu/:globalAreaId', // GET（前台菜單）
+      MONTHLY_SALES_RM: 'lazybaobao/product/api/rm/monthly-sales',
+      MONTHLY_SALES_ADMIN: 'lazybaobao/product/api/admin/top5-monthly-sales',
     },
 
-    // 分店庫存（BranchInventoryController，lazybaobao 前綴）
+    // 分店庫存（BranchInventoryController，@RequestMapping("/inventory")）
     BRANCH_INVENTORY: {
-      GET_BY_AREA: 'lazybaobao/branch_inventory/:areaId', // GET
-      UPDATE: 'lazybaobao/branch_inventory/update', // POST
+      GET_BY_AREA: 'lazybaobao/inventory/branch/:areaId', // GET
+      GET_BY_PRODUCT: 'lazybaobao/inventory/product/:productId', // GET
+      UPDATE: 'lazybaobao/inventory/update', // POST (全欄位更新)
+      UPDATE_STOCK: 'lazybaobao/inventory/update-stock', // POST (僅更新庫存數量)
     },
 
-    // 支付（PaymentController，lazybaobao 前綴，透過 Angular proxy 轉發）
+    // 支付（OrdersController）
     PAYMENT: {
-      LINEPAY_REQUEST: 'lazybaobao/payment/linepay/request', // POST 取得 LINE Pay 付款 URL
-      LINEPAY_CONFIRM: 'lazybaobao/payment/linepay/confirm', // GET  LINE Pay 回調（後端處理）
-      ECPAY_REQUEST: 'lazybaobao/payment/ecpay/request', // POST 取得 ECPay HTML 表單
-      ECPAY_CALLBACK: 'lazybaobao/payment/ecpay/callback', // POST ECPay 付款結果通知
+      GO_PAY: 'lazybaobao/goPay', // GET ?orderDateId=&id=&way=ECPAY|LINEPAY
+      LINEPAY_CONFIRM: 'lazybaobao/linepay/confirm', // GET
     },
   },
 };

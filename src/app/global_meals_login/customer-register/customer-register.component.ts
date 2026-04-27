@@ -81,7 +81,7 @@ export class CustomerRegisterComponent implements OnInit {
       valid = false;
     }
 
-    if (this.password.length < 8) {
+    if (this.password.length < 6) {
       this.passwordError = true;
       valid = false;
     }

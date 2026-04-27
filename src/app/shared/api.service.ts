@@ -3,32 +3,13 @@
  * 檔案名稱：api.service.ts
  * 位置說明：src/app/shared/api.service.ts
  * 用途說明：集中管理所有後端 API 呼叫
- *
- * ⚠ 使用說明（串接流程）：
- *   1. 確認 app.config.ts 已有 provideHttpClient()（已完成）
- *   2. 確認 api.config.ts 的 BASE_URL 已填入後端位址
- *   3. 在目標元件中注入此 Service：
- *        constructor(private apiService: ApiService) {}
- *        或 Angular 17+ 寫法：
- *        private apiService = inject(ApiService);
- *   4. 找到元件內對應的 ⚠ TODO [API串接點] 區塊，
- *      取消其中的 API 呼叫程式碼，並移除或保留 mock 邏輯
- *
- * ⚠ Demo 期間說明：
- *   此 Service 已在後台待命，但各元件尚未注入它，
- *   所有操作仍走 mock 資料，不影響 Demo。
- *
- * ⚠ CORS 注意事項：
- *   後端 Controller 已設定 @CrossOrigin(origins = "http://localhost:4200")
- *   正式部署時需更新後端的 CORS 白名單為正式 domain。
- *
- * 最後更新：2026-04-10（依後端 Req/Res 欄位修正所有介面）
+ * 最後更新：2026-04-24（依後端 Controller 實際路由全面修正）
  * =====================================================
  */
 
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 import { API_CONFIG } from './api.config';
 
 /* ════════════════════════════════════════════════════
@@ -44,76 +25,62 @@ export interface BasicRes {
 
 /* ── Cart（購物車）────────────────────────────────── */
 
-/* POST cart/sync
- * ⚠ cartId 新建時傳 null；memberId 訪客傳 1
- * ⚠ 舊版的 operation 欄位已移除（後端不存在此欄位）
- */
 export interface CartSyncReq {
-  cartId: number | null; /* 新建購物車傳 null；已有購物車傳 id */
-  globalAreaId: number | null; /* 新建時必填；已有購物車可傳 null */
-  productId: number; /* 必填，最小值 1 */
-  quantity: number; /* 必填，最小值 0（0 不合法，減少用 DELETE /cart/item） */
+  cartId: number | null;
+  globalAreaId: number | null;
+  productId: number;
+  quantity: number;
   operationType: 'STAFF' | 'CUSTOMER';
-  memberId: number; /* 訪客固定傳 1 */
-  staffId?: number; /* 員工操作時傳 staff.id；顧客傳 null 或不傳 */
+  memberId: number;
+  staffId?: number;
 }
 
-/* DELETE cart/item
- * ⚠ memberId 為必填（舊版缺少此欄位）
- */
 export interface CartRemoveReq {
   cartId: number;
   productId: number;
-  memberId: number; /* 訪客傳 1 */
+  memberId: number;
 }
 
-/* POST cart/gift
- * 使用者從可用贈品清單選擇後呼叫
- * ⚠ giftRuleId 是 promotions_gifts.id，不是 productId
- */
 export interface CartSelectGiftReq {
   cartId: number;
-  memberId: number; /* 訪客傳 1 */
-  giftRuleId: number; /* promotions_gifts.id；後端用此 ID 精確定位贈品規則 */
+  memberId: number;
+  giftRuleId: number;
 }
 
-/* DELETE cart/clear */
 export interface CartClearReq {
   cartId: number;
-  memberId: number; /* 訪客傳 1 */
+  memberId: number;
 }
 
-/* GET cart/{cartId}?memberId={memberId} 的回傳 */
+export interface CartSwitchBranchReq {
+  oldCartId: number;
+  newGlobalAreaId: number;
+  memberId: number;
+}
+
 export interface CartViewRes extends BasicRes {
   cartId: number;
   globalAreaId: number;
   operationType: string;
   items: CartItemVO[];
   subtotal: number;
-  /* 使用者「有資格參加」的活動及可選贈品（以活動為單位的兩層結構）
-   * 空陣列 = 消費未達任何門檻；有值 = 前端顯示贈品選擇 UI */
   availablePromotions: AvailablePromotionVO[];
-  /* 稅務資訊（稅率、稅類型、稅額）；分店無稅務設定時為 null */
   taxInfo: TaxInfoVO | null;
-  /* 最終總計（subtotal + taxAmount 或 subtotal，後端算好直接顯示） */
   totalAmount: number;
-  /* 後端重新驗算時發現的警告（例如商品已下架、價格變動）；正常為空陣列 */
   warningMessages: string[];
 }
 
-/* CartViewRes.items[] 的單一商品 */
 export interface CartItemVO {
-  detailId: number; /* order_cart_details.id */
+  detailId: number;
   productId: number;
-  productName: string; /* ⚠ 欄位名是 productName，不是 name */
+  productName: string;
   quantity: number;
-  price: number; /* 加入購物車時的價格快照 */
+  price: number;
   isGift: boolean;
-  discountNote?: string; /* 滿額贈說明（例如「滿300贈薯條」） */
-  lineTotal: number; /* 後端已算好的小計（price × quantity） */
+  discountNote?: string;
+  lineTotal: number;
 }
 
-/* CartViewRes.availablePromotions[] */
 export interface AvailablePromotionVO {
   promotionId: number;
   promotionName: string;
@@ -121,17 +88,16 @@ export interface AvailablePromotionVO {
 }
 
 export interface AvailableGiftVO {
-  giftRuleId: number; /* promotions_gifts.id，選贈品時傳回後端 */
+  giftRuleId: number;
   giftProductId: number;
   giftProductName: string;
   fullAmount: number;
   available: boolean;
-  unavailableReason?: string; /* 無庫存等原因 */
+  unavailableReason?: string;
 }
 
-/* CartViewRes.taxInfo */
 export interface TaxInfoVO {
-  taxRate: number; /* 小數格式，例如 0.0500 = 5% */
+  taxRate: number;
   taxType: 'INCLUSIVE' | 'EXCLUSIVE';
   taxAmount: number;
 }
@@ -154,33 +120,34 @@ export interface TodayOrderVo {
   id: string;
   orderDateId: string;
   totalAmount: number;
-  kitchenStatus: string; // WAITING / COOKING / READY
-  paymentStatus: string; // COMPLETED | PENDING_CASH
+  kitchenStatus: string;
+  paymentStatus: string;
   phone: string;
   items: TodayOrderDetailVo[];
 }
 
+// export interface GetTodayOrdersRes extends BasicRes {
+//   orders: TodayOrderVo[];
+// }
+
 export interface GetTodayOrdersRes extends BasicRes {
-  orders: TodayOrderVo[];
+  getOrderVoList: GetOrdersVo[];
 }
 
 /* ── Orders（訂單）────────────────────────────────── */
 
-/* POST Orders/createOrdersRes
- * ⚠ orderCartId 是 String 型別（後端用 @NotBlank 驗證）
- * ⚠ paymentMethod 不在此請求，在 PayReq 階段才傳
- * ⚠ orderCartDetailsList 中的商品列表為必填
- */
 export interface CreateOrdersReq {
-  orderCartId: string; /* ⚠ String，不是 number（需 String(cartId)） */
+  orderCartId: string;
   globalAreaId: number;
-  memberId: number; /* 訪客傳 1 */
+  memberId: number;
   phone: string;
   subtotalBeforeTax: number;
   taxAmount: number;
   totalAmount: number;
-  orderCartDetailsList: OrderCartDetailItem[]; /* 必填，不能為空陣列 */
-  paymentMethod?: string; /* 傳 'CASH' → 後端建立 PENDING_CASH 訂單（不立即付款） */
+  orderCartDetailsList: OrderCartDetailItem[];
+  useDiscount?: boolean;
+  promotionsId?: number;
+  paymentMethod?: string; /* 'CASH' → 後端建立 PENDING_CASH 訂單 */
 }
 
 export interface OrderCartDetailItem {
@@ -189,59 +156,61 @@ export interface OrderCartDetailItem {
   isGift: boolean;
 }
 
-/* POST Orders/createOrdersRes 的回傳 */
 export interface CreateOrdersRes extends BasicRes {
-  id: string; /* ⚠ 欄位名是 id（不是 orderId）；4 碼流水號 */
-  orderDateId: string; /* YYYYMMDD，與 id 組成複合主鍵 */
+  id: string;
+  orderDateId: string;
+  totalAmount: number;
+  status?: string;
+}
+
+export interface PayReq {
+  id: string;
+  orderDateId: string;
+  paymentMethod: string;
+  transactionId: string;
   totalAmount: number;
 }
 
-/* POST Orders/pay
- * ⚠ id 取自 CreateOrdersRes.id
- * ⚠ paymentMethod 必填（@NotBlank）
- * ⚠ transactionId 必填（現金可傳 "CASH_PAYMENT"）
- */
-export interface PayReq {
-  id: string; /* ⚠ 欄位名是 id（不是 orderId） */
-  orderDateId: string;
-  paymentMethod: string; /* ⚠ 必填！例：'CASH' | 'CREDIT_CARD' | 'MOBILE_PAY' */
-  transactionId: string; /* ⚠ 必填！現金付款可傳 "CASH_PAYMENT" */
-  totalAmount: number; /* ⚠ 必填！後端用於驗證金額是否一致 */
-}
-
-/* POST Orders/GetAllOrdersList 的請求 */
 export interface HistoricalOrdersReq {
   memberId: number;
 }
 
-/* POST Orders/ordersStatus 的請求 */
 export interface RefundedReq {
-  id: string; /* ⚠ 欄位名是 id（不是 orderId） */
+  id: string;
   orderDateId: string;
-  status: 'CANCELLED' | 'REFUNDED';
+  status: 'CANCELLED' | 'REFUNDED' | 'AWAITING_PAYMENT';
 }
 
-/* POST Orders/GetAllOrdersList 的回傳 */
 export interface GetAllOrdersRes extends BasicRes {
-  getOrderVoList: GetOrdersVo[]; /* ⚠ 欄位名是 getOrderVoList（不是 orders） */
+  getOrderVoList: GetOrdersVo[];
 }
 
 export interface GetOrdersVo {
-  id: string; /* ⚠ 欄位名是 id（不是 orderId） */
+  id: string;
   orderDateId: string;
   globalAreaId: number;
   totalAmount: number;
-  status: string; /* UNPAID / COMPLETED / CANCELLED / REFUNDED */
-  completedAt: string; /* ISO 日期時間字串 */
-  getOrdersDetailVoList: GetOrdersDetailVo[]; /* ⚠ 欄位名注意大小寫 */
+  status: string;
+  completedAt: string | null;
+  kitchenStatus?: string | null;
+  paymentMethod?: string; /* 後端可能用此欄位名 */
+  payMethod?: string; /* 後端可能用此欄位名 */
+  paymentStatus?: string; /* 舊版 TodayOrderVo 欄位名 */
+  /* 後端實際回傳的欄位名（首字母大寫） */
+  GetOrdersDetailVoList?: GetOrdersDetailVo[] | null;
+  /* 小寫版本，部分端點可能用 */
+  getOrdersDetailVoList?: GetOrdersDetailVo[] | null;
 }
 
 export interface GetOrdersDetailVo {
-  productId: number;
-  productName: string; /* ⚠ 欄位名是 productName（不是 name） */
+  productId?: number;
+  name?: string;
+  productName?: string;
   quantity: number;
-  price: number;
-  isGift: boolean;
+  price?: number | null;
+  isGift?: boolean; /* 舊版欄位名 */
+  gift?: boolean; /* 後端實際回傳欄位名 */
+  discountNote?: string | null;
 }
 
 /* ── Members（會員）──────────────────────────────── */
@@ -249,8 +218,8 @@ export interface GetOrdersDetailVo {
 export interface RegisterMembersReq {
   name: string;
   phone: string;
-  country: string; /* BranchService.country — 'TW' | 'JP' | 'KR' */
-  password?: string; /* 訪客版不需要密碼 */
+  country: string;
+  password?: string;
 }
 
 export interface LoginMembersReq {
@@ -270,7 +239,6 @@ export interface MembersInfo {
 
 export interface MembersRes extends BasicRes {
   members?: MembersInfo;
-  /* 保留舊欄位相容（未來清除） */
   memberId?: number;
   name?: string;
   phone?: string;
@@ -279,15 +247,26 @@ export interface MembersRes extends BasicRes {
 }
 
 export interface UpdatePasswordReq {
-  phone: string;
+  id: number;
   oldPassword: string;
   newPassword: string;
+}
+
+/** POS 依電話查詢會員的回傳格式（對應後端 MembersRes + Members entity） */
+export interface MemberLookupRes extends BasicRes {
+  members?: {
+    id: number;
+    name: string;
+    phone: string;
+    orderCount: number;
+    discount: boolean;
+  };
 }
 
 /* ── Staff（員工）──────────────────────────────────── */
 
 export interface LoginStaffReq {
-  account: string; /* email 或帳號 */
+  account: string;
   password: string;
 }
 
@@ -295,9 +274,9 @@ export interface StaffVO {
   id: number;
   name: string;
   account: string;
-  role: string; /* ADMIN / REGION_MANAGER / MANAGER_AGENT / STAFF */
+  role: string;
   globalAreaId: number;
-  isStatus: boolean;
+  status: boolean;
   hireAt: string;
 }
 
@@ -314,11 +293,16 @@ export interface RegisterStaffReq {
 }
 
 export interface UpdateStaffStatusReq {
-  isStatus: boolean;
+  newStatus: boolean;
 }
 
-// 新增，放在 ChangePasswordReq 附近
 export interface AdminChangePasswordReq {
+  newPassword: string;
+}
+
+export interface SelfChangePasswordReq {
+  account: string;
+  oldPassword: string;
   newPassword: string;
 }
 
@@ -340,11 +324,11 @@ export interface UpdateGlobalAreaReq {
 }
 
 export interface DeleteGlobalAreaReq {
-  globalAreaIdList: number[]; /* 後端 @NotEmpty List<Integer> */
+  globalAreaIdList: number[];
 }
 
 export interface GlobalAreaRes extends BasicRes {
-  globalAreaList: GlobalAreaVO[]; /* ⚠ 欄位名是 globalAreaList（不是 branches） */
+  globalAreaList: GlobalAreaVO[];
 }
 
 export interface GlobalAreaVO {
@@ -358,50 +342,58 @@ export interface GlobalAreaVO {
 
 /* ── Regions（稅率）────────────────────────────────── */
 
-/* ⚠ dev-wun：upsert 統一端點取代原本的 create/update */
 export interface UpsertRegionsTaxReq {
   country: string;
-  currencyCode: string; /* 三碼貨幣代碼，例如 'TWD' 'JPY' */
-  countryCode: string; /* 兩碼國家代碼，例如 'TW' 'JP' 'KR' */
-  taxRate: number; /* 小數格式，例如 0.05 = 5% */
+  currencyCode: string;
+  countryCode: string;
+  taxRate: number;
   taxType: 'INCLUSIVE' | 'EXCLUSIVE';
 }
 
 export interface UpdateRegionsUsageCapReq extends UpsertRegionsTaxReq {
   id: number;
-  usageCap: number; /* 折扣上限（各國貨幣單位，例如 TW=200, JP=1000） */
+  usageCap: number;
 }
 
 export interface RegionsRes extends BasicRes {
-  regionsList: RegionVO[]; /* ⚠ 欄位名是 regionsList（不是 regions） */
+  regionsList: RegionVO[];
 }
 
 export interface RegionVO {
   id: number;
   country: string;
-  countryCode: string; /* TW / JP / KR */
+  countryCode: string;
   currencyCode: string;
-  taxRate: number; /* 小數格式（0.05 = 5%），顯示時需 × 100 */
+  taxRate: number;
   taxType: string;
-  usageCap: number; /* 折扣上限 */
+  usageCap: number;
 }
 
-/* ── Reports（月報表，dev-kao）────────────────────── */
+/* ── Reports（月報表）────────────────────────────── */
+
+export interface MonthlyProductsSalesVo {
+  productName: string;
+  totalQuantity: number;
+}
+
+export interface MonthlyProductsSalesRes extends BasicRes {
+  salesList: MonthlyProductsSalesVo[];
+}
 
 export interface MonthlyReportReq {
-  reportDate: string; /* 格式：YYYY-MM，例如 '2026-04' */
+  reportDate: string;
 }
 
 export interface MonthRangeReportsReq {
-  startMonth: string; /* 格式：YYYY-MM */
+  startMonth: string;
   endMonth: string;
 }
 
 export interface RevenueQueryReq {
-  startDate: string; /* 格式：yyyy-MM-dd */
+  startDate: string;
   endDate: string;
-  branchId?: number; /* null 或不傳 = 查全部或按 regionsId */
-  regionsId?: number; /* null 或不傳 = 查全球 */
+  branchId?: number;
+  regionsId?: number;
 }
 
 export interface MonthlyReportDetail {
@@ -412,12 +404,12 @@ export interface MonthlyReportDetail {
 }
 
 export interface MonthlyReportRes extends BasicRes {
-  currentData: MonthlyReportDetail[]; /* 本月各店報表 */
-  lastData: MonthlyReportDetail[]; /* 上月各店報表（對比用） */
+  currentData: MonthlyReportDetail[];
+  lastData: MonthlyReportDetail[];
 }
 
 export interface MonthRangeReportsRes extends BasicRes {
-  currentMonth: MonthlyReportDetail[]; /* 區間內各月份各店報表 */
+  currentMonth: MonthlyReportDetail[];
 }
 
 export interface RevenueData {
@@ -433,85 +425,105 @@ export interface RevenueQueryRes extends BasicRes {
 /* ── ExchangeRates（匯率）──────────────────────────── */
 
 export interface ExchangeRatesReq {
-  date: string; /* 格式：YYYY-MM-DD */
+  date: string;
 }
 
 export interface ExchangeRatesRes extends BasicRes {
-  rates: ExchangeRateVO[];
+  exchangeRatesList: ExchangeRateVO[];
 }
 
 export interface ExchangeRateVO {
   id: number;
   currencyCode: string;
-  rateToTwd: number; /* 1 單位外幣 = rateToTwd 台幣 */
+  rateToTwd: number;
   updatedAt: string;
 }
 
-/* ── Products（商品）─────────────────────────────── */
+/* ── AI（AiController）─────────────────────────────── */
+export interface AiRes extends BasicRes {
+  generatedDescription?: string;
+}
 
-export interface ProductVO {
+/* ── Products（商品）─────────────────────────────────
+ * MenuVo: 前台菜單（/inventory/menu/{globalAreaId}）
+ * ProductAdminVo: 管理端商品（/product/list）
+ * ─────────────────────────────────────────────────── */
+
+/** 前台菜單商品（來自 BranchInventoryController /inventory/menu/{id}） */
+export interface MenuVo {
+  productId: number; /* 商品 ID（注意：不是 id，是 productId） */
+  name: string;
+  category: string;
+  description: string;
+  foodImgBase64: string;
+  basePrice: number;
+  stockQuantity: number;
+}
+
+/** 前台菜單回傳（BaseListRes<MenuVo>） */
+export interface MenuListRes extends BasicRes {
+  data: MenuVo[];
+}
+
+/** 管理端商品 VO（ProductsController /product/list） */
+export interface ProductAdminVo {
   id: number;
   name: string;
   category: string;
   description: string;
   active: boolean;
-  basePrice: number;
-  stockQuantity: number;
-  maxOrderQuantity: number;
+  foodImgBase64: string;
 }
 
-export interface ProductsRes extends BasicRes {
-  products: ProductVO[];
+/** 管理端商品回傳（AdminProductRes） */
+export interface AdminProductRes extends BasicRes {
+  product?: ProductAdminVo;
+  productList?: ProductAdminVo[];
+  inventoryList?: InventoryDetailVo[];
 }
 
+/** 建立商品請求（對應後端 ProductCreateReq） */
 export interface CreateProductReq {
   name: string;
   category: string;
   description?: string;
-  globalAreaId: number;
-  basePrice: number;
-  stockQuantity: number;
-  maxOrderQuantity?: number;
-  imageBase64?: string;
+  active?: boolean;
 }
 
+/** 修改商品請求（對應後端 ProductUpdateReq extends ProductCreateReq） */
 export interface UpdateProductReq {
   id: number;
-  name?: string;
-  category?: string;
-  description?: string;
-  imageBase64?: string;
-}
-
-export interface ToggleProductReq {
-  id: number;
-  active: boolean;
-}
-
-/* ── BranchInventory（分店庫存）─────────────────── */
-
-export interface BranchInventoryVO {
-  id: number;
-  productId: number;
-  productName: string;
+  name: string;
   category: string;
+  description?: string;
+  active?: boolean;
+}
+
+/* ── BranchInventory（分店庫存）─────────────────────
+ * InventoryDetailVo: 後端 vo/InventoryDetailVo.java
+ * BranchInventoryRes: 後端 BaseListRes<InventoryDetailVo>
+ * ─────────────────────────────────────────────────── */
+
+export interface InventoryDetailVo {
+  productId: number; /* 商品 ID */
+  productName: string;
   globalAreaId: number;
-  stockQuantity: number;
+  branchName: string;
   basePrice: number;
+  stockQuantity: number;
   maxOrderQuantity: number;
-  version: number;
 }
 
 export interface BranchInventoryRes extends BasicRes {
-  inventory: BranchInventoryVO[];
+  data: InventoryDetailVo[]; /* 後端 BaseListRes.data */
 }
 
 export interface UpdateBranchInventoryReq {
   productId: number;
   globalAreaId: number;
-  basePrice?: number;
-  stockQuantity?: number;
-  maxOrderQuantity?: number;
+  stockQuantity: number;
+  basePrice: number;
+  maxOrderQuantity: number;
 }
 
 /* ── Payment（支付）──────────────────────────────── */
@@ -527,26 +539,20 @@ export interface LinePayRes extends BasicRes {
 
 /* ── Promotions（促銷活動）────────────────────────── */
 
-/* POST /promotions/calculate 的請求
- * ⚠ memberId = 1 表示訪客（無折扣資格）
- * ⚠ selectedGiftId = 0 表示放棄選贈品
- * ⚠ originalAmount 需由前端計算好後傳入
- */
 export interface PromotionsReq {
   cartId: number;
-  memberId: number; /* 1 = 訪客；>1 = 會員 */
-  useCoupon: boolean; /* 使用者是否勾選使用 8 折券 */
-  selectedGiftId: number; /* promotions_gifts.id；放棄傳 0 */
-  originalAmount: number; /* 購物車原始總金額（必填） */
+  memberId: number;
+  useCoupon: boolean;
+  selectedGiftId: number;
+  originalAmount: number;
 }
 
-/* POST /promotions/calculate 的回傳 */
 export interface PromotionsRes {
   cartId: number;
   appliedPromotionIds: number[];
-  appliedDiscountName: string; /* 有折扣時為 "會員 8 折優惠"；無折扣為 "" */
+  appliedDiscountName: string;
   originalAmount: number;
-  finalAmount: number; /* int，已無條件進位 */
+  finalAmount: number;
   receivedGifts: GiftItem[];
 }
 
@@ -554,26 +560,21 @@ export interface GiftItem {
   promotionsGiftsId: number;
   productId: number;
   productName: string;
-  quantity: number; /* -1 = 無限供應 */
+  quantity: number;
 }
 
-/* POST /promotions/create 和 /promotions/toggle 的請求
- * 新增活動時：name, startTime, endTime 必填
- * 新增贈品時：promotionsId, fullAmount, giftProductId 必填；quantity 預設 -1
- * toggle 時：promotionsId, active 必填
- */
 export interface PromotionsManageReq {
   name: string;
-  startTime: string; /* 格式 YYYY-MM-DD */
+  startTime: string;
   endTime: string;
+  description?: string;
   promotionsId?: number;
   fullAmount?: number;
-  quantity?: number; /* -1 = 無限供應 */
+  quantity?: number;
   giftProductId?: number;
-  active?: boolean; /* true 開啟 / false 關閉 */
+  active?: boolean;
 }
 
-/* GET /promotions/list 的回傳（管理端）*/
 export interface PromotionsListRes {
   code: number;
   message: string;
@@ -583,9 +584,9 @@ export interface PromotionsListRes {
 export interface PromotionDetailVo {
   id: number;
   name: string;
-  nameJP?: string; /* 日文活動名稱（null 時前端 fallback 至 name） */
-  nameKR?: string; /* 韓文活動名稱 */
-  globalAreaId?: number; /* null = 全球活動；有值 = 分店專屬 */
+  nameJP?: string;
+  nameKR?: string;
+  globalAreaId?: number;
   startTime: string;
   endTime: string;
   active: boolean;
@@ -597,18 +598,17 @@ export interface PromotionDetailVo {
 export interface UpdatePromotionInfoReq {
   promotionsId: number;
   description?: string;
-  promotionImg?: string; /* Base64 或 data URL */
+  promotionImg?: string;
 }
 
-// ↓ 新增在這裡
 export interface CreatePromotionRes extends BasicRes {
-  id?: number; /* 後端 POST /promotions/create 回傳的新活動 id */
+  id?: number;
 }
 
 export interface GiftDetailVo {
   id: number;
   fullAmount: number;
-  quantity: number; /* -1 = 無限供應；0 = 已送完 */
+  quantity: number;
   giftProductId: number;
   productName: string;
   active: boolean;
@@ -625,7 +625,6 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
-  /* ── Mock helpers（MOCK_MODE = true 時使用，不發送 HTTP 請求）── */
   private get isMock(): boolean {
     return API_CONFIG.MOCK_MODE;
   }
@@ -635,7 +634,7 @@ export class ApiService {
       code: 200,
       message: 'ok',
       cartId,
-      globalAreaId: 1,
+      globalAreaId: 4,
       operationType: 'CUSTOMER',
       items: [],
       subtotal: 0,
@@ -646,22 +645,10 @@ export class ApiService {
     };
   }
 
-  /** 更新活動基本資訊（名稱、開始／結束日期）*/
-  updatePromotion(req: PromotionsManageReq): Observable<BasicRes> {
-    return this.http.post<BasicRes>(
-      `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.UPDATE}`,
-      req,
-    );
-  }
-
   /* ══════════════════════════════════════════════════
-   * Cart API  →  cart/（無 /api/ 前綴）
+   * Cart API  →  /cart/
    * ══════════════════════════════════════════════════ */
 
-  /** 查看購物車（含稅務、可用贈品清單、警告訊息）
-   * @param cartId 購物車 ID
-   * @param memberId 訪客傳 1；有值時後端計算折扣資格
-   */
   viewCart(cartId: number, memberId: number = 1): Observable<CartViewRes> {
     const path = API_CONFIG.ENDPOINTS.CART.VIEW.replace(
       ':cartId',
@@ -672,7 +659,6 @@ export class ApiService {
     );
   }
 
-  /** 新增/更新購物車商品（quantity=0 不合法，減少數量請用 removeCartItem） */
   syncCart(req: CartSyncReq): Observable<CartViewRes> {
     if (this.isMock) return of(this.mockCartRes(req.cartId ?? 9999));
     return this.http.post<CartViewRes>(
@@ -681,7 +667,6 @@ export class ApiService {
     );
   }
 
-  /** 從購物車刪除整個品項 */
   removeCartItem(req: CartRemoveReq): Observable<CartViewRes> {
     if (this.isMock) return of(this.mockCartRes(req.cartId));
     return this.http.delete<CartViewRes>(
@@ -690,7 +675,6 @@ export class ApiService {
     );
   }
 
-  /** 使用者確認選擇贈品（giftRuleId = promotions_gifts.id）*/
   selectGift(req: CartSelectGiftReq): Observable<CartViewRes> {
     return this.http.post<CartViewRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.CART.GIFT}`,
@@ -698,7 +682,6 @@ export class ApiService {
     );
   }
 
-  /** 清空購物車所有商品 */
   clearCart(req: CartClearReq): Observable<CartViewRes> {
     if (this.isMock) return of(this.mockCartRes(req.cartId));
     return this.http.delete<CartViewRes>(
@@ -707,13 +690,18 @@ export class ApiService {
     );
   }
 
+  switchBranch(req: CartSwitchBranchReq): Observable<CartViewRes> {
+    return this.http.post<CartViewRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.CART.SWITCH_BRANCH}`,
+      req,
+      { withCredentials: true },
+    );
+  }
+
   /* ══════════════════════════════════════════════════
-   * Orders API  →  Orders/（大寫 O，無前綴）
+   * Orders API  →  /orders/
    * ══════════════════════════════════════════════════ */
 
-  /** 成立訂單（狀態：UNPAID，尚未結帳）
-   * 回傳 id 和 orderDateId，下一步 pay() 需要這兩個值
-   */
   createOrder(req: CreateOrdersReq): Observable<CreateOrdersRes> {
     if (this.isMock) {
       const d = new Date();
@@ -734,9 +722,6 @@ export class ApiService {
     );
   }
 
-  /** 結帳（將訂單狀態改為 COMPLETED）
-   * ⚠ paymentMethod 和 transactionId 皆為必填
-   */
   pay(req: PayReq): Observable<BasicRes> {
     if (this.isMock) return of({ code: 200, message: 'ok' });
     return this.http.post<BasicRes>(
@@ -746,59 +731,78 @@ export class ApiService {
     );
   }
 
-  /** 取得會員歷史訂單清單 */
   getAllOrders(req: HistoricalOrdersReq): Observable<GetAllOrdersRes> {
     return this.http.post<GetAllOrdersRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.GET_ALL}`,
       req,
+      { withCredentials: true },
     );
   }
 
-  /** 以電話號碼查詢 UNPAID 訂單（POS 取餐用）*/
   getOrderByPhone(phone: string): Observable<CreateOrdersRes> {
     return this.http.get<CreateOrdersRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.BY_PHONE}?phone=${encodeURIComponent(phone)}`,
     );
   }
 
-  /** 更改訂單狀態（取消 CANCELLED 或退款 REFUNDED）*/
+  /** POS 依電話查詢正式會員（排除訪客），需員工 session（GET /members/get_by_phone） */
+  getMemberByPhone(phone: string): Observable<MemberLookupRes> {
+    return this.http.get<MemberLookupRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.GET_BY_PHONE}?phone=${encodeURIComponent(phone)}`,
+      { withCredentials: true },
+    );
+  }
+
   updateOrderStatus(req: RefundedReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.UPDATE_STATUS}`,
       req,
+      { withCredentials: true },
     );
   }
 
-  /** POS 看板：取得今日所有已付款訂單（含品項、廚房狀態） */
-  getTodayOrders(): Observable<GetTodayOrdersRes> {
+  /** 後端無此端點，回傳空結果供元件靜默處理 */
+  // getTodayOrders(): Observable<GetTodayOrdersRes> {
+  //   return of({ code: 404, message: 'not implemented', orders: [] });
+  // }
+  /**真實呼叫 */
+  getTodayOrders(globalAreaId: number): Observable<GetTodayOrdersRes> {
     return this.http.get<GetTodayOrdersRes>(
-      `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.TODAY_ORDERS}`,
+      `${this.BASE}/lazybaobao/orders/today?globalAreaId=${globalAreaId}`,
+      { withCredentials: true },
     );
   }
 
-  /** POS 看板：更新廚房狀態（COOKING / READY） */
+  /** POS 廚房狀態更新 (COOKING / READY) */
   updateKitchenStatus(req: UpdateKitchenStatusReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.KITCHEN_STATUS}`,
-      req,
+      { id: req.id, orderDateId: req.orderDateId, status: req.kitchenStatus },
+      { withCredentials: true },
     );
   }
 
-  /** 客戶端：查詢自己訂單的廚房狀態（每 5 秒輪詢） */
+  /** 顧客端輪詢單筆訂單狀態 */
   getOrderStatus(id: string, orderDateId: string): Observable<BasicRes> {
     return this.http.get<BasicRes>(
-      `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.ORDER_STATUS}?id=${id}&orderDateId=${orderDateId}`,
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.GET_STATUS}?id=${encodeURIComponent(id)}&orderDateId=${encodeURIComponent(orderDateId)}`,
+      { withCredentials: true },
+    );
+  }
+
+  /** POS 現金收款確認（READY → COMPLETED） */
+  confirmCashPayment(id: string, orderDateId: string): Observable<BasicRes> {
+    return this.http.post<BasicRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.CASH_CONFIRM}?id=${encodeURIComponent(id)}&orderDateId=${encodeURIComponent(orderDateId)}`,
+      {},
+      { withCredentials: true },
     );
   }
 
   /* ══════════════════════════════════════════════════
-   * Promotions API  →  /promotions/（管理端）
-   *                    Promotions/（顧客端，大寫 P）
+   * Promotions API  →  /promotions/
    * ══════════════════════════════════════════════════ */
 
-  /** 結帳時計算促銷結果（折扣 + 贈品）
-   * selectedGiftId = 0 表示使用者放棄選贈品
-   */
   calculatePromotion(req: PromotionsReq): Observable<PromotionsRes> {
     return this.http.post<PromotionsRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.CALCULATE}`,
@@ -806,20 +810,14 @@ export class ApiService {
     );
   }
 
-  /** 傳入消費金額，取得達標的可選贈品清單
-   * ⚠ 後端用 @RequestParam，需拼接 Query String
-   */
+  /** POST /promotions/getAvailableGifts，body 為金額數字 */
   getAvailableGifts(amount: number): Observable<GiftItem[]> {
     return this.http.post<GiftItem[]>(
-      `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.AVAILABLE_GIFTS}?amount=${amount}`,
-      null,
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.AVAILABLE_GIFTS}`,
+      amount,
     );
   }
 
-  /** 取得活動及贈品清單
-   * globalAreaId 有值 → 客戶端：全球活動 + 分店專屬活動（已篩選 active + 時間範圍）
-   * 不傳 → 管理端：回傳全部活動（含停用）
-   */
   getPromotionsList(globalAreaId?: number): Observable<PromotionsListRes> {
     const url = globalAreaId
       ? `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.LIST}?globalAreaId=${globalAreaId}`
@@ -827,7 +825,6 @@ export class ApiService {
     return this.http.get<PromotionsListRes>(url);
   }
 
-  /** 建立促銷活動（可附帶建立一筆贈品規則）*/
   createPromotion(req: PromotionsManageReq): Observable<CreatePromotionRes> {
     return this.http.post<CreatePromotionRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.CREATE}`,
@@ -835,7 +832,6 @@ export class ApiService {
     );
   }
 
-  /** 啟用或停用促銷活動（active=false 時連帶停用底下所有贈品）*/
   togglePromotion(req: PromotionsManageReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.TOGGLE}`,
@@ -843,7 +839,7 @@ export class ApiService {
     );
   }
 
-  /** 對既有活動新增一條贈品規則 */
+  /** POST /promotions/addPromotionGift */
   addGift(req: PromotionsManageReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.ADD_GIFT}`,
@@ -851,26 +847,53 @@ export class ApiService {
     );
   }
 
-  /** 更新活動文案（description）與封面圖片 */
-  updatePromotionInfo(req: UpdatePromotionInfoReq): Observable<BasicRes> {
-    return this.http.post<BasicRes>(
-      `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.UPDATE_INFO}`,
-      req,
+  /** DELETE /promotions/deletePromotion/{id} */
+  deletePromotion(id: number): Observable<BasicRes> {
+    const path = API_CONFIG.ENDPOINTS.PROMOTIONS.DELETE.replace(
+      ':id',
+      String(id),
     );
+    return this.http.delete<BasicRes>(`${this.BASE}/${path}`, {
+      withCredentials: true,
+    });
+  }
+
+  /** GET /promotions/image/{id}，回傳可直接放入 img[src] 的 URL */
+  getPromotionImageUrl(id: number): string {
+    const path = API_CONFIG.ENDPOINTS.PROMOTIONS.GET_IMAGE.replace(
+      ':id',
+      String(id),
+    );
+    return `${this.BASE}/${path}`;
+  }
+
+  /** 上傳促銷活動圖片（multipart），description 已在 create 時一起帶入 */
+  updatePromotionInfo(req: UpdatePromotionInfoReq): Observable<BasicRes> {
+    if (!req.promotionImg) return of({ code: 200, message: 'ok' });
+    const id = String(req.promotionsId);
+    const imgPath = API_CONFIG.ENDPOINTS.PROMOTIONS.UPLOAD_IMAGE.replace(':id', id);
+    const base64 = req.promotionImg.startsWith('data:')
+      ? req.promotionImg.split(',')[1]
+      : req.promotionImg;
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'image/jpeg' });
+    const form = new FormData();
+    form.append('image', blob, 'promotion.jpg');
+    return this.http.post<BasicRes>(`${this.BASE}/${imgPath}`, form);
   }
 
   /* ══════════════════════════════════════════════════
-   * GlobalArea API  →  global_area/
+   * GlobalArea API  →  /global_area/
    * ══════════════════════════════════════════════════ */
 
-  /** 取得全部分店清單 */
   getAllBranches(): Observable<GlobalAreaRes> {
     return this.http.get<GlobalAreaRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.GLOBAL_AREA.GET_ALL}`,
     );
   }
 
-  /** 新增分店 */
   createBranch(req: CreateGlobalAreaReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.GLOBAL_AREA.CREATE}`,
@@ -878,7 +901,6 @@ export class ApiService {
     );
   }
 
-  /** 修改分店資料 */
   updateBranch(req: UpdateGlobalAreaReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.GLOBAL_AREA.UPDATE}`,
@@ -886,7 +908,6 @@ export class ApiService {
     );
   }
 
-  /** 刪除分店 */
   deleteBranch(req: DeleteGlobalAreaReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.GLOBAL_AREA.DELETE}`,
@@ -898,14 +919,12 @@ export class ApiService {
    * Regions API  →  /lazybaobao/regions/
    * ══════════════════════════════════════════════════ */
 
-  /** 取得全部國家稅率 */
   getAllTax(): Observable<RegionsRes> {
     return this.http.get<RegionsRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.REGIONS.GET_ALL}`,
     );
   }
 
-  /** 新增或更新國家稅率（upsert 統一端點，dev-wun）*/
   upsertRegion(req: UpsertRegionsTaxReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.REGIONS.UPSERT}`,
@@ -913,7 +932,6 @@ export class ApiService {
     );
   }
 
-  /** 更新折扣上限（dev-wun）*/
   updateRegionUsageCap(req: UpdateRegionsUsageCapReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.REGIONS.UPDATE_USAGE_CAP}`,
@@ -922,10 +940,9 @@ export class ApiService {
   }
 
   /* ══════════════════════════════════════════════════
-   * Reports API  →  無前綴（dev-kao）
+   * Reports API  →  /find_monthly_reports 等
    * ══════════════════════════════════════════════════ */
 
-  /** 查詢單月報表（含本月 + 上月對比）⚠ 需員工 Session */
   getMonthlyReport(req: MonthlyReportReq): Observable<MonthlyReportRes> {
     return this.http.post<MonthlyReportRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.REPORTS.MONTHLY}`,
@@ -934,7 +951,6 @@ export class ApiService {
     );
   }
 
-  /** 查詢月份區間報表 ⚠ 需員工 Session */
   getMonthlyReportByRange(
     req: MonthRangeReportsReq,
   ): Observable<MonthRangeReportsRes> {
@@ -945,7 +961,6 @@ export class ApiService {
     );
   }
 
-  /** 查詢日期區間營業額（可依分店 / 國家 / 全球維度查詢）*/
   getRevenueReports(req: RevenueQueryReq): Observable<RevenueQueryRes> {
     return this.http.post<RevenueQueryRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.REPORTS.REVENUE}`,
@@ -953,18 +968,27 @@ export class ApiService {
     );
   }
 
+  getTop5MonthlySales(
+    year: number,
+    month: number,
+    regionId: number,
+  ): Observable<MonthlyProductsSalesRes> {
+    return this.http.get<MonthlyProductsSalesRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.MONTHLY_SALES_ADMIN}?year=${year}&month=${month}&regionId=${regionId}`,
+      { withCredentials: true },
+    );
+  }
+
   /* ══════════════════════════════════════════════════
-   * ExchangeRates API  →  exchange_rates/
+   * ExchangeRates API  →  /exchange_rates/
    * ══════════════════════════════════════════════════ */
 
-  /** 取得全部匯率歷史紀錄（由排程自動更新，前端唯讀）*/
   getAllRates(): Observable<ExchangeRatesRes> {
     return this.http.get<ExchangeRatesRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.EXCHANGE_RATES.GET_ALL}`,
     );
   }
 
-  /** 取得特定日期的匯率 */
   getRatesByDate(req: ExchangeRatesReq): Observable<ExchangeRatesRes> {
     return this.http.post<ExchangeRatesRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.EXCHANGE_RATES.GET_BY_DATE}`,
@@ -972,11 +996,50 @@ export class ApiService {
     );
   }
 
+  fetchRatesNow(): Observable<string> {
+    return this.http.post(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.EXCHANGE_RATES.FETCH}`,
+      {},
+      { responseType: 'text' },
+    );
+  }
+
+  /** POST /ai/promo-copy（multipart：data JSON + file 圖片），回傳含 generatedDescription，並存 ai_generated */
+  generateAiPromoCopy(
+    promotionsId: number,
+    activityName: string,
+    imageBlob: Blob,
+  ): Observable<AiRes> {
+    const form = new FormData();
+    const dataBlob = new Blob(
+      [JSON.stringify({ promotionsId, activityName })],
+      { type: 'application/json' },
+    );
+    form.append('data', dataBlob);
+    form.append('file', imageBlob, 'promo.jpg');
+    return this.http.post<AiRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.AI.PROMO_COPY}`,
+      form,
+      { withCredentials: true },
+    );
+  }
+
+  /** POST /ai/product-desc，回傳含 generatedDescription */
+  generateAiProductDesc(
+    productName: string,
+    category: string,
+  ): Observable<AiRes> {
+    return this.http.post<AiRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.AI.PRODUCT_DESC}`,
+      { productName, category },
+      { withCredentials: true },
+    );
+  }
+
   /* ══════════════════════════════════════════════════
-   * Members API  →  members/（無前綴，後端已建立）
+   * Members API  →  /members/
    * ══════════════════════════════════════════════════ */
 
-  /** 訪客快速建立（不需密碼）*/
   registerGuest(req: RegisterMembersReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.REGISTER_GUEST}`,
@@ -985,7 +1048,6 @@ export class ApiService {
     );
   }
 
-  /** 正式會員註冊（需密碼）*/
   registerMember(req: RegisterMembersReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.REGISTER_MEMBER}`,
@@ -994,7 +1056,6 @@ export class ApiService {
     );
   }
 
-  /** 會員登入（phone + password）回傳 MembersRes 含 memberId、name */
   memberLogin(req: LoginMembersReq): Observable<MembersRes> {
     return this.http.post<MembersRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.LOGIN}`,
@@ -1003,7 +1064,6 @@ export class ApiService {
     );
   }
 
-  /** 會員登出（清除 Session）*/
   memberLogout(): Observable<MembersRes> {
     return this.http.get<MembersRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.LOGOUT}`,
@@ -1011,7 +1071,6 @@ export class ApiService {
     );
   }
 
-  /** 修改密碼（oldPassword 驗證後才能更新）*/
   updateMemberPassword(req: UpdatePasswordReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.UPDATE_PASSWORD}`,
@@ -1021,10 +1080,9 @@ export class ApiService {
   }
 
   /* ══════════════════════════════════════════════════
-   * Staff API  →  api/auth/ 和 api/admin/（後端已建立）
+   * Staff API  →  /api/auth/ 和 /api/admin/
    * ══════════════════════════════════════════════════ */
 
-  /** 員工登入（account + password），成功後後端寫入 Session */
   staffLogin(req: LoginStaffReq): Observable<StaffSearchRes> {
     return this.http.post<StaffSearchRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.STAFF.LOGIN}`,
@@ -1033,7 +1091,6 @@ export class ApiService {
     );
   }
 
-  /** 員工登出（清除 Session）*/
   staffLogout(): Observable<BasicRes> {
     return this.http.get<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.STAFF.LOGOUT}`,
@@ -1041,7 +1098,6 @@ export class ApiService {
     );
   }
 
-  /** 取得員工清單（ADMIN 看全部；RM 看自己分店）*/
   getAllStaff(): Observable<StaffSearchRes> {
     return this.http.get<StaffSearchRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.STAFF.GET_ALL}`,
@@ -1049,7 +1105,6 @@ export class ApiService {
     );
   }
 
-  /** 新增員工（RM 或 ST）*/
   createStaff(req: RegisterStaffReq): Observable<StaffSearchRes> {
     return this.http.post<StaffSearchRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.STAFF.CREATE}`,
@@ -1058,7 +1113,6 @@ export class ApiService {
     );
   }
 
-  /** 停權或復權（isStatus: true=啟用, false=停用）*/
   updateStaffStatus(
     id: number,
     req: UpdateStaffStatusReq,
@@ -1072,7 +1126,6 @@ export class ApiService {
     });
   }
 
-  /** 修改員工密碼 */
   changeStaffPassword(
     id: number,
     req: AdminChangePasswordReq,
@@ -1086,7 +1139,14 @@ export class ApiService {
     });
   }
 
-  /** 晉升員工為副店長 */
+  selfChangePassword(req: SelfChangePasswordReq): Observable<StaffSearchRes> {
+    return this.http.patch<StaffSearchRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.STAFF.SELF_CHANGE_PASSWORD}`,
+      req,
+      { withCredentials: true },
+    );
+  }
+
   promoteStaff(id: number): Observable<StaffSearchRes> {
     const path = API_CONFIG.ENDPOINTS.STAFF.PROMOTE.replace(':id', String(id));
     return this.http.patch<StaffSearchRes>(
@@ -1097,264 +1157,165 @@ export class ApiService {
   }
 
   /* ══════════════════════════════════════════════════
-   * Products API  →  lazybaobao/products/
+   * Products API
+   * 前台菜單：GET /inventory/menu/{globalAreaId} → MenuListRes { data: MenuVo[] }
+   * 管理端：  GET /product/list → AdminProductRes { productList: ProductAdminVo[] }
    * ══════════════════════════════════════════════════ */
 
-  private mockProducts(): ProductVO[] {
-    return [
-      {
-        id: 1,
-        name: '招牌滷肉飯',
-        category: '飯食',
-        description: '慢燉豬五花，滷汁濃醇入味，配半熟滷蛋與爽脆泡菜',
-        active: true,
-        basePrice: 120,
-        stockQuantity: 20,
-        maxOrderQuantity: 5,
-      },
-      {
-        id: 2,
-        name: '古早味排骨飯',
-        category: '飯食',
-        description: '台式醃製炸排骨，滷汁菜頭配白飯',
-        active: true,
-        basePrice: 145,
-        stockQuantity: 15,
-        maxOrderQuantity: 5,
-      },
-      {
-        id: 3,
-        name: '牛排',
-        category: '飯食',
-        description: '精選澳洲牛肉，炭烤鎖汁，附時蔬與醬汁',
-        active: true,
-        basePrice: 130,
-        stockQuantity: 10,
-        maxOrderQuantity: 5,
-      },
-      {
-        id: 4,
-        name: '三杯雞',
-        category: '飯食',
-        description: '麻油、醬油、米酒三杯燒製，九層塔香氣四溢',
-        active: true,
-        basePrice: 150,
-        stockQuantity: 15,
-        maxOrderQuantity: 5,
-      },
-      {
-        id: 5,
-        name: '阿三陽春麵',
-        category: '麵食',
-        description: '古法熬製清湯底，手工製麵條彈牙有嚼勁',
-        active: true,
-        basePrice: 120,
-        stockQuantity: 15,
-        maxOrderQuantity: 5,
-      },
-      {
-        id: 6,
-        name: '蚵仔煎',
-        category: '小吃',
-        description: '鮮蚵地瓜粉煎餅，淋上特製甜辣醬',
-        active: true,
-        basePrice: 80,
-        stockQuantity: 18,
-        maxOrderQuantity: 5,
-      },
-      {
-        id: 7,
-        name: '蚵仔麵線',
-        category: '小吃',
-        description: '鮮蚵燴入麵線，甜辣醬提味，道地夜市風味',
-        active: true,
-        basePrice: 70,
-        stockQuantity: 20,
-        maxOrderQuantity: 5,
-      },
-      {
-        id: 8,
-        name: '黑糖珍珠奶茶',
-        category: '飲品',
-        description: '現煮珍珠，手工黑糖虎紋',
-        active: true,
-        basePrice: 75,
-        stockQuantity: 50,
-        maxOrderQuantity: 5,
-      },
-      {
-        id: 9,
-        name: '仙草奶茶',
-        category: '飲品',
-        description: '台灣本產仙草凍，搭配濃醇鮮奶茶',
-        active: true,
-        basePrice: 65,
-        stockQuantity: 30,
-        maxOrderQuantity: 5,
-      },
-    ];
-  }
-
-  /** 前台菜單：只回已上架商品＋分店售價庫存 */
-  getActiveProducts(globalAreaId: number): Observable<ProductsRes> {
-    if (this.isMock)
-      return of({
-        code: 200,
-        message: 'ok',
-        products: this.mockProducts().filter((p) => p.active),
-      });
-    return this.http.get<ProductsRes>(
-      `${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.GET_ACTIVE}?globalAreaId=${globalAreaId}`,
+  /** 前台菜單：依分店取得上架商品（含圖片、庫存）*/
+  getActiveProducts(globalAreaId: number): Observable<MenuListRes> {
+    const path = API_CONFIG.ENDPOINTS.PRODUCTS.MENU.replace(
+      ':globalAreaId',
+      String(globalAreaId),
     );
+    return this.http.get<MenuListRes>(`${this.BASE}/${path}`);
   }
 
   /** 管理端：取得全部商品（含下架）*/
-  getAllProducts(globalAreaId: number): Observable<ProductsRes> {
-    if (this.isMock)
-      return of({ code: 200, message: 'ok', products: this.mockProducts() });
-    return this.http.get<ProductsRes>(
-      `${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.GET_ALL}?globalAreaId=${globalAreaId}`,
+  getAllProducts(_globalAreaId?: number): Observable<AdminProductRes> {
+    return this.http.get<AdminProductRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.LIST}`,
+      { withCredentials: true },
     );
   }
 
-  /** 取得商品圖片（回傳 Base64 字串）*/
-  getProductImage(id: number): Observable<string> {
-    const path = API_CONFIG.ENDPOINTS.PRODUCTS.IMAGE.replace(':id', String(id));
-    return this.http.get(`${this.BASE}/${path}`, { responseType: 'text' });
+  /** 取得單一商品詳情 */
+  getProductDetail(id: number): Observable<AdminProductRes> {
+    const path = API_CONFIG.ENDPOINTS.PRODUCTS.DETAIL.replace(
+      ':id',
+      String(id),
+    );
+    return this.http.get<AdminProductRes>(`${this.BASE}/${path}`, {
+      withCredentials: true,
+    });
   }
 
-  /** 新增商品（含分店初始庫存售價）*/
-  createProduct(req: CreateProductReq): Observable<BasicRes> {
-    if (this.isMock) return of({ code: 200, message: 'ok' });
-    return this.http.post<BasicRes>(
+  /** GET /product/trash — 已刪除商品清單（資源回收桶） */
+  getTrashProducts(): Observable<AdminProductRes> {
+    return this.http.get<AdminProductRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.TRASH}`,
+      { withCredentials: true },
+    );
+  }
+
+  /**
+   * 新增商品（POST /product/create，multipart/form-data）
+   * data 欄位：ProductCreateReq JSON；file 欄位：圖片檔案
+   */
+  createProduct(
+    req: CreateProductReq,
+    file?: File,
+  ): Observable<AdminProductRes> {
+    const form = new FormData();
+    form.append(
+      'data',
+      new Blob([JSON.stringify(req)], { type: 'application/json' }),
+    );
+    if (file) form.append('file', file);
+    return this.http.post<AdminProductRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.CREATE}`,
-      req,
+      form,
+      { withCredentials: true },
     );
   }
 
-  /** 修改商品基本資訊 */
-  updateProduct(req: UpdateProductReq): Observable<BasicRes> {
-    if (this.isMock) return of({ code: 200, message: 'ok' });
-    return this.http.post<BasicRes>(
+  /**
+   * 修改商品（POST /product/update，multipart/form-data）
+   * data 欄位：ProductUpdateReq JSON；file 欄位：新圖片（選填）
+   */
+  updateProduct(
+    req: UpdateProductReq,
+    file?: File,
+  ): Observable<AdminProductRes> {
+    const form = new FormData();
+    form.append(
+      'data',
+      new Blob([JSON.stringify(req)], { type: 'application/json' }),
+    );
+    if (file) form.append('file', file);
+    return this.http.post<AdminProductRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.UPDATE}`,
-      req,
+      form,
+      { withCredentials: true },
     );
   }
 
-  /** 切換上/下架（active=true/false）*/
-  toggleProduct(req: ToggleProductReq): Observable<BasicRes> {
-    if (this.isMock) return of({ code: 200, message: 'ok' });
-    return this.http.post<BasicRes>(
-      `${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.TOGGLE}`,
-      req,
+  /**
+   * 切換上/下架（PATCH /product/status/{id}?active=true|false）
+   */
+  toggleProduct(id: number, active: boolean): Observable<AdminProductRes> {
+    const path = API_CONFIG.ENDPOINTS.PRODUCTS.STATUS.replace(
+      ':id',
+      String(id),
+    );
+    return this.http.patch<AdminProductRes>(
+      `${this.BASE}/${path}?active=${active}`,
+      {},
+      { withCredentials: true },
     );
   }
 
   /* ══════════════════════════════════════════════════
-   * BranchInventory API  →  lazybaobao/branch_inventory/
+   * BranchInventory API  →  /inventory/
+   * 回傳 BranchInventoryRes { data: InventoryDetailVo[] }
    * ══════════════════════════════════════════════════ */
 
-  private mockInventory(): BranchInventoryVO[] {
-    return [
-      {
-        id: 1,
-        productId: 1,
-        productName: '紅燒牛肉麵',
-        category: '台式',
-        globalAreaId: 1,
-        stockQuantity: 48,
-        basePrice: 165,
-        maxOrderQuantity: 5,
-        version: 0,
-      },
-      {
-        id: 2,
-        productId: 3,
-        productName: '越南牛肉河粉',
-        category: '南洋',
-        globalAreaId: 2,
-        stockQuantity: 5,
-        basePrice: 155,
-        maxOrderQuantity: 5,
-        version: 0,
-      },
-      {
-        id: 3,
-        productId: 4,
-        productName: '義式肉醬寬麵',
-        category: '西式',
-        globalAreaId: 3,
-        stockQuantity: 0,
-        basePrice: 185,
-        maxOrderQuantity: 5,
-        version: 0,
-      },
-      {
-        id: 4,
-        productId: 2,
-        productName: '印度奶油咖哩飯',
-        category: '南洋',
-        globalAreaId: 1,
-        stockQuantity: 32,
-        basePrice: 175,
-        maxOrderQuantity: 5,
-        version: 0,
-      },
-      {
-        id: 5,
-        productId: 6,
-        productName: '珍珠奶茶',
-        category: '飲品',
-        globalAreaId: 1,
-        stockQuantity: 120,
-        basePrice: 65,
-        maxOrderQuantity: 5,
-        version: 0,
-      },
-    ];
-  }
-
-  /** 取得指定分店的庫存清單（含商品名稱）*/
   getBranchInventory(areaId: number): Observable<BranchInventoryRes> {
-    if (this.isMock)
-      return of({ code: 200, message: 'ok', inventory: this.mockInventory() });
     const path = API_CONFIG.ENDPOINTS.BRANCH_INVENTORY.GET_BY_AREA.replace(
       ':areaId',
       String(areaId),
     );
-    return this.http.get<BranchInventoryRes>(`${this.BASE}/${path}`);
+    return this.http.get<BranchInventoryRes>(`${this.BASE}/${path}`, {
+      withCredentials: true,
+    });
   }
 
-  /** 更新分店庫存售價（null 欄位不覆蓋）*/
+  /**
+   * 更新分店庫存售價（POST /inventory/update，body 為陣列）
+   * 後端接受 List<BranchInventoryUpdateReq>，故包裝成 [req]
+   */
   updateBranchInventory(req: UpdateBranchInventoryReq): Observable<BasicRes> {
-    if (this.isMock) return of({ code: 200, message: 'ok' });
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.BRANCH_INVENTORY.UPDATE}`,
-      req,
+      [req],
+      { withCredentials: true },
     );
   }
 
-  /** 取得 LINE Pay 付款連結 */
-  getLinePayUrl(req: PaymentInitReq): Observable<LinePayRes> {
+  /** POS 庫存調整：僅更新 stockQuantity（POST /inventory/update-stock） */
+  updateStockOnly(
+    productId: number,
+    globalAreaId: number,
+    stockQuantity: number,
+  ): Observable<BasicRes> {
+    return this.http.post<BasicRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.BRANCH_INVENTORY.UPDATE_STOCK}`,
+      { productId, globalAreaId, stockQuantity },
+      { withCredentials: true },
+    );
+  }
+
+  /* ══════════════════════════════════════════════════
+   * Payment API  →  GET /goPay?way=ECPAY|LINEPAY
+   * ══════════════════════════════════════════════════ */
+
+  /** 前往付款：LINE Pay，後端重導向至 LINE Pay 付款頁 */
+  getLinePayUrl(req: PaymentInitReq): Observable<string> {
     if (this.isMock)
-      return of({
-        code: 200,
-        message: 'ok',
-        paymentUrl:
-          'https://sandbox-web-pay.line.me/web/payment/wait?transactionReserveId=mock',
-      });
-    return this.http.post<LinePayRes>(
-      `${this.BASE}/${API_CONFIG.ENDPOINTS.PAYMENT.LINEPAY_REQUEST}`,
-      req,
+      return of(
+        'https://sandbox-web-pay.line.me/web/payment/wait?transactionReserveId=mock',
+      );
+    return this.http.get(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.PAYMENT.GO_PAY}?orderDateId=${req.orderDateId}&id=${req.id}&way=LINEPAY`,
+      { responseType: 'text' },
     );
   }
 
-  /** 取得 ECPay 自動提交 HTML 表單（字串） */
+  /** 前往付款：ECPay，後端回傳自動提交 HTML 表單 */
   getEcpayForm(req: PaymentInitReq): Observable<string> {
     if (this.isMock) return of('<p>ECPay Mock</p>');
-    return this.http.post(
-      `${this.BASE}/${API_CONFIG.ENDPOINTS.PAYMENT.ECPAY_REQUEST}`,
-      req,
+    return this.http.get(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.PAYMENT.GO_PAY}?orderDateId=${req.orderDateId}&id=${req.id}&way=ECPAY`,
       { responseType: 'text' },
     );
   }

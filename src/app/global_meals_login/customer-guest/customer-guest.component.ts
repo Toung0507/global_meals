@@ -17,10 +17,9 @@ import { ApiService } from '../../shared/api.service';
   standalone: true,
   imports: [FormsModule, RouterLink],
   templateUrl: './customer-guest.component.html',
-  styleUrls: ['./customer-guest.component.scss']
+  styleUrls: ['./customer-guest.component.scss'],
 })
 export class CustomerGuestComponent implements OnInit {
-
   /** 手機號碼欄位 */
   phone: string = '';
 
@@ -28,18 +27,27 @@ export class CustomerGuestComponent implements OnInit {
   phoneError: boolean = false;
 
   /** 目前語系翻譯字典（響應式 signal，自動隨國家切換更新） */
-  get lang() { return this.branchService.lang(); }
+  get lang() {
+    return this.branchService.lang();
+  }
 
   constructor(
     private router: Router,
     private authService: AuthService,
     private loadingService: LoadingService,
     public branchService: BranchService,
-    private apiService: ApiService
+    private apiService: ApiService,
   ) {}
 
   ngOnInit(): void {
     this.branchService.init();
+    this.authService.loginAsGuest('');
+    this.loadingService.showCustomerLoading();
+    setTimeout(() => {
+      this.router
+        .navigate(['/customer-home'])
+        .then(() => this.loadingService.hide());
+    }, 6200);
   }
 
   /**
@@ -57,15 +65,19 @@ export class CustomerGuestComponent implements OnInit {
       this.authService.loginAsGuest(this.phone.trim());
       this.loadingService.showCustomerLoading();
       setTimeout(() => {
-        this.router.navigate(['/customer-home']).then(() => this.loadingService.hide());
+        this.router
+          .navigate(['/customer-home'])
+          .then(() => this.loadingService.hide());
       }, 6200);
     };
 
-    this.apiService.registerGuest({
-      name: '訪客',
-      phone: this.phone.trim(),
-      country: this.branchService.country
-    }).subscribe({ next: proceed, error: proceed });
+    this.apiService
+      .registerGuest({
+        name: '訪客',
+        phone: this.phone.trim(),
+        country: this.branchService.country,
+      })
+      .subscribe({ next: proceed, error: proceed });
   }
 
   /** 清除錯誤狀態 */
