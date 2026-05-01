@@ -242,7 +242,7 @@ export class AuthService {
    * 回傳 Observable<MembersRes>，讓元件訂閱並處理結果
    * ────────────────────────────────────────────────── */
   loginMember(phone: string, password: string): Observable<MembersRes> {
-    const req: LoginMembersReq = { phone, password };
+    const req: LoginMembersReq = { phone, password, countryCode: 'TW' };
     return this.apiService.memberLogin(req).pipe(
       tap(res => {
         if (res.code === 200) {
@@ -274,7 +274,8 @@ export class AuthService {
     const req: LoginStaffReq = { account, password };
     return this.apiService.staffLogin(req).pipe(
       tap(res => {
-        if (res.code === 200 && res.staffList && res.staffList.length > 0) {
+        const isFirstLogin = res.message === 'First Login Change Password';
+        if ((res.code === 200 || isFirstLogin) && res.staffList && res.staffList.length > 0) {
           const staff = res.staffList[0];
           const staffUser: StaffUser = {
             id: staff.id,

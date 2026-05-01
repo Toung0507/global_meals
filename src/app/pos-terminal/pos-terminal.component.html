@@ -56,6 +56,15 @@
   }}</span>
   <div class="ms-auto d-flex align-items-center gap-3">
     <span class="pos-time">{{ clockStr() }}</span>
+    @if (isBM && authService.currentUser?.role === 'branch_manager') {
+      <button
+        class="btn btn-sm btn-outline-success"
+        style="font-size: 0.75rem"
+        (click)="goToRmDashboard()"
+      >
+        🏢 進入後台
+      </button>
+    }
     <button
       class="btn btn-sm btn-outline-secondary"
       style="font-size: 0.75rem"
@@ -586,7 +595,7 @@
           </div>
         }
 
-        <!-- 狀態三：訪客模式 — 手機號碼輸入 -->
+        <!-- 狀態三：訪客模式 -->
         @if (orderMode() === "guest") {
           <div class="omp-guest-area">
             <div class="omp-mode-header">
@@ -613,14 +622,7 @@
                 取消
               </button>
             </div>
-            <input
-              class="omp-input"
-              type="tel"
-              placeholder="手機號碼（現場外帶識別用，可不填）"
-              [value]="guestPhone()"
-              (input)="guestPhone.set($any($event.target).value)"
-            />
-            <div class="omp-hint">訪客免填，可直接進行結帳</div>
+            <div class="omp-hint">訪客模式，可直接按下結帳</div>
           </div>
         }
       </div>
@@ -694,13 +696,12 @@
 
           <!-- 贈品列（已選且非「不需要」時顯示，無增減按鈕，金額為 $0） -->
           @if (
-            subtotal() >= 300 &&
-            selectedGift() &&
-            selectedGift() !== "不需要滿額免費贈品"
+            posSelectedGiftName() &&
+            posSelectedGiftName() !== "不需要滿額免費贈品"
           ) {
             <div class="cart-row cart-row-gift">
               <div class="cart-item-name">
-                {{ selectedGift() }}
+                {{ posSelectedGiftName() }}
                 <span class="cart-item-eng cart-gift-tag">滿額贈品</span>
               </div>
               <div class="qty-gift-placeholder"></div>
@@ -744,182 +745,121 @@
             >
           </div>
 
-          <!-- ── 活動區塊（統一深色設計）── -->
-          @if (showPromoHint() && unlockedPromos().length === 0) {
-            <div class="pos-promo-hint">
-              再加 <strong>${{ promoRemain() }}</strong> 即可解鎖滿額贈品
-            </div>
-          }
-
-          @if (showGiftPanel) {
-            <div
-              class="pos-pgp-panel"
-              [class.pos-pgp-done]="
-                !!selectedGift() && selectedGift() !== '不需要滿額免費贈品'
-              "
+          <!-- ── 活動區塊（抽屜 + accordion）── -->
+          @if (posEnrichedPromos().length > 0) {
+            <button
+              class="pos-pact-drawer-toggle"
+              [class.open]="posPromoDrawerOpen()"
+              (click)="posPromoDrawerOpen.set(!posPromoDrawerOpen())"
+              type="button"
             >
-              <button
-                class="pos-pgp-header"
-                (click)="toggleGiftDropdown()"
-                type="button"
-              >
-                <div
-                  class="pos-pgp-icon"
-                  [class.pos-pgp-icon-done]="
-                    !!selectedGift() && selectedGift() !== '不需要滿額免費贈品'
-                  "
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                  >
-                    <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4" />
-                    <rect x="2" y="6" width="20" height="6" rx="1" />
-                    <path d="M12 12v9" />
-                    <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6" />
-                    <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3" />
-                  </svg>
-                </div>
-                <div class="pos-pgp-text">
-                  @if (
-                    selectedGift() && selectedGift() !== "不需要滿額免費贈品"
-                  ) {
-                    <span class="pos-pgp-label pos-pgp-label-done"
-                      >已選：{{ selectedGift() }}</span
-                    >
-                    <span class="pos-pgp-hint-txt">點此更換</span>
-                  } @else {
-                    <span class="pos-pgp-label">選擇免費贈品</span>
-                    <span class="pos-pgp-hint-txt">{{ giftPanelHint }}</span>
-                  }
-                </div>
-                @if (
-                  selectedGift() && selectedGift() !== "不需要滿額免費贈品"
-                ) {
-                  <span class="pos-pgp-free-tag">免費</span>
-                }
-                <svg
-                  class="pos-pgp-chevron"
-                  [class.open]="giftDropdownOpen()"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
-              @if (giftDropdownOpen()) {
-                <div class="pos-pgp-options">
-                  @for (opt of currentGiftOptions; track opt) {
-                    <button
-                      class="pos-pgp-gift-opt"
-                      [class.selected]="selectedGift() === opt"
-                      [class.skip]="opt === '不需要滿額免費贈品'"
-                      (click)="selectGift(opt)"
-                      type="button"
-                    >
-                      <span>{{ opt }}</span>
-                      @if (selectedGift() === opt) {
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2.5"
-                          style="
-                            width: 13px;
-                            height: 13px;
-                            flex-shrink: 0;
-                            margin-left: auto;
-                          "
-                        >
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      }
-                    </button>
-                  }
-                </div>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px;flex-shrink:0">
+                <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4" />
+                <rect x="2" y="6" width="20" height="6" rx="1" />
+                <path d="M12 12v9" /><path d="M12 6c0-1.5-1-3-2-3S8 4 8 6" /><path d="M12 6c0-1.5 1-3 2-3s2 1 2 3" />
+              </svg>
+              <span class="pos-pact-drawer-label">
+                優惠活動
+                <span class="pos-pact-drawer-count">{{ posEnrichedPromos().length }}</span>
+              </span>
+              @if (posSelectedGiftName()) {
+                <span class="pos-pact-drawer-selected">已選：{{ posSelectedGiftName() }}</span>
+              } @else if (selectedPosPromoId() === -1) {
+                <span class="pos-pact-drawer-skip">不參加</span>
               }
-            </div>
+              <svg class="pos-pact-drawer-chevron" [class.open]="posPromoDrawerOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;flex-shrink:0;margin-left:auto">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
           }
-
-          @if (unlockedPromos().length > 0) {
-            <div class="pos-promo-act-list">
+          @if (posEnrichedPromos().length > 0 && posPromoDrawerOpen()) {
+            <div class="pos-pact-list">
+              <!-- 不參加 -->
               <button
-                class="pos-promo-act-row pos-promo-act-skip"
-                [class.selected]="selectedPromoName() === '不參加活動優惠'"
-                (click)="selectPromo('不參加活動優惠')"
+                class="pos-pact-row pos-pact-skip"
+                [class.selected]="selectedPosPromoId() === -1"
+                (click)="selectPosPromo(-1)"
                 type="button"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  style="width: 15px; height: 15px; flex-shrink: 0"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="15" y1="9" x2="9" y2="15" />
-                  <line x1="9" y1="9" x2="15" y2="15" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:15px;height:15px;flex-shrink:0">
+                  <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
                 </svg>
                 <span>不參加活動優惠</span>
-                @if (selectedPromoName() === "不參加活動優惠") {
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    style="
-                      width: 13px;
-                      height: 13px;
-                      margin-left: auto;
-                      flex-shrink: 0;
-                    "
-                  >
+                @if (selectedPosPromoId() === -1) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;margin-left:auto;flex-shrink:0">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 }
               </button>
-              @for (act of unlockedPromos(); track act.name) {
-                <button
-                  class="pos-promo-act-row"
-                  [class.selected]="selectedPromoName() === act.name"
-                  (click)="selectPromo(act.name)"
-                  type="button"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    style="width: 15px; height: 15px; flex-shrink: 0"
-                  >
-                    <path
-                      d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"
-                    />
-                  </svg>
-                  <div class="pos-par-text">
-                    <span class="pos-par-name">{{ act.name }}</span>
-                    <span class="pos-par-hint">點此選擇活動</span>
-                  </div>
-                  <span class="pos-par-min-tag">滿 NT${{ act.minSpend }}</span>
-                  @if (selectedPromoName() === act.name) {
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2.5"
-                      style="width: 13px; height: 13px; flex-shrink: 0"
+
+              @for (item of posEnrichedPromos(); track item.id) {
+                <div class="pos-pact-item">
+                  @if (item.qualified) {
+                    <!-- 已達門檻：accordion 展開選贈品 -->
+                    <button
+                      class="pos-pact-row"
+                      [class.selected]="selectedPosPromoId() === item.id"
+                      [class.pos-pact-row--open]="selectedPosPromoId() === item.id"
+                      (click)="selectPosPromo(item.id)"
+                      type="button"
                     >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:15px;height:15px;flex-shrink:0">
+                        <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
+                      </svg>
+                      <div class="pos-par-text">
+                        <span class="pos-par-name">{{ item.name }}</span>
+                        <span class="pos-par-hint">按此選擇此活動，點選免費贈品。</span>
+                      </div>
+                      <span class="pos-par-min-tag">滿 NT${{ item.minThreshold }}</span>
+                      <svg class="pos-par-chevron" [class.open]="selectedPosPromoId() === item.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;flex-shrink:0">
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
+                    @if (selectedPosPromoId() === item.id) {
+                      <div class="pos-pact-gifts">
+                        @for (gift of item.gifts; track gift.giftRuleId) {
+                          <button
+                            class="pos-pgp-gift-opt"
+                            [class.selected]="selectedPosGiftRuleId() === gift.giftRuleId"
+                            [class.oos]="!gift.available"
+                            [disabled]="!gift.available"
+                            (click)="pickPosGift(gift.giftRuleId)"
+                            type="button"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px;flex-shrink:0">
+                              <circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" />
+                            </svg>
+                            <span>{{ gift.giftProductName }}</span>
+                            @if (!gift.available) {
+                              <span class="pos-oos-tag">已售完</span>
+                            } @else if (selectedPosGiftRuleId() === gift.giftRuleId) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;flex-shrink:0;margin-left:auto">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            }
+                          </button>
+                        }
+                      </div>
+                    }
+                  } @else {
+                    <!-- 未達門檻：進度條提示 -->
+                    <div class="pos-pact-progress">
+                      <div class="pos-pact-prog-head">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px;flex-shrink:0;opacity:0.5">
+                          <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
+                        </svg>
+                        <span class="pos-par-name pos-par-name--dim">{{ item.name }}</span>
+                        <span class="pos-par-min-tag">滿 NT${{ item.minThreshold }}</span>
+                      </div>
+                      <div class="pos-pact-prog-bar">
+                        <div class="pos-pact-prog-fill" [style.width.%]="item.progressPct"></div>
+                      </div>
+                      <span class="pos-pact-prog-hint">
+                        再消費 NT${{ item.gapAmount }} 即可獲得贈品
+                      </span>
+                    </div>
                   }
-                </button>
+                </div>
               }
             </div>
           }
@@ -1191,6 +1131,70 @@
         </div>
       </div>
     }
+
+    <!-- ── 報電話號碼取餐查詢 ── -->
+    <div class="phone-pickup-section mb-4">
+      <div class="phone-pickup-bar">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             style="width:15px;height:15px;flex-shrink:0;color:#c49756">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+        </svg>
+        <span style="font-weight:600;font-size:.85rem;color:#c49756">報電話取餐</span>
+        <input
+          class="phone-pickup-input"
+          type="tel"
+          placeholder="輸入手機號碼（09xxxxxxxx 或 +886...）"
+          [value]="phoneQuery()"
+          (input)="phoneQuery.set($any($event.target).value)"
+          (keydown.enter)="searchByPhone()"
+        />
+        <button class="btn btn-sm btn-ghost-gold" (click)="searchByPhone()" [disabled]="phoneSearchLoading()">
+          @if (phoneSearchLoading()) { 查詢中... } @else { 查詢 }
+        </button>
+        @if (phoneSearchDone()) {
+          <button class="btn btn-sm btn-outline-secondary" style="font-size:.75rem" (click)="clearPhoneSearch()">清除</button>
+        }
+      </div>
+
+      @if (phoneSearchError()) {
+        <div class="phone-pickup-msg phone-pickup-msg--err">{{ phoneSearchError() }}</div>
+      }
+
+      @if (phoneSearchDone() && phoneSearchResults().length === 0 && !phoneSearchError()) {
+        <div class="phone-pickup-msg">查無今日訂單</div>
+      }
+
+      @if (phoneSearchResults().length > 0) {
+        <div class="phone-pickup-results">
+          @for (order of phoneSearchResults(); track order.id) {
+            <div class="phone-pickup-card" [class.phone-pickup-card--diff]="!isSameBranch(order)">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="ob-num">{{ order.orderDateId }}-{{ order.id }}</span>
+                @if (!isSameBranch(order)) {
+                  <span class="badge-err" title="此訂單屬於其他分店，無法在此取餐">⚠ 其他分店訂單</span>
+                } @else {
+                  <span class="badge-ok" style="font-size:.7rem">本店訂單</span>
+                }
+              </div>
+              <div style="font-size:.78rem;color:#8b949e;margin-bottom:4px">
+                狀態：{{ order.ordersStatus }} ／ 金額：${{ order.totalAmount }}
+              </div>
+              @for (detail of (order.getOrdersDetailVoList ?? []); track $index) {
+                @if (!detail.gift) {
+                  <div class="ob-item">{{ detail.name }} × {{ detail.quantity }}</div>
+                }
+              }
+              @if (!isSameBranch(order)) {
+                <div style="margin-top:6px;font-size:.78rem;color:#f85149;font-weight:500">
+                  ⚠ 此訂單非本分店，請告知顧客至正確分店取餐
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
 
     <div class="ob-kanban">
 
@@ -1914,13 +1918,24 @@
 
       <div class="modal-field">
         <label class="modal-label">密碼 *</label>
-        <input
-          type="password"
-          class="modal-input"
-          placeholder="請設定登入密碼"
-          [value]="newStaffPassword()"
-          (input)="newStaffPassword.set($any($event.target).value)"
-        />
+        <div class="modal-pw-wrap">
+          <input
+            [type]="showAddStaffPwd() ? 'text' : 'password'"
+            class="modal-input"
+            placeholder="請設定登入密碼"
+            [value]="newStaffPassword()"
+            (input)="newStaffPassword.set($any($event.target).value)"
+          />
+          <button type="button" class="modal-eye-btn" (click)="showAddStaffPwd.set(!showAddStaffPwd())">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              @if (!showAddStaffPwd()) {
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              } @else {
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+              }
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div class="modal-field">
@@ -1980,13 +1995,24 @@
             >（留空則不更改）</span
           >
         </label>
-        <input
-          type="password"
-          class="modal-input"
-          placeholder="留空則保留原密碼"
-          [value]="editStaffDraft.password"
-          (input)="editStaffDraft.password = $any($event.target).value"
-        />
+        <div class="modal-pw-wrap">
+          <input
+            [type]="showEditStaffPwd() ? 'text' : 'password'"
+            class="modal-input"
+            placeholder="留空則保留原密碼"
+            [value]="editStaffDraft.password"
+            (input)="editStaffDraft.password = $any($event.target).value"
+          />
+          <button type="button" class="modal-eye-btn" (click)="showEditStaffPwd.set(!showEditStaffPwd())">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              @if (!showEditStaffPwd()) {
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              } @else {
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+              }
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div class="modal-field">
@@ -2192,35 +2218,26 @@
 
     <div class="modal-field">
       <label class="modal-label">舊密碼 *</label>
-      <input
-        type="password"
-        class="modal-input"
-        placeholder="請輸入目前密碼"
-        [value]="changePwOld()"
-        (input)="changePwOld.set($any($event.target).value)"
-      />
+      <div class="modal-pw-wrap">
+        <input [type]="showChangePwOld() ? 'text' : 'password'" class="modal-input" placeholder="請輸入舊密碼" [value]="changePwOld()" (input)="changePwOld.set($any($event.target).value)"/>
+        <button type="button" class="modal-eye-btn" (click)="showChangePwOld.set(!showChangePwOld())"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@if (!showChangePwOld()) {<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>} @else {<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>}</svg></button>
+      </div>
     </div>
 
     <div class="modal-field">
       <label class="modal-label">新密碼 *</label>
-      <input
-        type="password"
-        class="modal-input"
-        placeholder="請輸入新密碼（至少 6 碼）"
-        [value]="changePwNew()"
-        (input)="changePwNew.set($any($event.target).value)"
-      />
+      <div class="modal-pw-wrap">
+        <input [type]="showChangePwNew() ? 'text' : 'password'" class="modal-input" placeholder="請輸入新密碼（至少 6 碼）" [value]="changePwNew()" (input)="changePwNew.set($any($event.target).value)"/>
+        <button type="button" class="modal-eye-btn" (click)="showChangePwNew.set(!showChangePwNew())"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@if (!showChangePwNew()) {<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>} @else {<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>}</svg></button>
+      </div>
     </div>
 
     <div class="modal-field">
       <label class="modal-label">確認新密碼 *</label>
-      <input
-        type="password"
-        class="modal-input"
-        placeholder="再次輸入新密碼"
-        [value]="changePwConfirm()"
-        (input)="changePwConfirm.set($any($event.target).value)"
-      />
+      <div class="modal-pw-wrap">
+        <input [type]="showChangePwConf() ? 'text' : 'password'" class="modal-input" placeholder="再次輸入新密碼" [value]="changePwConfirm()" (input)="changePwConfirm.set($any($event.target).value)"/>
+        <button type="button" class="modal-eye-btn" (click)="showChangePwConf.set(!showChangePwConf())"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@if (!showChangePwConf()) {<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>} @else {<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>}</svg></button>
+      </div>
     </div>
 
     @if (changePwError()) {

@@ -458,6 +458,29 @@
     color: #A0AABB;
 }
 
+.s-pw-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    input { width: 100%; padding-right: 40px; }
+}
+
+.s-eye-btn {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: #6B7F99;
+    display: flex;
+    align-items: center;
+
+    svg { width: 18px; height: 18px; }
+    &:hover { color: #1E3A5F; }
+}
+
 
 /* 密碼欄位：移除眼睛切換，固定 type=password，無需額外樣式 */
 
@@ -698,4 +721,101 @@
     .s-submit {
         height: 42px;
     }
+}
+
+/* ── 首次登入 Modal ───────────────────────────────────── */
+.sl-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.sl-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 36px 32px 28px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+
+.sl-modal-icon {
+  font-size: 2.4rem;
+  margin-bottom: 10px;
+}
+
+.sl-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a2540;
+  margin: 0 0 10px;
+}
+
+.sl-modal-desc {
+  font-size: 0.88rem;
+  color: #5a6a8a;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.sl-modal-field {
+  text-align: left;
+  margin-bottom: 14px;
+
+  label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #344060;
+    margin-bottom: 5px;
+  }
+}
+
+.sl-modal-error {
+  font-size: 0.82rem;
+  color: #e53e3e;
+  margin: 4px 0 10px;
+  text-align: left;
+}
+
+.sl-modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.sl-btn-skip {
+  flex: 1;
+  padding: 10px 0;
+  border: 1.5px solid #c8d0e0;
+  border-radius: 8px;
+  background: #fff;
+  color: #5a6a8a;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: #f4f6fb; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.sl-btn-confirm {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  border-radius: 8px;
+  background: #1a2540;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: #2d3f6b; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
 }

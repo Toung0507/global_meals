@@ -92,7 +92,7 @@
             <div class="cm-field-row">
               <span class="cm-field-label">手機號碼</span>
               <span class="cm-field-value">{{
-                authService.currentUser?.phone
+                phoneToLocal(authService.currentUser?.phone)
               }}</span>
             </div>
 
@@ -134,7 +134,7 @@
               <input
                 type="text"
                 name="editPhone"
-                [value]="authService.currentUser?.phone"
+                [value]="phoneToLocal(authService.currentUser?.phone)"
                 readonly
                 class="cm-input-readonly"
               />
@@ -146,15 +146,25 @@
                 目前密碼
                 <span class="cm-optional">（修改密碼時必填）</span>
               </label>
-              <input
-                type="password"
-                name="editOldPassword"
-                [(ngModel)]="editOldPassword"
-                placeholder="請輸入目前密碼"
-              />
+              <div class="cm-password-wrap">
+                <input
+                  [type]="showOldPwd ? 'text' : 'password'"
+                  name="editOldPassword"
+                  [(ngModel)]="editOldPassword"
+                  placeholder="請輸入舊密碼"
+                />
+                <button type="button" class="cm-eye-btn" (click)="toggleOldPwd()" [attr.aria-label]="showOldPwd ? '隱藏密碼' : '顯示密碼'">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    @if (!showOldPwd) {
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                    } @else {
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                    }
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            <!-- 新密碼輸入欄（固定 type=password，無眼睛切換） -->
             <div class="cm-input-field">
               <label>
                 新密碼
@@ -162,11 +172,20 @@
               </label>
               <div class="cm-password-wrap">
                 <input
-                  type="password"
+                  [type]="showNewPwd ? 'text' : 'password'"
                   name="editPassword"
                   [(ngModel)]="editPassword"
                   placeholder="輸入新密碼，留空則不變更"
                 />
+                <button type="button" class="cm-eye-btn" (click)="toggleNewPwd()" [attr.aria-label]="showNewPwd ? '隱藏密碼' : '顯示密碼'">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    @if (!showNewPwd) {
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                    } @else {
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                    }
+                  </svg>
+                </button>
               </div>
             </div>
 

@@ -814,21 +814,102 @@ $pos-blue:        #4f8ef7;   // 員工藍色
     &.skip { opacity: 0.55; font-style: italic; }
 }
 
-/* 活動列表 */
-.pos-promo-act-list {
+/* ── 活動抽屜 toggle ────────────────────────────── */
+.pos-pact-drawer-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 12px;
+    margin-top: 10px;
+    background: rgba(196,151,86,0.06);
+    border: 1.5px solid rgba(196,151,86,0.20);
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    color: #c49756;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: background 0.18s ease, border-color 0.18s ease;
+
+    &:hover {
+        background: rgba(196,151,86,0.11);
+        border-color: rgba(196,151,86,0.38);
+    }
+    &.open {
+        border-radius: 10px 10px 0 0;
+        border-bottom-color: transparent;
+        background: rgba(196,151,86,0.10);
+    }
+}
+
+.pos-pact-drawer-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.pos-pact-drawer-count {
+    font-size: 0.65rem;
+    font-weight: 700;
+    background: rgba(196,151,86,0.18);
+    border: 1px solid rgba(196,151,86,0.30);
+    color: #f0c87c;
+    padding: 1px 6px;
+    border-radius: 999px;
+}
+
+.pos-pact-drawer-selected {
+    font-size: 0.68rem;
+    color: #4ade80;
+    background: rgba(74,222,128,0.10);
+    border: 1px solid rgba(74,222,128,0.22);
+    padding: 1px 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+
+.pos-pact-drawer-skip {
+    font-size: 0.68rem;
+    color: #718096;
+    font-style: italic;
+}
+
+.pos-pact-drawer-chevron {
+    transition: transform 0.22s ease;
+    &.open { transform: rotate(180deg); }
+}
+
+/* ── 活動 Accordion 列表（新版）──────────────────── */
+.pos-pact-list {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    margin-top: 10px;
+    padding: 8px 10px 10px;
+    background: rgba(196,151,86,0.04);
+    border: 1.5px solid rgba(196,151,86,0.20);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
 }
 
-.pos-promo-act-row {
+.pos-pact-item {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 活動 row（含資格與未達門檻共用） */
+.pos-pact-row {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 12px;
+    padding: 11px 13px;
     border: 1.5px solid rgba(255,255,255,0.07);
-    border-radius: 10px;
+    border-radius: 11px;
     background: rgba(255,255,255,0.02);
     font-family: 'Noto Sans TC', sans-serif;
     cursor: pointer;
@@ -842,14 +923,20 @@ $pos-blue:        #4f8ef7;   // 員工藍色
     }
     &.selected {
         border-color: rgba(196,151,86,0.55);
-        background: rgba(196,151,86,0.11);
+        background: rgba(196,151,86,0.12);
+    }
+    &.pos-pact-row--open {
+        border-radius: 11px 11px 0 0;
+        border-bottom-color: transparent;
     }
 }
 
-.pos-promo-act-skip {
+/* 不參加 */
+.pos-pact-skip {
     opacity: 0.55;
     font-style: italic;
     color: #718096;
+    font-size: 0.76rem;
     &.selected {
         border-color: rgba(113,128,150,0.35);
         background: rgba(113,128,150,0.07);
@@ -857,6 +944,106 @@ $pos-blue:        #4f8ef7;   // 員工藍色
     }
 }
 
+/* chevron 動畫 */
+.pos-par-chevron {
+    transition: transform 0.2s ease;
+    color: #c49756;
+    &.open { transform: rotate(180deg); }
+}
+
+/* 展開的贈品列 */
+.pos-pact-gifts {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px 10px;
+    background: rgba(196,151,86,0.05);
+    border: 1.5px solid rgba(196,151,86,0.3);
+    border-top: none;
+    border-radius: 0 0 11px 11px;
+}
+
+/* 贈品按鈕（dark 主題） */
+.pos-pgp-gift-opt {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+    font-size: 0.76rem;
+    color: #a0b0c0;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: all 0.18s ease;
+    &:hover {
+        background: rgba(196,151,86,0.08);
+        border-color: rgba(196,151,86,0.22);
+        color: #e2c87a;
+    }
+    &.selected {
+        background: rgba(196,151,86,0.14);
+        border-color: rgba(196,151,86,0.40);
+        color: #f0c87c;
+        font-weight: 600;
+    }
+    &.oos, &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+}
+
+.pos-oos-tag {
+    margin-left: auto;
+    font-size: 0.64rem;
+    color: #718096;
+    background: rgba(113,128,150,0.14);
+    border-radius: 4px;
+    padding: 1px 5px;
+    white-space: nowrap;
+}
+
+/* 未達門檻進度條卡片 */
+.pos-pact-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 13px;
+    border: 1.5px dashed rgba(255,255,255,0.08);
+    border-radius: 11px;
+    background: rgba(255,255,255,0.01);
+}
+
+.pos-pact-prog-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pos-pact-prog-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.pos-pact-prog-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #c49756, #f0c87c);
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+
+.pos-pact-prog-hint {
+    font-size: 0.65rem;
+    color: #7a6a50;
+    letter-spacing: 0.01em;
+}
+
+/* 共用文字元件 */
 .pos-par-text {
     flex: 1;
     display: flex;
@@ -869,6 +1056,7 @@ $pos-blue:        #4f8ef7;   // 員工藍色
     font-size: 0.76rem;
     font-weight: 600;
     color: #e2e8f8;
+    &--dim { color: #6a7a8a; font-weight: 500; }
 }
 
 .pos-par-hint {
@@ -1542,6 +1730,29 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 select.modal-input option {
     background: #111927;
     color: #e2e8f8;
+}
+
+.modal-pw-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    .modal-input { width: 100%; padding-right: 40px; }
+}
+
+.modal-eye-btn {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: #7a8898;
+    display: flex;
+    align-items: center;
+
+    svg { width: 16px; height: 16px; }
+    &:hover { color: #c49756; }
 }
 
 .modal-actions {

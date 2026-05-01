@@ -41,6 +41,7 @@ import {
   CreatePromotionRes,
   ExchangeRateVO,
   AiRes,
+  PromotionsManageReq,
 } from '../shared/api.service';
 import { GeminiService } from '../shared/gemini.service';
 
@@ -102,7 +103,9 @@ interface DashInventory {
   stock: number;
   safeStock: number;
   basePrice: number;
+  costPrice: number;
   maxOrderQuantity: number;
+  active: boolean;
 }
 
 /* ── 帳號型別 ──────────────────────────────────────── */
@@ -167,8 +170,8 @@ interface DashOrder {
 })
 export class ManagerDashboardComponent implements OnInit, OnDestroy {
   /* ── 頁籤狀態 ──────────────────────────────────── */
-  /* 預設頁籤改為分店管理（綜合總覽等5個功能暫時停用） */
-  activeTab = signal<DashTab>('branches');
+  /* 預設頁籤：帳號管理 */
+  activeTab = signal<DashTab>('users');
   userSubTab = signal<UserSubTab>('bm');
   clockStr = signal('');
 
@@ -346,7 +349,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       stock: 48,
       safeStock: 10,
       basePrice: 165,
+      costPrice: 0,
       maxOrderQuantity: 10,
+      active: true,
     },
     {
       id: 2,
@@ -357,7 +362,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       stock: 5,
       safeStock: 10,
       basePrice: 155,
+      costPrice: 0,
       maxOrderQuantity: 10,
+      active: true,
     },
     {
       id: 3,
@@ -368,7 +375,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       stock: 0,
       safeStock: 10,
       basePrice: 185,
+      costPrice: 0,
       maxOrderQuantity: 10,
+      active: true,
     },
     {
       id: 4,
@@ -379,7 +388,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       stock: 32,
       safeStock: 10,
       basePrice: 175,
+      costPrice: 0,
       maxOrderQuantity: 10,
+      active: true,
     },
     {
       id: 5,
@@ -390,7 +401,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       stock: 120,
       safeStock: 30,
       basePrice: 65,
+      costPrice: 0,
       maxOrderQuantity: 5,
+      active: true,
     },
   ]);
 
@@ -575,7 +588,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       country: '台灣',
       countryCode: 'TW',
       currency: 'TWD',
-      taxType: 'INCLUSIVE',
+      taxType: 'EXCLUSIVE',
       rate: 5,
       discountLimit: 200,
       editing: false,
@@ -612,14 +625,11 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   ]);
 
   /* ── 國家設定子頁籤 ──────────────────────────────── */
-  taxSubTab = signal<'tax' | 'discount' | 'rates'>('tax');
+  showRates = signal(false);
 
   /* ── 匯率查詢 ────────────────────────────────────── */
   allRates = signal<ExchangeRateVO[]>([]);
-  ratesByDate = signal<ExchangeRateVO[]>([]);
   ratesLoading = signal(false);
-  ratesQueryDate = signal('');
-  fetchingRates = signal(false);
 
   /* ── 商品篩選 ─────────────────────────────────── */
   productCategoryFilter = signal<string>('全部分類');
@@ -985,6 +995,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   >(null);
   selectedOrder = signal<DashOrder | null>(null);
   editingAccountId = signal<number | null>(null);
+  newStaffResult = signal<{ name: string; account: string } | null>(null);
   editingProductId = signal<number | null>(null);
 
   /* ── 表單草稿（普通屬性，開啟 modal 時重置） ─────────── */
@@ -1011,6 +1022,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     minAmount: null as number | null,
     image: '',
     currency: 'NT$',
+    giftFullAmount: null as number | null,
+    giftProductId: null as number | null,
+    giftQuantity: -1,
   };
   showPromoPanel = signal(false);
   giftDraft = {
@@ -1042,23 +1056,76 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     isActive: true,
     country: '台灣',
   };
+  readonly COUNTRY_DATA: { name: string; code: string; currency: string }[] = [
+    // 東亞
+    { name: '台灣', code: 'TW', currency: 'TWD' },
+    { name: '日本', code: 'JP', currency: 'JPY' },
+    { name: '韓國', code: 'KR', currency: 'KRW' },
+    { name: '中國', code: 'CN', currency: 'CNY' },
+    { name: '香港', code: 'HK', currency: 'HKD' },
+    { name: '澳門', code: 'MO', currency: 'MOP' },
+    { name: '蒙古', code: 'MN', currency: 'MNT' },
+    // 東南亞
+    { name: '泰國', code: 'TH', currency: 'THB' },
+    { name: '越南', code: 'VN', currency: 'VND' },
+    { name: '印尼', code: 'ID', currency: 'IDR' },
+    { name: '馬來西亞', code: 'MY', currency: 'MYR' },
+    { name: '新加坡', code: 'SG', currency: 'SGD' },
+    { name: '菲律賓', code: 'PH', currency: 'PHP' },
+    { name: '柬埔寨', code: 'KH', currency: 'KHR' },
+    { name: '緬甸', code: 'MM', currency: 'MMK' },
+    { name: '寮國', code: 'LA', currency: 'LAK' },
+    { name: '汶萊', code: 'BN', currency: 'BND' },
+    { name: '東帝汶', code: 'TL', currency: 'USD' },
+    // 南亞
+    { name: '印度', code: 'IN', currency: 'INR' },
+    { name: '孟加拉', code: 'BD', currency: 'BDT' },
+    { name: '巴基斯坦', code: 'PK', currency: 'PKR' },
+    { name: '斯里蘭卡', code: 'LK', currency: 'LKR' },
+    { name: '尼泊爾', code: 'NP', currency: 'NPR' },
+    { name: '不丹', code: 'BT', currency: 'BTN' },
+    { name: '馬爾地夫', code: 'MV', currency: 'MVR' },
+    // 中亞
+    { name: '哈薩克', code: 'KZ', currency: 'KZT' },
+    { name: '烏茲別克', code: 'UZ', currency: 'UZS' },
+    { name: '吉爾吉斯', code: 'KG', currency: 'KGS' },
+    { name: '塔吉克', code: 'TJ', currency: 'TJS' },
+    { name: '土庫曼', code: 'TM', currency: 'TMT' },
+    // 西亞／中東
+    { name: '阿拉伯聯合大公國', code: 'AE', currency: 'AED' },
+    { name: '沙烏地阿拉伯', code: 'SA', currency: 'SAR' },
+    { name: '卡達', code: 'QA', currency: 'QAR' },
+    { name: '科威特', code: 'KW', currency: 'KWD' },
+    { name: '巴林', code: 'BH', currency: 'BHD' },
+    { name: '以色列', code: 'IL', currency: 'ILS' },
+    { name: '土耳其', code: 'TR', currency: 'TRY' },
+    { name: '伊朗', code: 'IR', currency: 'IRR' },
+  ];
+
   taxDraft: {
     country: string;
     countryCode: string;
     currency: string;
     taxType: 'INCLUSIVE' | 'EXCLUSIVE';
     rate: number;
-    effectiveDate: string;
     discountLimit: number;
   } = {
     country: '',
     countryCode: '',
     currency: '',
     taxType: 'INCLUSIVE',
-    rate: 5,
-    effectiveDate: '',
+    rate: 0,
     discountLimit: 0,
   };
+
+  onCountrySelect(name: string): void {
+    const found = this.COUNTRY_DATA.find(c => c.name === name);
+    if (found) {
+      this.taxDraft.countryCode = found.code;
+      this.taxDraft.currency = found.currency;
+    }
+  }
+
   branchDraft = { regionsId: 0, city: '', address: '', phone: '' };
   editBranchDraft = { id: 0, regionsId: 0, city: '', address: '', phone: '' };
 
@@ -1331,9 +1398,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
               return {
                 id: r.id,
                 country: r.country,
-                countryCode: r.countryCode ?? '',
-                currency: r.currencyCode,
-                taxType: r.taxType ?? 'INCLUSIVE',
+                countryCode: (r.countryCode ?? '').toUpperCase(),
+                currency: r.currencyCode.toUpperCase(),
+                taxType: r.country === '台灣' ? 'EXCLUSIVE' : (r.taxType ?? 'INCLUSIVE'),
                 rate,
                 discountLimit: cap,
                 editing: false,
@@ -1562,7 +1629,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
               stock: inv.stockQuantity,
               safeStock: 10,
               basePrice: inv.basePrice,
+              costPrice: inv.costPrice,
               maxOrderQuantity: inv.maxOrderQuantity,
+              active: inv.active,
             })),
           );
         }
@@ -1822,7 +1891,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
           globalAreaId: item.globalAreaId,
           stockQuantity: amt,
           basePrice: item.basePrice,
+          costPrice: item.costPrice,
           maxOrderQuantity: item.maxOrderQuantity,
+          active: item.active,
         })
         .subscribe({
           next: () => this.loadInventory(),
@@ -1916,12 +1987,10 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       越南: 'VND',
     };
     this.apiService
-      .upsertRegion({
-        country: target.country,
-        countryCode: target.countryCode || '',
-        currencyCode: target.currency || currencyMap[target.country] || 'USD',
+      .updateRegion({
+        id,
         taxRate: target.editValue / 100,
-        taxType: target.taxType as 'INCLUSIVE' | 'EXCLUSIVE',
+        taxType: target.taxType,
       })
       .subscribe({
         next: () => this.showToast('稅率已同步至後端'),
@@ -1966,13 +2035,10 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       ),
     );
     this.apiService
-      .updateRegionUsageCap({
+      .updateRegion({
         id,
-        country: target.country,
-        countryCode: target.countryCode,
-        currencyCode: target.currency,
         taxRate: target.rate / 100,
-        taxType: target.taxType as 'INCLUSIVE' | 'EXCLUSIVE',
+        taxType: target.taxType,
         usageCap: target.editDiscountValue,
       })
       .subscribe({
@@ -2002,44 +2068,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  /* ── 匯率：依日期查詢 ────────────────────────────── */
-  queryRatesByDate(): void {
-    const date = this.ratesQueryDate();
-    if (!date) {
-      this.showToast('⚠️ 請選擇日期');
-      return;
-    }
-    this.ratesLoading.set(true);
-    this.ratesByDate.set([]);
-    this.apiService.getRatesByDate({ date }).subscribe({
-      next: (res) => {
-        this.ratesByDate.set((res as any)?.exchangeRatesList ?? []);
-        this.ratesLoading.set(false);
-      },
-      error: () => {
-        this.ratesLoading.set(false);
-        this.showToast('⚠️ 查詢失敗，請確認後端連線');
-      },
-    });
-  }
-
-  /* ── 匯率：手動立即抓取 ──────────────────────────── */
-  manualFetchRates(): void {
-    this.fetchingRates.set(true);
-    this.apiService.fetchRatesNow().subscribe({
-      next: () => {
-        this.fetchingRates.set(false);
-        this.showToast('✅ 匯率已更新');
-        this.ratesByDate.set([]);
-        this.loadAllRates();
-      },
-      error: () => {
-        this.fetchingRates.set(false);
-        this.showToast('⚠️ 匯率更新失敗，請確認後端連線');
-      },
-    });
-  }
-
   /* ── 商品篩選 ─────────────────────────────────── */
   onCategoryFilter(event: Event): void {
     this.productCategoryFilter.set((event.target as HTMLSelectElement).value);
@@ -2054,6 +2082,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.activeModal.set(null);
     this.selectedOrder.set(null);
     this.editingProductId.set(null);
+    this.newStaffResult.set(null);
   }
 
   /* ── 訂單：詳情 Modal ─────────────────────────────── */
@@ -2277,7 +2306,28 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       minAmount: null,
       image: '',
       currency: 'NT$',
+      giftFullAmount: null,
+      giftProductId: null,
+      giftQuantity: -1,
     };
+    if (this.giftProductList().length === 0) {
+      this.apiService.getBranchInventory(4).subscribe({
+        next: (res) =>
+          this.giftProductList.set(
+            (res?.data ?? []).map(
+              (inv: InventoryDetailVo) =>
+                ({
+                  id: inv.productId,
+                  name: inv.productName,
+                  category: '',
+                  description: '',
+                  active: true,
+                  foodImgBase64: '',
+                }) as ProductAdminVo,
+            ),
+          ),
+      });
+    }
     this.showPromoPanel.set(true);
   }
 
@@ -2309,69 +2359,38 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       this.showToast('請填寫活動開始與結束日期');
       return;
     }
-    const saved = { ...this.promoDraft };
-    this.apiService
-      .createPromotion({
-        name: saved.name.trim(),
-        startTime: saved.startTime,
-        endTime: saved.endTime,
-        description: saved.description || undefined,
-      })
-      .subscribe({
-        next: (res) => {
-          const newId: number | undefined = res?.id;
+    if (!this.promoDraft.image) {
+      this.showToast('請上傳活動封面圖片（必填）');
+      return;
+    }
 
-          if ((saved.image || saved.description) && newId) {
-            this.apiService
-              .updatePromotionInfo({
-                promotionsId: newId,
-                description: saved.description ?? '',
-                promotionImg: saved.image || undefined,
-              })
-              .subscribe({
-                next: () => {
-                  this.loadPromos();
-                  this.closePromoPanel();
-                  this.showToast(`活動「${saved.name.trim()}」已新增`);
-                },
-                error: () => {
-                  this.loadPromos();
-                  this.closePromoPanel();
-                  this.showToast(`活動已新增，但圖片上傳失敗`);
-                },
-              });
-          } else {
-            this.loadPromos();
-            this.closePromoPanel();
-            this.showToast(`活動「${saved.name.trim()}」已新增`);
-          }
-        },
-        error: () => {
-          const ids = this.promos().map((p) => p.id);
-          const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
-          this.promos.update((list) => [
-            ...list,
-            {
-              id: newId,
-              title: saved.name.trim(),
-              scope: `${saved.startTime} ～ ${saved.endTime}`,
-              isActive: true,
-              color: saved.badgeColor || '#c49756',
-              ended: false,
-              rawName: saved.name.trim(),
-              rawStartTime: saved.startTime,
-              rawEndTime: saved.endTime,
-              type: saved.type,
-              description: saved.description,
-              image: saved.image,
-              badgeColor: saved.badgeColor,
-              minAmount: saved.minAmount ?? undefined,
-            },
-          ]);
-          this.closePromoPanel();
-          this.showToast(`後端暫不可用，已本地新增「${saved.name.trim()}」`);
-        },
-      });
+    const saved = { ...this.promoDraft };
+    const req: PromotionsManageReq = {
+      name: saved.name.trim(),
+      startTime: saved.startTime,
+      endTime: saved.endTime,
+      description: saved.description?.trim() || undefined,
+    };
+    if (
+      saved.giftProductId != null &&
+      saved.giftProductId > 0 &&
+      saved.giftFullAmount != null &&
+      saved.giftFullAmount > 0
+    ) {
+      req.giftProductId = saved.giftProductId;
+      req.fullAmount = saved.giftFullAmount;
+      req.quantity = saved.giftQuantity;
+    }
+    this.apiService.createPromotion(req, saved.image).subscribe({
+      next: () => {
+        this.loadPromos();
+        this.closePromoPanel();
+        this.showToast(`活動「${saved.name.trim()}」已新增`);
+      },
+      error: () => {
+        this.showToast('活動新增失敗，請確認後端服務是否正常');
+      },
+    });
   }
 
   /* ── 新增 / 編輯帳號 Modal ─────────────────────────── */
@@ -2423,17 +2442,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       this.showToast('⚠️ 姓名為必填');
       return;
     }
-    if (this.editingAccountId() !== null && !this.accountDraft.account.trim()) {
-      this.showToast('⚠️ 帳號為必填');
-      return;
-    }
-    if (
-      this.editingAccountId() === null &&
-      !this.accountDraft.password.trim()
-    ) {
-      this.showToast('⚠️ 新增帳號時密碼為必填');
-      return;
-    }
     const editId = this.editingAccountId();
     const savedName = this.accountDraft.name;
     if (editId !== null) {
@@ -2443,7 +2451,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
             ? {
                 ...a,
                 name: this.accountDraft.name,
-                account: this.accountDraft.account,
                 branch: this.accountDraft.branch,
                 shift:
                   this.accountDraft.role === 'staff'
@@ -2467,20 +2474,28 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       this.apiService
         .createStaff({
           name: this.accountDraft.name,
-          account: this.accountDraft.account,
-          password: this.accountDraft.password,
           role: backendRole,
           globalAreaId,
         })
         .subscribe({
-          next: () => {
-            this.closeModal();
-            this.showToast(`✅ 帳號「${savedName}」已新增`);
+          next: (res) => {
             this.loadStaff();
+            const created = res?.staffList?.[0];
+            if (created?.account) {
+              this.newStaffResult.set({ name: created.name, account: created.account });
+            } else {
+              this.closeModal();
+              this.showToast(`✅ 帳號「${savedName}」已新增`);
+            }
           },
           error: () => this.showToast('⚠️ 新增失敗，請確認後端連線'),
         });
     }
+  }
+
+  confirmNewStaff(): void {
+    this.newStaffResult.set(null);
+    this.closeModal();
   }
 
   /* ── 新增國家稅率 Modal ─────────────────────────────── */
@@ -2490,8 +2505,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       countryCode: '',
       currency: '',
       taxType: 'INCLUSIVE',
-      rate: 5,
-      effectiveDate: '',
+      rate: 0,
       discountLimit: 0,
     };
     this.activeModal.set('addCountry');
@@ -2521,7 +2535,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       saved.currency.trim() || currencyMap[saved.country.trim()] || 'USD';
     const taxTypeLabel = saved.taxType === 'INCLUSIVE' ? '內含稅' : '外加稅';
     this.apiService
-      .upsertRegion({
+      .insertRegion({
         country: saved.country.trim(),
         countryCode: saved.countryCode.trim().toUpperCase(),
         currencyCode: resolvedCurrency,

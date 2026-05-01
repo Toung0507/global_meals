@@ -1,54 +1,45 @@
-/*
- * =====================================================
- * 檔案名稱：staff-login.component.ts
- * 用途說明：管理系統登入頁面的 Angular 元件邏輯
- * 功能說明：
- *   - 控制密碼欄位的顯示 / 隱藏狀態
- *   - 表單欄位雙向綁定（email / password）
- *   - 呼叫 AuthService.staffLogin() 驗證帳號密碼
- *   - 登入成功後依帳號 role 自動導向對應後台頁面：
- *       boss           → /manager-dashboard
- *       branch_manager → /pos-terminal
- *       staff          → /pos-terminal
- *   - 點擊「客戶入口」時顯示 Loading 動畫再切換頁面
- * =====================================================
- */
-
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 import { LoadingService } from '../../shared/loading.service';
 import { AuthService } from '../../shared/auth.service';
+import { ApiService } from '../../shared/api.service';
 
 @Component({
   selector: 'app-staff-login',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, CommonModule],
   templateUrl: './staff-login.component.html',
   styleUrls: ['./staff-login.component.scss']
 })
 export class StaffLoginComponent {
 
-  /* 表單欄位 */
-  email: string = '';
-  password: string = '';
-
-  /* 錯誤訊息（null = 無錯誤，不顯示） */
+  email = '';
+  password = '';
   errorMsg: string | null = null;
+
+  showPassword = false;
+  togglePassword(): void { this.showPassword = !this.showPassword; }
+
+  /* 首次登入彈窗 */
+  showFirstLoginModal = false;
+  firstLoginNewPwd = '';
+  firstLoginConfirmPwd = '';
+  showFirstLoginNewPwd = false;
+  showFirstLoginConfirmPwd = false;
+  firstLoginError: string | null = null;
+  firstLoginLoading = false;
+  private _firstLoginAccount = '';
 
   constructor(
     private router: Router,
     private loadingService: LoadingService,
-    public authService: AuthService
+    public authService: AuthService,
+    private apiService: ApiService,
   ) {}
 
-  /*
-   * 管理人員登入
-   * 1. 呼叫 AuthService.staffLogin() 驗證帳號
-   * 2. 登入成功 → 依帳號 role 自動導向對應後台頁面
-   * 3. 登入失敗 → 顯示錯誤訊息
-   */
   submitLogin(): void {
     this.errorMsg = null;
 
@@ -60,18 +51,13 @@ export class StaffLoginComponent {
     this.authService.loginStaffApi(this.email.trim(), this.password.trim()).subscribe({
       next: (res) => {
         if (res.code === 200 && this.authService.currentUser) {
-          const role = this.authService.currentUser.role;
-          if (role === 'boss') {
-            this.loadingService.showStaffLoading();
-            setTimeout(() => {
-              this.router.navigate(['/manager-dashboard']).then(() => this.loadingService.hide());
-            }, 1400);
-          } else {
-            this.loadingService.showPosLoading();
-            setTimeout(() => {
-              this.router.navigate(['/pos-terminal']).then(() => this.loadingService.hide());
-            }, 1400);
-          }
+          this.navigateToDashboard();
+        } else if (res.message === 'First Login Change Password' && this.authService.currentUser) {
+          this._firstLoginAccount = this.authService.currentUser.email;
+          this.firstLoginNewPwd = '';
+          this.firstLoginConfirmPwd = '';
+          this.firstLoginError = null;
+          this.showFirstLoginModal = true;
         } else if (res.code === 403) {
           this.errorMsg = '此帳號已停用，請聯絡管理員';
         } else if (res.code === 404) {
@@ -88,17 +74,71 @@ export class StaffLoginComponent {
     });
   }
 
-  /*
-   * 切換到客戶入口（含 Loading 動畫）
-   * 顯示橘紅色 Loading 遮罩 → 等 1500ms → 導覽至 /customer-login
-   */
+  skipFirstLogin(): void {
+    this.showFirstLoginModal = false;
+    this.navigateToDashboard();
+  }
+
+  submitNewPassword(): void {
+    const pwd = this.firstLoginNewPwd.trim();
+    const confirm = this.firstLoginConfirmPwd.trim();
+    if (!pwd) {
+      this.firstLoginError = '請輸入新密碼';
+      return;
+    }
+    if (pwd === '00000') {
+      this.firstLoginError = '新密碼不能與預設密碼相同';
+      return;
+    }
+    if (pwd !== confirm) {
+      this.firstLoginError = '兩次輸入的密碼不一致';
+      return;
+    }
+    this.firstLoginLoading = true;
+    this.firstLoginError = null;
+    this.apiService.selfChangePassword({
+      account: this._firstLoginAccount,
+      oldPassword: '00000',
+      newPassword: pwd,
+    }).subscribe({
+      next: () => {
+        this.firstLoginLoading = false;
+        this.showFirstLoginModal = false;
+        this.navigateToDashboard();
+      },
+      error: () => {
+        this.firstLoginLoading = false;
+        this.firstLoginError = '密碼修改失敗，請重試';
+      }
+    });
+  }
+
+  private navigateToDashboard(): void {
+    const role = this.authService.currentUser?.role;
+    if (role === 'boss') {
+      this.loadingService.showStaffLoading();
+      setTimeout(() => {
+        this.router.navigate(['/manager-dashboard']).then(() => this.loadingService.hide());
+      }, 1400);
+    } else if (role === 'branch_manager') {
+      this.loadingService.showStaffLoading();
+      setTimeout(() => {
+        this.router.navigate(['/rm-dashboard']).then(() => this.loadingService.hide());
+      }, 1400);
+    } else {
+      this.loadingService.showPosLoading();
+      setTimeout(() => {
+        this.router.navigate(['/pos-terminal']).then(() => this.loadingService.hide());
+      }, 1400);
+    }
+  }
+
   goToCustomer(): void {
     this.loadingService.showCustomerLoading();
     setTimeout(() => {
-      this.router.navigate(['/customer-login']).then(() => {
-        this.loadingService.hide();
-      });
-    }, 1500);
+      this.loadingService.hide();
+      this.router.navigate(['/customer-login']);
+    }, 2300);
   }
 
 }

@@ -104,11 +104,11 @@
                   <input
                     type="text"
                     class="pr-input"
-                    [value]="authService.currentUser?.phone"
+                    [value]="phoneToLocal(authService.currentUser?.phone)"
                   />
                 } @else {
                   <span class="pr-value">{{
-                    authService.currentUser?.phone
+                    phoneToLocal(authService.currentUser?.phone)
                   }}</span>
                 }
               </div>
@@ -132,13 +132,27 @@
                       type="button"
                     >
                       @if (showOldPassword()) {
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path
+                            d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                          ></path>
                           <line x1="1" y1="1" x2="23" y2="23"></line>
                         </svg>
                       } @else {
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path
+                            d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                          ></path>
                           <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                       }
@@ -171,13 +185,27 @@
                       type="button"
                     >
                       @if (showPassword()) {
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path
+                            d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                          ></path>
                           <line x1="1" y1="1" x2="23" y2="23"></line>
                         </svg>
                       } @else {
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path
+                            d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                          ></path>
                           <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                       }
@@ -201,13 +229,27 @@
                       type="button"
                     >
                       @if (showConfirmPassword()) {
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path
+                            d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                          ></path>
                           <line x1="1" y1="1" x2="23" y2="23"></line>
                         </svg>
                       } @else {
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path
+                            d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                          ></path>
                           <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                       }
@@ -467,6 +509,46 @@
 
   <div class="ch-content-wrapper">
     <!-- ═══════════════════════════════════════════════
+         頂部導覽列（手機：fixed 品牌＋用戶按鈕；桌機：sticky 頁籤）
+    ═══════════════════════════════════════════════════ -->
+    <header class="ch-topbar">
+      <!-- 左：品牌 Logo（手機顯示） -->
+      <div class="ch-topbar-brand" (click)="setTab('home')" style="cursor:pointer">
+        <div class="ch-topbar-logo-wrap">
+          <img src="/assets/logo圓形.png" alt="Logo" class="ch-topbar-logo" width="32" height="32" />
+        </div>
+        <div class="ch-topbar-brand-text">
+          <span class="ch-topbar-name">懶飽飽</span>
+          <span class="ch-topbar-en">Lazy BaoBao</span>
+        </div>
+      </div>
+
+      <!-- 中：頁籤（桌機版顯示） -->
+      <div class="ch-topbar-tabs">
+        @for (tab of navTabs(); track tab.id) {
+          <button
+            class="ch-topbar-tab"
+            [class.active]="activeTab() === tab.id"
+            (click)="setTab(tab.id)"
+          >
+            <span class="tab-text">{{ tab.label }}</span>
+            @if (tab.id === 'checkout' && cartCount() > 0) {
+              <span class="ch-topbar-badge">{{ cartCount() }}</span>
+            }
+          </button>
+        }
+      </div>
+
+      <!-- 右：用戶按鈕（手機顯示） -->
+      <button class="ch-topbar-user-btn" (click)="toggleMobileMenu()" aria-label="會員選單">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      </button>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════
          主內容區（各頁籤在此切換）
     ═══════════════════════════════════════════════════ -->
     <main class="ch-main">
@@ -477,7 +559,6 @@
         <section
           class="tab-home"
           aria-label="品牌形象首頁"
-          style="padding-top: 24px"
         >
           <!-- ── 首頁輪播 ───────────────────────────────────── -->
           <div
@@ -514,19 +595,18 @@
                 </div>
               </div>
 
-              <!-- ── 卡片 2：滿額好禮 ── -->
+              <!-- ── 卡片 2：最新活動（動態撈取後端最新一筆活動） ── -->
               <div class="hc-slide hc-slide-promo">
                 <div class="hcs-left">
                   <span class="hcs-tag hcs-tag-dark">{{
                     lang.limitedOffer
                   }}</span>
                   <h2 class="hcs-title hcs-title-dark">
-                    {{ lang.heroSlide2Title }}
+                    {{ getHeroPromoLocalName() }}
                   </h2>
                   <p class="hcs-desc hcs-desc-dark">
-                    {{ lang.heroSlide2DescPre
-                    }}{{ branchService.config.currency }}300<br />{{
-                      lang.heroSlide2DescGift
+                    {{ lang.heroSlide2DescPre }}{{ getHeroPromoMinSpend() }}<br />{{
+                      getHeroPromoGiftLabel()
                     }}
                   </p>
                   <button
@@ -538,7 +618,7 @@
                 </div>
                 <div class="hcs-right">
                   <img
-                    src="/assets/主頁輪播圖2.jpg"
+                    [src]="getHeroPromoImage()"
                     alt="滿額好禮"
                     class="hcsr-img"
                     width="480"
@@ -565,7 +645,7 @@
                 </div>
                 <div class="hcs-right">
                   <img
-                    src="/assets/主頁輪播圖3.jpg"
+                    [src]="getChefPickImage()"
                     alt="本週主廚推薦"
                     class="hcsr-img"
                     width="480"
@@ -620,152 +700,6 @@
           </div>
           <!-- /home-carousel -->
 
-          <!-- 首頁搜尋與分類列 (移回頂部功能) -->
-          <div class="home-section" style="padding-bottom: 0">
-            <div
-              class="menu-header"
-              style="
-                padding: 0;
-                background: transparent;
-                border: none;
-                box-shadow: none;
-              "
-            >
-              <div class="menu-search-wrap">
-                <svg
-                  class="menu-search-icon"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="M21 21l-4.35-4.35" />
-                </svg>
-                <input
-                  type="text"
-                  [placeholder]="lang.searchPlaceholder"
-                  class="menu-search-input"
-                />
-              </div>
-              <!-- 分類標籤列 -->
-              <div class="menu-cat-bar">
-                <button
-                  class="menu-cat-btn"
-                  [class.active]="activeMenuCategory() === 'all'"
-                  (click)="setMenuCategory('all'); setTab('menu')"
-                >
-                  {{ lang.catAll }}
-                </button>
-                <button
-                  class="menu-cat-btn"
-                  [class.active]="activeMenuCategory() === '飯食'"
-                  (click)="setMenuCategory('飯食'); setTab('menu')"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                  >
-                    <path d="M4 13h16" />
-                    <path d="M4 13c0 5.5 2.7 7.5 8 7.5S20 18.5 20 13" />
-                    <line x1="8" y1="5" x2="9" y2="13" />
-                    <line x1="16" y1="5" x2="15" y2="13" />
-                  </svg>
-                  <span>{{ lang.catRice }}</span>
-                </button>
-                <button
-                  class="menu-cat-btn"
-                  [class.active]="activeMenuCategory() === '麵食'"
-                  (click)="setMenuCategory('麵食'); setTab('menu')"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                  >
-                    <path d="M4 13h16" />
-                    <path d="M4 13c0 5.5 2.7 7.5 8 7.5S20 18.5 20 13" />
-                    <path d="M7 9c1-1.5 2-1 3 0s2 1.5 3 0 2-1 3 0" />
-                  </svg>
-                  <span>{{ lang.catNoodles }}</span>
-                </button>
-                <button
-                  class="menu-cat-btn"
-                  [class.active]="activeMenuCategory() === '小吃'"
-                  (click)="setMenuCategory('小吃'); setTab('menu')"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                  >
-                    <line x1="12" y1="3" x2="12" y2="21" />
-                    <circle cx="12" cy="8" r="2.5" />
-                    <circle cx="12" cy="15" r="2.5" />
-                  </svg>
-                  <span>{{ lang.catSnacks }}</span>
-                </button>
-                <button
-                  class="menu-cat-btn"
-                  [class.active]="activeMenuCategory() === '輕食'"
-                  (click)="setMenuCategory('輕食'); setTab('menu')"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="M12 22V12" />
-                    <path d="M12 12C10 8 6 6 3 7c0 5 3 9 9 9z" />
-                    <path d="M12 12c2-4 6-6 9-5 0 5-3 9-9 9z" />
-                  </svg>
-                  <span>{{ lang.catLight }}</span>
-                </button>
-                <button
-                  class="menu-cat-btn"
-                  [class.active]="activeMenuCategory() === '飲品'"
-                  (click)="setMenuCategory('飲品'); setTab('menu')"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                  >
-                    <path d="M7 3l-1.5 18h13L17 3H7z" />
-                    <line x1="15" y1="3" x2="12" y2="12" />
-                    <circle
-                      cx="9"
-                      cy="8"
-                      r="1"
-                      fill="currentColor"
-                      stroke="none"
-                    />
-                    <circle
-                      cx="11"
-                      cy="12"
-                      r="1"
-                      fill="currentColor"
-                      stroke="none"
-                    />
-                  </svg>
-                  <span>{{ lang.catDrinks }}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
           <!-- 今日推薦 -->
           <div class="home-section" id="featured-section">
             <div class="home-section-header">
@@ -776,7 +710,7 @@
               <!-- 首頁大卡：招牌滷肉飯 -->
               <div
                 class="featured-card featured-card-lg"
-                (click)="setTab('menu')"
+                (click)="goToChefMenu()"
               >
                 <!-- 招牌滷肉飯實體圖片 -->
                 <img
@@ -798,7 +732,7 @@
                 </div>
               </div>
               <!-- 首頁小卡：古早味排骨飯 -->
-              <div class="featured-card" (click)="setTab('menu')">
+              <div class="featured-card" (click)="goToChefMenu()">
                 <!-- 古早味排骨飯實體圖片 -->
                 <img
                   class="featured-img"
@@ -819,7 +753,7 @@
                 </div>
               </div>
               <!-- 首頁小卡：蚵仔麵線 -->
-              <div class="featured-card" (click)="setTab('menu')">
+              <div class="featured-card" (click)="goToChefMenu()">
                 <!-- 蚵仔麵線實體圖片 -->
                 <img
                   class="featured-img"
@@ -1137,6 +1071,25 @@
                 (click)="setMenuCategory('all')"
               >
                 {{ lang.catAll }}
+              </button>
+              <button
+                class="menu-cat-btn"
+                [class.active]="activeMenuCategory() === 'chef'"
+                (click)="setMenuCategory('chef')"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  style="width: 14px; height: 14px"
+                >
+                  <path d="M12 2a5 5 0 0 1 5 5c0 1.5-.6 2.8-1.5 3.8L17 22H7l1.5-11.2A5 5 0 0 1 12 2z" />
+                  <line x1="9" y1="22" x2="9" y2="14" />
+                  <line x1="15" y1="22" x2="15" y2="14" />
+                </svg>
+                <span>{{ lang.catChef }}</span>
               </button>
               <button
                 class="menu-cat-btn"
@@ -1459,62 +1412,121 @@
           <!-- /.menu-header（含搜尋列、分類列、促銷橫幅） -->
 
           <!-- ── 動態菜單分類（由 menuItems signal 驅動，MOCK_MODE 或真實 API 皆可）── -->
-          @for (cat of menuCategories(); track cat) {
-            @let catItems = getItemsByCategory(cat);
-            @if (catItems.length > 0) {
-              <div class="menu-category-section">
-                <h3 class="menu-cat-title">
-                  <span class="menu-cat-line"></span>
-                  {{ getCategoryLabel(cat) }}
-                </h3>
-                <div class="menu-items-list">
-                  @for (item of catItems; track item.id) {
-                    <div class="menu-item-card">
-                      <div
-                        class="menu-item-img"
-                        [ngClass]="getMenuImageClass(item)"
-                        [style.background-image]="
-                          item.image
-                            ? 'url(data:image/jpeg;base64,' + item.image + ')'
-                            : null
-                        "
-                      ></div>
-                      <div class="menu-item-body">
-                        <div>
-                          <h4 class="menu-item-name">
-                            {{ getLocalizedName(item) }}
-                          </h4>
-                          <p class="menu-item-desc">
-                            {{ getLocalizedDesc(item) }}
-                          </p>
-                        </div>
-                        <div class="menu-item-bottom">
-                          <div class="menu-price-group">
-                            <span class="menu-item-price"
-                              >{{ branchService.config.currency }}
-                              <strong>{{ item.price }}</strong></span
-                            >
-                          </div>
-                          <button
-                            class="menu-add-btn"
-                            (click)="addToCart(item)"
-                            [attr.aria-label]="'加入' + item.name"
+
+          <!-- ── 主廚推薦專屬檢視 ── -->
+          @if (activeMenuCategory() === 'chef') {
+            <div class="menu-category-section">
+              <h3 class="menu-cat-title">
+                <span class="menu-cat-line"></span>
+                ⭐ {{ lang.catChef }}
+              </h3>
+              <div class="menu-items-list">
+                @for (item of chefPickItems(); track item.id) {
+                  <div class="menu-item-card">
+                    <div
+                      class="menu-item-img"
+                      [ngClass]="getMenuImageClass(item)"
+                      [style.background-image]="
+                        item.image
+                          ? 'url(' + item.image + ')'
+                          : null
+                      "
+                    ></div>
+                    <div class="menu-item-body">
+                      <div>
+                        <h4 class="menu-item-name">
+                          {{ getLocalizedName(item) }}
+                        </h4>
+                        <p class="menu-item-desc">
+                          {{ getLocalizedDesc(item) }}
+                        </p>
+                      </div>
+                      <div class="menu-item-bottom">
+                        <div class="menu-price-group">
+                          <span class="menu-item-price"
+                            >{{ branchService.config.currency }}
+                            <strong>{{ item.price }}</strong></span
                           >
-                            <svg
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              stroke-width="2.5"
-                            >
-                              <path d="M12 5v14M5 12h14" />
-                            </svg>
-                          </button>
                         </div>
+                        <button
+                          class="menu-add-btn"
+                          (click)="addToCart(item)"
+                          [attr.aria-label]="'加入' + item.name"
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                          >
+                            <path d="M12 5v14M5 12h14" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
-                  }
-                </div>
+                  </div>
+                }
               </div>
+            </div>
+          } @else {
+            <!-- ── 一般分類檢視 ── -->
+            @for (cat of menuCategories(); track cat) {
+              @let catItems = getItemsByCategory(cat);
+              @if (catItems.length > 0) {
+                <div class="menu-category-section">
+                  <h3 class="menu-cat-title">
+                    <span class="menu-cat-line"></span>
+                    {{ getCategoryLabel(cat) }}
+                  </h3>
+                  <div class="menu-items-list">
+                    @for (item of catItems; track item.id) {
+                      <div class="menu-item-card">
+                        <div
+                          class="menu-item-img"
+                          [ngClass]="getMenuImageClass(item)"
+                          [style.background-image]="
+                            item.image
+                              ? 'url(' + item.image + ')'
+                              : null
+                          "
+                        ></div>
+                        <div class="menu-item-body">
+                          <div>
+                            <h4 class="menu-item-name">
+                              {{ getLocalizedName(item) }}
+                            </h4>
+                            <p class="menu-item-desc">
+                              {{ getLocalizedDesc(item) }}
+                            </p>
+                          </div>
+                          <div class="menu-item-bottom">
+                            <div class="menu-price-group">
+                              <span class="menu-item-price"
+                                >{{ branchService.config.currency }}
+                                <strong>{{ item.price }}</strong></span
+                              >
+                            </div>
+                            <button
+                              class="menu-add-btn"
+                              (click)="addToCart(item)"
+                              [attr.aria-label]="'加入' + item.name"
+                            >
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.5"
+                              >
+                                <path d="M12 5v14M5 12h14" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
             }
           }
 
@@ -1770,7 +1782,9 @@
                           <div class="promo-act-item">
                             <button
                               class="promo-act-row"
-                              [class.selected]="selectedPromoName() === act.name"
+                              [class.selected]="
+                                selectedPromoName() === act.name
+                              "
                               (click)="selectPromo(act.name)"
                               type="button"
                             >
@@ -1781,7 +1795,11 @@
                                 stroke="currentColor"
                                 stroke-width="1.8"
                                 stroke-linecap="round"
-                                style="width: 16px; height: 16px; flex-shrink: 0"
+                                style="
+                                  width: 16px;
+                                  height: 16px;
+                                  flex-shrink: 0;
+                                "
                               >
                                 <path
                                   d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"
@@ -1807,17 +1825,27 @@
                                 fill="none"
                                 stroke="currentColor"
                                 stroke-width="2.5"
-                                style="width: 14px; height: 14px; flex-shrink: 0"
+                                style="
+                                  width: 14px;
+                                  height: 14px;
+                                  flex-shrink: 0;
+                                "
                               >
                                 <polyline points="6 9 12 15 18 9" />
                               </svg>
                             </button>
                             @if (selectedPromoName() === act.name) {
                               <div class="promo-act-gifts">
-                                @for (g of act.gifts; track g; let gi = $index) {
+                                @for (
+                                  g of act.gifts;
+                                  track g;
+                                  let gi = $index
+                                ) {
                                   <button
                                     class="pgp-gift-opt"
                                     [class.selected]="selectedPromoGift() === g"
+                                    [class.pgp-gift-opt--oos]="isGiftOutOfStock(getLocalizedGifts(act)[gi] || g)"
+                                    [disabled]="isGiftOutOfStock(getLocalizedGifts(act)[gi] || g)"
                                     (click)="selectPromoGift(g)"
                                     type="button"
                                   >
@@ -1827,19 +1855,32 @@
                                       stroke="currentColor"
                                       stroke-width="1.8"
                                       stroke-linecap="round"
-                                      style="width: 16px; height: 16px; flex-shrink: 0"
+                                      style="
+                                        width: 16px;
+                                        height: 16px;
+                                        flex-shrink: 0;
+                                      "
                                     >
                                       <circle cx="12" cy="12" r="10" />
                                       <path d="M12 8v4l3 3" />
                                     </svg>
-                                    <span>{{ getLocalizedGifts(act)[gi] || g }}</span>
-                                    @if (selectedPromoGift() === g) {
+                                    <span>{{
+                                      stripGiftQty(getLocalizedGifts(act)[gi] || g)
+                                    }}</span>
+                                    @if (isGiftOutOfStock(getLocalizedGifts(act)[gi] || g)) {
+                                      <span class="pgp-oos-tag">已售完</span>
+                                    } @else if (selectedPromoGift() === g) {
                                       <svg
                                         viewBox="0 0 24 24"
                                         fill="none"
                                         stroke="currentColor"
                                         stroke-width="2.5"
-                                        style="width: 14px; height: 14px; flex-shrink: 0; margin-left: auto"
+                                        style="
+                                          width: 14px;
+                                          height: 14px;
+                                          flex-shrink: 0;
+                                          margin-left: auto;
+                                        "
                                       >
                                         <polyline points="20 6 9 17 4 12" />
                                       </svg>
@@ -1854,8 +1895,8 @@
                     </div>
                   }
 
-                  <!-- 折扣兌換券（達 10 次才顯示） -->
-                  @if (hasDiscountReady()) {
+                  <!-- 折扣兌換券（達 10 次且為會員才顯示） -->
+                  @if (hasDiscountReady() && !isGuest()) {
                     <div
                       class="discount-coupon-block"
                       [class.active]="useDiscountCoupon()"
@@ -2154,7 +2195,7 @@
                 <span>{{ lang.total }}</span>
                 <span class="psc-total-amount"
                   >{{ branchService.config.currency }}
-                  {{ discountedTotal() }}</span
+                  {{ confirmedTotal() }}</span
                 >
               </div>
             </div>
@@ -2479,7 +2520,7 @@
             @if (paymentMethod() === "mobile") {
               <div class="mobile-pay-panel">
                 <div class="mp-amount-badge">
-                  {{ branchService.config.currency }} {{ discountedTotal() }}
+                  {{ branchService.config.currency }} {{ confirmedTotal() }}
                 </div>
                 <p class="mp-desc">{{ lang.mobilePayDesc }}</p>
                 <div class="qr-wrapper">
@@ -2545,10 +2586,10 @@
                   </svg>
                   @if (paymentMethod() === "credit") {
                     {{ lang.checkout }}（{{ lang.creditCard }}）—
-                    {{ branchService.config.currency }} {{ discountedTotal() }}
+                    {{ branchService.config.currency }} {{ confirmedTotal() }}
                   } @else {
                     {{ lang.checkout }} — {{ branchService.config.currency }}
-                    {{ discountedTotal() }}
+                    {{ confirmedTotal() }}
                   }
                 }
               </button>
@@ -2572,260 +2613,7 @@
         </section>
       }
 
-      <!-- ╔═══════════════════════════════════════════╗
-         ║  頁籤 4 🔔  訂單狀態追蹤 (Tracker)         ║
-         ╚═══════════════════════════════════════════╝ -->
-      @if (activeTab() === "tracker") {
-        <section class="tab-tracker" aria-label="訂單追蹤">
-          @if (trackingOrder()) {
-            <div class="tracker-container">
-              <!-- 取餐號碼大牌 -->
-              <div class="tracker-number-card">
-                <span class="tracker-number-label">{{
-                  lang.pickupNumber
-                }}</span>
-                <div class="tracker-number">
-                  {{ trackingOrder()!.number }}
-                </div>
-                <span class="tracker-time-label"
-                  >{{ lang.estimatedWait }}
-                  <strong>{{ trackingOrder()!.estimatedMinutes }}</strong>
-                  {{ lang.minutes }}</span
-                >
-              </div>
 
-              <!-- 製作進度條 -->
-              <div class="tracker-steps">
-                <!-- Step 1：等待中 -->
-                <div
-                  class="tracker-step"
-                  [class.step-done]="
-                    [
-                      'cooking',
-                      'ready',
-                      'done',
-                      'paid',
-                      'pending-cash',
-                    ].includes(trackingOrder()!.status)
-                  "
-                  [class.step-active]="trackingOrder()!.status === 'waiting'"
-                >
-                  <div class="step-dot">
-                    @if (
-                      [
-                        "cooking",
-                        "ready",
-                        "done",
-                        "paid",
-                        "pending-cash",
-                      ].includes(trackingOrder()!.status)
-                    ) {
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="3"
-                      >
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    }
-                  </div>
-                  <div class="step-line"></div>
-                  <span class="step-label">{{ lang.waiting }}</span>
-                </div>
-
-                <!-- Step 2：製作中 -->
-                <div
-                  class="tracker-step"
-                  [class.step-done]="
-                    ['ready', 'done', 'paid', 'pending-cash'].includes(
-                      trackingOrder()!.status
-                    )
-                  "
-                  [class.step-active]="trackingOrder()!.status === 'cooking'"
-                >
-                  <div class="step-dot">
-                    @if (trackingOrder()!.status === "cooking") {
-                      <span class="step-cooking-dot"></span>
-                    }
-                    @if (
-                      ["ready", "done", "paid", "pending-cash"].includes(
-                        trackingOrder()!.status
-                      )
-                    ) {
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="3"
-                      >
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    }
-                  </div>
-                  <div class="step-line"></div>
-                  <span class="step-label">{{ lang.cooking }}</span>
-                </div>
-
-                @if (trackingOrder()!.isCash) {
-                  <!-- ── 現金訂單：Step 3 可取餐 + Step 4 付款 ── -->
-
-                  <!-- Step 3：可取餐 -->
-                  <div
-                    class="tracker-step"
-                    [class.step-done]="
-                      ['paid', 'pending-cash'].includes(trackingOrder()!.status)
-                    "
-                    [class.step-active]="trackingOrder()!.status === 'ready'"
-                  >
-                    <div class="step-dot">
-                      @if (
-                        ["paid", "pending-cash"].includes(
-                          trackingOrder()!.status
-                        )
-                      ) {
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="3"
-                        >
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      }
-                    </div>
-                    <div class="step-line"></div>
-                    <span class="step-label">{{ lang.ready }} 🎉</span>
-                  </div>
-
-                  <!-- Step 4：付款（現金專屬） -->
-                  <div
-                    class="tracker-step"
-                    [class.step-active]="
-                      trackingOrder()!.status === 'pending-cash'
-                    "
-                    [class.step-done]="trackingOrder()!.status === 'paid'"
-                  >
-                    <div class="step-dot">
-                      @if (trackingOrder()!.status === "paid") {
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="3"
-                        >
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      }
-                    </div>
-                    <span class="step-label">付款 💰</span>
-                  </div>
-                } @else {
-                  <!-- ── 線上付款：Step 3 可取餐（最後一步）── -->
-                  <div
-                    class="tracker-step"
-                    [class.step-done]="
-                      ['done', 'paid'].includes(trackingOrder()!.status)
-                    "
-                    [class.step-active]="trackingOrder()!.status === 'ready'"
-                  >
-                    <div class="step-dot">
-                      @if (["done", "paid"].includes(trackingOrder()!.status)) {
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="3"
-                        >
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      }
-                    </div>
-                    <span class="step-label">{{ lang.ready }} 🎉</span>
-                  </div>
-                }
-              </div>
-
-              <!-- 訂單明細 -->
-              <div class="tracker-order-card">
-                <div class="toc-header">
-                  <span class="toc-id">{{ trackingOrder()!.id }}</span>
-                  <span class="toc-time">{{ trackingOrder()!.createdAt }}</span>
-                </div>
-                <div class="toc-items">
-                  @for (item of trackingOrder()!.items; track item) {
-                    <div class="toc-item-row">
-                      <span class="toc-dot">•</span>
-                      <span>{{ item }}</span>
-                    </div>
-                  }
-                </div>
-                <div class="toc-total">
-                  <span>{{ lang.total }}</span>
-                  <span class="toc-price"
-                    >{{ branchService.config.currency }}
-                    {{ trackingOrder()!.total }}</span
-                  >
-                </div>
-              </div>
-
-              <!-- 繼續點餐 -->
-              <button class="tracker-more-btn" (click)="setTab('menu')">
-                {{ lang.navMenu }}
-              </button>
-
-              <!-- 取消訂單（僅 waiting / pending-cash 時可取消）-->
-              @if (
-                ["waiting", "pending-cash"].includes(trackingOrder()!.status)
-              ) {
-                <button
-                  class="tracker-cancel-btn"
-                  (click)="openCancelConfirm()"
-                >
-                  取消訂單
-                </button>
-              }
-            </div>
-          }
-
-          <!-- 取消訂單確認 Modal -->
-          @if (cancelConfirmOpen()) {
-            <div class="tracker-cancel-overlay" (click)="closeCancelConfirm()">
-              <div
-                class="tracker-cancel-modal"
-                (click)="$event.stopPropagation()"
-              >
-                <p class="tcm-title">確定取消此訂單？</p>
-                <p class="tcm-desc">取消後無法恢復，請確認再送出。</p>
-                <div class="tcm-btns">
-                  <button class="tcm-btn-ghost" (click)="closeCancelConfirm()">
-                    返回
-                  </button>
-                  <button class="tcm-btn-danger" (click)="confirmCancelOrder()">
-                    確認取消
-                  </button>
-                </div>
-              </div>
-            </div>
-          }
-
-          @if (!trackingOrder()) {
-            <div class="tracker-empty">
-              <div class="tracker-empty-icon">🔔</div>
-              <p>{{ lang.noActiveOrder }}</p>
-              <button class="tracker-start-btn" (click)="setTab('menu')">
-                {{ lang.goOrder }}
-              </button>
-            </div>
-          }
-
-          <div style="height: 80px"></div>
-        </section>
-      }
-
-      <!-- ═══════════════════════════════════════════════
-         訂單管理 (取代原有的獨立會員中心)
-    ═══════════════════════════════════════════════════ -->
       <!-- ════════════════════════════════════════════════════
          訂單紀錄（Order History）
          設計風格：餐廳票據感（暖橘奶油配色 + receipt 分隔線）
@@ -2850,7 +2638,18 @@
              active 態：奶油白底 + 橘紅邊框 + 橘色文字
         ─────────────────────────────────────────────────────── -->
           <div class="ord-filter-bar">
-            <!-- 已完成篩選（綠色圓點） -->
+            <!-- 未完成（橘色圓點） -->
+            <button
+              class="ord-filter-btn"
+              [class.active]="activeOrderTab() === 'active'"
+              (click)="activeOrderTab.set('active')"
+            >
+              <span class="ord-filter-dot dot-active"></span>
+              未完成
+              <span class="ord-filter-count">{{ activeOrders().length }}</span>
+            </button>
+
+            <!-- 已完成（綠色圓點） -->
             <button
               class="ord-filter-btn"
               [class.active]="activeOrderTab() === 'completed'"
@@ -2861,7 +2660,7 @@
               <span class="ord-filter-count">{{ completedCount() }}</span>
             </button>
 
-            <!-- 已取消篩選（灰色圓點） -->
+            <!-- 已取消（灰色圓點） -->
             <button
               class="ord-filter-btn"
               [class.active]="activeOrderTab() === 'cancelled'"
@@ -2872,7 +2671,7 @@
               <span class="ord-filter-count">{{ cancelledCount() }}</span>
             </button>
 
-            <!-- 已退款篩選（玫瑰紅圓點） -->
+            <!-- 已退款（玫瑰紅圓點） -->
             <button
               class="ord-filter-btn"
               [class.active]="activeOrderTab() === 'refunded'"
@@ -2886,313 +2685,217 @@
 
           <!-- ── 訂單列表 ──────────────────────────────────────── -->
           <div class="ord-list">
-            <!-- 空狀態：SVG 插圖 + 引導文字 -->
-            @if (filteredOrders().length === 0) {
-              <div class="ord-empty">
-                <!-- 票據插圖 SVG（純向量，無外部依賴） -->
-                <svg
-                  class="ord-empty-icon"
-                  viewBox="0 0 80 80"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <!-- 票據主體 -->
-                  <rect
-                    x="14"
-                    y="10"
-                    width="52"
-                    height="60"
-                    rx="8"
-                    fill="#F0D8B8"
-                  />
-                  <!-- 票據高光 -->
-                  <rect
-                    x="14"
-                    y="10"
-                    width="52"
-                    height="16"
-                    rx="8"
-                    fill="#FFFAF3"
-                    opacity="0.5"
-                  />
-                  <!-- 內頁線條（模擬文字） -->
-                  <rect
-                    x="24"
-                    y="32"
-                    width="32"
-                    height="3.5"
-                    rx="1.75"
-                    fill="#D95C1A"
-                    opacity="0.25"
-                  />
-                  <rect
-                    x="24"
-                    y="42"
-                    width="24"
-                    height="3"
-                    rx="1.5"
-                    fill="#D95C1A"
-                    opacity="0.18"
-                  />
-                  <rect
-                    x="24"
-                    y="51"
-                    width="28"
-                    height="3"
-                    rx="1.5"
-                    fill="#D95C1A"
-                    opacity="0.15"
-                  />
-                  <!-- 訂單折角 -->
-                  <path
-                    d="M54 10 L66 22 L54 22 Z"
-                    fill="#F0A500"
-                    opacity="0.3"
-                  />
-                  <!-- 底部鋸齒（票根感） -->
-                  <path
-                    d="M14 62 Q17 65 20 62 Q23 59 26 62 Q29 65 32 62 Q35 59 38 62 Q41 65 44 62 Q47 59 50 62 Q53 65 56 62 Q59 59 62 62 Q65 65 66 62 V70 H14 Z"
-                    fill="#FFFAF3"
-                  />
-                  <!-- 空資料勾勾（淡色） -->
-                  <circle
-                    cx="40"
-                    cy="44"
-                    r="10"
-                    stroke="#D95C1A"
-                    stroke-width="1.5"
-                    opacity="0.2"
-                  />
-                  <path
-                    d="M35 44l3.5 3.5L46 40"
-                    stroke="#D95C1A"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    opacity="0.25"
-                  />
-                </svg>
-                <p class="ord-empty-text">
-                  @if (activeOrderTab() === "completed") {
-                    {{ lang.noCompletedOrders }}
-                  } @else if (activeOrderTab() === "cancelled") {
-                    {{ lang.noCancelledOrders }}
-                  } @else {
-                    {{ lang.noRefundedOrders }}
-                  }
-                </p>
-                <p class="ord-empty-sub">{{ lang.goOrderSomething }}</p>
-              </div>
-            } @else {
-              <!-- 訂單卡片（票據感設計）
-                 animation-delay 透過 inline style 控制 stagger（每卡延遲 80ms）-->
-              @for (order of filteredOrders(); track order.id; let i = $index) {
-                <div class="ord-card" [style.animation-delay]="i * 80 + 'ms'">
-                  <!-- 卡片頂部：票據 icon + 訂單編號 | 狀態徽章 -->
-                  <div class="ord-card-head">
-                    <div class="ord-card-id-wrap">
-                      <!-- 票據 SVG icon（橘色描邊） -->
-                      <svg
-                        class="ord-card-icon"
-                        viewBox="0 0 20 22"
-                        fill="none"
-                      >
-                        <path
-                          d="M4 2h12a1 1 0 0 1 1 1v17l-3.5-2-3 2.5-3-2.5L4 20V3a1 1 0 0 1 1-1z"
-                          stroke="#D95C1A"
-                          stroke-width="1.6"
-                          stroke-linejoin="round"
-                        />
-                        <line
-                          x1="7"
-                          y1="8"
-                          x2="13"
-                          y2="8"
-                          stroke="#D95C1A"
-                          stroke-width="1.4"
-                          stroke-linecap="round"
-                        />
-                        <line
-                          x1="7"
-                          y1="11"
-                          x2="11"
-                          y2="11"
-                          stroke="#D95C1A"
-                          stroke-width="1.4"
-                          stroke-linecap="round"
-                        />
-                      </svg>
-                      <span class="ord-card-id">{{ order.id }}</span>
-                    </div>
 
-                    <!-- 狀態徽章：class binding 對應三種配色 -->
-                    <span
-                      class="ord-card-badge"
-                      [class.badge-completed]="order.status === 'completed'"
-                      [class.badge-cancelled]="order.status === 'cancelled'"
-                      [class.badge-refunded]="order.status === 'refunded'"
-                    >
-                      @if (order.status === "completed") {
-                        <!-- 勾勾 icon -->
-                        <svg viewBox="0 0 12 12" fill="none">
-                          <circle
-                            cx="6"
-                            cy="6"
-                            r="5"
-                            fill="#22C55E"
-                            opacity="0.18"
-                          />
-                          <path
-                            d="M3.5 6l2 2 3-3.5"
-                            stroke="#166534"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          />
+            <!-- ══ 未完成訂單 ══ -->
+            @if (activeOrderTab() === 'active') {
+              @if (activeOrders().length === 0) {
+                <div class="ord-empty">
+                  <svg class="ord-empty-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="14" y="10" width="52" height="60" rx="8" fill="#F0D8B8"/>
+                    <rect x="14" y="10" width="52" height="16" rx="8" fill="#FFFAF3" opacity="0.5"/>
+                    <rect x="24" y="32" width="32" height="3.5" rx="1.75" fill="#D95C1A" opacity="0.25"/>
+                    <rect x="24" y="42" width="24" height="3" rx="1.5" fill="#D95C1A" opacity="0.18"/>
+                    <rect x="24" y="51" width="28" height="3" rx="1.5" fill="#D95C1A" opacity="0.15"/>
+                    <path d="M54 10 L66 22 L54 22 Z" fill="#F0A500" opacity="0.3"/>
+                    <path d="M14 62 Q17 65 20 62 Q23 59 26 62 Q29 65 32 62 Q35 59 38 62 Q41 65 44 62 Q47 59 50 62 Q53 65 56 62 Q59 59 62 62 Q65 65 66 62 V70 H14 Z" fill="#FFFAF3"/>
+                  </svg>
+                  <p class="ord-empty-text">目前沒有進行中的訂單</p>
+                  <p class="ord-empty-sub">{{ lang.goOrderSomething }}</p>
+                </div>
+              } @else {
+                @for (order of activeOrders(); track order.id; let i = $index) {
+                  <div class="ord-card ord-card-active" [style.animation-delay]="i * 80 + 'ms'">
+                    <!-- 頂部：訂單號 + 取消按鈕 -->
+                    <div class="ord-card-head">
+                      <div class="ord-card-id-wrap">
+                        <svg class="ord-card-icon" viewBox="0 0 20 22" fill="none">
+                          <path d="M4 2h12a1 1 0 0 1 1 1v17l-3.5-2-3 2.5-3-2.5L4 20V3a1 1 0 0 1 1-1z"
+                            stroke="#D95C1A" stroke-width="1.6" stroke-linejoin="round"/>
+                          <line x1="7" y1="8" x2="13" y2="8" stroke="#D95C1A" stroke-width="1.4" stroke-linecap="round"/>
+                          <line x1="7" y1="11" x2="11" y2="11" stroke="#D95C1A" stroke-width="1.4" stroke-linecap="round"/>
                         </svg>
-                        {{ lang.statusCompleted }}
-                      } @else if (order.status === "cancelled") {
-                        <!-- × icon -->
-                        <svg viewBox="0 0 12 12" fill="none">
-                          <circle
-                            cx="6"
-                            cy="6"
-                            r="5"
-                            fill="#9CA3AF"
-                            opacity="0.18"
-                          />
-                          <path
-                            d="M4 4l4 4M8 4l-4 4"
-                            stroke="#4B5563"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                          />
-                        </svg>
-                        {{ lang.statusCancelled }}
-                      } @else {
-                        <!-- 退款箭頭 icon -->
-                        <svg viewBox="0 0 12 12" fill="none">
-                          <circle
-                            cx="6"
-                            cy="6"
-                            r="5"
-                            fill="#F43F5E"
-                            opacity="0.15"
-                          />
-                          <path
-                            d="M8 4H5a2 2 0 0 0 0 4h3"
-                            stroke="#BE123C"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                          />
-                          <path
-                            d="M7 6l-2-2 2-2"
-                            stroke="#BE123C"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          />
-                        </svg>
-                        {{ lang.statusRefunded }}
-                      }
-                    </span>
-                  </div>
-                  <!-- 卡片頂部結束 -->
-
-                  <!-- 虛線分隔（收據撕線感） -->
-                  <div class="ord-card-dash"></div>
-
-                  <!-- 日期列：行事曆 icon + 日期文字 -->
-                  <div class="ord-card-date">
-                    <svg viewBox="0 0 16 16" fill="none">
-                      <rect
-                        x="1.5"
-                        y="3"
-                        width="13"
-                        height="11.5"
-                        rx="2"
-                        stroke="#9E7A5A"
-                        stroke-width="1.4"
-                      />
-                      <line
-                        x1="5"
-                        y1="1"
-                        x2="5"
-                        y2="4.5"
-                        stroke="#9E7A5A"
-                        stroke-width="1.4"
-                        stroke-linecap="round"
-                      />
-                      <line
-                        x1="11"
-                        y1="1"
-                        x2="11"
-                        y2="4.5"
-                        stroke="#9E7A5A"
-                        stroke-width="1.4"
-                        stroke-linecap="round"
-                      />
-                      <line
-                        x1="1.5"
-                        y1="7"
-                        x2="14.5"
-                        y2="7"
-                        stroke="#9E7A5A"
-                        stroke-width="1.2"
-                      />
-                    </svg>
-                    <span>{{ order.date }}</span>
-                  </div>
-
-                  <!-- 訂單品項文字 -->
-                  <div class="ord-card-items">
-                    {{ getLocalizedOrderItems(order) }}
-                  </div>
-
-                  <!-- 虛線分隔 -->
-                  <div class="ord-card-dash"></div>
-
-                  <!-- 底部：合計標籤 + 金額（大字） + 退款按鈕（已完成才顯示） -->
-                  <div class="ord-card-foot">
-                    <span class="ord-card-total-label">{{
-                      lang.totalLabel
-                    }}</span>
-                    <div class="ord-card-foot-right">
-                      <div class="ord-card-total-wrap">
-                        <span class="ord-card-currency">{{
-                          branchService.config.currency
-                        }}</span>
-                        <span class="ord-card-price">{{ order.total }}</span>
+                        <span class="ord-card-id">{{ order.number }}</span>
                       </div>
-                      @if (order.status === "completed") {
-                        <button
-                          class="ord-refund-btn"
-                          (click)="openRefundModal(order)"
-                        >
-                          <svg
-                            viewBox="0 0 20 20"
-                            fill="none"
-                            class="ord-refund-icon"
-                          >
-                            <path
-                              d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2z"
-                              stroke="currentColor"
-                              stroke-width="1.5"
-                            />
-                            <path
-                              d="M10 6v4l2.5 2.5"
-                              stroke="currentColor"
-                              stroke-width="1.5"
-                              stroke-linecap="round"
-                            />
-                          </svg>
-                          {{ lang.requestRefund }}
+                      @if (order.status === 'cooking') {
+                        <button class="tracker-cancel-btn-sm" (click)="cancelActiveOrder(order.id)">
+                          取消訂單
                         </button>
                       }
                     </div>
+
+                    <!-- 狀態步驟條 -->
+                    <div class="ord-tracker-steps">
+                      <div class="ord-step"
+                        [class.step-done]="['ready','done'].includes(order.status)"
+                        [class.step-active]="order.status === 'cooking'">
+                        <div class="step-dot">
+                          @if (['ready','done'].includes(order.status)) {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          }
+                          @if (order.status === 'cooking') {
+                            <span class="step-cooking-dot"></span>
+                          }
+                        </div>
+                        <div class="step-line"></div>
+                        <span class="step-label">製作中</span>
+                      </div>
+
+                      <div class="ord-step"
+                        [class.step-done]="order.status === 'done'"
+                        [class.step-active]="order.status === 'ready'">
+                        <div class="step-dot">
+                          @if (order.status === 'done') {
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          }
+                        </div>
+                        <div class="step-line"></div>
+                        <span class="step-label">餐點製作完成</span>
+                      </div>
+
+                      <div class="ord-step" [class.step-active]="order.status === 'done'">
+                        <div class="step-dot"></div>
+                        <span class="step-label">取餐完畢</span>
+                      </div>
+                    </div>
+
+                    <div class="ord-card-dash"></div>
+
+                    <!-- 時間 & 品項 -->
+                    <div class="ord-card-date">
+                      <svg viewBox="0 0 16 16" fill="none">
+                        <rect x="1.5" y="3" width="13" height="11.5" rx="2" stroke="#9E7A5A" stroke-width="1.4"/>
+                        <line x1="5" y1="1" x2="5" y2="4.5" stroke="#9E7A5A" stroke-width="1.4" stroke-linecap="round"/>
+                        <line x1="11" y1="1" x2="11" y2="4.5" stroke="#9E7A5A" stroke-width="1.4" stroke-linecap="round"/>
+                        <line x1="1.5" y1="7" x2="14.5" y2="7" stroke="#9E7A5A" stroke-width="1.2"/>
+                      </svg>
+                      <span>{{ order.createdAt }}</span>
+                    </div>
+                    <div class="ord-card-items">{{ order.items.join('、') }}</div>
+
+                    <div class="ord-card-dash"></div>
+
+                    <!-- 合計 -->
+                    <div class="ord-card-foot">
+                      <span class="ord-card-total-label">合　計</span>
+                      <div class="ord-card-foot-right">
+                        <div class="ord-card-total-wrap">
+                          <span class="ord-card-currency">{{ branchService.config.currency }}</span>
+                          <span class="ord-card-price">{{ order.total }}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                }
+              }
+
+            <!-- ══ 已完成 / 已取消 / 已退款 ══ -->
+            } @else {
+              @if (filteredOrders().length === 0) {
+                <div class="ord-empty">
+                  <svg class="ord-empty-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="14" y="10" width="52" height="60" rx="8" fill="#F0D8B8"/>
+                    <rect x="14" y="10" width="52" height="16" rx="8" fill="#FFFAF3" opacity="0.5"/>
+                    <rect x="24" y="32" width="32" height="3.5" rx="1.75" fill="#D95C1A" opacity="0.25"/>
+                    <rect x="24" y="42" width="24" height="3" rx="1.5" fill="#D95C1A" opacity="0.18"/>
+                    <rect x="24" y="51" width="28" height="3" rx="1.5" fill="#D95C1A" opacity="0.15"/>
+                    <path d="M54 10 L66 22 L54 22 Z" fill="#F0A500" opacity="0.3"/>
+                    <path d="M14 62 Q17 65 20 62 Q23 59 26 62 Q29 65 32 62 Q35 59 38 62 Q41 65 44 62 Q47 59 50 62 Q53 65 56 62 Q59 59 62 62 Q65 65 66 62 V70 H14 Z" fill="#FFFAF3"/>
+                    <circle cx="40" cy="44" r="10" stroke="#D95C1A" stroke-width="1.5" opacity="0.2"/>
+                    <path d="M35 44l3.5 3.5L46 40" stroke="#D95C1A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.25"/>
+                  </svg>
+                  <p class="ord-empty-text">
+                    @if (activeOrderTab() === 'completed') {
+                      {{ lang.noCompletedOrders }}
+                    } @else if (activeOrderTab() === 'cancelled') {
+                      {{ lang.noCancelledOrders }}
+                    } @else {
+                      {{ lang.noRefundedOrders }}
+                    }
+                  </p>
+                  <p class="ord-empty-sub">{{ lang.goOrderSomething }}</p>
                 </div>
-                <!-- 訂單卡片結束 -->
+              } @else {
+                @for (order of filteredOrders(); track order.id; let i = $index) {
+                  <div class="ord-card" [style.animation-delay]="i * 80 + 'ms'">
+                    <div class="ord-card-head">
+                      <div class="ord-card-id-wrap">
+                        <svg class="ord-card-icon" viewBox="0 0 20 22" fill="none">
+                          <path d="M4 2h12a1 1 0 0 1 1 1v17l-3.5-2-3 2.5-3-2.5L4 20V3a1 1 0 0 1 1-1z"
+                            stroke="#D95C1A" stroke-width="1.6" stroke-linejoin="round"/>
+                          <line x1="7" y1="8" x2="13" y2="8" stroke="#D95C1A" stroke-width="1.4" stroke-linecap="round"/>
+                          <line x1="7" y1="11" x2="11" y2="11" stroke="#D95C1A" stroke-width="1.4" stroke-linecap="round"/>
+                        </svg>
+                        <span class="ord-card-id">{{ order.id }}</span>
+                      </div>
+                      <span
+                        class="ord-card-badge"
+                        [class.badge-completed]="order.status === 'completed'"
+                        [class.badge-cancelled]="order.status === 'cancelled'"
+                        [class.badge-refunded]="order.status === 'refunded'"
+                      >
+                        @if (order.status === 'completed') {
+                          <svg viewBox="0 0 12 12" fill="none">
+                            <circle cx="6" cy="6" r="5" fill="#22C55E" opacity="0.18"/>
+                            <path d="M3.5 6l2 2 3-3.5" stroke="#166534" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                          {{ lang.statusCompleted }}
+                        } @else if (order.status === 'cancelled') {
+                          <svg viewBox="0 0 12 12" fill="none">
+                            <circle cx="6" cy="6" r="5" fill="#9CA3AF" opacity="0.18"/>
+                            <path d="M4 4l4 4M8 4l-4 4" stroke="#4B5563" stroke-width="1.5" stroke-linecap="round"/>
+                          </svg>
+                          {{ lang.statusCancelled }}
+                        } @else {
+                          <svg viewBox="0 0 12 12" fill="none">
+                            <circle cx="6" cy="6" r="5" fill="#F43F5E" opacity="0.15"/>
+                            <path d="M8 4H5a2 2 0 0 0 0 4h3" stroke="#BE123C" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M7 6l-2-2 2-2" stroke="#BE123C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                          {{ lang.statusRefunded }}
+                        }
+                      </span>
+                    </div>
+
+                    <div class="ord-card-dash"></div>
+
+                    <div class="ord-card-date">
+                      <svg viewBox="0 0 16 16" fill="none">
+                        <rect x="1.5" y="3" width="13" height="11.5" rx="2" stroke="#9E7A5A" stroke-width="1.4"/>
+                        <line x1="5" y1="1" x2="5" y2="4.5" stroke="#9E7A5A" stroke-width="1.4" stroke-linecap="round"/>
+                        <line x1="11" y1="1" x2="11" y2="4.5" stroke="#9E7A5A" stroke-width="1.4" stroke-linecap="round"/>
+                        <line x1="1.5" y1="7" x2="14.5" y2="7" stroke="#9E7A5A" stroke-width="1.2"/>
+                      </svg>
+                      <span>{{ order.date }}</span>
+                    </div>
+
+                    <div class="ord-card-items">{{ getLocalizedOrderItems(order) }}</div>
+
+                    <div class="ord-card-dash"></div>
+
+                    <div class="ord-card-foot">
+                      <span class="ord-card-total-label">{{ lang.totalLabel }}</span>
+                      <div class="ord-card-foot-right">
+                        <div class="ord-card-total-wrap">
+                          <span class="ord-card-currency">{{ branchService.config.currency }}</span>
+                          <span class="ord-card-price">{{ order.total }}</span>
+                        </div>
+                        @if (order.status === 'completed') {
+                          <button class="ord-refund-btn" (click)="openRefundModal(order)">
+                            <svg viewBox="0 0 20 20" fill="none" class="ord-refund-icon">
+                              <path d="M10 2a8 8 0 1 0 0 16A8 8 0 0 0 10 2z" stroke="currentColor" stroke-width="1.5"/>
+                              <path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                            {{ lang.requestRefund }}
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
               }
             }
           </div>
@@ -3359,40 +3062,25 @@
                   <span>{{ selectedPromoDetail.endDate }}</span>
                 </div>
 
-                <!-- Spend threshold -->
-                <div class="pz-sheet-spend">
-                  {{ lang.promoSpendPre
-                  }}<strong
-                    >{{ branchService.config.currency
-                    }}{{ selectedPromoDetail.minSpend }}</strong
-                  >{{ lang.promoJoinPost }}
-                </div>
-
                 <!-- Description -->
                 <p class="pz-sheet-desc">
                   {{ getLocalizedDesc(selectedPromoDetail) }}
                 </p>
 
-                <!-- Highlights -->
-                <div class="pz-sheet-section">
-                  <h4 class="pz-sheet-section-title">
-                    {{ lang.activityDesc }}
-                  </h4>
-                  <ul class="pz-highlight-list">
-                    @for (
-                      h of getLocalizedHighlights(selectedPromoDetail);
-                      track h
-                    ) {
-                      <li class="pz-highlight-item">{{ h }}</li>
-                    }
-                  </ul>
-                </div>
-
                 <!-- Gifts -->
                 <div class="pz-sheet-section">
-                  <h4 class="pz-sheet-section-title">
-                    {{ lang.availableGifts }}
-                  </h4>
+                  <div class="pz-sheet-section-header">
+                    <h4 class="pz-sheet-section-title">
+                      {{ lang.availableGifts }}
+                    </h4>
+                    <span class="pz-sheet-spend-badge">
+                      {{ lang.promoSpendPre
+                      }}<strong
+                        >{{ branchService.config.currency
+                        }}{{ selectedPromoDetail.minSpend }}</strong
+                      >{{ lang.promoJoinPost }}
+                    </span>
+                  </div>
                   <div class="pz-gift-list">
                     @for (
                       gift of getLocalizedGifts(selectedPromoDetail);
@@ -3416,7 +3104,7 @@
                             d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"
                           ></path>
                         </svg>
-                        {{ gift }}
+                        {{ stripGiftQty(gift) }}
                       </div>
                     }
                   </div>
@@ -3492,18 +3180,7 @@
               />
             </svg>
           }
-          @if (tab.icon === "tracker") {
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path
-                d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"
-              />
-            </svg>
-          }
+
           @if (tab.icon === "orders") {
             <svg
               viewBox="0 0 24 24"
@@ -3542,6 +3219,44 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
+   手機版 會員選單 底部抽屜（點遮罩關閉）
+═══════════════════════════════════════════════════════════ -->
+@if (showMobileMenu()) {
+  <div class="mobile-menu-overlay" (click)="toggleMobileMenu()">
+    <div class="mobile-menu-sheet" (click)="$event.stopPropagation()">
+      <div class="mm-handle"></div>
+      <!-- 用戶資訊 -->
+      <div class="mm-user-row">
+        <div class="mm-avatar">{{ getAvatarLetter() }}</div>
+        <div class="mm-user-detail">
+          <div class="mm-name">{{ authService.currentUser?.name ?? lang.guestLabel }}</div>
+          @if (!isGuest()) {
+            <div class="mm-phone">{{ phoneToLocal(authService.currentUser?.phone) }}</div>
+          }
+        </div>
+      </div>
+      <!-- 登出 / 登入會員 -->
+      <button class="mm-logout-btn" (click)="logout(); toggleMobileMenu()">
+        @if (isGuest()) {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          {{ lang.loginAsMember }}
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          {{ lang.logout }}
+        }
+      </button>
+    </div>
+  </div>
+}
+
+<!-- ═══════════════════════════════════════════════════════════
    行動支付 Modal（模擬手機掃碼後的付款畫面）
    ─ 點擊遮罩關閉（僅在未完成付款時）
 ═══════════════════════════════════════════════════════════ -->
@@ -3565,7 +3280,7 @@
           <div class="mp-screen-amount">
             <span class="mp-screen-amount-label">{{ lang.payAmount }}</span>
             <span class="mp-screen-amount-value"
-              >{{ branchService.config.currency }} {{ discountedTotal() }}</span
+              >{{ branchService.config.currency }} {{ confirmedTotal() }}</span
             >
           </div>
 
@@ -3612,7 +3327,7 @@
           <div class="mp-screen-total">
             <span>{{ lang.total }}</span>
             <span class="mp-screen-total-amt"
-              >{{ branchService.config.currency }} {{ discountedTotal() }}</span
+              >{{ branchService.config.currency }} {{ confirmedTotal() }}</span
             >
           </div>
 
@@ -3658,7 +3373,7 @@
               </svg>
             </div>
             <p class="mp-success-title">付款成功！</p>
-            <p class="mp-success-amount">NT$ {{ discountedTotal() }}</p>
+            <p class="mp-success-amount">NT$ {{ confirmedTotal() }}</p>
             <p class="mp-success-msg">訂單正在備餐中，感謝您使用懶飽飽</p>
           </div>
         }
@@ -3667,6 +3382,7 @@
       <!-- 手機底部 Home 指示線 -->
       <div class="phone-home-bar"></div>
     </div>
+    
   </div>
 }
 
@@ -3808,5 +3524,10 @@
         {{ lang.sessionExpiredBtn }}
       </button>
     </div>
+    @if (checkoutToastVisible) {
+      <div class="ch-toast">
+        <span>⚠️ {{ checkoutToastMessage }}</span>
+      </div>
+    }
   </div>
 }

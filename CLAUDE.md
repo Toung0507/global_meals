@@ -1,4 +1,18 @@
 
+## 語言設定
+
+**永遠使用繁體中文**回覆所有問題和說明。程式碼內的英文識別碼、API 路徑等技術術語維持原文，但說明文字必須是繁體中文。
+
+---
+
+## 本機路徑設定
+
+- **前端**：`C:\Users\a4377\OneDrive\Desktop\global_meals`（Angular，Port 4200）
+- **後端**：`C:\Users\a4377\OneDrive\Desktop\global_meals_gradle`（Spring Boot，Port 8080）
+- **資料庫 SQL**：`C:\Users\a4377\OneDrive\Desktop\20260428.sql`（MySQL 8.0，DB: global_meals）
+
+---
+
 ## 專案啟動設定（Demo / 開發環境）
 
 ### 必要工具

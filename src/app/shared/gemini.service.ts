@@ -31,7 +31,11 @@ export class GeminiService {
     return this.http.post<any>(AI_ENDPOINT, {
       contents: [{ parts: [{ text: prompt }] }]
     }).pipe(
-      map(res => res?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '生成失敗，請稍後再試')
+      map(res => {
+        const parts = res?.candidates?.[0]?.content?.parts;
+        const text = parts?.find((p: any) => !p.thought && p.text)?.text?.trim() ?? '生成失敗，請稍後再試';
+        return text;
+      })
     );
   }
 }

@@ -72,6 +72,10 @@ export class CustomerMemberComponent implements OnInit {
   ) {}
 
   editOldPassword: string = '';
+  showOldPwd = false;
+  showNewPwd = false;
+  toggleOldPwd(): void { this.showOldPwd = !this.showOldPwd; }
+  toggleNewPwd(): void { this.showNewPwd = !this.showNewPwd; }
   /*
    * ngOnInit：元件初始化時自動執行
    * ① 登入保護：沒有登入的人直接踢回登入頁
@@ -95,7 +99,7 @@ export class CustomerMemberComponent implements OnInit {
   startEdit(): void {
     if (this.authService.currentUser) {
       this.editName = this.authService.currentUser.name;
-      this.editPhone = this.authService.currentUser.phone;
+      this.editPhone = this.phoneToLocal(this.authService.currentUser.phone);
       this.editPassword = ''; /* 密碼欄預設留空（不修改） */
       this.editOldPassword = ''; // ← 新增
     }
@@ -125,7 +129,7 @@ export class CustomerMemberComponent implements OnInit {
     // 有填新密碼時才呼叫後端修改密碼 API
     if (this.editPassword.trim().length > 0) {
       if (this.editOldPassword.trim().length === 0) {
-        alert('請輸入目前密碼');
+        alert('請輸入舊密碼');
         return;
       }
       this.apiService
@@ -182,6 +186,13 @@ export class CustomerMemberComponent implements OnInit {
         this.loadingService.hide();
       });
     }, 1500);
+  }
+
+  /** +886XXXXXXXXX → 0XXXXXXXXX（台灣），其他國碼原樣返回 */
+  phoneToLocal(phone: string | undefined | null): string {
+    if (!phone) return '';
+    if (phone.startsWith('+886')) return '0' + phone.slice(4);
+    return phone;
   }
 
   /* ── 取得頭像顯示文字 ─────────────────────────────

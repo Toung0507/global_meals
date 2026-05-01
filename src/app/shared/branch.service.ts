@@ -3,6 +3,25 @@ import { DOCUMENT } from '@angular/common';
 
 export type CountryCode = 'TW' | 'JP' | 'KR';
 
+export interface BranchOption {
+  id: number;
+  name: string;
+  nameJP?: string;
+  nameKR?: string;
+}
+
+/** 各國分店清單（來源：global_area JOIN regions） */
+const BRANCHES_BY_COUNTRY: Partial<Record<CountryCode, BranchOption[]>> = {
+  TW: [
+    { id: 4,  name: '懶飽飽台北總店', nameJP: 'レイジーバオバオ 台北本店',  nameKR: '레이지바오바오 타이베이 본점' },
+    { id: 14, name: '台灣高雄店',     nameJP: 'レイジーバオバオ 高雄店',    nameKR: '레이지바오바오 가오슝점' },
+  ],
+  JP: [
+    { id: 5,  name: '懶飽飽東京店',  nameJP: 'レイジーバオバオ 東京店',    nameKR: '레이지바오바오 도쿄점' },
+  ],
+  KR: [], // 暫無分店資料
+};
+
 export interface CountryConfig {
   code: CountryCode;
   name: string;
@@ -65,6 +84,7 @@ export interface LangDict {
   navPromos: string;
   /* ── Menu categories ── */
   catAll: string;
+  catChef: string;
   catRice: string;
   catNoodles: string;
   catSnacks: string;
@@ -302,6 +322,7 @@ const TW: LangDict = {
   navOrders: '我的訂單',
   navPromos: '活動專區',
   catAll: '全部',
+  catChef: '主廚推薦',
   catRice: '飯食',
   catNoodles: '麵食',
   catSnacks: '小吃',
@@ -332,7 +353,7 @@ const TW: LangDict = {
   profileTitle: '個人資料',
   emailLbl: '電子郵件',
   emailPlaceholder: '輸入Email',
-  oldPwdPlaceholder: '輸入目前密碼',
+  oldPwdPlaceholder: '請輸入舊密碼',
   newPwdPlaceholder: '輸入新密碼',
   confirmNewPwdPlaceholder: '再次輸入新密碼',
   couponTitle: '兌換券紀錄',
@@ -347,7 +368,7 @@ const TW: LangDict = {
   editProfile: '修改資料',
   navDivider: '導覽功能',
   footerTagline: '✦ 懶懶吃，飽飽樂 ✦',
-  loginAsMember: '使用會員登入點餐',
+  loginAsMember: '返回登入頁面',
   logout: '登出帳號',
   heroSlide1Tag: '✦ 全球風味 • 一掌點餐 ✦',
   heroSlide1Desc: '懶懶吃，飽飽樂 — 探索各地絕妙風味',
@@ -519,6 +540,7 @@ const JP: LangDict = {
   navOrders: '注文履歴',
   navPromos: 'キャンペーン',
   catAll: 'すべて',
+  catChef: 'シェフのおすすめ',
   catRice: 'ご飯料理',
   catNoodles: '麺料理',
   catSnacks: '軽食',
@@ -741,6 +763,7 @@ const KR: LangDict = {
   navOrders: '내 주문',
   navPromos: '이벤트',
   catAll: '전체',
+  catChef: '셰프 추천',
   catRice: '밥 요리',
   catNoodles: '면류',
   catSnacks: '간식',
@@ -972,7 +995,29 @@ export class BranchService {
     })(),
   );
 
+  private _globalAreaId = signal<number>(
+    (() => {
+      try {
+        const saved = localStorage.getItem('selectedBranch');
+        return saved ? Number(saved) : 4;
+      } catch {
+        return 4;
+      }
+    })(),
+  );
+
   readonly lang = computed(() => TRANSLATIONS[this._c()]);
+
+  /** 依目前語系回傳本地化分店清單（name 已翻譯） */
+  readonly localizedBranches = computed(() => {
+    const cc = this._c();
+    return (BRANCHES_BY_COUNTRY[cc] ?? []).map(b => ({
+      id: b.id,
+      name: cc === 'JP' ? (b.nameJP ?? b.name)
+          : cc === 'KR' ? (b.nameKR ?? b.name)
+          : b.name,
+    }));
+  });
 
   get country(): CountryCode {
     return this._c();
@@ -983,11 +1028,34 @@ export class BranchService {
   get allCountries(): CountryConfig[] {
     return Object.values(COUNTRY_CONFIGS);
   }
+  get globalAreaId(): number {
+    return this._globalAreaId();
+  }
+  get currentBranches(): BranchOption[] {
+    return BRANCHES_BY_COUNTRY[this._c()] ?? [];
+  }
+
+  setGlobalAreaId(id: number): void {
+    this._globalAreaId.set(id);
+    try { localStorage.setItem('selectedBranch', String(id)); } catch {}
+  }
+
+  getLocalizedBranchName(branch: BranchOption): string {
+    const cc = this._c();
+    if (cc === 'JP') return branch.nameJP ?? branch.name;
+    if (cc === 'KR') return branch.nameKR ?? branch.name;
+    return branch.name;
+  }
 
   setCountry(code: CountryCode): void {
     this._c.set(code);
+    // 切換國家時自動選第一個分店
+    const branches = BRANCHES_BY_COUNTRY[code] ?? [];
+    const firstId = branches.length > 0 ? branches[0].id : 4;
+    this._globalAreaId.set(firstId);
     try {
       localStorage.setItem('selectedCountry', code);
+      localStorage.setItem('selectedBranch', String(firstId));
     } catch {}
     this.applyTheme(code);
   }

@@ -520,20 +520,30 @@ public/
 
 ## 待辦事項
 
+- [ ] 老闆後台財務報表接真實資料（目前為假資料 UI）
 - [ ] 客戶端菜單商品卡補齊真實食物照片（目前部分仍用 CSS 漸層佔位）
-- [ ] POS 商品卡補齊真實食物照片（目前 9 件有圖，招牌滷蛋 / 特定品項待上傳）
+- [ ] POS 商品卡補齊真實食物照片
 - [ ] Angular Router 頁面轉場動畫
-- [ ] CustomerRegister 表單串接後端 API
-- [ ] CustomerGuest 後端 session 紀錄
-- [ ] 所有 API TODO 串接點替換（已在 AuthService 內以註解標記）
 - [ ] POS 訂單看板狀態持久化（目前頁面重整後重置）
-- [ ] 老闆後台財務報表接真實資料
 
 ---
 
 ## 變更紀錄（最近功能異動）
 
 > 完整版本歷史請見 [CHANGELOG.md](./CHANGELOG.md)
+
+### v0.4.0（2026-05-02）新增 / 修正
+| 項目 | 說明 |
+| ---- | ---- |
+| 分店長 Dashboard 活動一覽 | 與老闆活動管理相同卡片樣式（封面圖、描述、日期、門檻）；移除新增/刪除按鈕，保留啟用/停用 toggle |
+| POS 庫存扣減 | 結帳後自動呼叫 `POST /inventory/update` 扣減購物車商品庫存；手動調整庫存亦同步後端 |
+| POS 活動贈品重構 | 移除前端硬編碼 `PROMO_ACTIVITIES`；改為即時呼叫 cart sync API 取得 `availablePromotions`，與客戶端一致 |
+| POS 活動 UI 升級 | accordion 下拉展開贈品選項（客戶端同款）；未達門檻活動顯示進度條 +「再消費 NT$X 即可獲得贈品」提示 |
+| POS 活動抽屜 | 優惠活動區塊可收合/展開；收合時顯示「已選：XXX 贈品」或「不參加」狀態 |
+| POS 訪客結帳簡化 | 移除訪客模式手機號碼輸入欄；選訪客後可直接按結帳 |
+| POS 會員未查詢攔截 | 選會員模式但未查詢到會員時按結帳，顯示 toast 警告阻止結帳 |
+| POS 會員查詢修正 | 後端新增 `GET /members/get_by_phone` 端點；支援 `09XXXXXXXX` 本地格式自動轉 `+886XXXXXXXXX` |
+| Debug 清理 | 移除 console.log、System.out.println、Hibernate TRACE logging |
 
 ### v0.2.7（2026-04-16）新增 / 修正
 | 項目 | 說明 |

@@ -37,6 +37,7 @@ import {
   PayReq,
   CartRemoveReq,
   CartClearReq,
+  OrderCartDetailItem,
   PromotionDetailVo,
 } from '../shared/api.service';
 import { DEMO_BASE_URL } from '../shared/demo.config';
@@ -80,23 +81,29 @@ export interface MenuItem {
 }
 
 /* ── 訂單追蹤型別 ─────────────────────────────────────── */
+export interface ActiveOrder {
+  id: string;
+  number: string;
+  status: 'cooking' | 'ready' | 'done';
+  items: string[];
+  total: number;
+  createdAt: string;
+  payMethod: string;
+  isCash: boolean;
+  estimatedMinutes: number;
+}
+
+/* ── 訂單追蹤型別 ─────────────────────────────────────── */
 export interface TrackingOrder {
   id: string;
   number: string;
-  status:
-    | 'pending-cash'
-    | 'waiting'
-    | 'cooking'
-    | 'ready'
-    | 'done'
-    | 'cancelled'
-    | 'paid';
+  status: string;
   estimatedMinutes: number;
   items: string[];
   total: number;
   createdAt: string;
   payMethod: string;
-  isCash: boolean; // ← 加這行
+  isCash: boolean;
 }
 
 /* ── 頁籤型別 ──────────────────────────────────────────── */
@@ -105,7 +112,6 @@ export type TabId =
   | 'menu'
   | 'checkout'
   | 'payment'
-  | 'tracker'
   | 'orders'
   | 'promotions';
 
@@ -163,6 +169,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   cartItems = signal<CartItem[]>([]);
   currentCartId = signal<number | null>(null);
   private promoGiftIds = new Map<string, number>(); // 贈品名稱 → giftProductId
+  private outOfStockGifts = new Set<string>(); // 庫存為 0 的贈品 productName
 
   cartCount = computed(() =>
     this.cartItems().reduce((sum, item) => sum + item.quantity, 0),
@@ -448,8 +455,18 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   activeMenuCategory = signal<string>('all');
   menuSearchQuery = signal<string>('');
 
+  /** 主廚推薦餐點（首頁 featured 區塊對應的品項名稱） */
+  readonly CHEF_PICKS = ['招牌滷肉飯', '古早味排骨飯', '蚵仔麵線'];
+
   setMenuCategory(cat: string): void {
     this.activeMenuCategory.set(cat);
+    document.querySelector('.ch-main')?.scrollTo({ top: 0 });
+  }
+
+  /** 從首頁主廚推薦卡片點入：切換至菜單頁並套用主廚推薦篩選 */
+  goToChefMenu(): void {
+    this.activeMenuCategory.set('chef');
+    this.setTab('menu');
   }
 
   onMenuSearch(event: Event): void {
@@ -460,10 +477,22 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   isMenuItemShown(name: string, category: string): boolean {
     const cat = this.activeMenuCategory();
     const q = this.menuSearchQuery().trim().toLowerCase();
-    const catMatch = cat === 'all' || cat === category;
+    const catMatch =
+      cat === 'all' ||
+      (cat === 'chef' ? this.CHEF_PICKS.includes(name) : cat === category);
     const nameMatch = q === '' || name.toLowerCase().includes(q);
     return catMatch && nameMatch;
   }
+
+  /** 主廚推薦篩選下的所有品項（依 CHEF_PICKS 順序） */
+  chefPickItems = computed(() => {
+    const q = this.menuSearchQuery().trim().toLowerCase();
+    return this.CHEF_PICKS
+      .map((name) => this.menuItems().find((i) => i.name === name))
+      .filter((i): i is NonNullable<typeof i> =>
+        !!i && (q === '' || i.name.toLowerCase().includes(q)),
+      );
+  });
 
   /** 回傳整個分類區塊是否應顯示（只要有任一品項符合篩選即顯示） */
   isSectionShown(
@@ -477,6 +506,10 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   /* ── 側邊欄：個人資料抽屜狀態 ────────────────────── */
   isProfileExpanded = signal(false);
   isEditingProfile = signal(false);
+
+  /* ── 手機版：頂部用戶選單 ─────────────────────────── */
+  showMobileMenu = signal(false);
+  toggleMobileMenu(): void { this.showMobileMenu.update(v => !v); }
 
   showPassword = signal(false);
   showConfirmPassword = signal(false);
@@ -500,10 +533,43 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
    * ────────────────────────────────────────────────── */
   phoneNumber = signal('');
 
-  /** 訪客時電話為必填；會員時有預設值但可修改（均不能為空） */
-  isPhoneValid = computed(() =>
-    this.isGuest() ? true : this.phoneNumber().trim().length > 0,
-  );
+  /** 訪客時電話為必填，且必須為 10 位數字；會員時同樣驗證 */
+  isPhoneValid = computed(() => /^\d{10}$/.test(this.phoneNumber().trim()));
+
+  /** +886XXXXXXXXX → 0XXXXXXXXX（台灣），其他國碼原樣返回 */
+  phoneToLocal(phone: string | undefined | null): string {
+    if (!phone) return '';
+    if (phone.startsWith('+886')) return '0' + phone.slice(4);
+    return phone;
+  }
+
+  /** 0XXXXXXXXX → +886XXXXXXXXX（台灣），已是國際格式則原樣返回 */
+  private phoneToIntl(phone: string): string {
+    if (!phone) return '';
+    if (phone.startsWith('0') && /^\d{10}$/.test(phone)) return '+886' + phone.slice(1);
+    if (phone.startsWith('+')) return phone;
+    return phone;
+  }
+
+  /* ── 待付款訂單（確認建立訂單後存入，付款時使用）── */
+  pendingOrderId = signal<string | null>(null);
+  pendingOrderDateId = signal<string>('');
+  backendConfirmedTotal = signal<number | null>(null);
+  /** 付款頁顯示的總計：優先使用後端確認值，fallback 前端計算值 */
+  confirmedTotal = computed(() => this.backendConfirmedTotal() ?? this.discountedTotal());
+
+  checkoutToastVisible = false;
+  checkoutToastMessage = '';
+  private checkoutToastTimer: any = null;
+
+  showCheckoutToast(message: string): void {
+    this.checkoutToastMessage = message;
+    this.checkoutToastVisible = true;
+    if (this.checkoutToastTimer) clearTimeout(this.checkoutToastTimer);
+    this.checkoutToastTimer = setTimeout(() => {
+      this.checkoutToastVisible = false;
+    }, 3000);
+  }
   /* ── 信用卡表單 ─────────────────────────────────────────
    * Demo 假卡：4532 1234 5678 9012 / 12/28 / CVV:123
    * ─────────────────────────────────────────────────── */
@@ -915,6 +981,51 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     return promo.gifts;
   }
 
+  /** 移除贈品字串中的數量（× N），只保留品名 */
+  stripGiftQty(gift: string): string {
+    return gift.replace(/\s*×\s*\d+/g, '').replace(/\s{2,}/g, ' ').trim();
+  }
+
+  getHeroPromoLocalName(): string {
+    const p = this.PROMO_DISPLAY[0] ?? null;
+    if (!p) return this.lang.heroSlide2Title;
+    const cc = this.branchService.country;
+    if (cc === 'JP') return (p as any).nameJP || p.name;
+    if (cc === 'KR') return (p as any).nameKR || p.name;
+    return p.name;
+  }
+
+  getHeroPromoMinSpend(): string {
+    const p = this.PROMO_DISPLAY[0] ?? null;
+    const cur = this.branchService.config.currency;
+    return p ? `${cur}${p.minSpend}` : `${cur}300`;
+  }
+
+  getHeroPromoGiftLabel(): string {
+    const p = this.PROMO_DISPLAY[0] ?? null;
+    if (!p || !p.gifts?.length) return this.lang.heroSlide2DescGift;
+    const cc = this.branchService.country;
+    const gifts = cc === 'JP' ? (p as any).giftsJP : cc === 'KR' ? (p as any).giftsKR : p.gifts;
+    const raw: string = gifts?.[0] ?? p.gifts[0];
+    return `贈${raw}`;
+  }
+
+  getHeroPromoImage(): string {
+    const p = this.PROMO_DISPLAY[0] ?? null;
+    return p ? p.image : '/assets/主頁輪播圖2.jpg';
+  }
+
+  getChefPickImage(): string {
+    const item = this.menuItems().find(i => i.name === '古早味排骨飯');
+    return item?.image || '/assets/主頁輪播圖3.jpg';
+  }
+
+  /** 判斷贈品是否無庫存（quantity = 0）→ 顯示淡色、不可選 */
+  isGiftOutOfStock(giftStr: string): boolean {
+    const name = this.stripGiftQty(giftStr);
+    return this.outOfStockGifts.has(name);
+  }
+
   /** 根據目前語言取得活動亮點清單 */
   getLocalizedHighlights(promo: {
     highlights: string[];
@@ -962,9 +1073,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   /* 菜單頁：整個活動抽屜是否展開 */
   promoDrawerOpen = signal<boolean>(false);
 
-  /* 根據目前小計，篩出已達門檻的活動 */
+  /* 根據目前小計，篩出已達門檻的活動，並依門檻金額由低到高排序 */
   unlockedPromos = computed(() =>
-    this.PROMO_ACTIVITIES.filter((p) => this.cartTotal() >= p.minSpend),
+    this.PROMO_ACTIVITIES
+      .filter((p) => this.cartTotal() >= p.minSpend)
+      .sort((a, b) => a.minSpend - b.minSpend),
   );
 
   /* 目前選中的活動物件 */
@@ -1039,6 +1152,91 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   goToPayment(): void {
     this.showOrderPreview.set(false);
+    this.isPlacingOrder.set(true);
+    this._createOrderAsync().catch((err) => {
+      this.isPlacingOrder.set(false);
+      console.error('[Order] 建立訂單失敗', err);
+      const msg: string = err?.error?.message ?? err?.message ?? '';
+      if (msg.includes('逾時') || msg.includes('登入')) {
+        alert('登入連線已逾時，請重新登入後再結帳');
+        this.authService.logout();
+        this.router.navigate(['/customer-login']);
+      } else {
+        alert('建立訂單失敗，請稍後再試');
+      }
+    });
+  }
+
+  private async _createOrderAsync(): Promise<void> {
+    const items = this.cartItems();
+    const user = this.authService.currentUser;
+    const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
+    const phone = this.phoneToIntl(this.phoneNumber());
+
+    /* Step 1：取得後端購物車 ID */
+    let cartId = this.currentCartId();
+    if (cartId === null) {
+      for (const item of items) {
+        const syncReq: CartSyncReq = {
+          cartId,
+          globalAreaId: this.branchService.globalAreaId,
+          productId: item.id,
+          quantity: item.quantity,
+          operationType: 'CUSTOMER',
+          memberId,
+        };
+        const cartRes = await firstValueFrom(this.apiService.syncCart(syncReq));
+        cartId = cartRes.cartId;
+      }
+      if (!cartId) throw new Error('購物車同步失敗');
+      this.currentCartId.set(cartId);
+    }
+
+    /* Step 2：後端計算折扣金額 */
+    const selectedGiftId = this.promoGiftIds.get(this.selectedPromoGift()) ?? 0;
+    let finalTotal = this.discountedTotal();
+    try {
+      const calcRes = await firstValueFrom(
+        this.apiService.calculatePromotion({
+          cartId: cartId!,
+          memberId,
+          useCoupon: this.useDiscountCoupon(),
+          selectedGiftId,
+          originalAmount: this.cartTotal(),
+          country: this.branchService.country,
+        }),
+      );
+      if (calcRes?.finalAmount != null) finalTotal = calcRes.finalAmount;
+    } catch { /* 後端計算失敗時沿用前端計算值 */ }
+
+    /* Step 3：建立訂單（不含付款方式，待付款頁選擇後處理） */
+    const giftDetailItem: OrderCartDetailItem[] =
+      selectedGiftId > 0
+        ? [{ productId: 0, quantity: 1, gift: true, promotionsGiftsId: selectedGiftId }]
+        : [];
+
+    const orderReq: CreateOrdersReq = {
+      orderCartId: String(cartId),
+      globalAreaId: 4,
+      memberId,
+      phone,
+      subtotalBeforeTax: this.cartTotal(),
+      taxAmount: 0,
+      totalAmount: finalTotal,
+      orderCartDetailsList: [
+        ...items.map((i) => ({ productId: i.id, quantity: i.quantity, gift: false })),
+        ...giftDetailItem,
+      ],
+    };
+
+    const orderRes = await firstValueFrom(this.apiService.createOrder(orderReq));
+
+    /* 儲存訂單資訊供付款步驟使用 */
+    this.pendingOrderId.set(orderRes.id);
+    this.pendingOrderDateId.set(orderRes.orderDateId);
+    this.backendConfirmedTotal.set(orderRes.totalAmount ?? finalTotal);
+
+    this.isPlacingOrder.set(false);
     this.setTab('payment');
   }
 
@@ -1137,7 +1335,6 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       { id: 'home', label: l.navHome, icon: 'home' },
       { id: 'menu', label: l.navMenu, icon: 'menu' },
       { id: 'checkout', label: l.navCart, icon: 'checkout' },
-      { id: 'tracker', label: l.navTracker, icon: 'tracker' },
       { id: 'orders', label: l.navOrders, icon: 'orders' },
       { id: 'promotions', label: l.navPromos, icon: 'promotions' },
     ];
@@ -1145,7 +1342,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   });
 
   /* ── 訂單管理資料 ──────────────────────────────────── */
-  activeOrderTab = signal<'completed' | 'cancelled' | 'refunded'>('completed');
+  activeOrderTab = signal<'active' | 'completed' | 'cancelled' | 'refunded'>('active');
+  activeOrders = signal<ActiveOrder[]>([]);
 
   /* ── 退款申請 Modal ─────────────────────────────────── */
   refundModalOpen = signal(false);
@@ -1204,7 +1402,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       .updateOrderStatus({
         id: dbId.id,
         orderDateId: dbId.orderDateId,
-        status: 'CANCELLED',
+        ordersStatus: 'CANCELLED',
       })
       .subscribe({
         next: (res) => {
@@ -1219,6 +1417,30 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
           this._clearLocalTracking(dbId.id);
           this.cancelConfirmOpen.set(false);
           alert('後端無法取消此訂單，已從追蹤清單移除。');
+        },
+      });
+  }
+
+  cancelActiveOrder(trackId: string): void {
+    const dbId = this._activeOrderDbId;
+    if (!dbId) {
+      this.activeOrders.set(this.activeOrders().filter((o) => o.id !== trackId));
+      localStorage.removeItem('lbb_tracking_order');
+      return;
+    }
+    this.apiService
+      .updateOrderStatus({ id: dbId.id, orderDateId: dbId.orderDateId, ordersStatus: 'CANCELLED' })
+      .subscribe({
+        next: () => {
+          this.activeOrders.set(this.activeOrders().filter((o) => o.id !== trackId));
+          this._activeOrderDbId = null;
+          if (this.statusPollInterval) clearInterval(this.statusPollInterval);
+          this.statusPollInterval = null;
+          localStorage.removeItem('lbb_tracking_order');
+        },
+        error: () => {
+          this.activeOrders.set(this.activeOrders().filter((o) => o.id !== trackId));
+          localStorage.removeItem('lbb_tracking_order');
         },
       });
   }
@@ -1277,7 +1499,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       .updateOrderStatus({
         id: order.id,
         orderDateId,
-        status: 'REFUNDED',
+        ordersStatus: 'REFUNDED',
       })
       .subscribe({
         next: () => {
@@ -1385,11 +1607,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     () => this.orderHistoryList().filter((o) => o.status === 'refunded').length,
   );
 
-  filteredOrders = computed(() => {
-    return this.orderHistoryList().filter(
-      (o) => o.status === this.activeOrderTab(),
-    );
-  });
+filteredOrders = computed(() => {
+  const tab = this.activeOrderTab();
+  if (tab === 'active') return [];  // active tab 用 activeOrders() 直接顯示
+  return this.orderHistoryList().filter(o => o.status === tab);
+});
 
   /* ── 國家切換 ──────────────────────────────────────── */
   allCountries = signal<CountryConfig[]>([]);
@@ -1435,10 +1657,10 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       );
     }, 3000);
 
-    /* 會員自動填入電話號碼（訪客保持空白，為必填） */
+    /* 會員自動填入電話號碼（訪客保持空白，為必填），轉為本地格式顯示 */
     const user = this.authService.currentUser;
     if (user && !user.isGuest && user.phone) {
-      this.phoneNumber.set(user.phone);
+      this.phoneNumber.set(this.phoneToLocal(user.phone));
     }
 
     /* 載入促銷活動（API 成功則覆蓋靜態 Demo 資料，只顯示 active 的活動） */
@@ -1467,6 +1689,27 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
             payMethod: t.payMethod,
             source: 'customer',
           });
+
+          // 同步還原至 activeOrders
+          const restoredAoStatus =
+            t.status === 'waiting' ? 'cooking'
+            : t.status === 'cooking' ? 'cooking'
+            : t.status === 'ready' ? 'ready'
+            : 'done';
+          this.activeOrders.set([
+            {
+              id: t.orderId,
+              number: t.number,
+              status: restoredAoStatus as ActiveOrder['status'],
+              items: t.items,
+              total: t.total,
+              createdAt: t.createdAt,
+              payMethod: t.payMethod,
+              isCash: t.isCash ?? t.payMethod === '現金',
+              estimatedMinutes: t.estimatedMinutes,
+            },
+            ...this.activeOrders(),
+          ]);
 
           if (t.orderDateId) {
             // 從 trackId 反解原始 orderId（DB-20260424-0009 → 0009）
@@ -1548,7 +1791,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
                 nameJP: i18n.nameJP,
                 nameKR: i18n.nameKR,
                 price: p.basePrice,
-                image: '',
+                image: p.foodImgBase64 ?? '',
                 category: p.category,
                 categoryEn: p.category,
                 description: p.description ?? '',
@@ -1579,12 +1822,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
               res.getOrderVoList.map((o: GetOrdersVo) => ({
                 id: o.id,
                 date: o.completedAt?.slice(0, 10) ?? o.orderDateId ?? '',
-                items: (
-                  (o as any)['GetOrdersDetailVoList'] ??
-                  o.getOrdersDetailVoList ??
-                  []
-                )
-                  .filter((d: GetOrdersDetailVo) => !d.gift && !d.isGift)
+                items: (o.getOrdersDetailVoList ?? [])
+                  .filter((d: GetOrdersDetailVo) => !d.gift)
                   .map(
                     (d: GetOrdersDetailVo) =>
                       `${d.name || d.productName || '?'} × ${d.quantity}`,
@@ -1594,11 +1833,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
                 itemsKR: '',
                 total: +o.totalAmount,
                 status:
-                  o.status === 'COMPLETED'
+                  o.ordersStatus === 'COMPLETED'
                     ? ('completed' as const)
-                    : o.status === 'CANCELLED'
+                    : o.ordersStatus === 'CANCELLED'
                       ? ('cancelled' as const)
-                      : o.status === 'REFUNDED'
+                      : o.ordersStatus === 'REFUNDED'
                         ? ('refunded' as const)
                         : ('completed' as const),
               })),
@@ -1631,7 +1870,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
           this.currentCartId.set(res.cartId);
           this.cartItems.set(
             res.items
-              .filter((i) => !i.isGift && validIds.has(i.productId))
+              .filter((i) => !i.gift && validIds.has(i.productId))
               .map((i) => ({
                 id: i.productId,
                 name: i.productName,
@@ -1661,6 +1900,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       return;
     }
     this.activeTab.set(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   /* ── 加入購物車 ──────────────────────────────────── */
@@ -1707,9 +1947,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
     this.apiService.getPromotionsList(globalAreaId).subscribe({
       next: (res) => {
-        const active = (res?.data ?? []).filter(
-          (p: PromotionDetailVo) => p.active && p.gifts && p.gifts.length > 0,
-        );
+        const active = (res?.data ?? [])
+          .filter((p: PromotionDetailVo) => p.active && p.gifts && p.gifts.length > 0)
+          .sort((a: PromotionDetailVo, b: PromotionDetailVo) => b.id - a.id);
         if (!active.length) return;
 
         // 根據目前分店語言選取正確的活動名稱
@@ -1721,16 +1961,22 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
         };
 
         this.promoGiftIds.clear();
+        this.outOfStockGifts.clear();
         this.PROMO_ACTIVITIES = active.map((p: PromotionDetailVo) => {
           const minSpend = p.gifts.length
             ? Math.min(...p.gifts.map((g) => g.fullAmount))
             : 0;
-          const giftNames = p.gifts.map(
-            (g) => `${g.productName} × ${g.quantity === -1 ? 1 : g.quantity}`,
-          );
+          const seen = new Set<string>();
+          const giftNames: string[] = [];
           p.gifts.forEach((g) => {
-            const key = `${g.productName} × ${g.quantity === -1 ? 1 : g.quantity}`;
-            this.promoGiftIds.set(key, g.giftProductId);
+            // 庫存 0 → 記錄為無庫存，但顯示一律用 × 1
+            if (g.quantity === 0) this.outOfStockGifts.add(g.productName);
+            const key = `${g.productName} × 1`;
+            this.promoGiftIds.set(key, g.id);
+            if (!seen.has(key)) {
+              seen.add(key);
+              giftNames.push(key);
+            }
           });
           const lName = localName(p);
           return {
@@ -1742,15 +1988,20 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
             giftsJP: giftNames,
             giftsKR: giftNames,
           };
-        });
+        }).sort((a, b) => a.minSpend - b.minSpend);
 
         this.PROMO_DISPLAY = active.map((p: PromotionDetailVo, i: number) => {
           const minSpend = p.gifts.length
             ? Math.min(...p.gifts.map((g) => g.fullAmount))
             : 0;
-          const giftNames = p.gifts.map(
-            (g) => `${g.productName} × ${g.quantity === -1 ? 1 : g.quantity}`,
-          );
+          const giftNames = [
+            ...new Set(
+              p.gifts.map(
+                (g) =>
+                  `${g.productName} × ${g.quantity === -1 ? 1 : g.quantity}`,
+              ),
+            ),
+          ];
           const TAG_TYPES = ['new', 'promo', 'premium'] as const;
           const COLOR_SCHEMES = [
             'forest',
@@ -1822,7 +2073,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
         const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
         const req: CartSyncReq = {
           cartId: this.currentCartId(),
-          globalAreaId: 4,
+          globalAreaId: this.branchService.globalAreaId,
           productId,
           quantity,
           operationType: 'CUSTOMER',
@@ -1913,12 +2164,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
    * 6. 導向訂單追蹤頁
    * ────────────────────────────────────────────────── */
   placeOrder(): void {
-    if (this.cartItems().length === 0) return;
-    if (this.isPlacingOrder()) return; /* 防重複送出 */
-    /* 信用卡付款必須完整填寫卡片資料才能送出 */
+    if (!this.pendingOrderId()) return; /* 訂單尚未建立 */
+    if (this.isPlacingOrder()) return;
     if (this.paymentMethod() === 'credit' && !this.isCreditCardValid()) return;
-    /* 訪客必須填入電話號碼才能送出 */
-    if (this.isGuest() && !this.isPhoneValid()) return;
 
     this.isPlacingOrder.set(true);
 
@@ -1944,100 +2192,32 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   private async _doPlaceOrderAsync(): Promise<void> {
-    const items = this.cartItems();
-    const user = this.authService.currentUser;
-    const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
-    const phone = this.phoneNumber();
+    const orderId = this.pendingOrderId()!;
+    const orderDateId = this.pendingOrderDateId();
     const isCash = this.paymentMethod() === 'cash';
-
-    /* ── Step 1：取得後端購物車 ID
-     * eager sync 已完成 → 直接用；否則 fallback 逐筆同步 */
-    let cartId = this.currentCartId();
-    if (cartId === null) {
-      for (const item of items) {
-        const syncReq: CartSyncReq = {
-          cartId,
-          globalAreaId: 4,
-          productId: item.id,
-          quantity: item.quantity,
-          operationType: 'CUSTOMER',
-          memberId,
-        };
-        const cartRes = await firstValueFrom(this.apiService.syncCart(syncReq));
-        cartId = cartRes.cartId;
-      }
-      if (!cartId) throw new Error('購物車同步失敗');
-      this.currentCartId.set(cartId);
-    }
-
-    /* ── Step 1.5：後端計算折扣金額 ── */
-    let finalTotal = this.discountedTotal();
-    try {
-      const selectedGiftId =
-        this.promoGiftIds.get(this.selectedPromoGift()) ?? 0;
-      const calcRes = await firstValueFrom(
-        this.apiService.calculatePromotion({
-          cartId: cartId!,
-          memberId,
-          useCoupon: this.useDiscountCoupon(),
-          selectedGiftId,
-          originalAmount: this.cartTotal(),
-        }),
-      );
-      if (calcRes?.finalAmount != null) finalTotal = calcRes.finalAmount;
-    } catch {
-      /* 後端計算失敗時沿用前端計算值 */
-    }
-
-    /* ── Step 2：建立訂單
-     * 現金傳 paymentMethod:'CASH' → 後端建立 PENDING_CASH（不立即付款）
-     * 其他付款方式不傳 → 後端建立 UNPAID */
-    const orderReq: CreateOrdersReq = {
-      orderCartId: String(cartId),
-      globalAreaId: 4,
-      memberId,
-      phone,
-      subtotalBeforeTax: this.cartTotal(),
-      taxAmount: 0,
-      totalAmount: finalTotal,
-      orderCartDetailsList: items.map((i) => ({
-        productId: i.id,
-        quantity: i.quantity,
-        isGift: false,
-      })),
-      ...(isCash ? { paymentMethod: 'CASH' } : {}),
-    };
-    const orderRes = await firstValueFrom(
-      this.apiService.createOrder(orderReq),
-    );
+    const finalTotal = this.backendConfirmedTotal() ?? this.discountedTotal();
 
     /* ── 現金：直接進入待付款追蹤（不呼叫 pay()） ── */
     if (isCash) {
-      this._afterOrderSuccess(
-        orderRes.id,
-        orderRes.orderDateId,
-        'waiting',
-        true,
-      );
+      this._afterOrderSuccess(orderId, orderDateId, 'waiting', true);
       return;
     }
 
-    /* ── Step 3：非現金付款（→ COMPLETED） ── */
+    /* ── 非現金付款 ── */
     const payMethodMap: Record<string, string> = {
       credit: 'CREDIT_CARD',
       mobile: 'MOBILE_PAY',
     };
     const payReq: PayReq = {
-      id: orderRes.id,
-      orderDateId: orderRes.orderDateId,
+      id: orderId,
+      orderDateId,
       paymentMethod: payMethodMap[this.paymentMethod()] ?? 'CREDIT_CARD',
       transactionId: `DEMO_TXN_${Date.now()}`,
-      totalAmount: orderRes.totalAmount,
+      totalAmount: finalTotal,
     };
     await firstValueFrom(this.apiService.pay(payReq));
 
-    /* ── 成功後更新本地狀態 ── */
-    this._afterOrderSuccess(orderRes.id, orderRes.orderDateId, 'waiting');
+    this._afterOrderSuccess(orderId, orderDateId, 'waiting');
   }
 
   private _afterOrderSuccess(
@@ -2131,7 +2311,43 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
                 this.orderService.updateStatus(trackId, newStatus);
               }
               const endStatus: OrderStatus = isCash ? 'paid' : 'done';
+
+              // 同步 activeOrders 顯示狀態
+              const aoStatus =
+                newStatus === 'waiting' ? 'cooking'
+                : newStatus === 'cooking' ? 'cooking'
+                : newStatus === 'ready' ? 'ready'
+                : 'done';
+              this.activeOrders.set(
+                this.activeOrders().map((o) =>
+                  o.id === trackId
+                    ? { ...o, status: aoStatus as ActiveOrder['status'] }
+                    : o,
+                ),
+              );
+
               if (newStatus === endStatus) {
+                // 從未完成移至已完成
+                const d2 = new Date();
+                const p2 = (n: number) => String(n).padStart(2, '0');
+                const finished = this.activeOrders().find((o) => o.id === trackId);
+                if (finished) {
+                  this.activeOrders.set(
+                    this.activeOrders().filter((o) => o.id !== finished.id),
+                  );
+                  this.orderHistoryList.set([
+                    {
+                      id: orderId,
+                      date: `${d2.getFullYear()}-${p2(d2.getMonth() + 1)}-${p2(d2.getDate())}`,
+                      items: finished.items.join('、'),
+                      itemsJP: '',
+                      itemsKR: '',
+                      total: finished.total,
+                      status: 'completed' as const,
+                    },
+                    ...this.orderHistoryList(),
+                  ]);
+                }
                 localStorage.removeItem('lbb_tracking_order');
                 if (this.statusPollInterval)
                   clearInterval(this.statusPollInterval);
@@ -2145,18 +2361,23 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       }, 5000);
     }
 
+    
+
     /* 加入本地歷史訂單 */
-    this.orderHistoryList.set([
+/* 加入未完成訂單列表 */
+    this.activeOrders.set([
       {
-        id: orderId,
-        date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
-        items: itemTexts.join('、'),
-        itemsJP: '',
-        itemsKR: '',
+        id: trackId,
+        number: orderNum,
+        status: 'cooking',
+        items: itemTexts,
         total: this.discountedTotal(),
-        status: 'completed',
+        createdAt: timeStr,
+        payMethod: payLabel,
+        isCash,
+        estimatedMinutes: estMin,
       },
-      ...this.orderHistoryList(),
+      ...this.activeOrders(),
     ]);
 
     this.resetLocalCart();
@@ -2173,7 +2394,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     this.selectedPromoGift.set('');
     this.promoGiftPanelOpen.set(false);
     this.isPlacingOrder.set(false);
-    this.setTab('tracker');
+    this.setTab('orders');
+    this.activeOrderTab.set('active');
   }
 
   /* ── 取得頭像文字 ────────────────────────────────── */

@@ -101,7 +101,7 @@ export class CustomerRegisterComponent implements OnInit {
       .registerMember({
         name: this.name.trim(),
         phone: fullPhone,
-        country: this.branchService.country,
+        countryCode: this.branchService.country,
         password: this.password,
       })
       .subscribe({
