@@ -151,20 +151,6 @@ export const DEMO_BASE_URL = 'https://your-ngrok-url.ngrok-free.app';
 
 ---
 
-## 測試帳號
-
-| 角色     | Email                   | 密碼        | 手機號碼       |
-| -------- | ----------------------- | ----------- | -------------- |
-| 老闆     | admin@lazybao.com       | admin1234   | —              |
-| 分店長   | manager@lazybao.com     | mgr1234     | —              |
-| 員工     | staff@lazybao.com       | staff1234   | —              |
-| 客戶會員 | test@lazybao.com        | test1234    | 0912-345-678   |
-| 訪客     | —（不需帳號）           | —           | 任意手機號碼   |
-
-> ⚠ 所有帳號為前端 Mock 假資料，未來串接後端 API 後全部替換。
-
----
-
 ## 路由一覽
 
 | 路徑                 | 頁面                       | 可存取角色              |
