@@ -1469,6 +1469,7 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 .badge-warn   { background-color: rgba(251,191,36,0.15);  color: #fbbf24; border: 1px solid rgba(251,191,36,0.32); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
 .badge-err    { background-color: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.32); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
 .badge-blue   { background-color: rgba(129,140,248,0.15); color: #a5b4fc; border: 1px solid rgba(129,140,248,0.32); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+.badge-online { background-color: rgba(56,189,248,0.15);  color: #38bdf8; border: 1px solid rgba(56,189,248,0.32);  font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
 .badge-unpaid { background-color: rgba(248,113,113,0.18); color: #fca5a5; border: 1px solid rgba(248,113,113,0.4);  font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 700; white-space: nowrap; animation: unpaid-blink 1.6s ease-in-out infinite; }
 @keyframes unpaid-blink { 0%,100%{opacity:1} 50%{opacity:0.6} }
 

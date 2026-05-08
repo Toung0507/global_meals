@@ -1432,6 +1432,10 @@
                 共 {{ memberData().length }} 個國家／地區
               </div>
             </div>
+            <button class="btn btn-gold btn-sm" style="font-size:0.78rem; padding:5px 14px"
+              (click)="openAddMemberLimit()">
+              + 新增上限
+            </button>
           </div>
 
           @if (memberData().length === 0) {
@@ -1939,29 +1943,22 @@
                       <td style="color: #8a9ab0">{{ d.regionsName }}</td>
                       <td class="mono" style="color: #b08540">
                         {{ d.totalAmount | number: "1.0-0" }}
-                        @if (financeCountry() === "全部") {
-                          <span
-                            class="finance-currency-badge"
-                            style="background: #555"
-                            >{{ getRowCurrencyLabel(d.regionsName) }}</span
-                          >
-                        }
+                        <span class="finance-currency-badge" style="background: #555">
+                          {{ getRowCurrencyLabel(d.regionsName) }}
+                        </span>
                       </td>
                       <td class="mono" style="color: #f87171">
                         {{ d.totalCost | number: "1.0-0" }}
+                        <span class="finance-currency-badge" style="background: #555">
+                          {{ getRowCurrencyLabel(d.regionsName) }}
+                        </span>
                       </td>
                       <td class="mono" style="color: #8a9ab0">
                         @if (lastRow) {
                           {{ lastRow.totalAmount | number: "1.0-0" }}
-                          @if (financeCountry() === "全部") {
-                            <span
-                              class="finance-currency-badge"
-                              style="background: #555"
-                              >{{
-                                getRowCurrencyLabel(lastRow.regionsName)
-                              }}</span
-                            >
-                          }
+                          <span class="finance-currency-badge" style="background: #555">
+                            {{ getRowCurrencyLabel(lastRow.regionsName) }}
+                          </span>
                         } @else {
                           —
                         }
@@ -3320,33 +3317,77 @@
           </div>
         </div>
 
-        <!-- ── 下半區：會員折扣上限 ── -->
-        <hr style="border-color:rgba(255,255,255,0.08); margin:20px 0 16px" />
-        <div class="add-country-section-title">會員優惠設定</div>
-
-        <div class="row g-3">
-          <div class="col-5">
-            <label class="modal-label">活動折扣金額上限</label>
-            <div class="tax-input-wrap">
-              <input
-                type="number"
-                class="form-control form-ctrl mono tax-rate-input"
-                [(ngModel)]="taxDraft.discountLimit"
-                min="0"
-                placeholder="0"
-              />
-              <span class="tax-input-unit" style="font-size:0.75rem">{{ taxDraft.currency || '—' }}</span>
-            </div>
-            <div class="modal-helper-text">0 = 無上限；新增後可於「會員設定」調整</div>
-          </div>
-        </div>
-
       </div>
 
       <!-- 底部操作列 -->
       <div class="modal-ft">
         <button class="btn btn-ghost-navy" (click)="closeModal()">取消</button>
         <button class="btn btn-gold" (click)="saveCountry()">
+          <span style="font-size: 0.85rem; font-weight: 700">✓</span> 確認新增
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════
+     Modal：新增優惠上限
+     ════════════════════════════════════════════════════ -->
+@if (activeModal() === "addMemberLimit") {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-hd">
+        <div class="modal-hd-title">新增優惠上限</div>
+        <button class="modal-close-btn" (click)="closeModal()">✕</button>
+      </div>
+      <div class="modal-bd">
+
+        <!-- 國家 -->
+        <div class="mb-3">
+          <label class="modal-label">國家／地區 <span class="required">*</span></label>
+          <select class="form-select form-ctrl"
+            [ngModel]="addLimitRegionsId()"
+            (ngModelChange)="addLimitRegionsId.set($event)">
+            <option [ngValue]="0">請選擇國家／地區</option>
+            @for (t of taxes(); track t.id) {
+              <option [ngValue]="t.id">{{ t.country }}（{{ t.currency }}）</option>
+            }
+          </select>
+        </div>
+
+        @let selectedTax = addLimitSelectedTax();
+
+        <!-- 折扣上限 -->
+        <div class="mb-3">
+          <label class="modal-label">
+            折扣上限{{ selectedTax ? '（' + selectedTax.currency + '）' : '' }}
+          </label>
+          <div class="tax-input-wrap">
+            <input type="number" class="form-control form-ctrl mono tax-rate-input"
+              [ngModel]="addLimitAmount()"
+              (ngModelChange)="addLimitAmount.set(+$event)"
+              min="0" placeholder="0" />
+            <span class="tax-input-unit">{{ selectedTax?.currency || '—' }}</span>
+          </div>
+          <div class="modal-helper-text">0 = 無上限</div>
+        </div>
+
+        <!-- 累積消費次數 -->
+        <div class="mb-3">
+          <label class="modal-label">折扣累積消費次數門檻</label>
+          <div class="tax-input-wrap">
+            <input type="number" class="form-control form-ctrl mono tax-rate-input"
+              [ngModel]="addLimitCount()"
+              (ngModelChange)="addLimitCount.set(+$event)"
+              min="0" placeholder="0" />
+            <span class="tax-input-unit">次</span>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-ft">
+        <button class="btn btn-ghost-navy" (click)="closeModal()">取消</button>
+        <button class="btn btn-gold" (click)="saveAddMemberLimit()">
           <span style="font-size: 0.85rem; font-weight: 700">✓</span> 確認新增
         </button>
       </div>

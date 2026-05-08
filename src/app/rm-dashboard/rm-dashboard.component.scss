@@ -482,6 +482,20 @@ $rm-green: #10b981; // 分店長專屬點綴色
     }
 }
 
+.btn-reset-pwd {
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(#6b7faa, 0.4);
+    background: rgba(#6b7faa, 0.08);
+    color: #3a4f7a;
+    font-size: 0.75rem;
+    cursor: pointer;
+
+    &:hover {
+        background: rgba(#6b7faa, 0.18);
+    }
+}
+
 .btn-promote {
     padding: 4px 12px;
     border-radius: 6px;

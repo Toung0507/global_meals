@@ -19,6 +19,29 @@
   </div>
 
   <nav class="sidebar-nav">
+    <!-- 人員管理 -->
+    <div
+      class="nav-item"
+      [class.active]="activeTab() === 'users'"
+      (click)="setTab('users')"
+    >
+      <span class="nav-icon"
+        ><svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          style="width: 16px; height: 16px; vertical-align: middle"
+        >
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg
+      ></span>
+      人員管理
+    </div>
     <!-- 庫存管理 -->
     <div
       class="nav-item"
@@ -43,29 +66,6 @@
           <line x1="12" y1="22.08" x2="12" y2="12" /></svg
       ></span>
       庫存管理
-    </div>
-    <!-- 員工管理 -->
-    <div
-      class="nav-item"
-      [class.active]="activeTab() === 'users'"
-      (click)="setTab('users')"
-    >
-      <span class="nav-icon"
-        ><svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          style="width: 16px; height: 16px; vertical-align: middle"
-        >
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-          <circle cx="9" cy="7" r="4" />
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg
-      ></span>
-      員工管理
     </div>
     <!-- 活動一覽 -->
     <div
@@ -222,11 +222,11 @@
     </div>
   }
 
-  <!-- ══ 員工管理 ══════════════════════════════════════ -->
+  <!-- ══ 人員管理 ══════════════════════════════════════ -->
   @if (activeTab() === "users") {
     <div class="tab-panel">
       <div class="section-header">
-        <div class="section-title">員工管理</div>
+        <div class="section-title">人員管理</div>
         @if (!isDeputyManager()) {
           <button class="btn-add" (click)="openAddStaffModal()">
             ＋ 新增員工
@@ -285,15 +285,26 @@
                     </td>
                     <td class="action-cell">
                       @if (!isDeputyManager()) {
-                        <button class="btn-edit" (click)="openEditStaff(acc.id)">
-                          編輯
-                        </button>
                         <button
                           class="btn-toggle"
                           (click)="toggleAccount(acc.id)"
                         >
                           {{ acc.isActive ? "停權" : "復權" }}
                         </button>
+                        <button
+                          class="btn-reset-pwd"
+                          (click)="resetStaffPassword(acc.id)"
+                        >
+                          重設密碼
+                        </button>
+                        @if (acc.isActive) {
+                          <button
+                            class="btn-promote"
+                            (click)="promoteAccount(acc.id)"
+                          >
+                            升職副店長
+                          </button>
+                        }
                       }
                     </td>
                   </tr>
@@ -337,18 +348,19 @@
                     </td>
                     <td class="action-cell">
                       @if (!isDeputyManager()) {
-                        <button class="btn-edit" (click)="openEditStaff(acc.id)">
-                          編輯
-                        </button>
                         <button
                           class="btn-toggle"
                           (click)="toggleAccount(acc.id)"
                         >
                           {{ acc.isActive ? "停權" : "復權" }}
                         </button>
-                        @if (
-                          acc.isActive && acc.backendRole === "MANAGER_AGENT"
-                        ) {
+                        <button
+                          class="btn-reset-pwd"
+                          (click)="resetStaffPassword(acc.id)"
+                        >
+                          重設密碼
+                        </button>
+                        @if (acc.isActive && acc.backendRole === "MANAGER_AGENT") {
                           <button
                             class="btn-demote"
                             (click)="demoteAccount(acc.id)"

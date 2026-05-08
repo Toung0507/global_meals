@@ -1291,6 +1291,9 @@
                   } @else if (order.orderType) {
                     <span class="ob-type-badge">{{ order.orderType }}</span>
                   }
+                  @if (order.source === 'customer') {
+                    <span class="badge-online">線上</span>
+                  }
                   @if (order.source === 'pos') {
                     <span class="badge-ok">已收款</span>
                   }
@@ -1374,6 +1377,9 @@
                   } @else if (order.orderType) {
                     <span class="ob-type-badge">{{ order.orderType }}</span>
                   }
+                  @if (order.source === 'customer') {
+                    <span class="badge-online">線上</span>
+                  }
                   @if (order.source === 'pos') {
                     <span class="badge-ok">已收款</span>
                   }
@@ -1451,7 +1457,12 @@
             <div class="order-board-card ob-done" style="opacity: 0.45">
               <div class="ob-card-top">
                 <span class="ob-num">{{ order.number }}</span>
-                <span class="badge-ok">已收款</span>
+                <div class="ob-badges">
+                  @if (order.source === 'customer') {
+                    <span class="badge-online">線上</span>
+                  }
+                  <span class="badge-ok">已收款</span>
+                </div>
               </div>
               <div class="ob-items-list">
                 @for (item of order.items; track item) {
@@ -1469,7 +1480,12 @@
             <div class="order-board-card ob-done">
               <div class="ob-card-top">
                 <span class="ob-num">{{ order.number }}</span>
-                <span class="badge-ok ob-badge-pickup">可取餐</span>
+                <div class="ob-badges">
+                  @if (order.source === 'customer') {
+                    <span class="badge-online">線上</span>
+                  }
+                  <span class="badge-ok ob-badge-pickup">可取餐</span>
+                </div>
               </div>
               <div class="ob-items-list">
                 @for (item of order.items; track item) {
@@ -1498,7 +1514,12 @@
             >
               <div class="ob-card-top">
                 <span class="ob-num">{{ order.number }}</span>
-                <span class="badge-ok">已完成</span>
+                <div class="ob-badges">
+                  @if (order.source === 'customer') {
+                    <span class="badge-online">線上</span>
+                  }
+                  <span class="badge-ok">已完成</span>
+                </div>
               </div>
               <div class="ob-items-list">
                 @for (item of order.items; track item) {

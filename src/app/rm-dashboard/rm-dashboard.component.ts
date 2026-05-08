@@ -83,7 +83,7 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
 
   readonly TAB_TITLES: Record<RmTab, string> = {
     inventory: '庫存管理',
-    users: '員工管理',
+    users: '人員管理',
     promotions: '活動一覽',
     finance: '財務報表',
   };
@@ -532,6 +532,15 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
         this.loadStaff();
       },
       error: () => this.showToast('⚠️ 降級失敗，請確認後端連線'),
+    });
+  }
+
+  resetStaffPassword(id: number): void {
+    const target = this.accounts().find((a) => a.id === id);
+    if (!target) return;
+    this.apiService.changeStaffPassword(id).subscribe({
+      next: () => this.showToast(`✅ 帳號「${target.name}」密碼已重設為預設值`),
+      error: () => this.showToast('⚠️ 密碼重設失敗，請確認後端連線'),
     });
   }
 

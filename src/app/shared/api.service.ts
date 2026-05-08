@@ -9,7 +9,7 @@
 
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { forkJoin, Observable, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { API_CONFIG } from './api.config';
 
@@ -673,26 +673,6 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
-  private get isMock(): boolean {
-    return API_CONFIG.MOCK_MODE;
-  }
-
-  private mockCartRes(cartId = 9999): CartViewRes {
-    return {
-      code: 200,
-      message: 'ok',
-      cartId,
-      globalAreaId: 4,
-      operationType: 'CUSTOMER',
-      items: [],
-      subtotal: 0,
-      availablePromotions: [],
-      taxInfo: null,
-      totalAmount: 0,
-      warningMessages: [],
-    };
-  }
-
   /* ══════════════════════════════════════════════════
    * Cart API  →  /cart/
    * ══════════════════════════════════════════════════ */
@@ -709,7 +689,6 @@ export class ApiService {
   }
 
   syncCart(req: CartSyncReq): Observable<CartViewRes> {
-    if (this.isMock) return of(this.mockCartRes(req.cartId ?? 9999));
     return this.http.post<CartViewRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.CART.SYNC}`,
       req,
@@ -718,7 +697,6 @@ export class ApiService {
   }
 
   removeCartItem(req: CartRemoveReq): Observable<CartViewRes> {
-    if (this.isMock) return of(this.mockCartRes(req.cartId));
     return this.http.delete<CartViewRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.CART.REMOVE}`,
       { body: req, withCredentials: true },
@@ -733,7 +711,6 @@ export class ApiService {
   }
 
   clearCart(req: CartClearReq): Observable<CartViewRes> {
-    if (this.isMock) return of(this.mockCartRes(req.cartId));
     return this.http.delete<CartViewRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.CART.CLEAR}`,
       { body: req, withCredentials: true },
@@ -753,18 +730,6 @@ export class ApiService {
    * ══════════════════════════════════════════════════ */
 
   createOrder(req: CreateOrdersReq): Observable<CreateOrdersRes> {
-    if (this.isMock) {
-      const d = new Date();
-      const pad = (n: number) => String(n).padStart(2, '0');
-      const dateId = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
-      return of({
-        code: 200,
-        message: 'ok',
-        id: 'DEMO',
-        orderDateId: dateId,
-        totalAmount: req.totalAmount,
-      });
-    }
     return this.http.post<CreateOrdersRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.CREATE}`,
       req,
@@ -773,7 +738,6 @@ export class ApiService {
   }
 
   pay(req: PayReq): Observable<BasicRes> {
-    if (this.isMock) return of({ code: 200, message: 'ok' });
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.PAY}`,
       req,
@@ -1492,10 +1456,6 @@ export class ApiService {
 
   /** 前往付款：LINE Pay，後端重導向至 LINE Pay 付款頁 */
   getLinePayUrl(req: PaymentInitReq): Observable<string> {
-    if (this.isMock)
-      return of(
-        'https://sandbox-web-pay.line.me/web/payment/wait?transactionReserveId=mock',
-      );
     return this.http.get(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.PAYMENT.GO_PAY}?orderDateId=${req.orderDateId}&id=${req.id}&way=LINEPAY`,
       { responseType: 'text' },
@@ -1504,7 +1464,6 @@ export class ApiService {
 
   /** 前往付款：ECPay，後端回傳自動提交 HTML 表單 */
   getEcpayForm(req: PaymentInitReq): Observable<string> {
-    if (this.isMock) return of('<p>ECPay Mock</p>');
     return this.http.get(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.PAYMENT.GO_PAY}?orderDateId=${req.orderDateId}&id=${req.id}&way=ECPAY`,
       { responseType: 'text' },

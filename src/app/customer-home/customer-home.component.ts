@@ -725,13 +725,6 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     this.cardCvv.set(value.replace(/\D/g, '').slice(0, 4));
   }
 
-  fillTestCard(): void {
-    this.cardNumber.set('4311 9522 2222 2222');
-    this.cardExpiry.set('01/27');
-    this.cardCvv.set('222');
-    this.cardHolder.set('TEST USER');
-  }
-
   /* ── 行動支付 QR Modal ──────────────────────────────── */
   showMobilePayModal = signal(false);
   mobilePayCompleted = signal(false);

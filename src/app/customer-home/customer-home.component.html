@@ -2217,17 +2217,6 @@
                  ╚══════════════════════════════════════╝ -->
             @if (paymentMethod() === "ecpay") {
               <div class="ec-panel">
-                <!-- 測試卡號提示列 -->
-                <div class="ec-test-bar">
-                  <span class="ec-test-badge">測試環境</span>
-                  <span class="ec-test-info">
-                    卡號 <strong>4311 9522 2222 2222</strong>
-                    &nbsp;·&nbsp;到期 <strong>01/27</strong>
-                    &nbsp;·&nbsp;CVV <strong>222</strong>
-                  </span>
-                  <button class="ec-test-fill-btn" type="button" (click)="fillTestCard()">一鍵填入</button>
-                </div>
-
                 <!-- 3D 翻轉卡片視覺 -->
                 <div class="ec-card-wrap" [class.flipped]="cardFlipped()">
                   <div class="ec-card-front">

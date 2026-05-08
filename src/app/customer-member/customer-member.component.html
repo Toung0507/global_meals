@@ -211,43 +211,40 @@
         <!-- 區塊標題 -->
         <div class="cm-panel-title">📋 訂單紀錄</div>
 
+        <!-- 載入中 -->
+        @if (ordersLoading) {
+          <div class="cm-empty-orders">
+            <span class="cm-empty-icon">⏳</span>
+            <span>載入中…</span>
+          </div>
+        }
+
         <!-- 無訂單時顯示提示 -->
-        @if (orders.length === 0) {
+        @if (!ordersLoading && orders.length === 0) {
           <div class="cm-empty-orders">
             <span class="cm-empty-icon">🍽</span>
             <span>目前還沒有訂單紀錄</span>
           </div>
         }
 
-        <!-- 訂單卡片列表
-             @for 迴圈：遍歷 orders 陣列，每個項目渲染一張卡片
-             track order.id：Angular 用來識別每個項目的唯一值（效能最佳化用） -->
         @for (order of orders; track order.id) {
           <div class="cm-order-card">
-            <!-- 卡片頂部：訂單編號 + 狀態標籤 -->
             <div class="cm-order-top">
               <span class="cm-order-id">{{ order.id }}</span>
-              <!-- 狀態標籤：根據狀態文字加上不同顏色的 class -->
               <span
                 class="cm-order-status"
-                [class.status-done]="order.status === '已完成'"
-                [class.status-cooking]="order.status === '備餐中'"
-                [class.status-cancelled]="order.status === '已取消'"
+                [ngClass]="getOrderStatusClass(order.ordersStatus)"
               >
-                {{ order.status }}
+                {{ getOrderStatusText(order.ordersStatus) }}
               </span>
             </div>
 
-            <!-- 訂單日期 -->
-            <div class="cm-order-date">📅 {{ order.date }}</div>
+            <div class="cm-order-date">📅 {{ getOrderDate(order) }}</div>
+            <div class="cm-order-items">{{ getOrderItems(order) }}</div>
 
-            <!-- 訂單品項 -->
-            <div class="cm-order-items">{{ order.items }}</div>
-
-            <!-- 訂單金額 -->
             <div class="cm-order-total">
               <span class="cm-total-label">合計</span>
-              <span class="cm-total-amount">NT$ {{ order.total }}</span>
+              <span class="cm-total-amount">NT$ {{ order.totalAmount }}</span>
             </div>
           </div>
         }

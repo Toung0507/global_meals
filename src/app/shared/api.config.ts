@@ -6,9 +6,6 @@
 // =====================================================
 
 export const API_CONFIG = {
-  /** MOCK_MODE: true = 不發 HTTP 請求，直接回傳假資料 */
-  MOCK_MODE: false,
-
   BASE_URL: '', // 透過 Angular proxy 轉發，相對路徑即可（proxy.conf.json → localhost:8080）
   TIMEOUT: 60000, // 10 秒逾時
 

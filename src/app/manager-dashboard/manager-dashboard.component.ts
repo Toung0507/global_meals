@@ -97,7 +97,6 @@ interface DashPromo {
   badgeColor?: string;
   minAmount?: number;
   gifts?: GiftDetailVo[];
-  isDemoOnly?: boolean;
 }
 
 /* ── 庫存型別 ──────────────────────────────────────── */
@@ -271,68 +270,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   showTrash = signal(false);
 
   /* ── 活動清單（Signal） ─────────────────────────── */
-  promos = signal<DashPromo[]>([
-    {
-      id: 1,
-      title: '滿 $300 贈招牌滷蛋×2',
-      scope: '全部分店',
-      isActive: true,
-      color: '#c49756',
-      ended: false,
-      rawName: '滿 $300 贈招牌滷蛋×2',
-      rawStartTime: '2026-01-01',
-      rawEndTime: '2099-12-31',
-      type: 'promotion',
-      description: '消費滿 $300 即贈招牌滷蛋兩顆，無使用期限。',
-      badgeColor: '#c49756',
-      minAmount: 300,
-    },
-    {
-      id: 2,
-      title: '週一 9 折優惠',
-      scope: '日本東京店',
-      isActive: true,
-      color: '#4f8ef7',
-      ended: false,
-      rawName: '週一 9 折優惠',
-      rawStartTime: '2026-01-01',
-      rawEndTime: '2026-06-30',
-      type: 'promotion',
-      description: '每週一全品項享 9 折優惠，適用於東京店。',
-      badgeColor: '#4f8ef7',
-      minAmount: undefined,
-    },
-    {
-      id: 3,
-      title: '夏季新菜單上線公告',
-      scope: '全部分店',
-      isActive: true,
-      color: '#c084fc',
-      ended: false,
-      rawName: '夏季新菜單上線公告',
-      rawStartTime: '2026-04-01',
-      rawEndTime: '2026-06-30',
-      type: 'announcement',
-      description: '2026 夏季菜單已正式上線，新增 6 款季節限定料理。',
-      badgeColor: '#c084fc',
-      minAmount: undefined,
-    },
-    {
-      id: 4,
-      title: '週年慶全館 8 折',
-      scope: '全部分店',
-      isActive: false,
-      color: '#6b7280',
-      ended: true,
-      rawName: '週年慶全館 8 折',
-      rawStartTime: '2025-01-01',
-      rawEndTime: '2025-12-31',
-      type: 'promotion',
-      description: '週年慶期間全館商品享 8 折，活動已結束。',
-      badgeColor: '#6b7280',
-      minAmount: undefined,
-    },
-  ]);
+  promos = signal<DashPromo[]>([]);
 
   /* ── 活動分類篩選 Tab ────────────────────────────── */
   promoTypeTab = signal<'all' | 'promotion' | 'announcement'>('all');
@@ -1176,6 +1114,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     | 'editBranch'
     | 'addDiscount'
     | 'transferBranch'
+    | 'addMemberLimit'
     | null
   >(null);
   transferTargetId = signal<number | null>(null);
@@ -1299,14 +1238,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     currency: string;
     taxType: 'INCLUSIVE' | 'EXCLUSIVE';
     rate: number;
-    discountLimit: number;
   } = {
     country: '',
     countryCode: '',
     currency: '',
     taxType: 'INCLUSIVE',
     rate: 0,
-    discountLimit: 0,
   };
 
   onCountrySelect(name: string): void {
@@ -1619,115 +1556,38 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  /* ── Demo 結束活動（永遠附加在 API 資料後，id 為負數）── */
-  private readonly DEMO_ENDED: DashPromo[] = [
-    {
-      id: -1,
-      isDemoOnly: true,
-      title: '春節限定大禮包',
-      scope: '全部分店',
-      isActive: false,
-      color: '#6b7280',
-      ended: true,
-      rawName: '春節限定大禮包',
-      rawStartTime: '2026-01-15',
-      rawEndTime: '2026-02-14',
-      type: 'promotion',
-      description:
-        '春節期間單筆消費滿 NT$400 即享豐盛大禮包，感謝顧客一整年的支持與厚愛。',
-      badgeColor: '#6b7280',
-      minAmount: 400,
-      gifts: [],
-    },
-    {
-      id: -2,
-      isDemoOnly: true,
-      title: '週年慶全館8折',
-      scope: '全部分店',
-      isActive: false,
-      color: '#6b7280',
-      ended: true,
-      rawName: '週年慶全館8折',
-      rawStartTime: '2025-10-01',
-      rawEndTime: '2025-10-31',
-      type: 'promotion',
-      description:
-        '週年慶期間全品項享八折優惠，限時一個月，感謝所有支持懶飽飽的朋友。',
-      badgeColor: '#6b7280',
-      minAmount: undefined,
-      gifts: [],
-    },
-    {
-      id: -3,
-      isDemoOnly: true,
-      title: '冬季滿額送暖禮',
-      scope: '台灣台北店',
-      isActive: false,
-      color: '#6b7280',
-      ended: true,
-      rawName: '冬季滿額送暖禮',
-      rawStartTime: '2025-12-01',
-      rawEndTime: '2026-01-10',
-      type: 'promotion',
-      description:
-        '寒冬時節，消費滿 NT$250 即可兌換冬季限定熱飲，讓您在寒冬中感受懶飽飽的溫暖。',
-      badgeColor: '#6b7280',
-      minAmount: 250,
-      gifts: [],
-    },
-  ];
-
   /* ── 從後端重新載入促銷活動清單 ─────────────────── */
   private loadPromos(): void {
     this.apiService.getPromotionsList().subscribe({
       next: (res) => {
-        if (res?.data?.length) {
-          this.promos.set([
-            ...res.data.map((p: PromotionDetailVo) => {
-              const imageUrl = `${this.apiService.getPromotionImageUrl(p.id)}?v=${p.id}-${p.startTime}-${p.endTime}`;
-              /* 最低消費：取贈品規則中最小的 fullAmount */
-              const minAmount = p.gifts?.length
-                ? Math.min(
-                    ...p.gifts.map(
-                      (g: { fullAmount: number }) => +g.fullAmount,
-                    ),
-                  )
-                : undefined;
-              return {
-                id: p.id,
-                title:
-                  p.name +
-                  (p.gifts?.length ? `（${p.gifts.length} 項贈品）` : ''),
-                scope: `${p.startTime} ～ ${p.endTime}`,
-                isActive: p.active,
-                color: p.active ? '#c49756' : 'rgba(255,255,255,0.18)',
-                badgeColor: p.active ? '#c49756' : '#6b7280',
-                ended: !!p.endTime && new Date(p.endTime) < new Date(),
-                rawName: p.name,
-                rawStartTime: p.startTime,
-                rawEndTime: p.endTime,
-                type: 'promotion' as const,
-                description: p.description ?? '',
-                image: imageUrl,
-                minAmount,
-                gifts: p.gifts ?? [],
-              };
-            }),
-            ...this.DEMO_ENDED,
-          ]);
-        } else {
-          this.promos.update((list) => [
-            ...list.filter((p) => !p.isDemoOnly),
-            ...this.DEMO_ENDED,
-          ]);
-        }
+        this.promos.set(
+          (res?.data ?? []).map((p: PromotionDetailVo) => {
+            const imageUrl = `${this.apiService.getPromotionImageUrl(p.id)}?v=${p.id}-${p.startTime}-${p.endTime}`;
+            const minAmount = p.gifts?.length
+              ? Math.min(...p.gifts.map((g: { fullAmount: number }) => +g.fullAmount))
+              : undefined;
+            return {
+              id: p.id,
+              title: p.name + (p.gifts?.length ? `（${p.gifts.length} 項贈品）` : ''),
+              scope: `${p.startTime} ～ ${p.endTime}`,
+              isActive: p.active,
+              color: p.active ? '#c49756' : 'rgba(255,255,255,0.18)',
+              badgeColor: p.active ? '#c49756' : '#6b7280',
+              ended: !!p.endTime && new Date(p.endTime) < new Date(),
+              rawName: p.name,
+              rawStartTime: p.startTime,
+              rawEndTime: p.endTime,
+              type: 'promotion' as const,
+              description: p.description ?? '',
+              image: imageUrl,
+              minAmount,
+              gifts: p.gifts ?? [],
+            };
+          }),
+        );
       },
       error: () => {
-        console.warn('[Manager] 活動 API 連線失敗，使用 Demo 資料');
-        this.promos.update((list) => {
-          const already = list.some((p) => p.isDemoOnly);
-          return already ? list : [...list, ...this.DEMO_ENDED];
-        });
+        console.warn('[Manager] 活動 API 連線失敗');
       },
     });
   }
@@ -1760,41 +1620,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     台食: 'linear-gradient(135deg,#a78bfa,#7c3aed)',
     南洋: 'linear-gradient(135deg,#f59e0b,#d97706)',
     西式: 'linear-gradient(135deg,#818cf8,#6366f1)',
-  };
-
-  private readonly INIT_PRICES: Record<string, number> = {
-    招牌滷肉飯: 120,
-    古早味排骨飯: 150,
-    蚵仔煎: 80,
-    阿三陽春麵: 70,
-    黑糖珍珠奶茶: 75,
-    仙草奶茶: 65,
-    蚵仔麵線: 70,
-    台式牛排: 280,
-  };
-
-  private readonly DEMO_TOP5: Record<number, { productName: string; totalQuantity: number }[]> = {
-    1: [
-      { productName: '招牌滷肉飯', totalQuantity: 312 },
-      { productName: '蚵仔麵線', totalQuantity: 278 },
-      { productName: '古早味排骨飯', totalQuantity: 245 },
-      { productName: '黑糖珍珠奶茶', totalQuantity: 198 },
-      { productName: '阿三陽春麵', totalQuantity: 165 },
-    ],
-    2: [
-      { productName: '日式拉麵', totalQuantity: 298 },
-      { productName: '抹茶霜淇淋', totalQuantity: 251 },
-      { productName: '天婦羅定食', totalQuantity: 213 },
-      { productName: '親子丼', totalQuantity: 187 },
-      { productName: '味噌湯套餐', totalQuantity: 142 },
-    ],
-    3: [
-      { productName: '韓式炸雞', totalQuantity: 315 },
-      { productName: '部隊鍋', totalQuantity: 267 },
-      { productName: '石鍋拌飯', totalQuantity: 228 },
-      { productName: '韓式煎餅', totalQuantity: 194 },
-      { productName: '泡菜鍋', totalQuantity: 156 },
-    ],
   };
 
   // ↓ 新增這個函式
@@ -1847,7 +1672,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
                 productId: inv.productId,
                 globalAreaId: inv.globalAreaId,
                 stockQuantity: 100,
-                basePrice: this.INIT_PRICES[inv.productName] ?? 100,
+                basePrice: 100,
                 costPrice: 0,
                 maxOrderQuantity: 10,
                 active: inv.active,
@@ -2581,6 +2406,61 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
+  /* ── 會員設定：新增上限 Modal ───────────────────── */
+  addLimitRegionsId = signal(0);
+  addLimitAmount = signal(0);
+  addLimitCount = signal(0);
+  addLimitSelectedTax = computed(() =>
+    this.taxes().find((t) => t.id === this.addLimitRegionsId()),
+  );
+
+  openAddMemberLimit(): void {
+    this.addLimitRegionsId.set(0);
+    this.addLimitAmount.set(0);
+    this.addLimitCount.set(0);
+    this.activeModal.set('addMemberLimit');
+  }
+
+  saveAddMemberLimit(): void {
+    const regionsId = this.addLimitRegionsId();
+    const limitAmount = this.addLimitAmount();
+    const countThreshold = this.addLimitCount();
+    if (!regionsId) {
+      this.showToast('請選擇國家／地區');
+      return;
+    }
+    const row = this.memberData().find((r) => r.tax.id === regionsId);
+    if (!row) return;
+    const { tax, disc } = row;
+
+    const regionReq$ = this.apiService.updateRegion({
+      id: regionsId,
+      taxRate: tax.rate / 100,
+      taxType: tax.taxType,
+      usageCap: limitAmount,
+    });
+    const discReq$ = disc
+      ? this.apiService.updateDiscountSettings({ id: disc.id, usageCap: countThreshold, count: disc.count })
+      : this.apiService.createDiscount({ regionsId, usageCap: countThreshold, count: 0 });
+
+    forkJoin([regionReq$, discReq$]).subscribe({
+      next: () => {
+        localStorage.setItem(`discountLimit_${regionsId}`, String(limitAmount));
+        this.taxes.update((list) =>
+          list.map((t) =>
+            t.id === regionsId
+              ? { ...t, discountLimit: limitAmount, editDiscountLimit: limitAmount }
+              : t,
+          ),
+        );
+        this.loadDiscounts();
+        this.closeModal();
+        this.showToast('✅ 優惠上限已設定');
+      },
+      error: () => this.showToast('⚠️ 設定失敗，請確認後端連線'),
+    });
+  }
+
   /* ── 會員設定：啟動 / 儲存 / 取消 ─────────────── */
   startEditMember(taxId: number): void {
     const row = this.memberData().find((r) => r.tax.id === taxId);
@@ -3229,7 +3109,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       currency: '',
       taxType: 'INCLUSIVE',
       rate: 0,
-      discountLimit: 0,
     };
     this.activeModal.set('addCountry');
   }
@@ -3264,7 +3143,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         currencyCode: resolvedCurrency,
         taxRate: saved.rate / 100,
         taxType: saved.taxType as 'INCLUSIVE' | 'EXCLUSIVE',
-        usageCap: saved.discountLimit ?? 0,
+        usageCap: 0,
       })
       .subscribe({
         next: () => {
@@ -3286,11 +3165,11 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
               currency: resolvedCurrency,
               taxType: saved.taxType,
               rate: saved.rate,
-              discountLimit: saved.discountLimit ?? 0,
+              discountLimit: 0,
               editing: false,
-              editRate: saved.rate, // ✅
-              editTaxType: saved.taxType, // ✅
-              editDiscountLimit: saved.discountLimit ?? 0, // ✅
+              editRate: saved.rate,
+              editTaxType: saved.taxType,
+              editDiscountLimit: 0,
             },
           ]);
           this.closeModal();
@@ -3404,15 +3283,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
             .getTop5MonthlySales(year, monthNum, regionsId)
             .subscribe({
               next: (r) =>
-                this.financeTopProducts.set(
-                  r?.salesList?.length
-                    ? r.salesList
-                    : (this.DEMO_TOP5[regionsId] ?? this.DEMO_TOP5[1]),
-                ),
+                this.financeTopProducts.set(r?.salesList ?? []),
               error: () =>
-                this.financeTopProducts.set(
-                  this.DEMO_TOP5[regionsId] ?? this.DEMO_TOP5[1],
-                ),
+                this.financeTopProducts.set([]),
             });
         }
 
