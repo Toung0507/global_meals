@@ -22,16 +22,16 @@
 // ── 後台管理專屬色彩變數 ────────────────────────────
 // 說明：後台 UI 使用深海軍藍 + 金黃配色，與客戶端橘紅品牌色明確區隔。
 //       將色碼集中定義，方便日後主題切換或品牌更新。
-$admin-navy-dark:  #111927;   // 側邊欄深底色
-$admin-bg:         #F4F6FA;   // 主內容背景
-$admin-card:       #FFFFFF;   // 卡片白色
-$admin-border:     #D4DCE8;   // 邊框線條
-$admin-text:       #1A2840;   // 主要文字
-$admin-text-sub:   #4A5A70;   // 次要文字
-$admin-navy:       #1E3A5F;   // 深海軍藍（標題、大數字）
-$admin-gold:       #c49756;   // 金黃點綴（按鈕、強調）
-$admin-gold-light: #f0c68c;   // 淺金黃（文字、圖示）
-$admin-purple:     #c084fc;   // 側邊欄副標題紫色
+$admin-navy-dark: #111927; // 側邊欄深底色
+$admin-bg: #F4F6FA; // 主內容背景
+$admin-card: #FFFFFF; // 卡片白色
+$admin-border: #D4DCE8; // 邊框線條
+$admin-text: #1A2840; // 主要文字
+$admin-text-sub: #4A5A70; // 次要文字
+$admin-navy: #1E3A5F; // 深海軍藍（標題、大數字）
+$admin-gold: #c49756; // 金黃點綴（按鈕、強調）
+$admin-gold-light: #f0c68c; // 淺金黃（文字、圖示）
+$admin-purple: #c084fc; // 側邊欄副標題紫色
 
 
 /* ── :host 宿主元素：撐滿整個視窗 ───────────────────── */
@@ -83,12 +83,12 @@ $admin-purple:     #c084fc;   // 側邊欄副標題紫色
     display: block;
     margin-bottom: 10px;
     border: 2.5px solid rgba(240, 198, 140, 0.50);
-    box-shadow: 0 0 16px rgba(196, 151, 86, 0.28), 0 2px 8px rgba(0,0,0,0.25);
+    box-shadow: 0 0 16px rgba(196, 151, 86, 0.28), 0 2px 8px rgba(0, 0, 0, 0.25);
     transition: box-shadow $transition-base, transform $transition-base;
 }
 
 .sidebar-brand-logo:hover {
-    box-shadow: 0 0 24px rgba(196, 151, 86, 0.45), 0 4px 12px rgba(0,0,0,0.30);
+    box-shadow: 0 0 24px rgba(196, 151, 86, 0.45), 0 4px 12px rgba(0, 0, 0, 0.30);
     transform: scale(1.04);
 }
 
@@ -131,11 +131,22 @@ $admin-purple:     #c084fc;   // 側邊欄副標題紫色
     flex-shrink: 0;
 }
 
-.sidebar-uname { font-size: 0.85rem; color: #e2e8f8; font-weight: 500; }
-.sidebar-urole { font-size: 0.72rem; color: #8892b0; }
+.sidebar-uname {
+    font-size: 0.85rem;
+    color: #e2e8f8;
+    font-weight: 500;
+}
+
+.sidebar-urole {
+    font-size: 0.72rem;
+    color: #8892b0;
+}
 
 /* 導覽按鈕列表 */
-.sidebar-nav { flex: 1; padding: 14px 0; }
+.sidebar-nav {
+    flex: 1;
+    padding: 14px 0;
+}
 
 .nav-item {
     display: flex;
@@ -147,14 +158,15 @@ $admin-purple:     #c084fc;   // 側邊欄副標題紫色
     font-size: 0.855rem;
     border-left: 3px solid transparent;
     transition: background-color $transition-fast, color $transition-fast,
-                transform $transition-fast, padding-left $transition-fast;
+        transform $transition-fast, padding-left $transition-fast;
     user-select: none;
 }
 
 .nav-item:hover {
     background-color: rgba(240, 198, 140, 0.07);
     color: #c9d1d9;
-    padding-left: 24px;  /* 輕微右移：暗示選中的方向感 */
+    padding-left: 24px;
+    /* 輕微右移：暗示選中的方向感 */
 }
 
 /* 目前選中頁籤：金色左邊線 + 金色文字 */
@@ -165,7 +177,12 @@ $admin-purple:     #c084fc;   // 側邊欄副標題紫色
     font-weight: 500;
 }
 
-.nav-icon { font-size: 1rem; width: 18px; text-align: center; flex-shrink: 0; }
+.nav-icon {
+    font-size: 1rem;
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+}
 
 /* 側邊欄底部登出鈕區域 */
 .sidebar-footer {
@@ -200,10 +217,17 @@ $admin-purple:     #c084fc;   // 側邊欄副標題紫色
 }
 
 /* 頂部工具列標題：深色文字 */
-.topbar-title { font-size: 0.95rem; font-weight: 600; color: #1A2840; }
+.topbar-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1A2840;
+}
 
 /* 主要內容區域 */
-.main-content { padding: 26px; flex: 1; }
+.main-content {
+    padding: 26px;
+    flex: 1;
+}
 
 
 /* ── 統計卡片 (Stat Cards) ──────────────────────────── */
@@ -240,7 +264,11 @@ $admin-purple:     #c084fc;   // 側邊欄副標題紫色
 }
 
 /* 統計卡片補充說明 */
-.stat-sub { font-size: 0.75rem; color: #4A5A70; margin-top: 5px; }
+.stat-sub {
+    font-size: 0.75rem;
+    color: #4A5A70;
+    margin-top: 5px;
+}
 
 
 /* ── 通用內容卡片 (Content Card) ────────────────────── */
@@ -275,7 +303,10 @@ $admin-purple:     #c084fc;   // 側邊欄副標題紫色
    解決原因：Bootstrap 5 使用 CSS 變數設定 td 顏色，
    若未明確覆寫 td 的 color，Bootstrap 預設黑字會蓋過繼承色
    ──────────────────────────────────────────────────── */
-.table-dark-custom { color: #1A2840; font-size: 0.855rem; }
+.table-dark-custom {
+    color: #1A2840;
+    font-size: 0.855rem;
+}
 
 .table-dark-custom thead th {
     background-color: #F4F6FA;
@@ -302,15 +333,70 @@ $admin-purple:     #c084fc;   // 側邊欄副標題紫色
 }
 
 /* 表格外框容器：淺灰背景；overflow-x:auto 確保寬表格可橫向捲動而非被截斷 */
-.table-wrapper { background-color: #F4F6FA; border-radius: 8px; overflow-x: auto; overflow-y: hidden; border: 1px solid #D4DCE8; }
+.table-wrapper {
+    background-color: #F4F6FA;
+    border-radius: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border: 1px solid #D4DCE8;
+}
 
 
 /* ── 狀態徽章 (Status Badges) ───────────────────────── */
-.badge-ok    { background-color: rgba(62,207,142,0.12); color: #1a7a54; border: 1px solid rgba(62,207,142,0.35); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
-.badge-warn  { background-color: rgba(234,140,0,0.12);  color: #a05f00; border: 1px solid rgba(234,140,0,0.30);  font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
-.badge-err   { background-color: rgba(220,38,38,0.10);  color: #b91c1c; border: 1px solid rgba(220,38,38,0.25);  font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
-.badge-blue  { background-color: rgba(30,58,95,0.10);   color: #1E3A5F; border: 1px solid rgba(30,58,95,0.25);   font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
-.badge-teal  { background-color: rgba(13,148,136,0.10); color: #0f766e; border: 1px solid rgba(13,148,136,0.25); font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+.badge-ok {
+    background-color: rgba(62, 207, 142, 0.12);
+    color: #1a7a54;
+    border: 1px solid rgba(62, 207, 142, 0.35);
+    font-size: 0.7rem;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.badge-warn {
+    background-color: rgba(234, 140, 0, 0.12);
+    color: #a05f00;
+    border: 1px solid rgba(234, 140, 0, 0.30);
+    font-size: 0.7rem;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.badge-err {
+    background-color: rgba(220, 38, 38, 0.10);
+    color: #b91c1c;
+    border: 1px solid rgba(220, 38, 38, 0.25);
+    font-size: 0.7rem;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.badge-blue {
+    background-color: rgba(30, 58, 95, 0.10);
+    color: #1E3A5F;
+    border: 1px solid rgba(30, 58, 95, 0.25);
+    font-size: 0.7rem;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.badge-teal {
+    background-color: rgba(13, 148, 136, 0.10);
+    color: #0f766e;
+    border: 1px solid rgba(13, 148, 136, 0.25);
+    font-size: 0.7rem;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-weight: 600;
+    white-space: nowrap;
+}
 
 
 /* ── 按鈕樣式 ─────────────────────────────────────────── */
@@ -323,53 +409,178 @@ $admin-purple:     #c084fc;   // 側邊欄副標題紫色
     font-size: 0.8rem;
     letter-spacing: 0.4px;
     transition: background $transition-base, transform $transition-fast,
-                box-shadow $transition-base, opacity $transition-base;
-    box-shadow: 0 3px 10px rgba(196,151,86,0.30);
+        box-shadow $transition-base, opacity $transition-base;
+    box-shadow: 0 3px 10px rgba(196, 151, 86, 0.30);
 }
-.btn-gold:hover  { background: linear-gradient(135deg, #b08540 0%, #c49756 100%); color: #ffffff; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(196,151,86,0.40); }
-.btn-gold:active { transform: scale(0.97); opacity: 0.9; }
+
+.btn-gold:hover {
+    background: linear-gradient(135deg, #b08540 0%, #c49756 100%);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(196, 151, 86, 0.40);
+}
+
+.btn-gold:active {
+    transform: scale(0.97);
+    opacity: 0.9;
+}
 
 /* 金色幽靈按鈕：hover 時填充 + 輕微上浮 */
 .btn-ghost-gold {
-    background-color: rgba(196,151,86,0.08);
+    background-color: rgba(196, 151, 86, 0.08);
     color: #c49756;
-    border: 1px solid rgba(196,151,86,0.40);
+    border: 1px solid rgba(196, 151, 86, 0.40);
     font-size: 0.75rem;
     transition: background-color $transition-base, color $transition-base,
-                border-color $transition-base, transform $transition-fast;
+        border-color $transition-base, transform $transition-fast;
 }
-.btn-ghost-gold:hover  { background-color: rgba(196,151,86,0.18); color: #a07030; border-color: #c49756; transform: translateY(-1px); }
-.btn-ghost-gold:active { transform: scale(0.97); }
+
+.btn-ghost-gold:hover {
+    background-color: rgba(196, 151, 86, 0.18);
+    color: #a07030;
+    border-color: #c49756;
+    transform: translateY(-1px);
+}
+
+.btn-ghost-gold:active {
+    transform: scale(0.97);
+}
 
 /* 紅色幽靈按鈕 */
 .btn-ghost-red {
-    background-color: rgba(220,38,38,0.07);
+    background-color: rgba(220, 38, 38, 0.07);
     color: #b91c1c;
-    border: 1px solid rgba(220,38,38,0.25);
+    border: 1px solid rgba(220, 38, 38, 0.25);
     font-size: 0.75rem;
     transition: background-color $transition-base, transform $transition-fast;
 }
-.btn-ghost-red:hover  { background-color: rgba(220,38,38,0.14); color: #991b1b; transform: translateY(-1px); }
-.btn-ghost-red:active { transform: scale(0.97); }
+
+.btn-ghost-red:hover {
+    background-color: rgba(220, 38, 38, 0.14);
+    color: #991b1b;
+    transform: translateY(-1px);
+}
+
+.btn-ghost-red:active {
+    transform: scale(0.97);
+}
 
 @keyframes promo-delete-blink {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(220,38,38,0); color: #dc2626; }
-  50%       { opacity: 0.7; box-shadow: 0 0 12px 4px rgba(220,38,38,0.6); color: #ff6b6b; }
+
+    0%,
+    100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+        color: #dc2626;
+    }
+
+    50% {
+        opacity: 0.7;
+        box-shadow: 0 0 12px 4px rgba(220, 38, 38, 0.6);
+        color: #ff6b6b;
+    }
 }
+
 .promo-delete-pulse {
-  animation: promo-delete-blink 1.6s ease-in-out infinite;
+    animation: promo-delete-blink 1.6s ease-in-out infinite;
 }
 
 /* 綠色幽靈按鈕 */
 .btn-ghost-green {
-    background-color: rgba(22,163,74,0.08);
+    background-color: rgba(22, 163, 74, 0.08);
     color: #15803d;
-    border: 1px solid rgba(22,163,74,0.25);
+    border: 1px solid rgba(22, 163, 74, 0.25);
     font-size: 0.75rem;
     transition: background-color $transition-base, transform $transition-fast;
 }
-.btn-ghost-green:hover  { background-color: rgba(22,163,74,0.16); transform: translateY(-1px); }
-.btn-ghost-green:active { transform: scale(0.97); }
+
+.btn-ghost-green:hover {
+    background-color: rgba(22, 163, 74, 0.16);
+    transform: translateY(-1px);
+}
+
+.btn-ghost-green:active {
+    transform: scale(0.97);
+}
+
+.btn-ghost-purple {
+    background-color: rgba(192, 132, 252, 0.08);
+    color: #c084fc;
+    border: 1px solid rgba(192, 132, 252, 0.25);
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    transition: background-color $transition-base, transform $transition-fast;
+}
+.btn-ghost-purple:hover {
+    background-color: rgba(192, 132, 252, 0.16);
+    transform: translateY(-1px);
+}
+.btn-ghost-purple:active { transform: scale(0.97); }
+
+.btn-ghost-blue {
+    background-color: rgba(79, 142, 247, 0.08);
+    color: #4f8ef7;
+    border: 1px solid rgba(79, 142, 247, 0.25);
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    transition: background-color $transition-base, transform $transition-fast;
+}
+.btn-ghost-blue:hover {
+    background-color: rgba(79, 142, 247, 0.16);
+    transform: translateY(-1px);
+}
+.btn-ghost-blue:active { transform: scale(0.97); }
+
+.btn-ghost-teal {
+    background-color: rgba(62, 207, 142, 0.08);
+    color: #3ecf8e;
+    border: 1px solid rgba(62, 207, 142, 0.25);
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    transition: background-color $transition-base, transform $transition-fast;
+}
+.btn-ghost-teal:hover {
+    background-color: rgba(62, 207, 142, 0.16);
+    transform: translateY(-1px);
+}
+.btn-ghost-teal:active { transform: scale(0.97); }
+
+.btn-ghost-amber {
+    background-color: rgba(245, 158, 11, 0.08);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    transition: background-color $transition-base, transform $transition-fast;
+}
+.btn-ghost-amber:hover {
+    background-color: rgba(245, 158, 11, 0.16);
+    transform: translateY(-1px);
+}
+.btn-ghost-amber:active { transform: scale(0.97); }
+
+/* 子頁籤切換按鈕（inactive 預設灰，active 依顏色） */
+.subtab-btn {
+    color: #8892b0;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: background-color $transition-base, color $transition-base, border-color $transition-base;
+    &.is-purple {
+        background-color: rgba(192, 132, 252, 0.15);
+        color: #c084fc;
+        border-color: rgba(192, 132, 252, 0.3);
+    }
+    &.is-blue {
+        background-color: rgba(79, 142, 247, 0.15);
+        color: #4f8ef7;
+        border-color: rgba(79, 142, 247, 0.3);
+    }
+    &.is-teal {
+        background-color: rgba(62, 207, 142, 0.15);
+        color: #3ecf8e;
+        border-color: rgba(62, 207, 142, 0.3);
+    }
+}
 
 
 /* ── 表單控制元件覆寫 ─────────────────────────────────── */
@@ -380,6 +591,7 @@ $admin-purple:     #c084fc;   // 側邊欄副標題紫色
     font-size: 0.855rem;
     border-radius: 7px;
 }
+
 /* 獲得焦點時：邊框改為深海軍藍，背景變白 */
 .form-ctrl:focus {
     background-color: #ffffff;
@@ -387,15 +599,31 @@ $admin-purple:     #c084fc;   // 側邊欄副標題紫色
     color: #1A2840;
     box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.08);
 }
-.form-ctrl::placeholder { color: #A0AABB; }
-select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
+
+.form-ctrl::placeholder {
+    color: #A0AABB;
+}
+
+select.form-ctrl option {
+    background-color: #ffffff;
+    color: #1A2840;
+}
 
 .new-staff-result {
     text-align: center;
     padding: 12px 0 4px;
 
-    .nsr-icon  { font-size: 2rem; margin-bottom: 8px; }
-    .nsr-title { font-size: 1rem; font-weight: 700; color: #1e3a5f; margin-bottom: 16px; }
+    .nsr-icon {
+        font-size: 2rem;
+        margin-bottom: 8px;
+    }
+
+    .nsr-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1e3a5f;
+        margin-bottom: 16px;
+    }
 
     .nsr-row {
         display: flex;
@@ -406,28 +634,82 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
         padding: 10px 16px;
         margin-bottom: 10px;
     }
-    .nsr-label { font-size: 0.82rem; color: #4a5a70; }
-    .nsr-value { font-size: 1rem; font-weight: 700; color: #1e3a5f; font-family: monospace; letter-spacing: 1px; }
-    .nsr-hint  { font-size: 0.75rem; color: #8a9ab0; margin-top: 12px; }
+
+    .nsr-label {
+        font-size: 0.82rem;
+        color: #4a5a70;
+    }
+
+    .nsr-value {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1e3a5f;
+        font-family: monospace;
+        letter-spacing: 1px;
+    }
+
+    .nsr-hint {
+        font-size: 0.75rem;
+        color: #8a9ab0;
+        margin-top: 12px;
+    }
 }
 
 
 /* ── 頁面標題 ─────────────────────────────────────────── */
 /* 深海軍藍取代金色，在白色/淺灰背景上對比清晰 */
-.page-title  { font-size: 1.1rem; font-weight: 700; color: #1E3A5F; margin-bottom: 4px; }
-.page-sub    { font-size: 0.78rem; color: #4A5A70; margin-bottom: 22px; }
+.page-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1E3A5F;
+    margin-bottom: 4px;
+}
+
+.page-sub {
+    font-size: 0.78rem;
+    color: #4A5A70;
+    margin-bottom: 22px;
+}
 
 
 /* ── 分店色點 ─────────────────────────────────────────── */
-.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+    vertical-align: middle;
+}
 
 
 /* ── 庫存進度條 ───────────────────────────────────────── */
 /* 背景改為淺色，在白色卡片上更清晰 */
-.stock-bar { height: 5px; background-color: #E2E8F0; border-radius: 3px; overflow: hidden; margin-top: 4px; }
-.fill-ok   { background-color: #16a34a; height: 100%; border-radius: 3px; }
-.fill-warn { background-color: #d97706; height: 100%; border-radius: 3px; }
-.fill-err  { background-color: #dc2626; height: 100%; border-radius: 3px; }
+.stock-bar {
+    height: 5px;
+    background-color: #E2E8F0;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.fill-ok {
+    background-color: #16a34a;
+    height: 100%;
+    border-radius: 3px;
+}
+
+.fill-warn {
+    background-color: #d97706;
+    height: 100%;
+    border-radius: 3px;
+}
+
+.fill-err {
+    background-color: #dc2626;
+    height: 100%;
+    border-radius: 3px;
+}
 
 
 /* ── 商品行內卡片 ─────────────────────────────────────── */
@@ -466,6 +748,7 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     gap: 0;
     border-bottom: 2px solid #D4DCE8;
 }
+
 .promo-tab {
     padding: 8px 16px;
     font-size: 0.82rem;
@@ -480,12 +763,14 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     align-items: center;
     gap: 6px;
     transition: color 150ms, border-color 150ms;
+
     &.active {
         color: #1A2840;
         font-weight: 700;
         border-bottom-color: #C49756;
     }
 }
+
 .promo-tab-count {
     background: #E8EDF5;
     color: #4A5A70;
@@ -502,6 +787,7 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     gap: 16px;
     margin-top: 4px;
 }
+
 .promo-card {
     background: #FFFFFF;
     border: 1px solid #D4DCE8;
@@ -510,17 +796,28 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     display: flex;
     flex-direction: column;
     transition: transform 150ms, box-shadow 150ms;
+
     &:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 16px rgba(30, 58, 95, 0.1);
     }
 }
-.promo-card-bar { height: 4px; flex-shrink: 0; }
-.promo-card-body { padding: 14px 16px 10px; flex: 1; }
+
+.promo-card-bar {
+    height: 4px;
+    flex-shrink: 0;
+}
+
+.promo-card-body {
+    padding: 14px 16px 10px;
+    flex: 1;
+}
+
 .promo-card-foot {
     padding: 10px 16px 14px;
     border-top: 1px solid #F0F4FA;
 }
+
 /* 舊式 row（已停用，保留備用） */
 .promo-row {
     background-color: #FFFFFF;
@@ -531,15 +828,18 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     margin-bottom: 10px;
     transition: transform 150ms, box-shadow 150ms;
 }
+
 .promo-row:hover {
     transform: translateX(2px);
     box-shadow: 0 2px 10px rgba(30, 58, 95, 0.08);
 }
+
 .promo-title {
     font-size: 0.9rem;
     font-weight: 600;
     color: #1A2840;
 }
+
 .promo-desc {
     font-size: 0.76rem;
     color: #4A5A70;
@@ -550,6 +850,7 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
+
 .promo-meta {
     font-family: 'DM Mono', monospace;
     font-size: 0.7rem;
@@ -558,30 +859,36 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     align-items: center;
     gap: 6px;
 }
-.promo-meta-sep { color: #D4DCE8; }
+
+.promo-meta-sep {
+    color: #D4DCE8;
+}
 
 /* 活動類型篩選 tab */
 .promo-type-tabs {
     display: flex;
     gap: 6px;
 }
+
 .promo-type-tab {
     padding: 5px 16px;
     border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     background: transparent;
     color: #8a9ab0;
     font-size: 0.8rem;
     cursor: pointer;
     transition: all 150ms;
+
     &.active {
-        background: rgba(196,151,86,0.15);
+        background: rgba(196, 151, 86, 0.15);
         border-color: #c49756;
         color: #c49756;
         font-weight: 600;
     }
+
     &:hover:not(.active) {
-        background: rgba(255,255,255,0.05);
+        background: rgba(255, 255, 255, 0.05);
         color: #d4dce8;
     }
 }
@@ -595,10 +902,12 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     white-space: nowrap;
     flex-shrink: 0;
 }
+
 .promo-type-promo {
     background: #1E3A5F;
     color: #FFFFFF;
 }
+
 .promo-type-announce {
     background: #EDE9FE;
     color: #7C3AED;
@@ -608,13 +917,14 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
 .promo-sheet-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.45);
+    background: rgba(0, 0, 0, 0.45);
     z-index: 1060;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 16px;
 }
+
 .promo-sheet {
     width: 100%;
     max-width: 560px;
@@ -624,14 +934,16 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
 }
+
 .promo-sheet-hd {
     position: relative;
     height: 200px;
     flex-shrink: 0;
     background: #1E3A5F;
 }
+
 .promo-sheet-hd-img {
     position: absolute;
     inset: 0;
@@ -639,16 +951,19 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     height: 100%;
     object-fit: cover;
 }
+
 .promo-sheet-hd-placeholder {
     position: absolute;
     inset: 0;
     opacity: 0.7;
 }
+
 .promo-sheet-hd-gradient {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.65));
+    background: linear-gradient(to bottom, transparent 30%, rgba(0, 0, 0, 0.65));
 }
+
 .promo-sheet-hd-body {
     position: absolute;
     bottom: 0;
@@ -656,13 +971,15 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     right: 0;
     padding: 14px 18px;
 }
+
 .promo-sheet-hd-name {
     margin: 0;
     font-size: 1.15rem;
     font-weight: 700;
     color: #fff;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
+
 .promo-sheet-close {
     position: absolute;
     top: 10px;
@@ -670,22 +987,31 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: rgba(0,0,0,0.35);
+    background: rgba(0, 0, 0, 0.35);
     border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     color: #fff;
-    svg { width: 16px; height: 16px; }
-    &:hover { background: rgba(0,0,0,0.55); }
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    &:hover {
+        background: rgba(0, 0, 0, 0.55);
+    }
 }
+
 .promo-sheet-content {
     overflow-y: auto;
     padding: 20px;
     flex: 1;
     min-height: 0;
 }
+
 .promo-sheet-date {
     display: flex;
     align-items: center;
@@ -697,27 +1023,36 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     background: #F7F9FC;
     border-radius: 8px;
 }
-.promo-sheet-date-sep { color: #CBD5E0; }
+
+.promo-sheet-date-sep {
+    color: #CBD5E0;
+}
+
 .promo-sheet-spend-badge {
     display: inline-block;
     margin-bottom: 14px;
     padding: 5px 14px;
-    border: 1px solid rgba(196,151,86,0.4);
+    border: 1px solid rgba(196, 151, 86, 0.4);
     border-radius: 20px;
     font-size: 0.82rem;
     color: #c49756;
 }
+
 .promo-sheet-desc {
     font-size: 0.88rem;
     color: #4A5A70;
     line-height: 1.75;
     margin: 0 0 18px;
     padding: 12px 14px;
-    background: rgba(196,151,86,0.06);
+    background: rgba(196, 151, 86, 0.06);
     border-left: 3px solid #c49756;
     border-radius: 0 6px 6px 0;
 }
-.promo-sheet-section { margin-top: 6px; }
+
+.promo-sheet-section {
+    margin-top: 6px;
+}
+
 .promo-sheet-section-title {
     font-size: 0.7rem;
     font-weight: 700;
@@ -726,7 +1061,13 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     text-transform: uppercase;
     margin-bottom: 10px;
 }
-.promo-gift-list { display: flex; flex-direction: column; gap: 8px; }
+
+.promo-gift-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .promo-gift-item {
     display: flex;
     align-items: center;
@@ -735,17 +1076,32 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     background: #F7F9FC;
     border-radius: 8px;
     font-size: 0.84rem;
-    &.disabled { opacity: 0.5; }
+
+    &.disabled {
+        opacity: 0.5;
+    }
 }
-.promo-gift-name { flex: 1; color: #1A2840; font-weight: 500; }
-.promo-gift-amount { font-size: 0.75rem; color: #c49756; white-space: nowrap; }
+
+.promo-gift-name {
+    flex: 1;
+    color: #1A2840;
+    font-weight: 500;
+}
+
+.promo-gift-amount {
+    font-size: 0.75rem;
+    color: #c49756;
+    white-space: nowrap;
+}
+
 .promo-gift-inactive {
     font-size: 0.7rem;
     padding: 2px 7px;
-    background: rgba(248,113,113,0.12);
+    background: rgba(248, 113, 113, 0.12);
     color: #f87171;
     border-radius: 4px;
 }
+
 .promo-sheet-ft {
     padding: 12px 20px;
     border-top: 1px solid #E2E8F0;
@@ -763,6 +1119,7 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     z-index: 1040;
     animation: fadeIn 200ms ease;
 }
+
 .promo-panel {
     position: fixed;
     top: 0;
@@ -775,16 +1132,32 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     display: flex;
     flex-direction: column;
     animation: slideInRight 250ms cubic-bezier(0.22, 1, 0.36, 1);
-    @media (max-width: 520px) { width: 100vw; }
+
+    @media (max-width: 520px) {
+        width: 100vw;
+    }
 }
+
 @keyframes slideInRight {
-    from { transform: translateX(100%); }
-    to   { transform: translateX(0); }
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
 }
+
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
+
 .promo-panel-hd {
     height: 56px;
     padding: 0 20px;
@@ -794,11 +1167,13 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     justify-content: space-between;
     flex-shrink: 0;
 }
+
 .promo-panel-title {
     font-size: 1rem;
     font-weight: 700;
     color: #1A2840;
 }
+
 .promo-panel-close {
     background: none;
     border: none;
@@ -807,13 +1182,18 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     cursor: pointer;
     padding: 4px 8px;
     border-radius: 4px;
-    &:hover { background: #F4F6FA; }
+
+    &:hover {
+        background: #F4F6FA;
+    }
 }
+
 .promo-panel-body {
     flex: 1;
     overflow-y: auto;
     padding: 20px;
 }
+
 .promo-panel-ft {
     height: 64px;
     padding: 0 20px;
@@ -829,6 +1209,7 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
 .pp-field {
     margin-bottom: 16px;
 }
+
 .pp-label {
     display: block;
     font-size: 0.78rem;
@@ -838,10 +1219,12 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     text-transform: uppercase;
     letter-spacing: 0.4px;
 }
+
 .pp-type-group {
     display: flex;
     gap: 8px;
 }
+
 .pp-type-option {
     flex: 1;
     padding: 8px 12px;
@@ -856,7 +1239,11 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     align-items: center;
     justify-content: center;
     gap: 6px;
-    input[type="radio"] { display: none; }
+
+    input[type="radio"] {
+        display: none;
+    }
+
     &.selected {
         border-color: #C49756;
         background: rgba(196, 151, 86, 0.06);
@@ -864,10 +1251,12 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
         font-weight: 600;
     }
 }
+
 .pp-textarea {
     resize: vertical;
     min-height: 72px;
 }
+
 .pp-dropzone {
     border: 1.5px dashed #D4DCE8;
     border-radius: 8px;
@@ -880,22 +1269,35 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     gap: 6px;
     cursor: pointer;
     transition: border-color 150ms, background 150ms;
-    &:hover { border-color: #C49756; background: #FFF; }
-    svg { width: 24px; height: 24px; color: #4A5A70; }
+
+    &:hover {
+        border-color: #C49756;
+        background: #FFF;
+    }
+
+    svg {
+        width: 24px;
+        height: 24px;
+        color: #4A5A70;
+    }
 }
+
 .pp-dropzone-label {
     font-size: 0.82rem;
     color: #4A5A70;
 }
+
 .pp-dropzone-hint {
     font-size: 0.7rem;
     color: #A0AABB;
 }
+
 .pp-img-preview {
     position: relative;
     aspect-ratio: 16 / 9;
     border-radius: 8px;
     overflow: hidden;
+
     img {
         width: 100%;
         height: 100%;
@@ -903,6 +1305,7 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
         display: block;
     }
 }
+
 .pp-img-replace {
     position: absolute;
     top: 8px;
@@ -916,12 +1319,17 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     cursor: pointer;
     opacity: 0;
     transition: opacity 150ms;
-    .pp-img-preview:hover & { opacity: 1; }
+
+    .pp-img-preview:hover & {
+        opacity: 1;
+    }
 }
+
 .pp-color-swatches {
     display: flex;
     gap: 8px;
 }
+
 .pp-swatch {
     width: 28px;
     height: 28px;
@@ -929,21 +1337,28 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     border: 2px solid transparent;
     cursor: pointer;
     transition: transform 150ms, border-color 150ms;
-    &:hover { transform: scale(1.15); }
+
+    &:hover {
+        transform: scale(1.15);
+    }
+
     &.selected {
         border-color: #1A2840;
         transform: scale(1.1);
     }
 }
+
 .pp-date {
     font-family: 'DM Mono', monospace;
 }
+
 .pp-hint {
     font-size: 0.72rem;
     color: #A0AABB;
     margin-top: 4px;
     display: block;
 }
+
 .pp-section-divider {
     font-size: 0.72rem;
     font-weight: 600;
@@ -955,6 +1370,7 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     margin-bottom: 14px;
     margin-top: 4px;
 }
+
 .pp-amount-wrap {
     display: flex;
     align-items: center;
@@ -962,8 +1378,12 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     border: 1.5px solid #D4DCE8;
     border-radius: 8px;
     overflow: hidden;
-    &:focus-within { border-color: #1E3A5F; }
+
+    &:focus-within {
+        border-color: #1E3A5F;
+    }
 }
+
 .pp-amount-prefix {
     padding: 0 12px;
     background: #F4F6FA;
@@ -976,6 +1396,7 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     align-items: center;
     flex-shrink: 0;
 }
+
 .pp-currency-select {
     appearance: none;
     -webkit-appearance: none;
@@ -991,8 +1412,12 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     flex-shrink: 0;
     cursor: pointer;
     outline: none;
-    &:focus { background-color: #EDF0F7; }
+
+    &:focus {
+        background-color: #EDF0F7;
+    }
 }
+
 .pp-amount-input {
     border: none !important;
     border-radius: 0 !important;
@@ -1018,7 +1443,7 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     color: #4A5A70;
     margin-top: 16px;
     padding: 10px 12px;
-    background: rgba(255,255,255,0.04);
+    background: rgba(255, 255, 255, 0.04);
     border-radius: 8px;
     line-height: 1.6;
 }
@@ -1027,9 +1452,9 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
 .tax-combined-block {
     display: flex;
     gap: 20px;
-    align-items: flex-start;
+    align-items: stretch;
 
-    > .content-card {
+    >.content-card {
         flex: 1;
         min-width: 0;
         margin-bottom: 0;
@@ -1037,7 +1462,10 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
 
     @media (max-width: 900px) {
         flex-direction: column;
-        > .content-card { width: 100%; }
+
+        >.content-card {
+            width: 100%;
+        }
     }
 }
 
@@ -1065,13 +1493,18 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     margin-bottom: 6px;
     background: #F9FAFB;
     border: 1px solid #D4DCE8;
+    min-height: 80px; // ← 加這行
     transition: background 0.15s, box-shadow 0.15s;
 }
+
 .tax-row:hover {
     background: #F0F4FA;
-    box-shadow: 0 2px 8px rgba(30,58,95,0.07);
+    box-shadow: 0 2px 8px rgba(30, 58, 95, 0.07);
 }
-.tax-row:last-child { margin-bottom: 0; }
+
+.tax-row:last-child {
+    margin-bottom: 0;
+}
 
 .tax-row-info {
     display: flex;
@@ -1133,15 +1566,17 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     padding: 1px 6px;
     letter-spacing: 0.3px;
 }
+
 .tax-type-badge.inclusive {
     color: #1E6B3A;
-    background: rgba(34,139,74,0.10);
-    border: 1px solid rgba(34,139,74,0.25);
+    background: rgba(34, 139, 74, 0.10);
+    border: 1px solid rgba(34, 139, 74, 0.25);
 }
+
 .tax-type-badge.exclusive {
     color: #7A4A00;
-    background: rgba(196,151,86,0.12);
-    border: 1px solid rgba(196,151,86,0.30);
+    background: rgba(196, 151, 86, 0.12);
+    border: 1px solid rgba(196, 151, 86, 0.30);
 }
 
 /* 稅率數字 Badge */
@@ -1149,18 +1584,20 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
     display: flex;
     align-items: baseline;
     gap: 3px;
-    background: rgba(196,151,86,0.10);
-    border: 1px solid rgba(196,151,86,0.30);
+    background: rgba(196, 151, 86, 0.10);
+    border: 1px solid rgba(196, 151, 86, 0.30);
     border-radius: 6px;
     padding: 3px 10px;
-    min-width: 64px;
+    min-width: 72px;
     justify-content: center;
 }
+
 .tax-rate-num {
     font-size: 1.1rem;
     font-weight: 700;
     color: #1A2840;
 }
+
 .tax-rate-unit {
     font-size: 0.75rem;
     color: #4A5A70;
@@ -1207,10 +1644,139 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
 
 
 /* ── 等寬字體 ─────────────────────────────────────────── */
-.mono { font-family: 'IBM Plex Mono', monospace; }
+.mono {
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+/* ── 財務報表直條圖 ───────────────────────────────────── */
+.finance-chart-wrap {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 52px;
+    height: 200px;
+    padding: 16px 24px 36px;
+    position: relative;
+    overflow: visible;
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 16px 0 36px;
+        background: repeating-linear-gradient(
+            to bottom,
+            transparent 0%,
+            transparent calc(25% - 1px),
+            #edf1f7 calc(25% - 1px),
+            #edf1f7 25%
+        );
+        pointer-events: none;
+    }
+}
+
+.finance-chart-col {
+    flex: 0 0 auto;
+    width: 96px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    position: relative;
+}
+
+.finance-chart-bars {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+}
+
+@keyframes barGrowUp {
+    from { transform: scaleY(0); opacity: 0.3; }
+    to   { transform: scaleY(1); opacity: 1;   }
+}
+
+.finance-chart-bar {
+    width: 34px;
+    min-height: 4px;
+    border-radius: 6px 6px 0 0;
+    transform-origin: bottom center;
+    animation: barGrowUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    cursor: default;
+    position: relative;
+    z-index: 1;
+
+    &.rev  { background: linear-gradient(180deg, #b08540 0%, #e0ab6a 100%); }
+    &.cost { background: linear-gradient(180deg, #dc2626 0%, #fca5a5 100%); }
+
+    &:hover { opacity: 0.72; }
+}
+
+// 每欄錯開 70ms，形成由左至右的波浪感
+@for $i from 1 through 12 {
+    .finance-chart-col:nth-child(#{$i}) .finance-chart-bar {
+        animation-delay: #{($i - 1) * 0.07}s;
+    }
+}
+
+.bar-tip {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.67rem;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+
+    &.rev  { color: #b08540; }
+    &.cost { color: #dc2626; }
+}
+
+.finance-chart-month-lbl {
+    position: absolute;
+    bottom: -26px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4a5a70;
+    white-space: nowrap;
+    text-align: center;
+    letter-spacing: 0.02em;
+}
+
+.finance-chart-legend {
+    display: flex;
+    gap: 24px;
+    margin-top: 16px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #3a4a60;
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .legend-dot {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        flex-shrink: 0;
+
+        &.rev  { background: #c49756; }
+        &.cost { background: #ef4444; }
+    }
+}
 
 /* 訂單號碼色：金色系，在白色背景上保持辨識度 */
-.order-id { font-family: 'IBM Plex Mono', monospace; color: #c49756; font-weight: 600; }
+.order-id {
+    font-family: 'IBM Plex Mono', monospace;
+    color: #c49756;
+    font-weight: 600;
+}
 
 
 /* ── Bootstrap form-switch 覆寫 ────────────────────────── */
@@ -1221,59 +1787,75 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
 
 /* ── Toast 通知 ─────────────────────────────────────── */
 .mgr-toast {
-  position: fixed;
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(20, 30, 48, 0.97);
-  color: #f0c68c;
-  border: 1px solid rgba(196, 151, 86, 0.45);
-  border-radius: 10px;
-  padding: 10px 22px;
-  font-size: 0.82rem;
-  font-weight: 500;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
-  z-index: 9999;
-  white-space: nowrap;
-  pointer-events: none;
-  animation: toastIn 0.22s ease both;
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20, 30, 48, 0.97);
+    color: #f0c68c;
+    border: 1px solid rgba(196, 151, 86, 0.45);
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+    z-index: 9999;
+    white-space: nowrap;
+    pointer-events: none;
+    animation: toastIn 0.22s ease both;
 }
 
 /* 淡出狀態 */
 .mgr-toast-leaving {
-  animation: toastOut 0.3s ease forwards;
+    animation: toastOut 0.3s ease forwards;
 }
 
 @keyframes toastIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
 }
 
 @keyframes toastOut {
-  from { opacity: 1; transform: translateX(-50%) translateY(0); }
-  to   { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+    from {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-8px);
+    }
 }
 
 /* ── CSV 匯出按鈕 spinner ───────────────────────────── */
 .mgr-export-spinner {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: currentColor;
-  border-radius: 50%;
-  animation: spinRing 0.6s linear infinite;
-  vertical-align: middle;
-  margin-right: 4px;
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spinRing 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 4px;
 }
 
 @keyframes spinRing {
-  to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .btn.exporting {
-  opacity: 0.75;
-  cursor: not-allowed;
+    opacity: 0.75;
+    cursor: not-allowed;
 }
 
 /* finance-num 樣式定義在上方第 462 行，此處不重複 */
@@ -1283,107 +1865,126 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
    position: fixed + inset: 0 可覆蓋整個視窗（含側邊欄）
    ──────────────────────────────────────────────────── */
 .modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(10, 18, 32, 0.62);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-  z-index: 3000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  animation: modalFadeIn 0.18s ease;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
 }
 
 @keyframes modalFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .modal-box {
-  background: #ffffff;
-  border-radius: 16px;
-  width: 100%;
-  max-width: 480px;
-  box-shadow:
-    0 24px 64px rgba(10, 18, 32, 0.38),
-    0 4px 16px rgba(10, 18, 32, 0.18);
-  border: 1px solid #D4DCE8;
-  animation: modalSlideIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
-  overflow: hidden;
+    background: #fff;
+    width: 520px;
+    max-width: 90%;
+    border-radius: 12px;
+    padding: 20px;
+    z-index: 10000;
 }
 
-.modal-box.modal-sm { max-width: 400px; }
+.modal-box.modal-sm {
+    max-width: 400px;
+}
+
+.modal-backdrop {
+    display: none !important;
+}
 
 @keyframes modalSlideIn {
-  from { transform: translateY(20px) scale(0.96); opacity: 0; }
-  to   { transform: translateY(0) scale(1);       opacity: 1; }
+    from {
+        transform: translateY(20px) scale(0.96);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
 }
 
 /* 標題列：深海軍藍漸層背景 + 金黃文字 */
 .modal-hd {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 22px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  background: linear-gradient(135deg, #1E3A5F 0%, #2A4F7C 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 22px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #1E3A5F 0%, #2A4F7C 100%);
 }
 
 .modal-hd-title {
-  font-size: 0.93rem;
-  font-weight: 700;
-  color: #f0c68c;
-  letter-spacing: 0.3px;
+    font-size: 0.93rem;
+    font-weight: 700;
+    color: #f0c68c;
+    letter-spacing: 0.3px;
 }
 
 .modal-close-btn {
-  background: rgba(255,255,255,0.10);
-  border: 1px solid rgba(255,255,255,0.18);
-  color: rgba(255,255,255,0.72);
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.72rem;
-  cursor: pointer;
-  transition: background $transition-fast, color $transition-fast;
-  flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.72);
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: background $transition-fast, color $transition-fast;
+    flex-shrink: 0;
 
-  &:hover {
-    background: rgba(255,255,255,0.22);
-    color: #ffffff;
-  }
+    &:hover {
+        background: rgba(255, 255, 255, 0.22);
+        color: #ffffff;
+    }
 }
 
 /* 內容區域 */
-.modal-bd { padding: 22px; }
+.modal-bd {
+    padding: 22px;
+}
 
 /* 底部操作列：淺灰底 */
 .modal-ft {
-  padding: 13px 22px 17px;
-  border-top: 1px solid #D4DCE8;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  background: #F4F6FA;
+    padding: 13px 22px 17px;
+    border-top: 1px solid #D4DCE8;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: #F4F6FA;
 }
 
 /* 表單標籤 */
 .modal-label {
-  display: block;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #4A5A70;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #4A5A70;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
 }
 
-.required { color: #dc2626; }
+.required {
+    color: #dc2626;
+}
 
 .product-img-preview {
     display: block;
@@ -1397,129 +1998,135 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
 
 /* ── 新增國家稅率 Modal 專屬 ─────────────────────────── */
 /* 加寬版 Modal */
-.modal-tax { max-width: 560px; }
+.modal-tax {
+    max-width: 560px;
+}
 
 /* Select 下拉選單樣式（與 form-ctrl 保持一致） */
 .form-select-ctrl {
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A5A70' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 36px;
-  cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A5A70' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    cursor: pointer;
 }
+
 .form-select-ctrl:focus {
-  border-color: #1E3A5F;
-  box-shadow: 0 0 0 3px rgba(30,58,95,0.08);
+    border-color: #1E3A5F;
+    box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.08);
 }
 
 /* 稅率輸入列：輸入框 + % 單位並排 */
 .tax-input-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  max-width: 160px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 160px;
 }
+
 .tax-rate-input {
-  font-family: 'DM Mono', monospace;
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-align: right;
-  color: #1A2840;
-  letter-spacing: 1px;
+    font-family: 'DM Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: right;
+    color: #1A2840;
+    letter-spacing: 1px;
 }
+
 .tax-input-unit {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #4A5A70;
-  flex-shrink: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #4A5A70;
+    flex-shrink: 0;
 }
 
 /* 輸入框下方說明文字 */
 .modal-helper-text {
-  font-size: 0.7rem;
-  color: #8892b0;
-  margin-top: 5px;
-  letter-spacing: 0.2px;
+    font-size: 0.7rem;
+    color: #8892b0;
+    margin-top: 5px;
+    letter-spacing: 0.2px;
 }
 
 /* 取消按鈕：深海軍藍幽靈樣式 */
 .btn-ghost-navy {
-  background-color: transparent;
-  color: #1E3A5F;
-  border: 1px solid rgba(30,58,95,0.35);
-  font-size: 0.82rem;
-  font-weight: 600;
-  padding: 6px 16px;
-  border-radius: 8px;
-  transition: background-color 0.15s, border-color 0.15s;
+    background-color: transparent;
+    color: #1E3A5F;
+    border: 1px solid rgba(30, 58, 95, 0.35);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 6px 16px;
+    border-radius: 8px;
+    transition: background-color 0.15s, border-color 0.15s;
 }
+
 .btn-ghost-navy:hover {
-  background-color: rgba(30,58,95,0.07);
-  border-color: #1E3A5F;
+    background-color: rgba(30, 58, 95, 0.07);
+    border-color: #1E3A5F;
 }
 
 
 /* ── 訂單詳情 Modal 專屬 ─────────────────────────────── */
 .order-detail-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid #D4DCE8;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #D4DCE8;
 }
 
 .detail-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
 }
 
 .detail-item {
-  background: #F4F6FA;
-  border: 1px solid #D4DCE8;
-  border-radius: 8px;
-  padding: 10px 13px;
+    background: #F4F6FA;
+    border: 1px solid #D4DCE8;
+    border-radius: 8px;
+    padding: 10px 13px;
 }
 
 .detail-key {
-  font-size: 0.68rem;
-  color: #4A5A70;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
-  font-weight: 600;
+    font-size: 0.68rem;
+    color: #4A5A70;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    font-weight: 600;
 }
 
 .detail-val {
-  font-size: 0.88rem;
-  color: #1A2840;
-  font-weight: 500;
+    font-size: 0.88rem;
+    color: #1A2840;
+    font-weight: 500;
 }
 
 .detail-items-section {
-  background: #F4F6FA;
-  border: 1px solid #D4DCE8;
-  border-radius: 8px;
-  padding: 12px 14px;
+    background: #F4F6FA;
+    border: 1px solid #D4DCE8;
+    border-radius: 8px;
+    padding: 12px 14px;
 }
 
 .detail-items-box {
-  font-size: 0.88rem;
-  color: #1A2840;
-  line-height: 1.65;
+    font-size: 0.88rem;
+    color: #1A2840;
+    line-height: 1.65;
 }
 
 
 /* ── 活動顏色預覽條 ─────────────────────────────────── */
 .promo-preview-bar {
-  height: 24px;
-  width: 80px;
-  border-radius: 6px;
-  border: 1px solid #D4DCE8;
-  transition: background $transition-base;
+    height: 24px;
+    width: 80px;
+    border-radius: 6px;
+    border: 1px solid #D4DCE8;
+    transition: background $transition-base;
 }
 
 
@@ -1530,98 +2137,113 @@ select.form-ctrl option { background-color: #ffffff; color: #1A2840; }
 
 /* ── 側邊欄在 1536px 以下略為縮窄，釋放主內容空間 ──── */
 @media (max-width: 1536px) {
-  .sidebar {
-    width: 220px;
-  }
-  .main-wrapper {
-    margin-left: 220px;
-  }
+    .sidebar {
+        width: 220px;
+    }
+
+    .main-wrapper {
+        margin-left: 220px;
+    }
 }
 
 /* ── 更窄視窗（如視窗縮小、側面板並排）────────────── */
 @media (max-width: 1280px) {
-  .sidebar {
-    width: 200px;
-  }
-  .main-wrapper {
-    margin-left: 200px;
-  }
-  .main-content {
-    padding: 18px 20px;
-  }
+    .sidebar {
+        width: 200px;
+    }
+
+    .main-wrapper {
+        margin-left: 200px;
+    }
+
+    .main-content {
+        padding: 18px 20px;
+    }
 }
 
 /* ── 高度壓縮時（864px 以下）緊縮垂直間距 ─────────── */
 @media (max-height: 864px) {
-  .topbar {
-    height: 50px;
-  }
-  .stat-card {
-    padding: 14px 16px;
-  }
-  .stat-value {
-    font-size: 1.5rem;
-  }
-  .main-content {
-    padding: 16px 26px 20px;
-  }
-  .page-sub {
-    margin-bottom: 14px;
-  }
-  .content-card {
-    padding: 16px 18px;
-    margin-bottom: 12px;
-  }
+    .topbar {
+        height: 50px;
+    }
+
+    .stat-card {
+        padding: 14px 16px;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .main-content {
+        padding: 16px 26px 20px;
+    }
+
+    .page-sub {
+        margin-bottom: 14px;
+    }
+
+    .content-card {
+        padding: 16px 18px;
+        margin-bottom: 12px;
+    }
 }
 
 /* ── 高度更緊時（768px 以下，如縮小視窗）────────────── */
 @media (max-height: 768px) {
-  .topbar {
-    height: 46px;
-  }
-  .stat-value {
-    font-size: 1.35rem;
-  }
-  .main-content {
-    padding: 12px 22px 16px;
-  }
-  .content-card {
-    padding: 13px 15px;
-    margin-bottom: 10px;
-  }
-  .finance-num {
-    font-size: 1.55rem;
-  }
+    .topbar {
+        height: 46px;
+    }
+
+    .stat-value {
+        font-size: 1.35rem;
+    }
+
+    .main-content {
+        padding: 12px 22px 16px;
+    }
+
+    .content-card {
+        padding: 13px 15px;
+        margin-bottom: 10px;
+    }
+
+    .finance-num {
+        font-size: 1.55rem;
+    }
 }
 
 /* ── slide-in 面板在窄視窗改全寬 ─────────────────────── */
 @media (max-width: 540px) {
-  .promo-panel {
-    width: 100vw;
-  }
+    .promo-panel {
+        width: 100vw;
+    }
 }
 
 /* ── Modal 在窄視窗全寬並確保不超出視窗高度 ──────────── */
 @media (max-height: 864px) {
-  .modal-overlay {
-    align-items: flex-start;
-    padding-top: 20px;
-    padding-bottom: 20px;
-  }
-  .modal-box {
-    max-height: calc(100dvh - 40px);
-    overflow-y: auto;
-  }
+    .modal-overlay {
+        align-items: flex-start;
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
+
+    .modal-box {
+        max-height: calc(100dvh - 40px);
+        overflow-y: auto;
+    }
 }
 
 @media (max-width: 600px) {
-  .modal-box {
-    max-width: calc(100vw - 24px);
-  }
-  .modal-tax {
-    max-width: calc(100vw - 24px);
-  }
-  .detail-grid {
-    grid-template-columns: 1fr;
-  }
+    .modal-box {
+        max-width: calc(100vw - 24px);
+    }
+
+    .modal-tax {
+        max-width: calc(100vw - 24px);
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
 }

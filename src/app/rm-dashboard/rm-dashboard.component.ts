@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '../shared/auth.service';
+import { forkJoin } from 'rxjs';
 import {
   ApiService,
   InventoryDetailVo,
@@ -11,7 +12,10 @@ import {
   GiftDetailVo,
   StaffVO,
   RegisterStaffReq,
-  RevenueData,
+  MonthlyReportDetail,
+  MonthlyProductsSalesVo,
+  RegionVO,
+  DiscountRecord,
 } from '../shared/api.service';
 
 /* ── 頁籤型別 ────────────────────────────────────── */
@@ -26,6 +30,7 @@ interface DashInventory {
   name: string;
   branch: string;
   category: string;
+  style: string;
   stock: number;
   safeStock: number;
   basePrice: number;
@@ -70,7 +75,6 @@ interface DashPromo {
   styleUrls: ['./rm-dashboard.component.scss'],
 })
 export class RmDashboardComponent implements OnInit, OnDestroy {
-
   /* ── 頁籤狀態 ────────────────────────────────────── */
   activeTab = signal<RmTab>('inventory');
   userSubTab = signal<RmUserSubTab>('staff');
@@ -78,46 +82,81 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
   private clockInterval: ReturnType<typeof setInterval> | null = null;
 
   readonly TAB_TITLES: Record<RmTab, string> = {
-    inventory:   '庫存管理',
-    users:       '員工管理',
-    promotions:  '活動一覽',
-    finance:     '財務報表',
+    inventory: '庫存管理',
+    users: '員工管理',
+    promotions: '活動一覽',
+    finance: '財務報表',
   };
 
   /* ── 分店資訊 ─────────────────────────────────────── */
   branchId = 0;
+  branchRegionsId = 0;
   branchName = signal<string>('');
+
+  /* ── 會員設定 ────────────────────────────────────── */
+  rmRegion = signal<RegionVO | null>(null);
+  rmDiscount = signal<DiscountRecord | null>(null);
+  editingMemberRegionId = signal<number | null>(null);
+  editMemberLimit = signal(0);
+  editMemberCap = signal(0);
 
   /* ── 庫存 ────────────────────────────────────────── */
   inventory = signal<DashInventory[]>([]);
   inventorySearch = signal('');
-  adjustingInventoryId = signal<number | null>(null);
-  adjustInventoryAmt = signal<number>(0);
-  adjustInventorySavedId = signal<number | null>(null);
 
   filteredInventory = computed(() => {
     const q = this.inventorySearch().toLowerCase().trim();
     if (!q) return this.inventory();
-    return this.inventory().filter(i => i.name.toLowerCase().includes(q));
+    return this.inventory().filter((i) => i.name.toLowerCase().includes(q));
   });
+
+  availableCategories = computed(() => [
+    ...new Set(
+      this.inventory()
+        .map((i) => i.category)
+        .filter(Boolean),
+    ),
+  ]);
+
+  readonly STYLE_OPTIONS = ['台式經典', '日式簡約', '韓式風情', '美式辣食', '義式浪漫'];
+
+  /* ── 調整庫存 Modal ────────────────────────────────── */
+  showAdjustModal = signal(false);
+  adjustModalItem = signal<DashInventory | null>(null);
+  adjustDraft = {
+    category: '',
+    style: '',
+    stock: 0,
+    costPrice: 0,
+    basePrice: 0,
+    maxOrderQuantity: 1,
+  };
+  adjustLoading = signal(false);
 
   /* ── 員工 ────────────────────────────────────────── */
   accounts = signal<DashAccount[]>([]);
 
-  bmAccounts = computed(() => this.accounts().filter(a => a.role === 'bm'));
-  staffAccounts = computed(() => this.accounts().filter(a => a.role === 'staff'));
+  isDeputyManager = computed(
+    () => this.authService.currentUser?.role === 'deputy_manager',
+  );
 
-  /* ── 新增員工 modal ───────────────────────────────── */
-  showAddStaffModal = signal(false);
+  bmAccounts = computed(() => this.accounts().filter((a) => a.role === 'bm'));
+  staffAccounts = computed(() =>
+    this.accounts().filter((a) => a.role === 'staff'),
+  );
+
+
+  /* ── 員工 modal ──────────────────────────────────── */
+  activeModal = signal<'addStaff' | 'editStaff' | null>(null);
   newStaff = { name: '', role: 'STAFF' };
   addStaffError = signal<string | null>(null);
   addStaffLoading = signal(false);
-
-  /* ── 編輯員工 modal ───────────────────────────────── */
-  showEditStaffModal = signal(false);
+  newStaffResult = signal<{ name: string; account: string } | null>(null);
   editStaffId = signal<number | null>(null);
   editStaffDraft: { name: string; password: string; backendRole: string } = {
-    name: '', password: '', backendRole: 'STAFF',
+    name: '',
+    password: '',
+    backendRole: 'STAFF',
   };
   showEditStaffPwd = signal(false);
 
@@ -129,10 +168,48 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
   financeStart = signal('');
   financeEnd = signal('');
   financeLoading = signal(false);
-  financeData = signal<RevenueData[]>([]);
+  financeMonthlyData = signal<MonthlyReportDetail[]>([]);
+
+  financeChartData = computed(() => {
+    const rows = this.financeMonthlyData();
+    if (!rows.length) return [] as { month: string; revenue: number; cost: number }[];
+    const monthMap = new Map<string, { revenue: number; cost: number }>();
+    rows.forEach((r) => {
+      const prev = monthMap.get(r.reportDate) ?? { revenue: 0, cost: 0 };
+      monthMap.set(r.reportDate, {
+        revenue: prev.revenue + Number(r.totalAmount ?? 0),
+        cost: prev.cost + Number(r.totalCost ?? 0),
+      });
+    });
+    return Array.from(monthMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, v]) => ({ month, ...v }));
+  });
+
+  financeChartMax = computed(() => {
+    const data = this.financeChartData();
+    if (!data.length) return 1;
+    return Math.max(...data.map((d) => Math.max(d.revenue, d.cost)), 1);
+  });
+
   financeTotal = computed(() =>
-    this.financeData().reduce((s, d) => s + Number(d.totalAmount), 0),
+    this.financeChartData().reduce((s, d) => s + d.revenue, 0),
   );
+  financeCostTotal = computed(() =>
+    this.financeChartData().reduce((s, d) => s + d.cost, 0),
+  );
+  financeGrossProfit = computed(() => this.financeTotal() - this.financeCostTotal());
+  financeMarginPct = computed(() => {
+    const rev = this.financeTotal();
+    if (!rev) return 0;
+    return (this.financeGrossProfit() / rev) * 100;
+  });
+
+  /* ── 商品月銷售報表 ────────────────────────────────── */
+  salesYear = signal(new Date().getFullYear());
+  salesMonth = signal(new Date().getMonth() + 1);
+  salesLoading = signal(false);
+  salesData = signal<MonthlyProductsSalesVo[]>([]);
 
   /* ── Toast ───────────────────────────────────────── */
   toastMsg = signal('');
@@ -148,11 +225,10 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const user = this.authService.currentUser;
-    if (!user || user.role !== 'branch_manager') {
+    if (!user || (user.role !== 'branch_manager' && user.role !== 'deputy_manager')) {
       this.router.navigate(['/staff-login']);
       return;
     }
-
     this.branchId = this.authService.currentStaff?.globalAreaId ?? 0;
 
     this.updateClock();
@@ -173,11 +249,72 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
   /* ── 初始化：取得分店名稱 ───────────────────────── */
   private loadBranchName(): void {
     this.apiService.getAllBranches().subscribe({
-      next: res => {
-        const found = res?.globalAreaList?.find(b => b.id === this.branchId);
-        if (found) this.branchName.set(found.branch);
+      next: (res) => {
+        const found = res?.globalAreaList?.find((b) => b.id === this.branchId);
+        if (found) {
+          this.branchName.set(found.branch);
+          this.branchRegionsId = found.regionsId;
+          this.loadMemberSettings();
+        }
       },
       error: () => {},
+    });
+  }
+
+  /* ── 會員設定：載入 ─────────────────────────────── */
+  private loadMemberSettings(): void {
+    const rid = this.branchRegionsId;
+    if (!rid) return;
+    forkJoin([
+      this.apiService.getAllTax(),
+      this.apiService.getDiscountList(),
+    ]).subscribe({
+      next: ([regRes, discRes]) => {
+        const region = regRes?.regionsList?.find((r: RegionVO) => r.id === rid);
+        if (region) this.rmRegion.set(region);
+        const disc = discRes?.discountList?.find((d: DiscountRecord) => d.regionsId === rid);
+        this.rmDiscount.set(disc ?? null);
+      },
+      error: () => {},
+    });
+  }
+
+  startEditMember(): void {
+    const region = this.rmRegion();
+    if (!region) return;
+    this.editingMemberRegionId.set(region.id);
+    this.editMemberLimit.set(region.usageCap);
+    this.editMemberCap.set(this.rmDiscount()?.usageCap ?? 0);
+  }
+
+  cancelEditMember(): void {
+    this.editingMemberRegionId.set(null);
+  }
+
+  saveMemberSettings(): void {
+    const region = this.rmRegion();
+    if (!region) return;
+    const disc = this.rmDiscount();
+    const newLimit = this.editMemberLimit();
+    const newCap = this.editMemberCap();
+
+    const regionReq$ = this.apiService.updateRegion({
+      id: region.id,
+      taxRate: region.taxRate,
+      taxType: region.taxType,
+      usageCap: newLimit,
+    });
+    const discReq$ = disc
+      ? this.apiService.updateDiscountSettings({ id: disc.id, usageCap: newCap, count: disc.count })
+      : this.apiService.createDiscount({ regionsId: region.id, usageCap: newCap, count: 0 });
+
+    forkJoin([regionReq$, discReq$]).subscribe({
+      next: () => {
+        this.editingMemberRegionId.set(null);
+        this.loadMemberSettings();
+        this.showToast('✅ 會員設定已更新');
+      },
+      error: () => this.showToast('⚠️ 更新失敗，請確認後端連線'),
     });
   }
 
@@ -185,7 +322,7 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
   private loadInventory(): void {
     if (!this.branchId) return;
     this.apiService.getBranchInventory(this.branchId).subscribe({
-      next: res => {
+      next: (res) => {
         if (res?.data?.length) {
           this.inventory.set(
             res.data.map((inv: InventoryDetailVo) => ({
@@ -195,6 +332,7 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
               name: inv.productName,
               branch: inv.branchName,
               category: inv.category ?? '',
+              style: inv.style ?? '',
               stock: inv.stockQuantity,
               safeStock: 10,
               basePrice: inv.basePrice,
@@ -209,82 +347,126 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  startAdjustInventory(id: number, currentStock: number): void {
-    this.adjustingInventoryId.set(id);
-    this.adjustInventoryAmt.set(currentStock);
+  openAdjustModal(item: DashInventory): void {
+    this.adjustModalItem.set(item);
+    this.adjustDraft = {
+      category: item.category,
+      style: item.style,
+      stock: item.stock,
+      costPrice: item.costPrice,
+      basePrice: item.basePrice,
+      maxOrderQuantity: item.maxOrderQuantity,
+    };
+    this.showAdjustModal.set(true);
   }
 
-  cancelAdjustInventory(): void {
-    this.adjustingInventoryId.set(null);
+  closeAdjustModal(): void {
+    this.showAdjustModal.set(false);
+    this.adjustModalItem.set(null);
   }
 
-  onInventoryInput(event: Event): void {
-    const val = parseInt((event.target as HTMLInputElement).value, 10);
-    if (!isNaN(val) && val >= 0) this.adjustInventoryAmt.set(val);
-  }
+  confirmAdjustModal(): void {
+    const item = this.adjustModalItem();
+    if (!item) return;
+    this.adjustLoading.set(true);
 
-  confirmAdjustInventory(): void {
-    const id = this.adjustingInventoryId();
-    const amt = this.adjustInventoryAmt();
-    if (id === null) return;
-    const item = this.inventory().find(i => i.id === id);
-    this.inventory.update(list =>
-      list.map(i => (i.id === id ? { ...i, stock: amt } : i)),
-    );
-    this.adjustingInventoryId.set(null);
-    this.adjustInventorySavedId.set(id);
-    setTimeout(() => this.adjustInventorySavedId.set(null), 1800);
-    if (item) {
-      this.apiService.updateBranchInventory({
+    const { category, style, stock, costPrice, basePrice, maxOrderQuantity } =
+      this.adjustDraft;
+    const metaChanged = category !== item.category || style !== item.style;
+
+    this.apiService
+      .updateBranchInventory({
         productId: item.productId,
         globalAreaId: item.globalAreaId,
-        stockQuantity: amt,
-        basePrice: item.basePrice,
-        costPrice: item.costPrice,
-        maxOrderQuantity: item.maxOrderQuantity,
+        stockQuantity: stock,
+        basePrice,
+        costPrice,
+        maxOrderQuantity,
         active: item.active,
-      }).subscribe({
-        next: () => this.loadInventory(),
-        error: () => this.showToast('⚠️ 庫存更新失敗'),
+      })
+      .subscribe({
+        next: () => {
+          if (!metaChanged) {
+            this.finishAdjust('✅ 庫存資料已更新');
+            return;
+          }
+          this.apiService.getProductDetail(item.productId).subscribe({
+            next: (res) => {
+              const desc = res?.product?.description ?? '';
+              if (!desc) {
+                this.finishAdjust('⚠️ 原商品描述為空，無法更新分類');
+                return;
+              }
+              this.apiService
+                .updateProduct({
+                  id: item.productId,
+                  name: item.name,
+                  category,
+                  style,
+                  description: desc,
+                  active: item.active,
+                })
+                .subscribe({
+                  next: () => this.finishAdjust('✅ 庫存資料已更新'),
+                  error: () =>
+                    this.finishAdjust('⚠️ 分類/風格更新失敗，其餘資料已儲存'),
+                });
+            },
+            error: () => this.finishAdjust('⚠️ 分類/風格更新失敗，其餘資料已儲存'),
+          });
+        },
+        error: () => {
+          this.adjustLoading.set(false);
+          this.showToast('⚠️ 庫存更新失敗');
+        },
       });
-    }
+  }
+
+  private finishAdjust(msg: string): void {
+    this.adjustLoading.set(false);
+    this.closeAdjustModal();
+    this.showToast(msg);
+    this.loadInventory();
   }
 
   toggleInventoryActive(id: number): void {
-    const item = this.inventory().find(i => i.id === id);
+    const item = this.inventory().find((i) => i.id === id);
     if (!item) return;
     const newActive = !item.active;
-    this.inventory.update(list =>
-      list.map(i => i.id === id ? { ...i, active: newActive } : i),
+    this.inventory.update((list) =>
+      list.map((i) => (i.id === id ? { ...i, active: newActive } : i)),
     );
-    this.apiService.updateBranchInventory({
-      productId: item.productId,
-      globalAreaId: item.globalAreaId,
-      stockQuantity: item.stock,
-      basePrice: item.basePrice,
-      costPrice: item.costPrice,
-      maxOrderQuantity: item.maxOrderQuantity,
-      active: newActive,
-    }).subscribe({
-      next: () => this.showToast(newActive ? '✅ 已上架' : '⏸️ 已下架'),
-      error: () => {
-        this.inventory.update(list =>
-          list.map(i => i.id === id ? { ...i, active: !newActive } : i),
-        );
-        this.showToast('⚠️ 操作失敗，請確認後端連線');
-      },
-    });
+    this.apiService
+      .updateBranchInventory({
+        productId: item.productId,
+        globalAreaId: item.globalAreaId,
+        stockQuantity: item.stock,
+        basePrice: item.basePrice,
+        costPrice: item.costPrice,
+        maxOrderQuantity: item.maxOrderQuantity,
+        active: newActive,
+      })
+      .subscribe({
+        next: () => this.showToast(newActive ? '✅ 已上架' : '⏸️ 已下架'),
+        error: () => {
+          this.inventory.update((list) =>
+            list.map((i) => (i.id === id ? { ...i, active: !newActive } : i)),
+          );
+          this.showToast('⚠️ 操作失敗，請確認後端連線');
+        },
+      });
   }
 
   /* ── 員工 ────────────────────────────────────────── */
   private loadStaff(): void {
     this.apiService.getAllStaff().subscribe({
-      next: res => {
+      next: (res) => {
         if (res?.staffList?.length) {
           this.accounts.set(
             res.staffList
-              .filter((s: StaffVO) =>
-                s.role !== 'ADMIN' && s.globalAreaId === this.branchId,
+              .filter(
+                (s: StaffVO) =>
+                  s.role !== 'ADMIN' && s.globalAreaId === this.branchId,
               )
               .map((s: StaffVO) => ({
                 id: s.id,
@@ -293,7 +475,10 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
                 branch: this.branchName(),
                 joinedAt: s.hireAt?.slice(0, 10) ?? '',
                 isActive: s.status ?? true,
-                role: (s.role === 'REGION_MANAGER' || s.role === 'MANAGER_AGENT') ? 'bm' : 'staff' as 'bm' | 'staff',
+                role:
+                  s.role === 'REGION_MANAGER' || s.role === 'MANAGER_AGENT'
+                    ? 'bm'
+                    : ('staff' as 'bm' | 'staff'),
                 backendRole: s.role,
               })),
           );
@@ -304,20 +489,22 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
   }
 
   toggleAccount(id: number): void {
-    const target = this.accounts().find(a => a.id === id);
+    const target = this.accounts().find((a) => a.id === id);
     if (!target) return;
     const newStatus = !target.isActive;
-    this.accounts.update(list =>
-      list.map(a => (a.id === id ? { ...a, isActive: newStatus } : a)),
+    this.accounts.update((list) =>
+      list.map((a) => (a.id === id ? { ...a, isActive: newStatus } : a)),
     );
     this.apiService.updateStaffStatus(id, { newStatus }).subscribe({
       next: () =>
         this.showToast(
-          newStatus ? `✅ 帳號「${target.name}」已復權` : `🔒 帳號「${target.name}」已停權`,
+          newStatus
+            ? `✅ 帳號「${target.name}」已復權`
+            : `🔒 帳號「${target.name}」已停權`,
         ),
       error: () => {
-        this.accounts.update(list =>
-          list.map(a => (a.id === id ? { ...a, isActive: !newStatus } : a)),
+        this.accounts.update((list) =>
+          list.map((a) => (a.id === id ? { ...a, isActive: !newStatus } : a)),
         );
         this.showToast('⚠️ 更新失敗，請確認後端連線');
       },
@@ -325,9 +512,9 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
   }
 
   promoteAccount(id: number): void {
-    const target = this.accounts().find(a => a.id === id);
+    const target = this.accounts().find((a) => a.id === id);
     if (!target) return;
-    this.apiService.promoteStaff(id).subscribe({
+    this.apiService.toggleStaff(id).subscribe({
       next: () => {
         this.showToast(`✅ 帳號「${target.name}」已晉升為副店長`);
         this.loadStaff();
@@ -337,9 +524,9 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
   }
 
   demoteAccount(id: number): void {
-    const target = this.accounts().find(a => a.id === id);
+    const target = this.accounts().find((a) => a.id === id);
     if (!target) return;
-    this.apiService.promoteStaff(id).subscribe({
+    this.apiService.toggleStaff(id).subscribe({
       next: () => {
         this.showToast(`✅ 帳號「${target.name}」已降級為員工`);
         this.loadStaff();
@@ -349,7 +536,7 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
   }
 
   openEditStaff(id: number): void {
-    const target = this.accounts().find(a => a.id === id);
+    const target = this.accounts().find((a) => a.id === id);
     if (!target) return;
     this.editStaffId.set(id);
     this.editStaffDraft = {
@@ -358,18 +545,27 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
       backendRole: target.backendRole ?? 'STAFF',
     };
     this.showEditStaffPwd.set(false);
-    this.showEditStaffModal.set(true);
+    this.activeModal.set('editStaff');
   }
 
   cancelEditStaff(): void {
-    this.showEditStaffModal.set(false);
+    this.activeModal.set(null);
     this.editStaffId.set(null);
+  }
+
+  closeModal(): void {
+    this.activeModal.set(null);
+    this.editStaffId.set(null);
+    this.newStaffResult.set(null);
+    this.addStaffError.set(null);
   }
 
   get editStaffIsMA(): boolean {
     const id = this.editStaffId();
     if (id === null) return false;
-    return this.accounts().find(a => a.id === id)?.backendRole === 'MANAGER_AGENT';
+    return (
+      this.accounts().find((a) => a.id === id)?.backendRole === 'MANAGER_AGENT'
+    );
   }
 
   saveEditStaff(): void {
@@ -381,38 +577,54 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     if (password.trim()) {
-      this.apiService.changeStaffPassword(id, { newPassword: password.trim() }).subscribe({
-        next: () => this.showToast('✅ 密碼已更新'),
-        error: () => this.showToast('⚠️ 密碼修改失敗'),
-      });
+      this.apiService
+        .changeStaffPassword(id)
+        .subscribe({
+          next: () => this.showToast('✅ 密碼已重設為預設值'),
+          error: () => this.showToast('⚠️ 密碼修改失敗'),
+        });
     }
-    const current = this.accounts().find(a => a.id === id);
-    if (current?.backendRole === 'STAFF' && backendRole === 'MANAGER_AGENT') {
-      this.apiService.promoteStaff(id).subscribe({
+    const current = this.accounts().find((a) => a.id === id);
+    const roleChanged =
+      (current?.backendRole === 'STAFF' && backendRole === 'MANAGER_AGENT') ||
+      (current?.backendRole === 'MANAGER_AGENT' && backendRole === 'STAFF');
+    if (roleChanged) {
+      const isPromote = backendRole === 'MANAGER_AGENT';
+      this.apiService.toggleStaff(id).subscribe({
         next: () => {
-          this.showToast(`✅ 帳號「${name.trim()}」已晉升為副店長`);
+          this.showToast(
+            isPromote
+              ? `✅ 帳號「${name.trim()}」已晉升為副店長`
+              : `✅ 帳號「${name.trim()}」已降級為員工`,
+          );
           this.loadStaff();
         },
-        error: () => this.showToast('⚠️ 晉升失敗，請確認後端連線'),
+        error: () =>
+          this.showToast(
+            isPromote
+              ? '⚠️ 晉升失敗，請確認後端連線'
+              : '⚠️ 降級失敗，請確認後端連線',
+          ),
       });
     } else {
-      this.accounts.update(list =>
-        list.map(a => (a.id === id ? { ...a, name: name.trim() } : a)),
+      this.accounts.update((list) =>
+        list.map((a) => (a.id === id ? { ...a, name: name.trim() } : a)),
       );
       this.showToast('✅ 已更新');
     }
-    this.showEditStaffModal.set(false);
+    this.activeModal.set(null);
     this.editStaffId.set(null);
   }
 
   openAddStaffModal(): void {
     this.newStaff = { name: '', role: 'STAFF' };
     this.addStaffError.set(null);
-    this.showAddStaffModal.set(true);
+    this.newStaffResult.set(null);
+    this.activeModal.set('addStaff');
   }
 
   closeAddStaffModal(): void {
-    this.showAddStaffModal.set(false);
+    this.activeModal.set(null);
   }
 
   submitAddStaff(): void {
@@ -429,10 +641,18 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
       globalAreaId: this.branchId,
     };
     this.apiService.createStaff(req).subscribe({
-      next: () => {
+      next: (res) => {
         this.addStaffLoading.set(false);
-        this.closeAddStaffModal();
-        this.showToast(`✅ 帳號「${name.trim()}」已新增`);
+        const created = res?.staffList?.[0];
+        if (created?.account) {
+          this.newStaffResult.set({
+            name: created.name,
+            account: created.account,
+          });
+        } else {
+          this.activeModal.set(null);
+          this.showToast(`✅ 帳號「${name.trim()}」已新增`);
+        }
         this.loadStaff();
       },
       error: () => {
@@ -442,12 +662,24 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  confirmNewStaff(): void {
+    this.newStaffResult.set(null);
+    this.activeModal.set(null);
+  }
+
   /* ── 活動 ────────────────────────────────────────── */
   private loadPromos(): void {
     this.apiService.getPromotionsList().subscribe({
-      next: res => {
+      next: (res) => {
         if (res?.data?.length) {
-          const colors = ['#c49756', '#4f8ef7', '#c084fc', '#10b981', '#f87171', '#f59e0b'];
+          const colors = [
+            '#c49756',
+            '#4f8ef7',
+            '#c084fc',
+            '#10b981',
+            '#f87171',
+            '#f59e0b',
+          ];
           this.promos.set(
             res.data.map((p: PromotionDetailVo, i: number) => ({
               id: p.id,
@@ -456,11 +688,11 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
               isActive: p.active,
               color: colors[i % colors.length],
               ended: p.endTime ? new Date(p.endTime) < new Date() : false,
-              type: (p.gifts?.length ? 'promotion' : 'announcement') as 'promotion' | 'announcement',
+              type: (p.gifts?.length ? 'promotion' : 'announcement') as
+                | 'promotion'
+                | 'announcement',
               description: p.description ?? '',
-              image: p.promotionImg
-                ? (p.promotionImg.startsWith('data:') ? p.promotionImg : `data:image/jpeg;base64,${p.promotionImg}`)
-                : '',
+              image: `${this.apiService.getPromotionImageUrl(p.id)}?v=${p.id}`,
               badgeColor: colors[i % colors.length],
               minAmount: p.gifts?.[0]?.fullAmount ?? undefined,
               gifts: p.gifts ?? [],
@@ -483,27 +715,30 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
   }
 
   togglePromo(id: number): void {
-    const promo = this.promos().find(p => p.id === id);
+    const promo = this.promos().find((p) => p.id === id);
     if (!promo || promo.ended) return;
     const newActive = !promo.isActive;
-    this.promos.update(list =>
-      list.map(p => (p.id === id ? { ...p, isActive: newActive } : p)),
+    this.promos.update((list) =>
+      list.map((p) => (p.id === id ? { ...p, isActive: newActive } : p)),
     );
-    this.apiService.togglePromotion({
-      name: promo.title,
-      startTime: promo.rawStartTime,
-      endTime: promo.rawEndTime,
-      promotionsId: id,
-      active: newActive,
-    }).subscribe({
-      next: () => this.showToast(newActive ? '✅ 活動已啟用' : '⏸️ 活動已暫停'),
-      error: () => {
-        this.promos.update(list =>
-          list.map(p => (p.id === id ? { ...p, isActive: !newActive } : p)),
-        );
-        this.showToast('⚠️ 操作失敗，請確認後端連線');
-      },
-    });
+    this.apiService
+      .togglePromotion({
+        name: promo.title,
+        startTime: promo.rawStartTime,
+        endTime: promo.rawEndTime,
+        promotionsId: id,
+        active: newActive,
+      })
+      .subscribe({
+        next: () =>
+          this.showToast(newActive ? '✅ 活動已啟用' : '⏸️ 活動已暫停'),
+        error: () => {
+          this.promos.update((list) =>
+            list.map((p) => (p.id === id ? { ...p, isActive: !newActive } : p)),
+          );
+          this.showToast('⚠️ 操作失敗，請確認後端連線');
+        },
+      });
   }
 
   /* ── 財務報表 ─────────────────────────────────────── */
@@ -511,30 +746,58 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
     const start = this.financeStart();
     const end = this.financeEnd();
     if (!start || !end) {
-      this.showToast('⚠️ 請選擇日期區間');
+      this.showToast('⚠️ 請選擇月份區間');
       return;
     }
     if (start > end) {
-      this.showToast('⚠️ 開始日期不能晚於結束日期');
+      this.showToast('⚠️ 起始月份不能晚於結束月份');
       return;
     }
     this.financeLoading.set(true);
-    this.financeData.set([]);
-    this.apiService.getRevenueReports({
-      startDate: start,
-      endDate: end,
-      branchId: this.branchId,
-    }).subscribe({
-      next: res => {
-        this.financeData.set(res?.revenueData ?? []);
-        this.financeLoading.set(false);
-        if (!res?.revenueData?.length) this.showToast('ℹ️ 此區間無報表資料');
+    this.financeMonthlyData.set([]);
+    this.apiService
+      .getMonthlyReportByRange({ startMonth: start, endMonth: end })
+      .subscribe({
+        next: (res) => {
+          this.financeMonthlyData.set(res?.reportList ?? []);
+          this.financeLoading.set(false);
+          if (!res?.reportList?.length) this.showToast('ℹ️ 此區間無報表資料');
+        },
+        error: () => {
+          this.financeLoading.set(false);
+          this.showToast('⚠️ 報表查詢失敗');
+        },
+      });
+  }
+
+  /* ── 商品月銷售報表 ────────────────────────────────── */
+  queryRmSales(): void {
+    const year = this.salesYear();
+    const month = this.salesMonth();
+    this.salesLoading.set(true);
+    this.salesData.set([]);
+    this.apiService.getRmMonthlySales(year, month).subscribe({
+      next: (res) => {
+        this.salesData.set(res?.salesList ?? []);
+        this.salesLoading.set(false);
+        if (!res?.salesList?.length) this.showToast('ℹ️ 此月份無銷售資料');
       },
       error: () => {
-        this.financeLoading.set(false);
-        this.showToast('⚠️ 報表查詢失敗');
+        this.salesLoading.set(false);
+        this.showToast('⚠️ 銷售報表查詢失敗');
       },
     });
+  }
+
+  abbreviateNum(n: number): string {
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return Math.round(n / 1000) + 'K';
+    return String(Math.round(n));
+  }
+
+  formatChartMonth(m: string): string {
+    const parts = m.split('-');
+    return parts.length >= 2 ? parts[1] + '月' : m;
   }
 
   /* ── 工具 ────────────────────────────────────────── */
@@ -571,7 +834,9 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
     const dd = String(now.getDate()).padStart(2, '0');
     const hh = String(now.getHours()).padStart(2, '0');
     const min = String(now.getMinutes()).padStart(2, '0');
-    this.clockStr.set(`${yy}-${mm}-${dd} 星期${days[now.getDay()]} ${hh}:${min}`);
+    this.clockStr.set(
+      `${yy}-${mm}-${dd} 星期${days[now.getDay()]} ${hh}:${min}`,
+    );
   }
 
   showToast(msg: string): void {

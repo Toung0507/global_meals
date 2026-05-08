@@ -24,6 +24,7 @@
 import { Injectable, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { ApiService, LoginMembersReq, LoginStaffReq, MembersRes, StaffSearchRes } from './api.service';
+import { BranchService } from './branch.service';
 
 
 /* ── 使用者帳號的資料結構定義 ──────────────────────────
@@ -235,14 +236,14 @@ export class AuthService {
   })();
 
 
-  constructor(private apiService: ApiService) {}
+  constructor(private apiService: ApiService, private branchService: BranchService) {}
 
   /* ── 會員登入（真實後端版本）───────────────────────
    * 呼叫後端 POST members/login，由後端 Session 管理狀態
    * 回傳 Observable<MembersRes>，讓元件訂閱並處理結果
    * ────────────────────────────────────────────────── */
   loginMember(phone: string, password: string): Observable<MembersRes> {
-    const req: LoginMembersReq = { phone, password, countryCode: 'TW' };
+    const req: LoginMembersReq = { phone, password, regionsId: this.branchService.regionsId };
     return this.apiService.memberLogin(req).pipe(
       tap(res => {
         if (res.code === 200) {
@@ -270,35 +271,49 @@ export class AuthService {
    * 呼叫後端 POST api/auth/login，由後端 Session 管理狀態
    * 回傳 Observable<StaffSearchRes>，讓元件訂閱並處理結果
    * ────────────────────────────────────────────────── */
-  loginStaffApi(account: string, password: string): Observable<StaffSearchRes> {
-    const req: LoginStaffReq = { account, password };
-    return this.apiService.staffLogin(req).pipe(
-      tap(res => {
-        const isFirstLogin = res.message === 'First Login Change Password';
-        if ((res.code === 200 || isFirstLogin) && res.staffList && res.staffList.length > 0) {
-          const staff = res.staffList[0];
-          const staffUser: StaffUser = {
-            id: staff.id,
-            role: staff.role,
-            name: staff.name,
-            account: staff.account,
-            globalAreaId: staff.globalAreaId
-          };
-          this.currentStaff = staffUser;
-          sessionStorage.setItem('currentStaff', JSON.stringify(staffUser));
-          // 同步更新 currentUser 讓舊元件讀到
-          this.currentUser = {
-            id: staff.id,
-            role: this.mapStaffRole(staff.role),
-            name: staff.name,
-            phone: '',
-            email: staff.account,
-            password: ''
-          };
-          sessionStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+ loginStaffApi(account: string, password: string): Observable<StaffSearchRes> {
+  const req: LoginStaffReq = { account, password };
+  return this.apiService.staffLogin(req).pipe(
+    tap(res => {
+      if (res.code === 200 && res.staffList && res.staffList.length > 0) {
+        const staff = res.staffList[0];
+        const staffUser: StaffUser = {
+          id: staff.id,
+          role: staff.role,
+          name: staff.name,
+          account: staff.account,
+          globalAreaId: staff.globalAreaId
+        };
+        this.currentStaff = staffUser;
+        sessionStorage.setItem('currentStaff', JSON.stringify(staffUser));
+
+        this.currentUser = {
+          id: staff.id,
+          role: this.mapStaffRole(staff.role),
+          name: staff.name,
+          phone: '',
+          email: staff.account,
+          password: ''
+        };
+        sessionStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+
+        // mustChangePassword 存入 sessionStorage 供登入頁讀取
+        if (res.mustChangePassword) {
+          sessionStorage.setItem('mustChangePassword', 'true');
+        } else {
+          sessionStorage.removeItem('mustChangePassword');
         }
-      })
-    );
+      }
+    })
+  );
+}
+
+  get needsPasswordChange(): boolean {
+    return sessionStorage.getItem('mustChangePassword') === 'true';
+  }
+
+  clearPasswordChangeFlag(): void {
+    sessionStorage.removeItem('mustChangePassword');
   }
 
   /* 將後端 role 字串轉換為前端舊版 role 字串（向後相容）*/
@@ -334,15 +349,24 @@ export class AuthService {
   /* ── 登出（清除所有 Session 狀態）─────────────────
    * 同時呼叫後端 logout，清除 Server-side Session
    * ─────────────────────────────────────────────────*/
-  logout(): void {
-    this.currentUser = null;
-    this.currentMember = null;
-    this.currentStaff = null;
-    sessionStorage.removeItem('currentUser');
-    sessionStorage.removeItem('currentMember');
-    sessionStorage.removeItem('currentStaff');
+logout(): void {
+  const wasStaff = this.currentStaff !== null;  // 登出前先記住身分
+
+  this.currentUser = null;
+  this.currentMember = null;
+  this.currentStaff = null;
+  sessionStorage.removeItem('currentUser');
+  sessionStorage.removeItem('currentMember');
+  sessionStorage.removeItem('currentStaff');
+
+  // ✅ 只有員工才呼叫 staff 登出 API
+  if (wasStaff) {
     this.apiService.staffLogout().subscribe({ error: () => {} });
+  } else {
+      this.apiService.memberLogout().subscribe({ error: () => {} });
+
   }
+}
 
   /** 後端 Session 過期（401）時由 HttpInterceptor 呼叫 */
   handleSessionExpired(): void {

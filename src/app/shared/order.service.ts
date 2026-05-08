@@ -113,11 +113,18 @@ export class OrderService {
           list.find((o) => o.id === order.id) ? list : [order, ...list],
         );
       } else if (data?.type === 'UPDATE_STATUS') {
-        this._orders.update((list) =>
-          list.map((o) =>
-            o.id === data.id ? { ...o, status: data.status as OrderStatus } : o,
-          ),
-        );
+        this._orders.update((list) => {
+          const idx = list.findIndex((o) => o.id === data.id);
+          if (idx === -1) return list;
+          const existing = list[idx];
+          const incoming = data.status as OrderStatus;
+          /* pending-cash 只能被升級為 paid，不可被其他 tab 廣播降回 ready/cooking 等 */
+          if (existing.status === 'pending-cash' && incoming !== 'paid') return list;
+          /* paid 是終態 */
+          if (existing.status === 'paid') return list;
+          const updated = { ...existing, status: incoming };
+          return [updated, ...list.filter((_, i) => i !== idx)];
+        });
       }
     };
   }
@@ -151,11 +158,14 @@ export class OrderService {
     this._bc.postMessage({ type: 'ADD_ORDER', order });
   }
 
-  /* ── 更新訂單狀態 ───────────────────────────────── */
+  /* ── 更新訂單狀態（狀態改變時移至該欄頂端） ─────── */
   updateStatus(id: string, status: OrderStatus): void {
-    this._orders.update((list) =>
-      list.map((o) => (o.id === id ? { ...o, status } : o)),
-    );
+    this._orders.update((list) => {
+      const idx = list.findIndex((o) => o.id === id);
+      if (idx === -1) return list;
+      const updated = { ...list[idx], status };
+      return [updated, ...list.filter((_, i) => i !== idx)];
+    });
     this._bc.postMessage({ type: 'UPDATE_STATUS', id, status });
   }
 

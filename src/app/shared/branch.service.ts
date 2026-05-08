@@ -1,26 +1,13 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { ApiService, GlobalAreaVO } from './api.service';
 
 export type CountryCode = 'TW' | 'JP' | 'KR';
 
 export interface BranchOption {
   id: number;
   name: string;
-  nameJP?: string;
-  nameKR?: string;
 }
-
-/** 各國分店清單（來源：global_area JOIN regions） */
-const BRANCHES_BY_COUNTRY: Partial<Record<CountryCode, BranchOption[]>> = {
-  TW: [
-    { id: 4,  name: '懶飽飽台北總店', nameJP: 'レイジーバオバオ 台北本店',  nameKR: '레이지바오바오 타이베이 본점' },
-    { id: 14, name: '台灣高雄店',     nameJP: 'レイジーバオバオ 高雄店',    nameKR: '레이지바오바오 가오슝점' },
-  ],
-  JP: [
-    { id: 5,  name: '懶飽飽東京店',  nameJP: 'レイジーバオバオ 東京店',    nameKR: '레이지바오바오 도쿄점' },
-  ],
-  KR: [], // 暫無分店資料
-};
 
 export interface CountryConfig {
   code: CountryCode;
@@ -393,7 +380,7 @@ const TW: LangDict = {
   couponDiscount: '折扣券折抵最多200',
   clearCart: '清空購物車',
   couponBlockTitle: '折扣兌換券',
-  couponActive: '已選擇使用，本次享 8 折優惠',
+  couponActive: '已選擇使用，本次享 9 折優惠',
   couponAvailable: '您有 1 張折扣券，是否在本次訂單使用？',
   couponCancel: '取消使用',
   couponUse: '使用折扣券',
@@ -612,7 +599,7 @@ const JP: LangDict = {
   couponDiscount: 'クーポン割引（最大200円）',
   clearCart: 'カートをクリア',
   couponBlockTitle: '割引クーポン',
-  couponActive: '割引クーポン使用中（20%オフ）',
+  couponActive: '割引クーポン使用中（10%オフ）',
   couponAvailable: '割引クーポンが1枚あります。今回の注文で使用しますか？',
   couponCancel: '使用をキャンセル',
   couponUse: 'クーポンを使用',
@@ -834,7 +821,7 @@ const KR: LangDict = {
   couponDiscount: '쿠폰 할인 (최대 200원)',
   clearCart: '장바구니 비우기',
   couponBlockTitle: '할인 쿠폰',
-  couponActive: '할인 쿠폰 사용 중 (20% 할인)',
+  couponActive: '할인 쿠폰 사용 중 (10% 할인)',
   couponAvailable: '할인 쿠폰 1장이 있습니다. 이번 주문에 사용하시겠습니까？',
   couponCancel: '사용 취소',
   couponUse: '쿠폰 사용',
@@ -981,6 +968,9 @@ export const COUNTRY_CONFIGS: Record<CountryCode, CountryConfig> = {
 @Injectable({ providedIn: 'root' })
 export class BranchService {
   private doc = inject(DOCUMENT);
+  private apiService = inject(ApiService);
+  private _regionsMap = signal<Record<string, number>>({});
+  private _branches = signal<GlobalAreaVO[]>([]);
 
   private _c = signal<CountryCode>(
     (() => {
@@ -999,28 +989,30 @@ export class BranchService {
     (() => {
       try {
         const saved = localStorage.getItem('selectedBranch');
-        return saved ? Number(saved) : 4;
+        return saved ? Number(saved) : 19;
       } catch {
-        return 4;
+        return 19;
       }
     })(),
   );
 
   readonly lang = computed(() => TRANSLATIONS[this._c()]);
 
-  /** 依目前語系回傳本地化分店清單（name 已翻譯） */
+  /** 依目前國家的 regionsId 篩選分店，並回傳 { id, name } 清單 */
   readonly localizedBranches = computed(() => {
-    const cc = this._c();
-    return (BRANCHES_BY_COUNTRY[cc] ?? []).map(b => ({
-      id: b.id,
-      name: cc === 'JP' ? (b.nameJP ?? b.name)
-          : cc === 'KR' ? (b.nameKR ?? b.name)
-          : b.name,
-    }));
+    const regId = this._regionsMap()[this._c()];
+    if (!regId) return [];
+    return this._branches()
+      .filter(b => b.regionsId === regId)
+      .map(b => ({ id: b.id, name: b.branch }));
   });
 
   get country(): CountryCode {
     return this._c();
+  }
+  /** 當前國家對應的 regions.id（後端 @Min(1) 驗證，0 表示尚未載入） */
+  get regionsId(): number {
+    return this._regionsMap()[this._c()] ?? 0;
   }
   get config(): CountryConfig {
     return COUNTRY_CONFIGS[this._c()];
@@ -1032,7 +1024,7 @@ export class BranchService {
     return this._globalAreaId();
   }
   get currentBranches(): BranchOption[] {
-    return BRANCHES_BY_COUNTRY[this._c()] ?? [];
+    return this.localizedBranches();
   }
 
   setGlobalAreaId(id: number): void {
@@ -1041,17 +1033,16 @@ export class BranchService {
   }
 
   getLocalizedBranchName(branch: BranchOption): string {
-    const cc = this._c();
-    if (cc === 'JP') return branch.nameJP ?? branch.name;
-    if (cc === 'KR') return branch.nameKR ?? branch.name;
     return branch.name;
   }
 
   setCountry(code: CountryCode): void {
     this._c.set(code);
-    // 切換國家時自動選第一個分店
-    const branches = BRANCHES_BY_COUNTRY[code] ?? [];
-    const firstId = branches.length > 0 ? branches[0].id : 4;
+    const regId = this._regionsMap()[code];
+    const branches = regId
+      ? this._branches().filter(b => b.regionsId === regId)
+      : [];
+    const firstId = branches.length > 0 ? branches[0].id : 19;
     this._globalAreaId.set(firstId);
     try {
       localStorage.setItem('selectedCountry', code);
@@ -1073,5 +1064,27 @@ export class BranchService {
 
   init(): void {
     this.applyTheme(this._c());
+    if (Object.keys(this._regionsMap()).length === 0) {
+      this.apiService.getAllTax().subscribe({
+        next: res => {
+          if (res.code === 200 && res.regionsList) {
+            const map: Record<string, number> = {};
+            res.regionsList.forEach(r => { map[r.countryCode] = r.id; });
+            this._regionsMap.set(map);
+          }
+        },
+        error: () => {},
+      });
+    }
+    if (this._branches().length === 0) {
+      this.apiService.getAllBranches().subscribe({
+        next: res => {
+          if (res.code === 200 && res.globalAreaList?.length) {
+            this._branches.set(res.globalAreaList);
+          }
+        },
+        error: () => {},
+      });
+    }
   }
 }

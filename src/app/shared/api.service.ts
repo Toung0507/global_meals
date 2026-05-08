@@ -10,6 +10,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { API_CONFIG } from './api.config';
 
 /* ════════════════════════════════════════════════════
@@ -180,7 +181,7 @@ export interface HistoricalOrdersReq {
 export interface RefundedReq {
   id: string;
   orderDateId: string;
-  ordersStatus: 'CANCELLED' | 'REFUNDED' | 'AWAITING_PAYMENT'; // 後端 UpdateOrdersStatusReq.ordersStatus（原欄位名 status 已更新）
+  ordersStatus: 'COOKING' | 'CANCELLED' | 'REFUNDED' | 'READY' | 'PICKED_UP'; // 後端 UpdateOrdersStatusReq.ordersStatus
 }
 
 export interface GetAllOrdersRes extends BasicRes {
@@ -199,7 +200,10 @@ export interface GetOrdersVo {
   paymentMethod?: string;
   payMethod?: string;
   paymentStatus?: string;
+  phone?: string;
+  memberId?: number;
   getOrdersDetailVoList?: GetOrdersDetailVo[] | null;
+  GetOrdersDetailVoList?: GetOrdersDetailVo[] | null;
 }
 
 export interface GetOrdersDetailVo {
@@ -217,13 +221,13 @@ export interface GetOrdersDetailVo {
 export interface RegisterMembersReq {
   name: string;
   phone: string;
-  countryCode: string;
+  regionsId: number;
   password?: string;
 }
 
 export interface LoginMembersReq {
   phone: string;
-  countryCode: string;
+  regionsId: number;
   password: string;
 }
 
@@ -252,14 +256,13 @@ export interface UpdatePasswordReq {
   newPassword: string;
 }
 
-/** POS 依電話查詢會員的回傳格式（對應後端 MembersRes + Members entity） */
+/** POS 依電話查詢會員折扣次數（GET /members/get_members_count/{phone}）回傳格式 */
 export interface MemberLookupRes extends BasicRes {
-  members?: {
-    id: number;
-    name: string;
-    phone: string;
-    orderCount: number;
-    discount: boolean;
+  data?: {
+    memberId?: number;
+    phone?: string;
+    orderCount?: number;
+    regionsId?: number;
   };
 }
 
@@ -282,6 +285,7 @@ export interface StaffVO {
 
 export interface StaffSearchRes extends BasicRes {
   staffList?: StaffVO[];
+  mustChangePassword?: boolean;
 }
 
 export interface RegisterStaffReq {
@@ -410,6 +414,7 @@ export interface MonthlyReportDetail {
   branchName: string;
   regionsName: string;
   totalAmount: number;
+  totalCost: number;
 }
 
 export interface MonthlyReportRes extends BasicRes {
@@ -418,7 +423,7 @@ export interface MonthlyReportRes extends BasicRes {
 }
 
 export interface MonthRangeReportsRes extends BasicRes {
-  currentMonth: MonthlyReportDetail[];
+  reportList: MonthlyReportDetail[];
 }
 
 export interface RevenueData {
@@ -444,6 +449,11 @@ export interface ExchangeRateVO {
   updatedAt: string;
 }
 
+/** POST /exchange-rates/get_rates_by_date body（date 格式：yyyy-MM-dd） */
+export interface ExchangeRatesByDateReq {
+  date: string;
+}
+
 /* ── AI（AiController）─────────────────────────────── */
 export interface AiRes extends BasicRes {
   generatedDescription?: string;
@@ -459,6 +469,7 @@ export interface MenuVo {
   productId: number; /* 商品 ID（注意：不是 id，是 productId） */
   name: string;
   category: string;
+  style: string;
   description: string;
   foodImgBase64: string;
   basePrice: number;
@@ -474,7 +485,10 @@ export interface MenuListRes extends BasicRes {
 export interface ProductAdminVo {
   id: number;
   name: string;
+  categoryId?: number;
   category: string;
+  styleId?: number;
+  style: string;
   description: string;
   active: boolean;
   foodImgBase64: string;
@@ -491,6 +505,7 @@ export interface AdminProductRes extends BasicRes {
 export interface CreateProductReq {
   name: string;
   category: string;
+  style: string;
   description?: string;
   active?: boolean;
 }
@@ -500,6 +515,7 @@ export interface UpdateProductReq {
   id: number;
   name: string;
   category: string;
+  style: string;
   description?: string;
   active?: boolean;
 }
@@ -513,6 +529,7 @@ export interface InventoryDetailVo {
   productId: number;
   productName: string;
   category: string;
+  style: string;
   globalAreaId: number;
   branchName: string;
   basePrice: number;
@@ -536,6 +553,26 @@ export interface UpdateBranchInventoryReq {
   active: boolean;
 }
 
+/* ── Discount（折抵）──────────────────────────────── */
+
+export interface DiscountRecord {
+  id: number;
+  regionsId: number;
+  count: number;
+  usageCap: number;
+}
+
+export interface DiscountRes extends BasicRes {
+  discountList: DiscountRecord[];
+}
+
+export interface DiscountReq {
+  id?: number;
+  regionsId?: number;
+  count?: number;
+  usageCap?: number;
+}
+
 /* ── Payment（支付）──────────────────────────────── */
 
 export interface PaymentInitReq {
@@ -555,7 +592,7 @@ export interface PromotionsReq {
   useCoupon: boolean;
   selectedGiftId: number;
   originalAmount: number;
-  country?: string;
+  regionsId: number;
 }
 
 export interface PromotionsRes {
@@ -666,7 +703,8 @@ export class ApiService {
       String(cartId),
     );
     return this.http.get<CartViewRes>(
-      `${this.BASE}/${path}?memberId=${memberId}`, { withCredentials: true },
+      `${this.BASE}/${path}?memberId=${memberId}`,
+      { withCredentials: true },
     );
   }
 
@@ -683,7 +721,7 @@ export class ApiService {
     if (this.isMock) return of(this.mockCartRes(req.cartId));
     return this.http.delete<CartViewRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.CART.REMOVE}`,
-      { body: req,  withCredentials: true },
+      { body: req, withCredentials: true },
     );
   }
 
@@ -698,7 +736,7 @@ export class ApiService {
     if (this.isMock) return of(this.mockCartRes(req.cartId));
     return this.http.delete<CartViewRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.CART.CLEAR}`,
-      { body: req , withCredentials: true },
+      { body: req, withCredentials: true },
     );
   }
 
@@ -757,10 +795,10 @@ export class ApiService {
     );
   }
 
-  /** POS 依電話查詢正式會員（排除訪客），需員工 session（GET /members/get_by_phone） */
+  /** POS 依電話查詢會員折扣次數（GET /members/order-stats/{phone}） */
   getMemberByPhone(phone: string): Observable<MemberLookupRes> {
     return this.http.get<MemberLookupRes>(
-      `${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.GET_BY_PHONE}?phone=${encodeURIComponent(phone)}`,
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.MEMBERS.ORDER_STATS}/${encodeURIComponent(phone)}`,
       { withCredentials: true },
     );
   }
@@ -789,24 +827,44 @@ export class ApiService {
   updateKitchenStatus(req: UpdateKitchenStatusReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.KITCHEN_STATUS}`,
-      { id: req.id, orderDateId: req.orderDateId, status: req.kitchenStatus },
+      {
+        id: req.id,
+        orderDateId: req.orderDateId,
+        kitchenStatus: req.kitchenStatus,
+      },
       { withCredentials: true },
     );
   }
 
-  /** 顧客端輪詢單筆訂單狀態 */
+  /** 顧客端輪詢單筆訂單狀態（呼叫 get_all_today_orders_list 再過濾） */
   getOrderStatus(id: string, orderDateId: string): Observable<BasicRes> {
-    return this.http.get<BasicRes>(
-      `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.GET_STATUS}?id=${encodeURIComponent(id)}&orderDateId=${encodeURIComponent(orderDateId)}`,
-      { withCredentials: true },
-    );
+    return this.http
+      .get<GetTodayOrdersRes>(
+        `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.GET_TODAY_BY_MEMBER}`,
+        { withCredentials: true },
+      )
+      .pipe(
+        map((res) => {
+          if (res?.code !== 200)
+            return { code: res?.code ?? 500, message: 'NOT_FOUND' };
+          const order = res.getOrderVoList?.find(
+            (o) => String(o.id) === String(id) && o.orderDateId === orderDateId,
+          );
+          if (!order) return { code: 200, message: 'NOT_FOUND' };
+          return { code: 200, message: order.ordersStatus };
+        }),
+      );
   }
 
   /** POS 現金收款確認（READY → COMPLETED） */
-  confirmCashPayment(id: string, orderDateId: string): Observable<BasicRes> {
+  confirmCashPayment(
+    id: string,
+    orderDateId: string,
+    totalAmount: number,
+  ): Observable<BasicRes> {
     return this.http.post<BasicRes>(
-      `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.CASH_CONFIRM}?id=${encodeURIComponent(id)}&orderDateId=${encodeURIComponent(orderDateId)}`,
-      {},
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.ORDERS.CASH_CONFIRM}`,
+      { id, orderDateId, totalAmount, paymentMethod: 'CASH' },
       { withCredentials: true },
     );
   }
@@ -831,22 +889,33 @@ export class ApiService {
     );
   }
 
-  getPromotionsList(globalAreaId?: number): Observable<PromotionsListRes> {
-    const url = globalAreaId
-      ? `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.LIST}?globalAreaId=${globalAreaId}`
-      : `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.LIST}`;
-    return this.http.get<PromotionsListRes>(url);
+  // 修改後：永遠不帶 globalAreaId，因為 promotions 表沒有分店欄位
+  getPromotionsList(): Observable<PromotionsListRes> {
+    return this.http.get<PromotionsListRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.LIST}`,
+    );
   }
 
-  createPromotion(req: PromotionsManageReq, imageBase64: string): Observable<CreatePromotionRes> {
+  createPromotion(
+    req: PromotionsManageReq,
+    imageBase64: string,
+  ): Observable<CreatePromotionRes> {
     const formData = new FormData();
-    const dataBlob = new Blob([JSON.stringify(req)], { type: 'application/json' });
+    const dataBlob = new Blob([JSON.stringify(req)], {
+      type: 'application/json',
+    });
     formData.append('data', dataBlob);
-    const base64 = imageBase64.startsWith('data:') ? imageBase64.split(',')[1] : imageBase64;
+    const base64 = imageBase64.startsWith('data:')
+      ? imageBase64.split(',')[1]
+      : imageBase64;
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    formData.append('image', new Blob([bytes], { type: 'image/jpeg' }), 'promotion.jpg');
+    formData.append(
+      'image',
+      new Blob([bytes], { type: 'image/jpeg' }),
+      'promotion.jpg',
+    );
     return this.http.post<CreatePromotionRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.CREATE}`,
       formData,
@@ -892,7 +961,10 @@ export class ApiService {
   updatePromotionInfo(req: UpdatePromotionInfoReq): Observable<BasicRes> {
     if (!req.promotionImg) return of({ code: 200, message: 'ok' });
     const id = String(req.promotionsId);
-    const imgPath = API_CONFIG.ENDPOINTS.PROMOTIONS.UPLOAD_IMAGE.replace(':id', id);
+    const imgPath = API_CONFIG.ENDPOINTS.PROMOTIONS.UPLOAD_IMAGE.replace(
+      ':id',
+      id,
+    );
     const base64 = req.promotionImg.startsWith('data:')
       ? req.promotionImg.split(',')[1]
       : req.promotionImg;
@@ -946,18 +1018,18 @@ export class ApiService {
     );
   }
 
-  /** POST /regions/insert — 新增國家稅率（CreateRegionsReq） */
+  /** POST /regions/upsert — 新增或更新國家稅率 */
   insertRegion(req: UpsertRegionsTaxReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(
-      `${this.BASE}/${API_CONFIG.ENDPOINTS.REGIONS.INSERT}`,
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.REGIONS.UPSERT}`,
       req,
     );
   }
 
-  /** POST /regions/update — 更新既有國家（UpdateRegionsReq：id 必填） */
+  /** POST /regions/update_usage_cap — 更新折扣上限（UpdateRegionsReq：id 必填） */
   updateRegion(req: UpdateRegionsReq): Observable<BasicRes> {
     return this.http.post<BasicRes>(
-      `${this.BASE}/${API_CONFIG.ENDPOINTS.REGIONS.UPDATE}`,
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.REGIONS.UPDATE_USAGE_CAP}`,
       req,
     );
   }
@@ -969,7 +1041,12 @@ export class ApiService {
 
   /** @deprecated 改用 updateRegion() */
   updateRegionUsageCap(req: UpdateRegionsUsageCapReq): Observable<BasicRes> {
-    return this.updateRegion({ id: req.id, taxRate: req.taxRate, taxType: req.taxType, usageCap: req.usageCap });
+    return this.updateRegion({
+      id: req.id,
+      taxRate: req.taxRate,
+      taxType: req.taxType,
+      usageCap: req.usageCap,
+    });
   }
 
   /* ══════════════════════════════════════════════════
@@ -1012,6 +1089,17 @@ export class ApiService {
     );
   }
 
+  /** GET /product/rm/monthlysales — 分店長查詢該月所有商品銷售量 */
+  getRmMonthlySales(
+    year: number,
+    month: number,
+  ): Observable<MonthlyProductsSalesRes> {
+    return this.http.get<MonthlyProductsSalesRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.MONTHLY_SALES_RM}?year=${year}&month=${month}`,
+      { withCredentials: true },
+    );
+  }
+
   /* ══════════════════════════════════════════════════
    * ExchangeRates API  →  /exchange_rates/
    * ══════════════════════════════════════════════════ */
@@ -1019,6 +1107,16 @@ export class ApiService {
   getAllRates(): Observable<ExchangeRatesRes> {
     return this.http.get<ExchangeRatesRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.EXCHANGE_RATES.GET_ALL}`,
+      { withCredentials: true },
+    );
+  }
+
+  /** POST /exchange-rates/get_rates_by_date — 查詢指定日期的匯率（date: "yyyy-MM-dd"） */
+  getRatesByDate(req: ExchangeRatesByDateReq): Observable<ExchangeRatesRes> {
+    return this.http.post<ExchangeRatesRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.EXCHANGE_RATES.GET_BY_DATE}`,
+      req,
+      { withCredentials: true },
     );
   }
 
@@ -1042,14 +1140,23 @@ export class ApiService {
     );
   }
 
-  /** POST /ai/product-desc，回傳含 generatedDescription */
+  /** POST /ai/product-desc (multipart/form-data)，回傳含 generatedDescription */
   generateAiProductDesc(
     productName: string,
     category: string,
+    style: string,
+    file: File,
   ): Observable<AiRes> {
+    const form = new FormData();
+    const dataBlob = new Blob(
+      [JSON.stringify({ productName, category, style })],
+      { type: 'application/json' },
+    );
+    form.append('data', dataBlob);
+    form.append('file', file, file.name);
     return this.http.post<AiRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.AI.PRODUCT_DESC}`,
-      { productName, category },
+      form,
       { withCredentials: true },
     );
   }
@@ -1144,15 +1251,12 @@ export class ApiService {
     });
   }
 
-  changeStaffPassword(
-    id: number,
-    req: AdminChangePasswordReq,
-  ): Observable<StaffSearchRes> {
+  changeStaffPassword(id: number): Observable<StaffSearchRes> {
     const path = API_CONFIG.ENDPOINTS.STAFF.CHANGE_PASSWORD.replace(
       ':id',
       String(id),
     );
-    return this.http.patch<StaffSearchRes>(`${this.BASE}/${path}`, req, {
+    return this.http.patch<StaffSearchRes>(`${this.BASE}/${path}`, {}, {
       withCredentials: true,
     });
   }
@@ -1174,6 +1278,33 @@ export class ApiService {
     );
   }
 
+  toggleStaff(id: number): Observable<StaffSearchRes> {
+    const path = API_CONFIG.ENDPOINTS.STAFF.TOGGLE.replace(':id', String(id));
+    return this.http.patch<StaffSearchRes>(
+      `${this.BASE}/${path}`,
+      {},
+      { withCredentials: true },
+    );
+  }
+
+  adminChangeStaffRole(id: number, targetRole: string): Observable<StaffSearchRes> {
+    const path = API_CONFIG.ENDPOINTS.STAFF.CHANGE_ROLE.replace(':id', String(id));
+    return this.http.patch<StaffSearchRes>(
+      `${this.BASE}/${path}?targetRole=${targetRole}`,
+      {},
+      { withCredentials: true },
+    );
+  }
+
+  transferStaff(id: number, newAreaId: number): Observable<StaffSearchRes> {
+    const path = API_CONFIG.ENDPOINTS.STAFF.TRANSFER.replace(':id', String(id));
+    return this.http.patch<StaffSearchRes>(
+      `${this.BASE}/${path}?newAreaId=${newAreaId}`,
+      {},
+      { withCredentials: true },
+    );
+  }
+
   /* ══════════════════════════════════════════════════
    * Products API
    * 前台菜單：GET /inventory/menu/{globalAreaId} → MenuListRes { data: MenuVo[] }
@@ -1186,7 +1317,9 @@ export class ApiService {
       ':globalAreaId',
       String(globalAreaId),
     );
-    return this.http.get<MenuListRes>(`${this.BASE}/${path}`);
+    return this.http.get<MenuListRes>(`${this.BASE}/${path}`, {
+      withCredentials: true,
+    });
   }
 
   /** 管理端：取得全部商品（含下架）*/
@@ -1212,6 +1345,35 @@ export class ApiService {
   getTrashProducts(): Observable<AdminProductRes> {
     return this.http.get<AdminProductRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.TRASH}`,
+      { withCredentials: true },
+    );
+  }
+
+  /** GET /product/styles — 取得所有料理風格清單 */
+  getStyles(): Observable<{ id: number; name: string }[]> {
+    return this.http.get<{ id: number; name: string }[]>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.STYLES}`,
+      { withCredentials: true },
+    );
+  }
+
+  /** GET /product/categories — 取得所有餐點分類清單 */
+  getCategories(): Observable<{ id: number; name: string }[]> {
+    return this.http.get<{ id: number; name: string }[]>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.PRODUCTS.CATEGORIES}`,
+      { withCredentials: true },
+    );
+  }
+
+  /** POST /product/delete/:id — 軟刪除商品 */
+  deleteProduct(id: number): Observable<AdminProductRes> {
+    const path = API_CONFIG.ENDPOINTS.PRODUCTS.DELETE.replace(
+      ':id',
+      String(id),
+    );
+    return this.http.post<AdminProductRes>(
+      `${this.BASE}/${path}`,
+      {},
       { withCredentials: true },
     );
   }
@@ -1301,10 +1463,25 @@ export class ApiService {
   }
 
   /** 結帳後批次扣減庫存（POST /inventory/update，body 為陣列）*/
-  deductInventoryBatch(items: UpdateBranchInventoryReq[]): Observable<BasicRes> {
+  deductInventoryBatch(
+    items: UpdateBranchInventoryReq[],
+  ): Observable<BasicRes> {
     return this.http.post<BasicRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.BRANCH_INVENTORY.UPDATE}`,
       items,
+      { withCredentials: true },
+    );
+  }
+
+  /** 快速切換分店商品上下架 PATCH /inventory/active-status */
+  toggleBranchActiveStatus(
+    productId: number,
+    globalAreaId: number,
+    active: boolean,
+  ): Observable<BasicRes> {
+    return this.http.patch<BasicRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.BRANCH_INVENTORY.ACTIVE_STATUS}?productId=${productId}&globalAreaId=${globalAreaId}&active=${active}`,
+      {},
       { withCredentials: true },
     );
   }
@@ -1332,5 +1509,68 @@ export class ApiService {
       `${this.BASE}/${API_CONFIG.ENDPOINTS.PAYMENT.GO_PAY}?orderDateId=${req.orderDateId}&id=${req.id}&way=ECPAY`,
       { responseType: 'text' },
     );
+  }
+
+  /* ══════════════════════════════════════════════════
+   * Discount API  →  /discount/
+   * ══════════════════════════════════════════════════ */
+
+  getDiscountList(): Observable<DiscountRes> {
+    return this.http.get<DiscountRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.DISCOUNT.LIST}`,
+      { withCredentials: true },
+    );
+  }
+
+  getDiscountById(id: number): Observable<DiscountRes> {
+    const path = API_CONFIG.ENDPOINTS.DISCOUNT.GET_BY_ID.replace(
+      ':id',
+      String(id),
+    );
+    return this.http.get<DiscountRes>(`${this.BASE}/${path}`, {
+      withCredentials: true,
+    });
+  }
+
+  createDiscount(req: DiscountReq): Observable<BasicRes> {
+    return this.http.post<BasicRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.DISCOUNT.CREATE}`,
+      req,
+      { withCredentials: true },
+    );
+  }
+
+  updateDiscountUsageCap(req: DiscountReq): Observable<BasicRes> {
+    return this.http.post<BasicRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.DISCOUNT.UPDATE_USAGE_CAP}`,
+      req,
+      { withCredentials: true },
+    );
+  }
+
+  updateDiscountSettings(req: DiscountReq): Observable<BasicRes> {
+    return this.http.post<BasicRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.DISCOUNT.UPDATE_DISCOUNT}`,
+      req,
+      { withCredentials: true },
+    );
+  }
+
+  updateDiscountCount(req: DiscountReq): Observable<BasicRes> {
+    return this.http.post<BasicRes>(
+      `${this.BASE}/${API_CONFIG.ENDPOINTS.DISCOUNT.UPDATE_COUNT}`,
+      req,
+      { withCredentials: true },
+    );
+  }
+
+  deleteDiscount(id: number): Observable<BasicRes> {
+    const path = API_CONFIG.ENDPOINTS.DISCOUNT.DELETE.replace(
+      ':id',
+      String(id),
+    );
+    return this.http.delete<BasicRes>(`${this.BASE}/${path}`, {
+      withCredentials: true,
+    });
   }
 }

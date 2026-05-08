@@ -10,7 +10,7 @@ export const API_CONFIG = {
   MOCK_MODE: false,
 
   BASE_URL: '', // 透過 Angular proxy 轉發，相對路徑即可（proxy.conf.json → localhost:8080）
-  TIMEOUT: 10000, // 10 秒逾時
+  TIMEOUT: 60000, // 10 秒逾時
 
   ENDPOINTS: {
     // 購物車（CartController，@RequestMapping("/cart")，WebConfig 加 /lazybaobao 前綴）
@@ -29,8 +29,8 @@ export const API_CONFIG = {
       PAY: 'lazybaobao/orders/pay', // POST
       GET_ALL: 'lazybaobao/orders/get_all_orders_list', // GET ?memberId=
       GET_TODAY_ALL: 'lazybaobao/orders/get_today_all_orders_list', // GET（無 globalAreaId，依 session）
-      GET_TODAY_BY_MEMBER: 'lazybaobao/orders/get_today_orders_by_member', // GET（依 session 會員，回傳今日訂單狀態）
-      BY_PHONE: 'lazybaobao/orders/get_by_phone', // GET ?phone=（原 get_order_by_phone）
+      GET_TODAY_BY_MEMBER: 'lazybaobao/orders/get_all_today_orders_list', // GET（依 session 會員，回傳今日訂單列表，用於短輪詢）
+      BY_PHONE: 'lazybaobao/orders/get_order_by_phone', // GET ?phone=
       UPDATE_STATUS: 'lazybaobao/orders/orders_status', // POST（UpdateOrdersStatusReq，欄位 ordersStatus）
       KITCHEN_STATUS: 'lazybaobao/orders/kitchen_status', // POST (POS 廚房狀態，未實作)
       GET_STATUS: 'lazybaobao/orders/get_order_status', // GET  (顧客輪詢)
@@ -61,9 +61,9 @@ export const API_CONFIG = {
 
     // 稅率（RegionsController，@RequestMapping("/regions")）
     REGIONS: {
-      GET_ALL: 'lazybaobao/regions/get_all', // GET（原 get_all_tax）
-      INSERT: 'lazybaobao/regions/insert', // POST 新增國家稅率（CreateRegionsReq：含 country/currencyCode/countryCode/taxRate/taxType/usageCap）
-      UPDATE: 'lazybaobao/regions/update', // POST 更新既有國家（UpdateRegionsReq：含 id/taxRate/taxType/usageCap）
+      GET_ALL: 'lazybaobao/regions/get_all', // ✅
+      UPSERT: 'lazybaobao/regions/insert', // ✅
+      UPDATE_USAGE_CAP: 'lazybaobao/regions/update', // ✅
     },
 
     // 月報表（ReportsController，@RequestMapping("/reports")）
@@ -75,7 +75,8 @@ export const API_CONFIG = {
 
     // 匯率（ExchangeRatesController，@RequestMapping("/exchange-rates")）
     EXCHANGE_RATES: {
-      GET_ALL: 'lazybaobao/exchange-rates/get_all_rates', // GET（僅此端點，排程自動更新）
+      GET_ALL: 'lazybaobao/exchange-rates/get_all_rates', // GET
+      GET_BY_DATE: 'lazybaobao/exchange-rates/get_rates_by_date', // POST
     },
 
     // AI（AiController，@RequestMapping("/ai")）
@@ -91,19 +92,22 @@ export const API_CONFIG = {
       LOGIN: 'lazybaobao/members/login', // POST
       LOGOUT: 'lazybaobao/members/logout', // GET
       UPDATE_PASSWORD: 'lazybaobao/members/update-password', // POST
-      GET_BY_PHONE: 'lazybaobao/members/get_by_phone', // GET ?phone= (POS 查詢正式會員)
+      ORDER_STATS: 'lazybaobao/members/get_members_count', // GET /{phone} (POS 查詢會員折扣次數)
     },
 
-    // 員工（StaffController，@RequestMapping("/staff")）
+    // 員工（StaffController，@RequestMapping("/staff")，WebConfig 加 /lazybaobao 前綴）
     STAFF: {
-      LOGIN: 'lazybaobao/staff/auth/login', // POST（原 /api/auth/login）
-      LOGOUT: 'lazybaobao/staff/auth/logout', // GET（原 /api/auth/logout）
-      GET_ALL: 'lazybaobao/staff/admin/staff', // GET（原 /api/admin/staff）
-      CREATE: 'lazybaobao/staff/admin/staff', // POST（原 /api/admin/staff）
+      LOGIN: 'lazybaobao/staff/auth/login', // POST /lazybaobao/staff/auth/login
+      LOGOUT: 'lazybaobao/staff/auth/logout', // GET /lazybaobao/staff/auth/logout
+      GET_ALL: 'lazybaobao/staff/admin/staff', // GET /lazybaobao/staff/admin/staff
+      CREATE: 'lazybaobao/staff/admin/staff', // POST /lazybaobao/staff/admin/staff
       UPDATE_STATUS: 'lazybaobao/staff/admin/staff/:id/status', // PATCH
       CHANGE_PASSWORD: 'lazybaobao/staff/admin/staff/:id/password', // PATCH
-      PROMOTE: 'lazybaobao/staff/admin/staff/:id/toggle', // PATCH（原 promote，現合併晉升/降級為 toggle）
-      SELF_CHANGE_PASSWORD: 'lazybaobao/staff/staff/password', // PATCH（原 /api/staff/password）
+      PROMOTE: 'lazybaobao/staff/admin/staff/:id/promote', // PATCH（舊，保留相容）
+      TOGGLE: 'lazybaobao/staff/admin/staff/:id/toggle', // PATCH 晉升/降級切換
+      CHANGE_ROLE: 'lazybaobao/staff/admin/staff/:id/change-role', // PATCH 老闆調職（RM/MA/ST 互轉）
+      TRANSFER: 'lazybaobao/staff/admin/staff/:id/transfer', // PATCH 老闆調店
+      SELF_CHANGE_PASSWORD: 'lazybaobao/staff/staff/password', // PATCH /lazybaobao/staff/staff/password
     },
 
     // 商品（ProductsController，@RequestMapping("/product")）
@@ -114,17 +118,32 @@ export const API_CONFIG = {
       STATUS: 'lazybaobao/product/status/:id', // PATCH ?active=
       CREATE: 'lazybaobao/product/create', // POST（multipart）
       UPDATE: 'lazybaobao/product/update', // POST（multipart）
-      MENU: 'lazybaobao/inventory/menu/:globalAreaId', // GET（前台菜單）
-      MONTHLY_SALES_RM: 'lazybaobao/product/rm/monthlysales', // GET（原 /api/rm/monthly-sales）
-      MONTHLY_SALES_ADMIN: 'lazybaobao/product/admin/top5monthlysales', // GET（原 /api/admin/top5-monthly-sales）
+      IMAGE: 'lazybaobao/product/image/:id', // GET（PR #52：直接回傳圖片二進位流，productList 中 foodImgBase64 欄位已改為此 URL）
+      MENU: 'lazybaobao/inventory/menu/:globalAreaId', // GET（前台菜單，BranchInventoryController）
+      DELETE: 'lazybaobao/product/delete/:id', // POST
+      STYLES: 'lazybaobao/product/styles', // GET（取得所有料理風格）
+      CATEGORIES: 'lazybaobao/product/categories', // GET（取得所有餐點分類）
+      MONTHLY_SALES_RM: 'lazybaobao/product/rm/monthlysales', // GET（分店長銷售報表）
+      MONTHLY_SALES_ADMIN: 'lazybaobao/product/admin/top5monthlysales', // GET（老闆查詢銷售前五名）
     },
 
     // 分店庫存（BranchInventoryController，@RequestMapping("/inventory")）
     BRANCH_INVENTORY: {
-      GET_BY_AREA: 'lazybaobao/inventory/branch/:areaId', // GET
-      GET_BY_PRODUCT: 'lazybaobao/inventory/product/:productId', // GET
-      UPDATE: 'lazybaobao/inventory/update', // POST (全欄位更新)
-      UPDATE_STOCK: 'lazybaobao/inventory/update-stock', // POST (僅更新庫存數量)
+      GET_BY_AREA: 'lazybaobao/inventory/branch/:areaId', // GET /inventory/branch/{globalAreaId}
+      GET_BY_PRODUCT: 'lazybaobao/inventory/product/:productId', // GET /inventory/product/{productId}
+      UPDATE: 'lazybaobao/inventory/update', // POST
+      ACTIVE_STATUS: 'lazybaobao/inventory/active-status', // PATCH
+    },
+
+    // 折抵（DiscountController，@RequestMapping("/discount")）
+    DISCOUNT: {
+      LIST: 'lazybaobao/discount/list', // GET
+      GET_BY_ID: 'lazybaobao/discount/:id', // GET
+      CREATE: 'lazybaobao/discount/create', // POST
+      UPDATE_USAGE_CAP: 'lazybaobao/discount/update-usage-cap', // POST
+      UPDATE_DISCOUNT: 'lazybaobao/discount/update-discount', // POST（同時改上限與次數）
+      UPDATE_COUNT: 'lazybaobao/discount/update-count', // POST
+      DELETE: 'lazybaobao/discount/:id', // DELETE
     },
 
     // 支付（OrdersController）

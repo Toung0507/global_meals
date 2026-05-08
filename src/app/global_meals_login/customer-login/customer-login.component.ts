@@ -52,9 +52,10 @@ export class CustomerLoginComponent implements OnInit {
   /** 給 HTML template 直接讀取 branchService.lang() */
   get lang() { return this.branchService.lang(); }
 
-  /** QR Code URL：現場掃碼直接進訪客點餐 */
+  /** QR Code URL：現場掃碼先進選擇頁，ngrok-skip-browser-warning 跳過 ngrok 警告頁 */
   get qrUrl(): string {
-    return (typeof window !== 'undefined' ? window.location.origin : '') + '/customer-guest';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/qr-entry?branch=${this.branchService.globalAreaId}&ngrok-skip-browser-warning=1`;
   }
 
   constructor(

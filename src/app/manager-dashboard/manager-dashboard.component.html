@@ -133,6 +133,25 @@
       ></span>
       國家基本設定
     </div>
+    <!-- 會員設定 -->
+    <div
+      class="nav-item"
+      [class.active]="activeTab() === 'member'"
+      (click)="setTab('member')"
+    >
+      <span class="nav-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+          style="width:16px;height:16px;vertical-align:middle">
+          <path d="M20 12V22H4V12" />
+          <path d="M22 7H2v5h20V7z" />
+          <path d="M12 22V7" />
+          <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+          <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+        </svg>
+      </span>
+      會員設定
+    </div>
     <!-- 商品管理 -->
     <div
       class="nav-item"
@@ -609,11 +628,8 @@
             style="max-width: 150px"
             (change)="onCategoryFilter($event)"
           >
-            <option>全部分類</option>
-            <option>🍜 台式</option>
-            <option>🍛 南洋</option>
-            <option>🍝 西式</option>
-            <option>🧋 飲品</option>
+            <option value="">全部風格</option>
+            <option *ngFor="let s of styleOptions()" [value]="s">{{ s }}</option>
           </select>
           <input
             type="text"
@@ -734,17 +750,28 @@
               (click)="openPromoDetail(promo)"
             >
               <!-- 頂部色條 -->
-              <div class="promo-card-bar" [style.background]="promo.badgeColor || promo.color"></div>
+              <div
+                class="promo-card-bar"
+                [style.background]="promo.badgeColor || promo.color"
+              ></div>
 
               <div class="promo-card-body">
                 <!-- bulk checkbox（批次刪除模式下才顯示） -->
                 @if (bulkDeleteMode() && promo.ended) {
-                  <div class="d-flex justify-content-end mb-1" (click)="$event.stopPropagation()">
+                  <div
+                    class="d-flex justify-content-end mb-1"
+                    (click)="$event.stopPropagation()"
+                  >
                     <input
                       type="checkbox"
                       [checked]="isPromoSelected(promo.id)"
                       (change)="togglePromoSelection(promo.id)"
-                      style="width:16px;height:16px;cursor:pointer;accent-color:#c49756"
+                      style="
+                        width: 16px;
+                        height: 16px;
+                        cursor: pointer;
+                        accent-color: #c49756;
+                      "
                     />
                   </div>
                 }
@@ -754,7 +781,15 @@
                   <img
                     [src]="promo.image"
                     alt="封面"
-                    style="width:100%;height:100px;object-fit:cover;border-radius:6px;margin-bottom:10px;border:1px solid rgba(0,0,0,0.06)"
+                    (error)="promo.image = ''"
+                    style="
+                      width: 100%;
+                      height: 100px;
+                      object-fit: cover;
+                      border-radius: 6px;
+                      margin-bottom: 10px;
+                      border: 1px solid rgba(0, 0, 0, 0.06);
+                    "
                   />
                 }
 
@@ -763,7 +798,9 @@
                   <div class="promo-desc">{{ promo.description }}</div>
                 }
                 <div class="promo-meta">
-                  <span>{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span>
+                  <span
+                    >{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span
+                  >
                   @if (promo.minAmount) {
                     <span class="promo-meta-sep">·</span>
                     <span>滿 NT${{ promo.minAmount }}</span>
@@ -792,19 +829,23 @@
                   </div>
                 </div>
                 <div class="d-flex gap-2 mt-2">
-                  @if (promo.type === 'promotion') {
+                  @if (promo.type === "promotion") {
                     <button
                       class="btn btn-sm btn-ghost-gold"
                       style="font-size: 0.72rem"
                       (click)="openAddGift(promo.id)"
-                    >＋ 新增門檻</button>
+                    >
+                      ＋ 新增門檻
+                    </button>
                   }
                   <button
                     class="btn btn-sm btn-ghost-red"
                     style="font-size: 0.72rem"
                     [class.promo-delete-pulse]="promo.ended"
                     (click)="deletePromo(promo.id)"
-                  >刪除</button>
+                  >
+                    刪除
+                  </button>
                 </div>
               </div>
             </div>
@@ -906,37 +947,37 @@
       <div>
         <div class="page-title">帳號管理</div>
 
-        <!-- 子頁籤 -->
-        <div class="d-flex gap-2 mb-4 align-items-center">
+        <!-- 三個子頁籤 + 新增按鈕 -->
+        <div class="d-flex gap-2 mb-4 align-items-center flex-wrap">
           <button
-            class="btn btn-sm"
-            [style.background]="
-              userSubTab() === 'bm'
-                ? 'rgba(192,132,252,0.15)'
-                : 'rgba(255,255,255,0.05)'
-            "
-            [style.color]="userSubTab() === 'bm' ? '#c084fc' : '#8892b0'"
-            [style.border]="
-              userSubTab() === 'bm'
-                ? '1px solid rgba(192,132,252,0.3)'
-                : '1px solid rgba(255,255,255,0.1)'
-            "
+            class="btn btn-sm subtab-btn"
+            [class.is-purple]="userSubTab() === 'bm'"
             (click)="setUserSubTab('bm')"
           >
             分店長帳號
+            <span style="margin-left:4px; font-size:0.72rem; opacity:0.8">({{ bmAccounts().length }})</span>
           </button>
-          <!-- 員工帳號頁籤暫時隱藏
-          <button class="btn btn-sm"
-            [style.background]="userSubTab()==='staff' ? 'rgba(79,142,247,0.15)' : 'rgba(255,255,255,0.05)'"
-            [style.color]="userSubTab()==='staff' ? '#4f8ef7' : '#8892b0'"
-            [style.border]="userSubTab()==='staff' ? '1px solid rgba(79,142,247,0.3)' : '1px solid rgba(255,255,255,0.1)'"
-            (click)="setUserSubTab('staff')">員工帳號</button>
-          -->
           <button
-            class="btn btn-sm btn-gold ms-auto"
-            (click)="openAddAccount()"
+            class="btn btn-sm subtab-btn"
+            [class.is-blue]="userSubTab() === 'ma'"
+            (click)="setUserSubTab('ma')"
           >
-            + 新增分店長
+            副店長帳號
+            <span style="margin-left:4px; font-size:0.72rem; opacity:0.8">({{ maAccounts().length }})</span>
+          </button>
+          <button
+            class="btn btn-sm subtab-btn"
+            [class.is-teal]="userSubTab() === 'staff'"
+            (click)="setUserSubTab('staff')"
+          >
+            員工帳號
+            <span style="margin-left:4px; font-size:0.72rem; opacity:0.8">({{ staffAccounts().length }})</span>
+          </button>
+          <button class="btn btn-sm btn-gold ms-auto" (click)="openAddAccount()">
+            + 新增
+            @if (userSubTab() === 'bm') { 分店長 }
+            @else if (userSubTab() === 'ma') { 副店長 }
+            @else { 員工 }
           </button>
         </div>
 
@@ -957,15 +998,18 @@
                   </tr>
                 </thead>
                 <tbody>
+                  @if (bmAccounts().length === 0) {
+                    <tr>
+                      <td colspan="7" style="text-align:center; color:#8892b0; padding:24px">尚無分店長帳號</td>
+                    </tr>
+                  }
                   @for (acc of bmAccounts(); track acc.id) {
                     <tr>
-                      <td>{{ acc.name }}</td>
-                      <td class="mono" style="color: #4a5a70">
-                        {{ acc.account }}
-                      </td>
+                      <td style="font-weight:600">{{ acc.name }}</td>
+                      <td class="mono" style="color:#c084fc">{{ acc.account }}</td>
                       <td>{{ acc.branch }}</td>
-                      <td style="color: #4a5a70">{{ acc.country ?? "—" }}</td>
-                      <td style="color: #4a5a70">{{ acc.joinedAt }}</td>
+                      <td style="color:#4a5a70">{{ acc.country ?? "—" }}</td>
+                      <td style="color:#4a5a70">{{ acc.joinedAt }}</td>
                       <td>
                         @if (acc.isActive) {
                           <span class="badge-ok">啟用</span>
@@ -973,28 +1017,18 @@
                           <span class="badge-err">停權</span>
                         }
                       </td>
-                      <td class="d-flex gap-1">
-                        <button
-                          class="btn btn-sm btn-ghost-gold"
-                          (click)="openEditAccount(acc.id)"
-                        >
-                          編輯
-                        </button>
-                        @if (acc.isActive) {
-                          <button
-                            class="btn btn-sm btn-ghost-red"
-                            (click)="toggleAccount(acc.id)"
-                          >
-                            停權
-                          </button>
-                        } @else {
-                          <button
-                            class="btn btn-sm btn-ghost-green"
-                            (click)="toggleAccount(acc.id)"
-                          >
-                            復權
-                          </button>
-                        }
+                      <td>
+                        <div class="d-flex gap-1 flex-wrap">
+                          <button class="btn btn-sm btn-ghost-gold" (click)="resetPasswordAccount(acc.id)">重設密碼</button>
+                          @if (acc.isActive) {
+                            <button class="btn btn-sm btn-ghost-red" (click)="toggleAccount(acc.id)">停權</button>
+                          } @else {
+                            <button class="btn btn-sm btn-ghost-green" (click)="toggleAccount(acc.id)">復權</button>
+                          }
+                          <button class="btn btn-sm btn-ghost-blue" (click)="adminChangeRoleAction(acc.id, 'MANAGER_AGENT')">降為副店長</button>
+                          <button class="btn btn-sm btn-ghost-teal" (click)="adminChangeRoleAction(acc.id, 'STAFF')">降為員工</button>
+                          <button class="btn btn-sm btn-ghost-amber" (click)="openTransferBranch(acc.id)">調換分店</button>
+                        </div>
                       </td>
                     </tr>
                   }
@@ -1004,9 +1038,8 @@
           </div>
         }
 
-        <!-- 員工列表暫時隱藏 -->
-        @if (false) {
-          <!-- userSubTab() === "staff" -->
+        <!-- 副店長列表 -->
+        @if (userSubTab() === "ma") {
           <div class="content-card">
             <div class="table-wrapper">
               <table class="table table-borderless table-dark-custom mb-0">
@@ -1015,21 +1048,25 @@
                     <th>姓名</th>
                     <th>帳號</th>
                     <th>所屬分店</th>
-                    <th>班別</th>
+                    <th>國家</th>
+                    <th>入職日期</th>
                     <th>狀態</th>
-                    <th>角色</th>
                     <th>操作</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (acc of staffAccounts(); track acc.id) {
+                  @if (maAccounts().length === 0) {
                     <tr>
-                      <td>{{ acc.name }}</td>
-                      <td class="mono" style="color: #4a5a70">
-                        {{ acc.account }}
-                      </td>
+                      <td colspan="7" style="text-align:center; color:#8892b0; padding:24px">尚無副店長帳號</td>
+                    </tr>
+                  }
+                  @for (acc of maAccounts(); track acc.id) {
+                    <tr>
+                      <td style="font-weight:600">{{ acc.name }}</td>
+                      <td class="mono" style="color:#4f8ef7">{{ acc.account }}</td>
                       <td>{{ acc.branch }}</td>
-                      <td>{{ acc.shift }}</td>
+                      <td style="color:#4a5a70">{{ acc.country ?? "—" }}</td>
+                      <td style="color:#4a5a70">{{ acc.joinedAt }}</td>
                       <td>
                         @if (acc.isActive) {
                           <span class="badge-ok">啟用</span>
@@ -1038,38 +1075,74 @@
                         }
                       </td>
                       <td>
-                        @if (acc.backendRole === "STAFF") {
-                          <span class="badge-warn">員工</span>
-                        } @else if (acc.backendRole === "MANAGER_AGENT") {
-                          <span class="badge-ok">副店長</span>
+                        <div class="d-flex gap-1 flex-wrap">
+                          <button class="btn btn-sm btn-ghost-gold" (click)="resetPasswordAccount(acc.id)">重設密碼</button>
+                          @if (acc.isActive) {
+                            <button class="btn btn-sm btn-ghost-red" (click)="toggleAccount(acc.id)">停權</button>
+                          } @else {
+                            <button class="btn btn-sm btn-ghost-green" (click)="toggleAccount(acc.id)">復權</button>
+                          }
+                          <button class="btn btn-sm btn-ghost-purple" (click)="adminChangeRoleAction(acc.id, 'REGION_MANAGER')">升為分店長</button>
+                          <button class="btn btn-sm btn-ghost-teal" (click)="adminChangeRoleAction(acc.id, 'STAFF')">降為員工</button>
+                          <button class="btn btn-sm btn-ghost-amber" (click)="openTransferBranch(acc.id)">調換分店</button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        <!-- 員工列表 -->
+        @if (userSubTab() === "staff") {
+          <div class="content-card">
+            <div class="table-wrapper">
+              <table class="table table-borderless table-dark-custom mb-0">
+                <thead>
+                  <tr>
+                    <th>姓名</th>
+                    <th>帳號</th>
+                    <th>所屬分店</th>
+                    <th>國家</th>
+                    <th>入職日期</th>
+                    <th>狀態</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @if (staffAccounts().length === 0) {
+                    <tr>
+                      <td colspan="7" style="text-align:center; color:#8892b0; padding:24px">尚無員工帳號</td>
+                    </tr>
+                  }
+                  @for (acc of staffAccounts(); track acc.id) {
+                    <tr>
+                      <td style="font-weight:600">{{ acc.name }}</td>
+                      <td class="mono" style="color:#3ecf8e">{{ acc.account }}</td>
+                      <td>{{ acc.branch }}</td>
+                      <td style="color:#4a5a70">{{ acc.country ?? "—" }}</td>
+                      <td style="color:#4a5a70">{{ acc.joinedAt }}</td>
+                      <td>
+                        @if (acc.isActive) {
+                          <span class="badge-ok">啟用</span>
                         } @else {
-                          <span class="badge-info">{{ acc.backendRole }}</span>
+                          <span class="badge-err">停權</span>
                         }
                       </td>
-                      <td class="d-flex gap-1">
-                        @if (acc.backendRole === "STAFF") {
-                          <button
-                            class="btn btn-sm btn-ghost-gold"
-                            (click)="promoteAccount(acc.id)"
-                          >
-                            晉升副店長
-                          </button>
-                        }
-                        @if (acc.isActive) {
-                          <button
-                            class="btn btn-sm btn-ghost-red"
-                            (click)="toggleAccount(acc.id)"
-                          >
-                            停權
-                          </button>
-                        } @else {
-                          <button
-                            class="btn btn-sm btn-ghost-green"
-                            (click)="toggleAccount(acc.id)"
-                          >
-                            復權
-                          </button>
-                        }
+                      <td>
+                        <div class="d-flex gap-1 flex-wrap">
+                          <button class="btn btn-sm btn-ghost-gold" (click)="resetPasswordAccount(acc.id)">重設密碼</button>
+                          @if (acc.isActive) {
+                            <button class="btn btn-sm btn-ghost-red" (click)="toggleAccount(acc.id)">停權</button>
+                          } @else {
+                            <button class="btn btn-sm btn-ghost-green" (click)="toggleAccount(acc.id)">復權</button>
+                          }
+                          <button class="btn btn-sm btn-ghost-purple" (click)="adminChangeRoleAction(acc.id, 'REGION_MANAGER')">升為分店長</button>
+                          <button class="btn btn-sm btn-ghost-blue" (click)="adminChangeRoleAction(acc.id, 'MANAGER_AGENT')">升為副店長</button>
+                          <button class="btn btn-sm btn-ghost-amber" (click)="openTransferBranch(acc.id)">調換分店</button>
+                        </div>
                       </td>
                     </tr>
                   }
@@ -1093,10 +1166,16 @@
         <div class="d-flex gap-2 mb-4 align-items-center">
           <button
             class="btn btn-sm"
-            [style.background]="showRates() ? 'rgba(79,142,247,0.15)' : 'rgba(255,255,255,0.05)'"
+            [style.background]="
+              showRates() ? 'rgba(79,142,247,0.15)' : 'rgba(255,255,255,0.05)'
+            "
             [style.color]="showRates() ? '#4f8ef7' : '#8892b0'"
-            [style.border]="showRates() ? '1px solid rgba(79,142,247,0.3)' : '1px solid rgba(255,255,255,0.1)'"
-            (click)="showRates.set(!showRates())"
+            [style.border]="
+              showRates()
+                ? '1px solid rgba(79,142,247,0.3)'
+                : '1px solid rgba(255,255,255,0.1)'
+            "
+            (click)="toggleRatesPanel()"
           >
             即時匯率
           </button>
@@ -1104,12 +1183,14 @@
 
         <!-- ── 稅率設定 + 折扣上限：整合常駐區塊 ── -->
         <div class="tax-combined-block">
-          <!-- 稅率設定 -->
+          <!-- 左卡：稅率 + 編輯入口 -->
           <div class="content-card">
             <div class="d-flex justify-content-between align-items-center mb-4">
               <div>
                 <div class="card-title mb-0">各國稅率一覽</div>
-                <div style="font-size: 0.72rem; color: #8892b0; margin-top: 2px">
+                <div
+                  style="font-size: 0.72rem; color: #8892b0; margin-top: 2px"
+                >
                   共 {{ taxes().length }} 個國家／地區
                 </div>
               </div>
@@ -1117,77 +1198,117 @@
                 <span style="font-size: 1rem; line-height: 1">＋</span> 新增國家
               </button>
             </div>
+
             @for (tax of taxes(); track tax.id) {
-              <div class="tax-row">
-                <div class="tax-row-info">
+              <div
+                class="tax-row"
+                style="
+                  flex-direction: column;
+                  align-items: stretch;
+                  gap: 10px;
+                  justify-content: center;
+                "
+              >
+                <!-- 國家標頭 -->
+                <div class="d-flex justify-content-between align-items-center">
                   <div>
                     <div class="tax-country-name">{{ tax.country }}</div>
                     <div class="tax-meta-row">
                       <span class="tax-currency-badge">{{ tax.currency }}</span>
-                      <span class="tax-type-badge"
-                        [class.inclusive]="tax.taxType === 'INCLUSIVE'"
-                        [class.exclusive]="tax.taxType === 'EXCLUSIVE'">
-                        {{ tax.taxType === "INCLUSIVE" ? "內含稅" : "外加稅" }}
-                      </span>
+                      @if (!tax.editing) {
+                        <span
+                          class="tax-type-badge"
+                          [class.inclusive]="tax.taxType === 'INCLUSIVE'"
+                          [class.exclusive]="tax.taxType === 'EXCLUSIVE'"
+                        >
+                          {{
+                            tax.taxType === "INCLUSIVE" ? "內含稅" : "外加稅"
+                          }}
+                        </span>
+                      }
                     </div>
                   </div>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                  @if (tax.editing) {
-                    <input type="number" class="form-control form-control-sm form-ctrl mono"
-                      [value]="tax.editValue" (input)="onTaxInput(tax.id, $event)"
-                      min="0" max="100" style="width: 80px; text-align: right" />
-                    <span style="color: #4a5a70; font-size: 0.85rem">%</span>
-                    <button class="btn btn-sm btn-gold" (click)="saveTax(tax.id)">✓ 儲存</button>
-                    <button class="btn btn-sm btn-ghost-red" (click)="cancelEditTax(tax.id)">✕</button>
-                  } @else {
-                    <div class="tax-rate-badge">
-                      <span class="tax-rate-num mono">{{ tax.rate }}</span>
-                      <span class="tax-rate-unit">%</span>
+                  @if (!tax.editing) {
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="tax-rate-badge">
+                        <span class="tax-rate-num mono">{{ tax.rate }}</span>
+                        <span class="tax-rate-unit">%</span>
+                      </div>
+                      <button
+                        class="btn btn-sm btn-ghost-gold"
+                        (click)="startEditTax(tax.id)"
+                      >
+                        修改
+                      </button>
                     </div>
-                    <button class="btn btn-sm btn-ghost-gold" (click)="startEditTax(tax.id)">修改</button>
                   }
                 </div>
+
+                <!-- 編輯模式 -->
+                @if (tax.editing) {
+                  <div class="d-flex flex-wrap gap-3 align-items-end">
+                    <div>
+                      <label
+                        style="
+                          font-size: 0.72rem;
+                          color: #4a5a70;
+                          display: block;
+                          margin-bottom: 4px;
+                        "
+                        >稅率（%）</label
+                      >
+                      <div class="d-flex align-items-center gap-1">
+                        <input
+                          type="number"
+                          class="form-control form-control-sm form-ctrl mono"
+                          [(ngModel)]="tax.editRate"
+                          min="0"
+                          max="100"
+                          style="width: 80px; text-align: right"
+                        />
+                        <span style="color: #4a5a70; font-size: 0.85rem"
+                          >%</span
+                        >
+                      </div>
+                    </div>
+                    <div>
+                      <label
+                        style="
+                          font-size: 0.72rem;
+                          color: #4a5a70;
+                          display: block;
+                          margin-bottom: 4px;
+                        "
+                        >稅種</label
+                      >
+                      <select
+                        class="form-control form-control-sm form-ctrl"
+                        [(ngModel)]="tax.editTaxType"
+                      >
+                        <option value="INCLUSIVE">內含稅</option>
+                        <option value="EXCLUSIVE">外加稅</option>
+                      </select>
+                    </div>
+                    <div class="d-flex gap-2">
+                      <button
+                        class="btn btn-sm btn-gold"
+                        (click)="saveTax(tax.id)"
+                      >
+                        ✓ 儲存
+                      </button>
+                      <button
+                        class="btn btn-sm btn-ghost-red"
+                        (click)="cancelEditTax(tax.id)"
+                      >
+                        ✕ 取消
+                      </button>
+                    </div>
+                  </div>
+                }
               </div>
             }
           </div>
 
-          <!-- 折扣上限 -->
-          <div class="content-card">
-            <div class="mb-4">
-              <div class="card-title mb-0">各國活動折扣上限</div>
-              <div style="font-size: 0.72rem; color: #8892b0; margin-top: 2px">
-                設定每筆訂單最高折扣金額（當地幣別）
-              </div>
-            </div>
-            @for (tax of taxes(); track tax.id) {
-              <div class="tax-row">
-                <div class="tax-row-info">
-                  <div class="tax-region-code">
-                    {{ tax.countryCode || tax.currency.slice(0, 2) }}
-                  </div>
-                  <div class="tax-country-name">{{ tax.country }}</div>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                  @if (tax.editingDiscount) {
-                    <input type="number" class="form-control form-control-sm form-ctrl mono"
-                      [value]="tax.editDiscountValue" (input)="onDiscountInput(tax.id, $event)"
-                      min="0" style="width: 100px; text-align: right" />
-                    <span class="tax-currency-badge">{{ tax.currency }}</span>
-                    <button class="btn btn-sm btn-gold" (click)="saveDiscount(tax.id)">✓ 儲存</button>
-                    <button class="btn btn-sm btn-ghost-red" (click)="cancelEditDiscount(tax.id)">✕</button>
-                  } @else {
-                    <span style="color: #8892b0; font-size: 0.8rem">上限</span>
-                    <div class="tax-rate-badge">
-                      <span class="tax-rate-num mono">{{ tax.discountLimit }}</span>
-                    </div>
-                    <span class="tax-currency-badge">{{ tax.currency }}</span>
-                    <button class="btn btn-sm btn-ghost-gold" (click)="startEditDiscount(tax.id)">修改</button>
-                  }
-                </div>
-              </div>
-            }
-          </div>
         </div>
 
         <!-- 即時匯率（切換顯示） -->
@@ -1196,19 +1317,59 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
               <div>
                 <div class="card-title mb-0">即時匯率</div>
-                <div style="font-size: 0.72rem; color: #8892b0; margin-top: 2px">
-                  相對台幣（TWD）的兌換率・每日凌晨 4 點自動更新
-                  @if (allRates().length > 0) {
-                    ・上次更新：{{ allRates()[0].updatedAt | slice: 0 : 10 }}
+                <div
+                  style="font-size: 0.72rem; color: #8892b0; margin-top: 2px"
+                >
+                  來源：匯率 API（TWD 基準）
+                  @if (latestRateUpdatedAt()) {
+                    ・上次更新：{{ formatRateUpdatedAt(latestRateUpdatedAt()) }}
                   }
                 </div>
               </div>
-              <button class="btn btn-sm btn-ghost-gold" [disabled]="ratesLoading()" (click)="loadAllRates()">
-                ↺ 重新整理
-              </button>
+              <div class="d-flex gap-2 align-items-center flex-wrap justify-content-end">
+                <input
+                  type="date"
+                  class="form-control form-control-sm form-ctrl"
+                  [ngModel]="rateQueryDate()"
+                  (ngModelChange)="rateQueryDate.set($event)"
+                  [disabled]="ratesLoading()"
+                  style="width: 150px"
+                />
+                <button
+                  class="btn btn-sm btn-ghost-blue"
+                  [disabled]="ratesLoading()"
+                  (click)="loadRatesByDate()"
+                >
+                  查詢日期
+                </button>
+                <button
+                  class="btn btn-sm btn-ghost-gold"
+                  [disabled]="ratesLoading()"
+                  (click)="loadAllRates()"
+                >
+                  重新整理
+                </button>
+              </div>
             </div>
             @if (ratesLoading()) {
-              <div style="text-align: center; color: #8a9ab0; padding: 32px 0">載入中…</div>
+              <div style="text-align: center; color: #8a9ab0; padding: 32px 0">
+                載入中…
+              </div>
+            }
+            @if (rateError()) {
+              <div
+                style="
+                  color: #b42318;
+                  background: rgba(244, 63, 94, 0.08);
+                  border: 1px solid rgba(244, 63, 94, 0.2);
+                  border-radius: 6px;
+                  padding: 10px 12px;
+                  margin-bottom: 12px;
+                  font-size: 0.85rem;
+                "
+              >
+                {{ rateError() }}
+              </div>
             }
             @if (!ratesLoading()) {
               @if (allRates().length > 0) {
@@ -1224,22 +1385,145 @@
                     <tbody>
                       @for (r of allRates(); track r.id) {
                         <tr>
-                          <td><span class="tax-currency-badge">{{ r.currencyCode }}</span></td>
-                          <td class="mono" style="color: #b08540">{{ r.rateToTwd }}</td>
-                          <td style="color: #8a9ab0; font-size: 0.8rem">{{ r.updatedAt }}</td>
+                          <td>
+                            <span class="tax-currency-badge">{{
+                              r.currencyCode
+                            }}</span>
+                          </td>
+                          <td class="mono" style="color: #b08540">
+                            {{ formatRate(r.rateToTwd) }}
+                          </td>
+                          <td style="color: #8a9ab0; font-size: 0.8rem">
+                            {{ formatRateUpdatedAt(r.updatedAt) }}
+                          </td>
                         </tr>
                       }
                     </tbody>
                   </table>
                 </div>
               } @else {
-                <div style="text-align: center; color: #8a9ab0; padding: 32px 0">
-                  尚無匯率資料，請點擊「↺ 最新」重新載入
+                <div
+                  style="text-align: center; color: #8a9ab0; padding: 32px 0"
+                >
+                  尚無匯率資料，請點擊「重新整理」或選擇日期查詢
                 </div>
               }
             }
           </div>
         }
+      </div>
+    }
+
+    <!-- ════════════════════════════════════════
+         頁籤：會員設定（各國折扣上限 + 累積次數）
+         ════════════════════════════════════════ -->
+    @if (activeTab() === "member") {
+      <div>
+        <div class="page-title">會員設定</div>
+        <p style="font-size:0.82rem; color:#8892b0; margin-bottom:24px">
+          設定各國會員優惠：活動折扣金額上限（每筆訂單最高可折抵）與折扣累積次數門檻。
+        </p>
+
+        <div class="content-card">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <div class="card-title mb-0">各國會員優惠設定</div>
+              <div style="font-size:0.72rem; color:#8892b0; margin-top:2px">
+                共 {{ memberData().length }} 個國家／地區
+              </div>
+            </div>
+          </div>
+
+          @if (memberData().length === 0) {
+            <div style="text-align:center; color:#8892b0; padding:32px">
+              尚無國家資料，請先至「國家基本設定」新增國家
+            </div>
+          }
+
+          @for (row of memberData(); track row.tax.id) {
+            <div class="tax-row" style="align-items:center; padding:14px 16px; gap:16px">
+
+              <!-- 左：國家識別 -->
+              <div class="d-flex align-items-center gap-3" style="min-width:140px">
+                <div class="tax-region-code">
+                  {{ row.tax.countryCode || row.tax.currency.slice(0, 2) }}
+                </div>
+                <div>
+                  <div class="tax-country-name">{{ row.tax.country }}</div>
+                  <span class="tax-currency-badge">{{ row.tax.currency }}</span>
+                </div>
+              </div>
+
+              <!-- 中：數值顯示 或 編輯輸入（flex:1） -->
+              <div style="flex:1; padding-left:28px">
+                @if (editingMemberRegionId() !== row.tax.id) {
+                  <!-- 顯示模式 -->
+                  <div class="d-flex align-items-center gap-4 flex-wrap">
+                    <div class="d-flex align-items-center gap-2">
+                      <span style="color:#8892b0; font-size:0.8rem">上限</span>
+                      <div class="tax-rate-badge" style="min-width:80px">
+                        <span class="tax-rate-num mono" style="font-size:0.95rem">{{ row.tax.discountLimit }}</span>
+                      </div>
+                      <span class="tax-currency-badge">{{ row.tax.currency }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <span style="color:#8892b0; font-size:0.8rem">累積</span>
+                      <div class="tax-rate-badge" style="min-width:60px">
+                        <span class="tax-rate-num mono" style="font-size:0.95rem">
+                          {{ row.disc?.usageCap ?? '—' }}
+                        </span>
+                      </div>
+                      @if (row.disc) {
+                        <span class="tax-currency-badge">次</span>
+                      } @else {
+                        <span style="font-size:0.72rem; color:#8892b0">未設定</span>
+                      }
+                    </div>
+                  </div>
+                } @else {
+                  <!-- 編輯模式 -->
+                  <div class="d-flex gap-3 flex-wrap align-items-end">
+                    <div>
+                      <label style="font-size:0.7rem; color:#8892b0; display:block; margin-bottom:4px">
+                        活動折扣金額上限（{{ row.tax.currency }}）
+                      </label>
+                      <div class="d-flex align-items-center gap-1">
+                        <input type="number" class="form-control form-control-sm form-ctrl mono"
+                          [ngModel]="editMemberLimit()" (ngModelChange)="editMemberLimit.set($event)"
+                          min="0" style="width:110px; text-align:right" />
+                        <span style="color:#4a5a70; font-size:0.82rem">{{ row.tax.currency }}</span>
+                      </div>
+                      <div style="font-size:0.66rem; color:#8892b0; margin-top:2px">0 = 無上限</div>
+                    </div>
+                    <div>
+                      <label style="font-size:0.7rem; color:#8892b0; display:block; margin-bottom:4px">
+                        折扣累積次數門檻
+                      </label>
+                      <div class="d-flex align-items-center gap-1">
+                        <input type="number" class="form-control form-control-sm form-ctrl mono"
+                          [ngModel]="editMemberCap()" (ngModelChange)="editMemberCap.set($event)"
+                          min="0" style="width:90px; text-align:right" />
+                        <span style="color:#4a5a70; font-size:0.82rem">次</span>
+                      </div>
+                      <div style="font-size:0.66rem; color:#8892b0; margin-top:2px">累積達此次數可折扣</div>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- 右：操作按鈕 -->
+              <div style="min-width:120px; display:flex; justify-content:flex-end; gap:6px">
+                @if (editingMemberRegionId() !== row.tax.id) {
+                  <button class="btn btn-sm btn-ghost-gold" (click)="startEditMember(row.tax.id)">修改</button>
+                } @else {
+                  <button class="btn btn-sm btn-gold" (click)="saveMemberSettings(row.tax.id)">✓ 儲存</button>
+                  <button class="btn btn-sm btn-ghost-red" (click)="cancelEditMember()">✕ 取消</button>
+                }
+              </div>
+
+            </div>
+          }
+        </div>
       </div>
     }
 
@@ -1271,6 +1555,18 @@
                   <option [value]="c">{{ c }}</option>
                 }
               </select>
+              @if (financeMode() === "month" && financeCountry() === "全部") {
+                <div
+                  style="
+                    font-size: 0.72rem;
+                    color: #8a9ab0;
+                    margin-top: 5px;
+                    line-height: 1.4;
+                  "
+                >
+                  💡 選擇特定國家可顯示<br />商品銷售 Top 5
+                </div>
+              }
             </div>
 
             <!-- 分店 -->
@@ -1385,36 +1681,38 @@
                 }
               </button>
             </div>
+
+            <!-- 台幣匯率轉換按鈕（僅在選擇非台幣國家時顯示） -->
+            @if (getFinanceCurrencyLabel() !== 'TWD' && getFinanceCurrencyLabel() !== '') {
+              <div style="padding-bottom: 1px">
+                <button
+                  class="btn btn-sm"
+                  [style.background]="showTwdConversion() ? '#2563eb' : 'transparent'"
+                  [style.color]="showTwdConversion() ? '#fff' : '#2563eb'"
+                  [style.border]="'1.5px solid #2563eb'"
+                  [style.border-radius]="'8px'"
+                  [style.font-weight]="'600'"
+                  (click)="toggleTwdConversion()"
+                >
+                  💱 台幣匯率轉換
+                </button>
+              </div>
+            }
           </div>
         </div>
 
         <!-- ══ 月份模式結果 ══════════════════════════════ -->
         @if (financeMode() === "month" && financeMonthResult()) {
-          <!-- 彙總卡片 -->
+          <!-- 彙總卡片（已隱藏） -->
+          <!--
           <div class="row g-3 mb-4">
             <div class="col-sm-4">
               <div class="stat-card">
                 <div class="stat-label">本月總營收</div>
                 <div class="finance-num">
                   {{ animatedCurrentTotal() | number: "1.0-0" }}
-                  <span class="finance-currency-badge">{{
-                    getFinanceCurrencyLabel()
-                  }}</span>
+                  <span class="finance-currency-badge">{{ getFinanceCurrencyLabel() }}</span>
                 </div>
-                @if (financeCountry() === "全部") {
-                  <div class="stat-sub" style="color: #8a9ab0">
-                    折合台幣加總
-                  </div>
-                }
-                @if (financeLastTotal() > 0) {
-                  <div
-                    class="stat-sub"
-                    [style.color]="financeGrowth() >= 0 ? '#3ecf8e' : '#f87171'"
-                  >
-                    {{ financeGrowth() >= 0 ? "↑" : "↓" }}
-                    {{ financeGrowth() | number: "1.1-1" }}% 較上月
-                  </div>
-                }
               </div>
             </div>
             <div class="col-sm-4">
@@ -1422,26 +1720,188 @@
                 <div class="stat-label">上月總營收</div>
                 <div class="finance-num">
                   {{ animatedLastTotal() | number: "1.0-0" }}
-                  <span class="finance-currency-badge">{{
-                    getFinanceCurrencyLabel()
-                  }}</span>
+                  <span class="finance-currency-badge">{{ getFinanceCurrencyLabel() }}</span>
                 </div>
-                <div class="stat-sub">對比基準</div>
               </div>
             </div>
             <div class="col-sm-4">
               <div class="stat-card">
                 <div class="stat-label">分店筆數</div>
                 <div class="finance-num">{{ animatedBranchCount() }}</div>
-                <div class="stat-sub">本月有資料的分店</div>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="stat-card">
+                <div class="stat-label">本月總成本</div>
+                <div class="finance-num" style="color: #f87171">
+                  {{ financeCurrentCostTotal() | number: "1.0-0" }}
+                  <span class="finance-currency-badge">{{ getFinanceCurrencyLabel() }}</span>
+                </div>
               </div>
             </div>
           </div>
+          -->
+
+          <!-- 營收趨勢直條圖 -->
+          @if (financeChartData().length > 0) {
+            <div class="content-card mb-4">
+              <div
+                class="card-title mb-1"
+                style="display: flex; align-items: baseline; gap: 10px"
+              >
+                <span>📊 近期營收趨勢</span>
+                <span style="font-size: 0.78rem; font-weight: 400; color: #8a9ab0"
+                  >{{ getFinanceCurrencyLabel() }}</span
+                >
+              </div>
+
+              <!-- 圖表本體 -->
+              <div class="finance-chart-wrap">
+                @for (bar of animatedChartData(); track bar.month + '_' + bar._k) {
+                  <div class="finance-chart-col">
+                    <div class="finance-chart-bars">
+                      <div
+                        class="finance-chart-bar rev"
+                        [style.height.px]="
+                          financeChartMax() > 0
+                            ? (bar.revenue / financeChartMax()) * 160
+                            : 0
+                        "
+                        [title]="
+                          (bar.revenue | number: '1.0-0') +
+                          ' ' +
+                          getFinanceCurrencyLabel()
+                        "
+                      >
+                        <span class="bar-tip rev">{{
+                          abbreviateNum(bar.revenue)
+                        }}</span>
+                      </div>
+                      <div
+                        class="finance-chart-bar cost"
+                        [style.height.px]="
+                          financeChartMax() > 0
+                            ? (bar.cost / financeChartMax()) * 160
+                            : 0
+                        "
+                        [title]="
+                          (bar.cost | number: '1.0-0') +
+                          ' ' +
+                          getFinanceCurrencyLabel()
+                        "
+                      >
+                        <span class="bar-tip cost">{{
+                          abbreviateNum(bar.cost)
+                        }}</span>
+                      </div>
+                    </div>
+                    <div class="finance-chart-month-lbl">
+                      {{ formatChartMonth(bar.month) }}
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- 圖例 -->
+              <div class="finance-chart-legend">
+                <div class="legend-item">
+                  <div class="legend-dot rev"></div>
+                  營收
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot cost"></div>
+                  成本
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- 台幣換算區塊 -->
+          @if (showTwdConversion() && getFinanceCurrencyLabel() !== 'TWD' && getFinanceCurrencyLabel() !== '') {
+            <div class="content-card mb-4" style="border: 1.5px solid #2563eb22; background: linear-gradient(135deg, #eff6ff 0%, #f8faff 100%)">
+              <div
+                class="card-title mb-3"
+                style="display: flex; align-items: center; gap: 10px"
+              >
+                <span>💱 台幣換算</span>
+                @if (financeRateToTwd() > 0) {
+                  <span
+                    style="
+                      font-size: 0.78rem;
+                      font-weight: 400;
+                      color: #4a5a70;
+                      background: #dbeafe;
+                      padding: 2px 10px;
+                      border-radius: 20px;
+                    "
+                  >
+                    1 {{ getFinanceCurrencyLabel() }} ≈
+                    {{ financeRateToTwd() | number: "1.4-4" }} TWD
+                  </span>
+                } @else {
+                  <span
+                    style="
+                      font-size: 0.78rem;
+                      color: #f87171;
+                      background: #fee2e2;
+                      padding: 2px 10px;
+                      border-radius: 20px;
+                    "
+                    >匯率資料載入中…</span
+                  >
+                }
+              </div>
+              <div class="row g-3">
+                <div class="col-sm-4">
+                  <div class="stat-card" style="border-color: #bfdbfe">
+                    <div class="stat-label">本月總營收（TWD）</div>
+                    <div class="finance-num" style="color: #1d4ed8; font-size: 1.5rem">
+                      {{ financeCurrentTotalTwd() | number: "1.0-0" }}
+                      <span class="finance-currency-badge" style="background: #2563eb">TWD</span>
+                    </div>
+                    <div class="stat-sub">
+                      {{ financeRevenueForTwd() | number: "1.0-0" }}
+                      {{ getFinanceCurrencyLabel() }} × {{ financeRateToTwd() | number: "1.4-4" }}
+                    </div>
+                  </div>
+                </div>
+                <div class="col-sm-4">
+                  <div class="stat-card" style="border-color: #bfdbfe">
+                    <div class="stat-label">上月總營收（TWD）</div>
+                    <div class="finance-num" style="color: #1d4ed8; font-size: 1.5rem">
+                      {{ financeLastTotalTwd() | number: "1.0-0" }}
+                      <span class="finance-currency-badge" style="background: #2563eb">TWD</span>
+                    </div>
+                    <div class="stat-sub">
+                      {{ financePrevRevenueForTwd() | number: "1.0-0" }}
+                      {{ getFinanceCurrencyLabel() }} × {{ financeRateToTwd() | number: "1.4-4" }}
+                    </div>
+                  </div>
+                </div>
+                <div class="col-sm-4">
+                  <div class="stat-card" style="border-color: #fecaca">
+                    <div class="stat-label">本月總成本（TWD）</div>
+                    <div class="finance-num" style="color: #b91c1c; font-size: 1.5rem">
+                      {{ financeCurrentCostTotalTwd() | number: "1.0-0" }}
+                      <span class="finance-currency-badge" style="background: #ef4444">TWD</span>
+                    </div>
+                    <div class="stat-sub">
+                      {{ financeCostForTwd() | number: "1.0-0" }}
+                      {{ getFinanceCurrencyLabel() }} × {{ financeRateToTwd() | number: "1.4-4" }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
 
           <!-- 本月 vs 上月分店對比表 -->
           <div class="content-card mb-4">
-            <div class="card-title mb-3">
+            <div class="card-title mb-3" style="display:flex; align-items:baseline; gap:8px">
               各分店本月 vs 上月對比（{{ financeMonth() }}）
+              @if (financeUsingLastFallback()) {
+                <span style="font-size:0.75rem; font-weight:400; color:#8a9ab0">顯示上月資料</span>
+              }
             </div>
             <div class="table-wrapper">
               <table class="table table-borderless table-dark-custom mb-0">
@@ -1449,24 +1909,25 @@
                   <tr>
                     <th>分店名稱</th>
                     <th>所屬國家</th>
-                    <th>本月營收</th>
-                    <th>上月營收</th>
+                    <th>{{ financeUsingLastFallback() ? '上月營收' : '本月營收' }}</th>
+                    <th>{{ financeUsingLastFallback() ? '上月成本' : '本月成本' }}</th>
+                    <th>{{ financeUsingLastFallback() ? '前月營收' : '上月營收' }}</th>
                     <th>成長</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @if (financeCurrentData().length === 0) {
+                  @if (financeDisplayCurrentData().length === 0) {
                     <tr>
                       <td
-                        colspan="5"
+                        colspan="6"
                         style="text-align: center; color: #8a9ab0"
                       >
                         本月尚無報表資料
                       </td>
                     </tr>
                   }
-                  @for (d of financeCurrentData(); track d.branchName) {
-                    @let lastRow = financeLastDataMap().get(d.branchName);
+                  @for (d of financeDisplayCurrentData(); track d.branchName) {
+                    @let lastRow = financeDisplayLastDataMap().get(d.branchName);
                     @let rowGrowth =
                       lastRow && +lastRow.totalAmount > 0
                         ? ((+d.totalAmount - +lastRow.totalAmount) /
@@ -1485,6 +1946,9 @@
                             >{{ getRowCurrencyLabel(d.regionsName) }}</span
                           >
                         }
+                      </td>
+                      <td class="mono" style="color: #f87171">
+                        {{ d.totalCost | number: "1.0-0" }}
                       </td>
                       <td class="mono" style="color: #8a9ab0">
                         @if (lastRow) {
@@ -1742,19 +2206,26 @@
   @if (selectedPromo(); as promo) {
     <div class="promo-sheet-overlay" (click)="closePromoDetail()">
       <div class="promo-sheet" (click)="$event.stopPropagation()">
-
         <!-- ── 圖片 Header ── -->
         <div class="promo-sheet-hd">
           @if (promo.image) {
-            <img [src]="promo.image" alt="封面" class="promo-sheet-hd-img" />
+            <img
+              [src]="promo.image"
+              alt="封面"
+              class="promo-sheet-hd-img"
+              (error)="promo.image = ''"
+            />
           } @else {
-            <div class="promo-sheet-hd-placeholder" [style.background]="promo.badgeColor || promo.color"></div>
+            <div
+              class="promo-sheet-hd-placeholder"
+              [style.background]="promo.badgeColor || promo.color"
+            ></div>
           }
           <div class="promo-sheet-hd-gradient"></div>
           <!-- 標題覆蓋在圖片上 -->
           <div class="promo-sheet-hd-body">
             <h2 class="promo-sheet-hd-name">{{ promo.title }}</h2>
-            <div style="font-size:0.78rem;margin-top:4px">
+            <div style="font-size: 0.78rem; margin-top: 4px">
               @if (promo.isActive && !promo.ended) {
                 <span class="badge-ok">進行中</span>
               } @else if (promo.ended) {
@@ -1766,56 +2237,86 @@
           </div>
           <!-- 關閉按鈕 -->
           <button class="promo-sheet-close" (click)="closePromoDetail()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
 
         <!-- ── 可捲動內容 ── -->
         <div class="promo-sheet-content">
+          <!-- 日期 -->
+          <div class="promo-sheet-date">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              style="width: 16px; height: 16px; flex-shrink: 0"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+            <span>{{ promo.rawStartTime }}</span>
+            <span class="promo-sheet-date-sep">—</span>
+            <span>{{ promo.rawEndTime }}</span>
+          </div>
 
-            <!-- 日期 -->
-            <div class="promo-sheet-date">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-              <span>{{ promo.rawStartTime }}</span>
-              <span class="promo-sheet-date-sep">—</span>
-              <span>{{ promo.rawEndTime }}</span>
+          <!-- 消費門檻 -->
+          @if (promo.minAmount) {
+            <div class="promo-sheet-spend-badge">
+              消費滿 NT${{ promo.minAmount }} 即可參加
             </div>
+          }
 
-            <!-- 消費門檻 -->
-            @if (promo.minAmount) {
-              <div class="promo-sheet-spend-badge">消費滿 NT${{ promo.minAmount }} 即可參加</div>
-            }
+          <!-- AI 文案 -->
+          @if (promo.description) {
+            <p class="promo-sheet-desc">{{ promo.description }}</p>
+          }
 
-            <!-- AI 文案 -->
-            @if (promo.description) {
-              <p class="promo-sheet-desc">{{ promo.description }}</p>
-            }
-
-            <!-- 贈品清單 -->
-            @if (promo.gifts && promo.gifts.length > 0) {
-              <div class="promo-sheet-section">
-                <div class="promo-sheet-section-title">可選贈品</div>
-                <div class="promo-gift-list">
-                  @for (gift of promo.gifts; track gift.id) {
-                    <div class="promo-gift-item" [class.disabled]="!gift.active">
-                      <span class="promo-gift-name">{{ gift.productName }} × {{ gift.quantity === -1 ? '∞' : gift.quantity }}</span>
-                      <span class="promo-gift-amount">滿 NT${{ gift.fullAmount }}</span>
-                      @if (!gift.active) {
-                        <span class="promo-gift-inactive">已停用</span>
-                      }
-                    </div>
-                  }
-                </div>
+          <!-- 贈品清單 -->
+          @if (promo.gifts && promo.gifts.length > 0) {
+            <div class="promo-sheet-section">
+              <div class="promo-sheet-section-title">可選贈品</div>
+              <div class="promo-gift-list">
+                @for (gift of promo.gifts; track gift.id) {
+                  <div class="promo-gift-item" [class.disabled]="!gift.active">
+                    <span class="promo-gift-name"
+                      >{{ gift.productName }} ×
+                      {{ gift.quantity === -1 ? "∞" : gift.quantity }}</span
+                    >
+                    <span class="promo-gift-amount"
+                      >滿 NT${{ gift.fullAmount }}</span
+                    >
+                    @if (!gift.active) {
+                      <span class="promo-gift-inactive">已停用</span>
+                    }
+                  </div>
+                }
               </div>
-            }
+            </div>
+          }
         </div>
 
         <!-- ── Footer ── -->
         <div class="promo-sheet-ft">
-          <button class="btn btn-sm btn-ghost-red" (click)="requestDeletePromo(promo)">刪除活動</button>
-          <button class="btn btn-sm btn-gold" (click)="closePromoDetail()">關閉</button>
+          <button
+            class="btn btn-sm btn-ghost-red"
+            (click)="requestDeletePromo(promo)"
+          >
+            刪除活動
+          </button>
+          <button class="btn btn-sm btn-gold" (click)="closePromoDetail()">
+            關閉
+          </button>
         </div>
       </div>
     </div>
@@ -1989,6 +2490,9 @@
 @if (activeModal() === "addProduct") {
   <div class="modal-overlay" (click)="closeModal()">
     <div class="modal-box" (click)="$event.stopPropagation()">
+      <!-- ⭐ 測試用：先放這行 -->
+      <div style="color: red">TEST MODAL</div>
+
       <div class="modal-hd">
         <div class="modal-hd-title">
           {{ editingProductId() !== null ? "✏️ 編輯商品" : "➕ 新增商品" }}
@@ -2009,39 +2513,24 @@
         </div>
         <div class="row g-2 mb-3">
           <div class="col-6">
-            <label class="modal-label">分類</label>
+            <label class="modal-label">料理風格</label>
+            <select
+              class="form-select form-ctrl"
+              [(ngModel)]="productDraft.style"
+            >
+              <option *ngFor="let s of styleOptions()" [value]="s">{{ s }}</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="modal-label">餐點分類</label>
             <select
               class="form-select form-ctrl"
               [(ngModel)]="productDraft.category"
             >
-              <option>台式</option>
-              <option>南洋</option>
-              <option>西式</option>
-              <option>飲品</option>
+              <option *ngFor="let c of categoryOptions()" [value]="c">{{ c }}</option>
             </select>
           </div>
-          <!-- 代表 Emoji（暫時停用）
-          <div class="col-6">
-            <label class="modal-label">代表 Emoji</label>
-            <select
-              class="form-select form-ctrl"
-              [(ngModel)]="productDraft.emoji"
-            >
-              <option>🍜</option>
-              <option>🍛</option>
-              <option>🍲</option>
-              <option>🍝</option>
-              <option>🌮</option>
-              <option>🧋</option>
-              <option>🍱</option>
-              <option>🍣</option>
-              <option>🍔</option>
-              <option>🥗</option>
-            </select>
-          </div>
-          -->
         </div>
-        <!-- 售價 & 初始庫存（暫時停用）
         <div class="row g-2 mb-3">
           <div class="col-6">
             <label class="modal-label">售價（元）</label>
@@ -2053,7 +2542,7 @@
             />
           </div>
           <div class="col-6">
-            <label class="modal-label">初始庫存數量</label>
+            <label class="modal-label">庫存數量</label>
             <input
               type="number"
               class="form-control form-ctrl"
@@ -2062,7 +2551,6 @@
             />
           </div>
         </div>
-        -->
         <div class="mb-3">
           <label class="modal-label">商品圖片（選填）</label>
           @if (productImagePreview()) {
@@ -2082,7 +2570,14 @@
         </div>
         <div class="mb-3">
           <div class="d-flex align-items-center justify-content-between mb-1">
-            <label class="modal-label mb-0">商品描述（選填）</label>
+            <label class="modal-label">
+              商品圖片
+              @if (editingProductId() === null) {
+                <span class="required">*</span>
+              } @else {
+                （選填）
+              }
+            </label>
             <button
               class="btn btn-sm"
               style="
@@ -2208,7 +2703,8 @@
               align-items: center;
               gap: 5px;
             "
-            [disabled]="generatingPromoAiDesc()"
+            [disabled]="generatingPromoAiDesc() || !promoDraft.image"
+            [title]="!promoDraft.image ? '請先上傳封面圖片' : ''"
             (click)="generatePromoAiDesc()"
           >
             @if (generatingPromoAiDesc()) {
@@ -2268,7 +2764,10 @@
       <div class="pp-field">
         <label class="pp-label">贈品商品</label>
         @if (giftProductList().length > 0) {
-          <select class="form-control form-ctrl" [(ngModel)]="promoDraft.giftProductId">
+          <select
+            class="form-control form-ctrl"
+            [(ngModel)]="promoDraft.giftProductId"
+          >
             <option [ngValue]="null">— 不設定贈品 —</option>
             @for (p of giftProductList(); track p.id) {
               <option [ngValue]="p.id">{{ p.name }}</option>
@@ -2564,7 +3063,10 @@
     <div class="modal-box" (click)="$event.stopPropagation()">
       <div class="modal-hd">
         <div class="modal-hd-title">
-          {{ editingAccountId() !== null ? "✏️ 編輯帳號" : "👤 新增分店長" }}
+          @if (editingAccountId() !== null) { ✏️ 編輯帳號 }
+          @else if (userSubTab() === 'bm') { 👤 新增分店長 }
+          @else if (userSubTab() === 'ma') { 👤 新增副店長 }
+          @else { 👤 新增員工 }
         </div>
         <button class="modal-close-btn" (click)="closeModal()">✕</button>
       </div>
@@ -2581,87 +3083,132 @@
               <span class="nsr-label">預設密碼</span>
               <span class="nsr-value">00000</span>
             </div>
-            <p class="nsr-hint">請將帳號告知員工，員工首次登入後系統會提示修改密碼。</p>
+            <p class="nsr-hint">
+              請將帳號告知員工，員工首次登入後系統會提示修改密碼。
+            </p>
           </div>
         } @else {
-        <div class="row g-2 mb-3">
-          <div class="col-12">
-            <label class="modal-label"
-              >姓名 <span class="required">*</span></label
-            >
-            <input
-              type="text"
-              class="form-control form-ctrl"
-              [(ngModel)]="accountDraft.name"
-              placeholder="例：王小明"
-            />
+          <div class="row g-2 mb-3">
+            <div class="col-12">
+              <label class="modal-label"
+                >姓名 <span class="required">*</span></label
+              >
+              <input
+                type="text"
+                class="form-control form-ctrl"
+                [(ngModel)]="accountDraft.name"
+                placeholder="例：王小明"
+              />
+            </div>
           </div>
-        </div>
-        @if (editingAccountId() === null) {
-          <p class="mb-3" style="font-size:0.78rem;color:#8a9ab0;">帳號與初始密碼由系統自動產生，員工首次登入時會提示修改密碼。</p>
+          @if (editingAccountId() === null) {
+            <p class="mb-3" style="font-size: 0.78rem; color: #8a9ab0">
+              帳號與初始密碼由系統自動產生，員工首次登入時會提示修改密碼。
+            </p>
+          }
+          <div class="row g-2 mb-3">
+            <div class="col-4">
+              <label class="modal-label">國家</label>
+              <select
+                class="form-select form-ctrl"
+                [(ngModel)]="accountDraft.country"
+                (ngModelChange)="onAccountCountryChange($event)"
+              >
+                @for (c of uniqueCountries(); track c) {
+                  <option [value]="c">{{ c }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-4">
+              <label class="modal-label">角色</label>
+              <select class="form-select form-ctrl" [(ngModel)]="accountDraft.role">
+                <option value="bm">分店長</option>
+                <option value="ma">副店長</option>
+                <option value="staff">員工</option>
+              </select>
+            </div>
+            <div class="col-4">
+              <label class="modal-label">所屬分店</label>
+              <select
+                class="form-select form-ctrl"
+                [(ngModel)]="accountDraft.branch"
+              >
+                @for (b of filteredAccountBranches(); track b.id) {
+                  <option>{{ b.name }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <div class="mb-1">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="modalAccActive"
+                [(ngModel)]="accountDraft.isActive"
+              />
+              <label
+                class="form-check-label"
+                for="modalAccActive"
+                style="font-size: 0.82rem; color: #4a5a70"
+                >帳號啟用</label
+              >
+            </div>
+          </div>
         }
-        <div class="row g-2 mb-3">
-          <div class="col-4">
-            <label class="modal-label">國家</label>
-            <select
-              class="form-select form-ctrl"
-              [(ngModel)]="accountDraft.country"
-              (ngModelChange)="onAccountCountryChange($event)"
-            >
-              @for (c of uniqueCountries(); track c) {
-                <option [value]="c">{{ c }}</option>
-              }
-            </select>
-          </div>
-          <div class="col-4">
-            <label class="modal-label">角色</label>
-            <select
-              class="form-select form-ctrl"
-              [(ngModel)]="accountDraft.role"
-            >
-              <option value="bm">分店長</option>
-              <option value="staff">員工</option>
-            </select>
-          </div>
-          <div class="col-4">
-            <label class="modal-label">所屬分店</label>
-            <select
-              class="form-select form-ctrl"
-              [(ngModel)]="accountDraft.branch"
-            >
-              @for (b of filteredAccountBranches(); track b.id) {
-                <option>{{ b.name }}</option>
-              }
-            </select>
-          </div>
-        </div>
-        <div class="mb-1">
-          <div class="form-check">
-            <input
-              class="form-check-input"
-              type="checkbox"
-              id="modalAccActive"
-              [(ngModel)]="accountDraft.isActive"
-            />
-            <label
-              class="form-check-label"
-              for="modalAccActive"
-              style="font-size: 0.82rem; color: #4a5a70"
-              >帳號啟用</label
-            >
-          </div>
-        </div>
-        } <!-- end @else -->
+        <!-- end @else -->
       </div>
       <div class="modal-ft">
         @if (newStaffResult()) {
-          <button class="btn btn-sm btn-gold" (click)="confirmNewStaff()">確認</button>
+          <button class="btn btn-sm btn-gold" (click)="confirmNewStaff()">
+            確認
+          </button>
         } @else {
-          <button class="btn btn-sm btn-ghost-red" (click)="closeModal()">取消</button>
+          <button class="btn btn-sm btn-ghost-red" (click)="closeModal()">
+            取消
+          </button>
           <button class="btn btn-sm btn-gold" (click)="saveAccount()">
             {{ editingAccountId() !== null ? "儲存變更" : "確認新增" }}
           </button>
         }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════
+     Modal：調換分店
+     ════════════════════════════════════════════════════ -->
+@if (activeModal() === "transferBranch") {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-hd">
+        <div class="modal-hd-title">🔄 調換分店</div>
+        <button class="modal-close-btn" (click)="closeModal()">✕</button>
+      </div>
+      <div class="modal-bd">
+        <p style="font-size:0.85rem; color:#8892b0; margin-bottom:16px">
+          將
+          <strong style="color:#e8eaf0">{{ transferTarget?.name }}</strong>
+          （目前：{{ transferTarget?.branch ?? "—" }}）調至新分店：
+        </p>
+        <div class="mb-3">
+          <label class="modal-label">目標分店</label>
+          <select
+            class="form-select form-ctrl"
+            [ngModel]="transferNewAreaId()"
+            (ngModelChange)="transferNewAreaId.set($event)"
+          >
+            <option [ngValue]="null" disabled>請選擇分店</option>
+            @for (b of branches(); track b.id) {
+              <option [ngValue]="b.id">{{ b.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="modal-ft">
+        <button class="btn btn-sm btn-ghost-red" (click)="closeModal()">取消</button>
+        <button class="btn btn-sm btn-gold" (click)="confirmTransfer()">確認調換</button>
       </div>
     </div>
   </div>
@@ -2685,7 +3232,9 @@
 
         <div class="row g-3 mb-3">
           <div class="col-7">
-            <label class="modal-label">國家／地區名稱 <span class="required">*</span></label>
+            <label class="modal-label"
+              >國家／地區名稱 <span class="required">*</span></label
+            >
             <select
               class="form-select form-ctrl"
               [(ngModel)]="taxDraft.country"
@@ -2704,7 +3253,11 @@
               class="form-control form-ctrl mono"
               [value]="taxDraft.countryCode"
               readonly
-              style="background: rgba(0,0,0,0.03); letter-spacing: 2px; text-transform: uppercase"
+              style="
+                background: rgba(0, 0, 0, 0.03);
+                letter-spacing: 2px;
+                text-transform: uppercase;
+              "
             />
             <div class="modal-helper-text">選擇國家後自動帶入</div>
           </div>
@@ -2712,14 +3265,22 @@
 
         <div class="row g-3 mb-3">
           <div class="col-7">
-            <label class="modal-label">稅率類型 <span class="required">*</span></label>
-            <select class="form-select form-ctrl" [(ngModel)]="taxDraft.taxType">
+            <label class="modal-label"
+              >稅率類型 <span class="required">*</span></label
+            >
+            <select
+              class="form-select form-ctrl"
+              [(ngModel)]="taxDraft.taxType"
+            >
               <option value="INCLUSIVE">內含稅（稅已含於售價中）</option>
               <option value="EXCLUSIVE">外加稅（結帳時另行加收）</option>
             </select>
             <div class="modal-helper-text">
-              @if (taxDraft.taxType === "INCLUSIVE") { 顧客支付的金額已包含稅款
-              } @else { 系統將於結帳時在小計金額上加計稅率 }
+              @if (taxDraft.taxType === "INCLUSIVE") {
+                顧客支付的金額已包含稅款
+              } @else {
+                系統將於結帳時在小計金額上加計稅率
+              }
             </div>
           </div>
           <div class="col-5">
@@ -2729,7 +3290,11 @@
               class="form-control form-ctrl mono"
               [value]="taxDraft.currency"
               readonly
-              style="background: rgba(0,0,0,0.03); letter-spacing: 2px; text-transform: uppercase"
+              style="
+                background: rgba(0, 0, 0, 0.03);
+                letter-spacing: 2px;
+                text-transform: uppercase;
+              "
             />
             <div class="modal-helper-text">選擇國家後自動帶入</div>
           </div>
@@ -2737,13 +3302,17 @@
 
         <div class="row g-3">
           <div class="col-5">
-            <label class="modal-label">稅率（%）<span class="required">*</span></label>
+            <label class="modal-label"
+              >稅率（%）<span class="required">*</span></label
+            >
             <div class="tax-input-wrap">
               <input
                 type="number"
                 class="form-control form-ctrl mono tax-rate-input"
                 [(ngModel)]="taxDraft.rate"
-                min="0" max="100" placeholder="0"
+                min="0"
+                max="100"
+                placeholder="0"
               />
               <span class="tax-input-unit">%</span>
             </div>
@@ -2751,28 +3320,27 @@
           </div>
         </div>
 
-        <hr class="add-country-divider" />
-
-        <!-- ── 下半區：折扣上限 ── -->
-        <div class="add-country-section-title">折扣上限</div>
+        <!-- ── 下半區：會員折扣上限 ── -->
+        <hr style="border-color:rgba(255,255,255,0.08); margin:20px 0 16px" />
+        <div class="add-country-section-title">會員優惠設定</div>
 
         <div class="row g-3">
-          <div class="col-7">
-            <label class="modal-label">最高折扣金額</label>
+          <div class="col-5">
+            <label class="modal-label">活動折扣金額上限</label>
             <div class="tax-input-wrap">
               <input
                 type="number"
                 class="form-control form-ctrl mono tax-rate-input"
                 [(ngModel)]="taxDraft.discountLimit"
-                min="0" placeholder="0"
+                min="0"
+                placeholder="0"
               />
-              <span class="tax-input-unit" style="font-size: 0.75rem; min-width: 40px">
-                {{ taxDraft.currency || '幣別' }}
-              </span>
+              <span class="tax-input-unit" style="font-size:0.75rem">{{ taxDraft.currency || '—' }}</span>
             </div>
-            <div class="modal-helper-text">每筆訂單可折抵的上限金額（0 表示無上限）</div>
+            <div class="modal-helper-text">0 = 無上限；新增後可於「會員設定」調整</div>
           </div>
         </div>
+
       </div>
 
       <!-- 底部操作列 -->

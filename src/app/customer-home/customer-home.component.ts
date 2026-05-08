@@ -19,6 +19,7 @@ import {
   signal,
   computed,
   inject,
+  effect,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -27,18 +28,19 @@ import { QRCodeComponent } from 'angularx-qrcode';
 import { AuthService } from '../shared/auth.service';
 import { LoadingService } from '../shared/loading.service';
 import { OrderService, OrderStatus } from '../shared/order.service';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, forkJoin, of, Subscription } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import {
   ApiService,
   GetOrdersVo,
   GetOrdersDetailVo,
   CartSyncReq,
   CreateOrdersReq,
-  PayReq,
   CartRemoveReq,
   CartClearReq,
   OrderCartDetailItem,
   PromotionDetailVo,
+  GiftItem,
 } from '../shared/api.service';
 import { DEMO_BASE_URL } from '../shared/demo.config';
 import {
@@ -72,6 +74,7 @@ export interface MenuItem {
   image: string;
   category: string;
   categoryEn: string;
+  style?: string;
   description: string;
   descriptionJP?: string;
   descriptionKR?: string;
@@ -138,6 +141,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   readonly HERO_SLIDE_COUNT = 3;
   private heroTimer: ReturnType<typeof setInterval> | null = null;
   private heroPaused = false;
+  private _removalTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   /* ── 促銷橫幅輪播 ────────────────────────────────────── */
   promoBannerIndex = signal(0);
@@ -168,8 +172,12 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   /* ── 購物車 ─────────────────────────────────────────── */
   cartItems = signal<CartItem[]>([]);
   currentCartId = signal<number | null>(null);
-  private promoGiftIds = new Map<string, number>(); // 贈品名稱 → giftProductId
+  private promoGiftIds = new Map<string, number>(); // 贈品名稱 → promotionsGiftsId
+  private promoGiftProductIds = new Map<string, number>(); // 贈品名稱 → productId（菜單品項 ID）
+  private promoNameToId = new Map<string, number>(); // 活動顯示名稱 → promotions.id（後端 promotions 主鍵）
   private outOfStockGifts = new Set<string>(); // 庫存為 0 的贈品 productName
+  checkoutGifts = signal<GiftItem[]>([]); // 結帳頁可選贈品（由 getAvailableGifts API 即時取得）
+  private _giftsSubscription?: Subscription;
 
   cartCount = computed(() =>
     this.cartItems().reduce((sum, item) => sum + item.quantity, 0),
@@ -293,6 +301,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       image: '',
       category: '飯食',
       categoryEn: 'Rice',
+      style: '台式經典',
       description: '慢燉豬五花，滷汁濃醇入味，配半熟滷蛋與爽脆泡菜',
       stock: 20,
     },
@@ -304,6 +313,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       image: '',
       category: '飯食',
       categoryEn: 'Rice',
+      style: '台式經典',
       description: '台式醃製炸排骨，滷汁菜頭配白飯',
       stock: 15,
     },
@@ -315,6 +325,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       image: '',
       category: '飯食',
       categoryEn: 'Rice',
+      style: '美式熱情',
       description: '精選澳洲牛肉，炭烤鎖汁，附時蔬與醬汁',
       stock: 10,
     },
@@ -326,6 +337,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       image: '',
       category: '飯食',
       categoryEn: 'Rice',
+      style: '台式經典',
       description: '麻油、醬油、米酒三杯燒製，九層塔香氣四溢',
       stock: 15,
     },
@@ -337,6 +349,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       image: '',
       category: '小吃',
       categoryEn: 'Snacks',
+      style: '台式經典',
       description: '鮮蚵地瓜粉煎餅，淋上特製甜辣醬',
       stock: 18,
     },
@@ -348,6 +361,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       image: '',
       category: '小吃',
       categoryEn: 'Snacks',
+      style: '台式經典',
       description: '鮮蚵燴入麵線，甜辣醬提味，道地夜市風味',
       stock: 20,
     },
@@ -359,6 +373,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       image: '',
       category: '麵食',
       categoryEn: 'Noodles',
+      style: '台式經典',
       description: '古法熬製清湯底，手工製麵條彈牙有嚼勁',
       stock: 15,
     },
@@ -370,6 +385,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       image: '',
       category: '飲品',
       categoryEn: 'Drinks',
+      style: '台式經典',
       description: '現煮珍珠，手工黑糖虎紋',
       stock: 50,
     },
@@ -381,17 +397,18 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       image: '',
       category: '飲品',
       categoryEn: 'Drinks',
+      style: '台式經典',
       description: '台灣本產仙草凍，搭配濃醇鮮奶茶',
       stock: 30,
     },
   ]);
 
-  /** 從 menuItems 衍生的分類清單（去重，保持插入順序） */
+  /** 從 menuItems 衍生的分類清單（去重，保持插入順序，過濾 null/undefined/空字串） */
   menuCategories = computed<string[]>(() => {
     const seen = new Set<string>();
     const cats: string[] = [];
     for (const item of this.menuItems()) {
-      if (!seen.has(item.category)) {
+      if (item.category && !seen.has(item.category)) {
         seen.add(item.category);
         cats.push(item.category);
       }
@@ -403,31 +420,50 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   getItemsByCategory(cat: string): MenuItem[] {
     return this.menuItems().filter(
       (item) =>
-        item.category === cat && this.isMenuItemShown(item.name, item.category),
+        item.category === cat &&
+        this.isMenuItemShown(item.name, item.category, item.style),
     );
   }
 
   /** 分類標題文字（含 emoji） */
   getCategoryLabel(cat: string): string {
+    if (!cat) return '';
     const cc = this.branchService.country;
     const MAP_TW: Record<string, string> = {
+      台式: '🏮 台式料理',
       飯食: '🍱 飯食料理',
       小吃: '🦪 台灣小吃',
       麵食: '🍜 麵食',
       飲品: '🧋 特調飲品',
-      台式: '🏮 台式料理',
+      甜點: '🍰 甜點',
+      湯食: '🍲 湯品料理',
+      鍋類: '🫕 鍋類料理',
+      辣食: '🌶️ 辣食料理',
+      台食: '🍽️ 台灣美食',
     };
     const MAP_JP: Record<string, string> = {
+      台式: '🏮 台湾スタイル',
       飯食: '🍱 ご飯料理',
       小吃: '🦪 台湾スナック',
       麵食: '🍜 麺料理',
       飲品: '🧋 ドリンク',
+      甜點: '🍰 デザート',
+      湯食: '🍲 スープ料理',
+      鍋類: '🫕 鍋料理',
+      辣食: '🌶️ 辛い料理',
+      台食: '🍽️ 台湾料理',
     };
     const MAP_KR: Record<string, string> = {
+      台式: '🏮 대만식',
       飯食: '🍱 밥 요리',
       小吃: '🦪 대만 간식',
       麵食: '🍜 면 요리',
       飲品: '🧋 음료',
+      甜點: '🍰 디저트',
+      湯食: '🍲 국물요리',
+      鍋類: '🫕 냄비요리',
+      辣食: '🌶️ 매운요리',
+      台食: '🍽️ 대만음식',
     };
     if (cc === 'JP') return MAP_JP[cat] ?? `🍽 ${cat}`;
     if (cc === 'KR') return MAP_KR[cat] ?? `🍽 ${cat}`;
@@ -451,16 +487,62 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     return MAP[item.name] ?? '';
   }
 
+  /* ── 菜單：分類定義（對應 category.json）─────────── */
+  readonly CATEGORY_DEFS: { key: string; emoji: string }[] = [
+    { key: '台式', emoji: '🏮' },
+    { key: '飯食', emoji: '🍱' },
+    { key: '小吃', emoji: '🦪' },
+    { key: '麵食', emoji: '🍜' },
+    { key: '飲品', emoji: '🧋' },
+    { key: '甜點', emoji: '🍰' },
+    { key: '湯食', emoji: '🍲' },
+    { key: '鍋類', emoji: '🫕' },
+    { key: '辣食', emoji: '🌶️' },
+    { key: '台食', emoji: '🍽️' },
+  ];
+
+  readonly STYLE_DEFS: { key: string; emoji: string }[] = [
+    { key: '台式經典', emoji: '🏮' },
+    { key: '日式簡約', emoji: '🌸' },
+    { key: '韓式風情', emoji: '🌙' },
+    { key: '美式熱情', emoji: '🗽' },
+    { key: '義式浪漫', emoji: '🌹' },
+  ];
+
   /* ── 菜單：分類篩選 & 搜尋 ────────────────────────── */
   activeMenuCategory = signal<string>('all');
+  activeMenuStyle = signal<string>('all');
   menuSearchQuery = signal<string>('');
 
-  /** 主廚推薦餐點（首頁 featured 區塊對應的品項名稱） */
-  readonly CHEF_PICKS = ['招牌滷肉飯', '古早味排骨飯', '蚵仔麵線'];
+  /** 動態風格清單（去重，保持插入順序） */
+  menuStyles = computed<string[]>(() => {
+    const seen = new Set<string>();
+    const styles: string[] = [];
+    for (const item of this.menuItems()) {
+      if (item.style && !seen.has(item.style)) {
+        seen.add(item.style);
+        styles.push(item.style);
+      }
+    }
+    return styles;
+  });
+
+  /** 主廚推薦餐點（對應後端真實產品名稱） */
+  readonly CHEF_PICKS = ['冠軍紅燒牛肉麵', '府城現炸蝦捲', '五更腸旺旺鍋'];
 
   setMenuCategory(cat: string): void {
     this.activeMenuCategory.set(cat);
     document.querySelector('.ch-main')?.scrollTo({ top: 0 });
+  }
+
+  setMenuStyle(sty: string): void {
+    this.activeMenuStyle.set(sty);
+    document.querySelector('.ch-main')?.scrollTo({ top: 0 });
+  }
+
+  scrollBar(id: string, dir: 'left' | 'right'): void {
+    const el = document.getElementById(id);
+    if (el) el.scrollBy({ left: dir === 'right' ? 180 : -180, behavior: 'smooth' });
   }
 
   /** 從首頁主廚推薦卡片點入：切換至菜單頁並套用主廚推薦篩選 */
@@ -473,34 +555,53 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     this.menuSearchQuery.set((event.target as HTMLInputElement).value);
   }
 
-  /** 回傳該品項是否應顯示（分類 + 名稱模糊搜尋） */
-  isMenuItemShown(name: string, category: string): boolean {
+  /** 回傳該品項是否應顯示（分類 + 風格 + 名稱模糊搜尋） */
+  isMenuItemShown(name: string, category: string, style?: string): boolean {
     const cat = this.activeMenuCategory();
+    const sty = this.activeMenuStyle();
     const q = this.menuSearchQuery().trim().toLowerCase();
     const catMatch =
       cat === 'all' ||
       (cat === 'chef' ? this.CHEF_PICKS.includes(name) : cat === category);
+    const styMatch = sty === 'all' || style === sty;
     const nameMatch = q === '' || name.toLowerCase().includes(q);
-    return catMatch && nameMatch;
+    return catMatch && styMatch && nameMatch;
   }
 
   /** 主廚推薦篩選下的所有品項（依 CHEF_PICKS 順序） */
   chefPickItems = computed(() => {
     const q = this.menuSearchQuery().trim().toLowerCase();
-    return this.CHEF_PICKS
-      .map((name) => this.menuItems().find((i) => i.name === name))
-      .filter((i): i is NonNullable<typeof i> =>
-        !!i && (q === '' || i.name.toLowerCase().includes(q)),
-      );
+    const sty = this.activeMenuStyle();
+    return this.CHEF_PICKS.map((name) =>
+      this.menuItems().find((i) => i.name === name),
+    ).filter(
+      (i): i is NonNullable<typeof i> =>
+        !!i &&
+        (q === '' || i.name.toLowerCase().includes(q)) &&
+        (sty === 'all' || i.style === sty),
+    );
   });
 
   /** 回傳整個分類區塊是否應顯示（只要有任一品項符合篩選即顯示） */
   isSectionShown(
-    sectionItems: Array<{ name: string; category: string }>,
+    sectionItems: Array<{ name: string; category: string; style?: string }>,
   ): boolean {
     return sectionItems.some((item) =>
-      this.isMenuItemShown(item.name, item.category),
+      this.isMenuItemShown(item.name, item.category, item.style),
     );
+  }
+
+  /** 目前篩選條件下是否有任何餐點可顯示 */
+  hasFilteredResults = computed(() =>
+    this.menuItems().some((item) =>
+      this.isMenuItemShown(item.name, item.category, item.style),
+    ),
+  );
+
+  resetFilters(): void {
+    this.activeMenuCategory.set('all');
+    this.activeMenuStyle.set('all');
+    this.menuSearchQuery.set('');
   }
 
   /* ── 側邊欄：個人資料抽屜狀態 ────────────────────── */
@@ -509,7 +610,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   /* ── 手機版：頂部用戶選單 ─────────────────────────── */
   showMobileMenu = signal(false);
-  toggleMobileMenu(): void { this.showMobileMenu.update(v => !v); }
+  toggleMobileMenu(): void {
+    this.showMobileMenu.update((v) => !v);
+  }
 
   showPassword = signal(false);
   showConfirmPassword = signal(false);
@@ -522,7 +625,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   profileSaveMsg = signal<{ ok: boolean; text: string } | null>(null);
 
   /* ── 結帳：付款方式選擇 ────────────────────────────── */
-  paymentMethod = signal<'credit' | 'mobile' | 'cash'>('cash');
+  paymentMethod = signal<'ecpay' | 'linepay' | 'cash'>('cash');
 
   /* ── 訂單備註（暫停使用，以電話號碼欄取代）────────────── */
   orderNote = signal('');
@@ -546,7 +649,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   /** 0XXXXXXXXX → +886XXXXXXXXX（台灣），已是國際格式則原樣返回 */
   private phoneToIntl(phone: string): string {
     if (!phone) return '';
-    if (phone.startsWith('0') && /^\d{10}$/.test(phone)) return '+886' + phone.slice(1);
+    if (phone.startsWith('0') && /^\d{10}$/.test(phone))
+      return '+886' + phone.slice(1);
     if (phone.startsWith('+')) return phone;
     return phone;
   }
@@ -555,8 +659,15 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   pendingOrderId = signal<string | null>(null);
   pendingOrderDateId = signal<string>('');
   backendConfirmedTotal = signal<number | null>(null);
+
+  /* ── LINE Pay QR Code 付款 Modal ── */
+  linePayQrUrl = signal<string | null>(null);
+  linePayPollOrderId = signal<string | null>(null);
+  linePayPollOrderDateId = signal<string>('');
   /** 付款頁顯示的總計：優先使用後端確認值，fallback 前端計算值 */
-  confirmedTotal = computed(() => this.backendConfirmedTotal() ?? this.discountedTotal());
+  confirmedTotal = computed(
+    () => this.backendConfirmedTotal() ?? this.discountedTotal(),
+  );
 
   checkoutToastVisible = false;
   checkoutToastMessage = '';
@@ -614,6 +725,13 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     this.cardCvv.set(value.replace(/\D/g, '').slice(0, 4));
   }
 
+  fillTestCard(): void {
+    this.cardNumber.set('4311 9522 2222 2222');
+    this.cardExpiry.set('01/27');
+    this.cardCvv.set('222');
+    this.cardHolder.set('TEST USER');
+  }
+
   /* ── 行動支付 QR Modal ──────────────────────────────── */
   showMobilePayModal = signal(false);
   mobilePayCompleted = signal(false);
@@ -629,8 +747,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     this.mobilePayCompleted.set(true);
     this.mobilePayTimer = setTimeout(() => {
       this.showMobilePayModal.set(false);
-      this._doPlaceOrder();
-      this.isPlacingOrder.set(false);
+      this._doPlaceOrderAsync()
+        .catch(console.error)
+        .finally(() => this.isPlacingOrder.set(false));
     }, 2200);
   }
 
@@ -646,7 +765,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   /* ── 下單中狀態（true 時按鈕顯示 spinner，防止重複送出） */
   isPlacingOrder = signal(false);
 
-  setPaymentMethod(method: 'credit' | 'mobile' | 'cash'): void {
+  setPaymentMethod(method: 'ecpay' | 'linepay' | 'cash'): void {
     this.paymentMethod.set(method);
   }
 
@@ -983,7 +1102,10 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
   /** 移除贈品字串中的數量（× N），只保留品名 */
   stripGiftQty(gift: string): string {
-    return gift.replace(/\s*×\s*\d+/g, '').replace(/\s{2,}/g, ' ').trim();
+    return gift
+      .replace(/\s*×\s*\d+/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
   }
 
   getHeroPromoLocalName(): string {
@@ -1005,7 +1127,12 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     const p = this.PROMO_DISPLAY[0] ?? null;
     if (!p || !p.gifts?.length) return this.lang.heroSlide2DescGift;
     const cc = this.branchService.country;
-    const gifts = cc === 'JP' ? (p as any).giftsJP : cc === 'KR' ? (p as any).giftsKR : p.gifts;
+    const gifts =
+      cc === 'JP'
+        ? (p as any).giftsJP
+        : cc === 'KR'
+          ? (p as any).giftsKR
+          : p.gifts;
     const raw: string = gifts?.[0] ?? p.gifts[0];
     return `贈${raw}`;
   }
@@ -1016,7 +1143,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   }
 
   getChefPickImage(): string {
-    const item = this.menuItems().find(i => i.name === '古早味排骨飯');
+    const item = this.menuItems().find((i) => i.name === this.CHEF_PICKS[0]);
     return item?.image || '/assets/主頁輪播圖3.jpg';
   }
 
@@ -1050,6 +1177,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     return item ? this.getLocalizedDesc(item) : '';
   }
 
+  /** 根據中文名稱查找 menuItems 並取得售價 */
+  getMenuItemPrice(chineseName: string): number {
+    return this.menuItems().find((i) => i.name === chineseName)?.price ?? 0;
+  }
+
   /** 根據目前語言取得訂單品項文字 */
   getLocalizedOrderItems(order: {
     items: string;
@@ -1073,12 +1205,14 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   /* 菜單頁：整個活動抽屜是否展開 */
   promoDrawerOpen = signal<boolean>(false);
 
-  /* 根據目前小計，篩出已達門檻的活動，並依門檻金額由低到高排序 */
-  unlockedPromos = computed(() =>
-    this.PROMO_ACTIVITIES
-      .filter((p) => this.cartTotal() >= p.minSpend)
-      .sort((a, b) => a.minSpend - b.minSpend),
-  );
+  /* 結帳頁：已達消費門檻的活動清單（即時依 cartTotal 篩選 PROMO_ACTIVITIES） */
+  unlockedPromos = computed(() => {
+    const total = this.cartTotal();
+    if (total <= 0) return [];
+    return this.PROMO_ACTIVITIES.filter(
+      (p) => p.minSpend > 0 && total >= p.minSpend,
+    );
+  });
 
   /* 目前選中的活動物件 */
   get selectedPromoActivity() {
@@ -1156,13 +1290,35 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     this._createOrderAsync().catch((err) => {
       this.isPlacingOrder.set(false);
       console.error('[Order] 建立訂單失敗', err);
-      const msg: string = err?.error?.message ?? err?.message ?? '';
+      const rawMsg: string = err?.error?.message ?? err?.message ?? '';
+      const msg = rawMsg
+        .replace('系統發生未預期錯誤，請連繫管理員。', '')
+        .replace(/^\((.+)\)$/, '$1')
+        .trim();
       if (msg.includes('逾時') || msg.includes('登入')) {
         alert('登入連線已逾時，請重新登入後再結帳');
         this.authService.logout();
         this.router.navigate(['/customer-login']);
+      } else if (msg.includes('已轉換為訂單') || msg.includes('重複提交')) {
+        this.currentCartId.set(null);
+        localStorage.removeItem('lbb_cart_id');
+        this._cartErrorShouldReset = true;
+        this.cartErrorModalOpen.set(true);
+      } else if (
+        msg.includes('Coupon') ||
+        msg.includes('Not Available') ||
+        msg.includes('折扣') ||
+        msg.includes('贈品') ||
+        msg.includes('兌換')
+      ) {
+        const isCouponErr = msg.includes('Coupon') || msg.includes('Not Available');
+        const displayMsg = isCouponErr
+          ? '折扣券無法使用，請取消勾選後重試'
+          : msg || '折扣券無法使用，請取消勾選後重試';
+        if (isCouponErr) this.useDiscountCoupon.set(false);
+        this.showCheckoutToast(displayMsg);
       } else {
-        alert('建立訂單失敗，請稍後再試');
+        this.cartErrorModalOpen.set(true);
       }
     });
   }
@@ -1178,7 +1334,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     if (cartId === null) {
       for (const item of items) {
         const syncReq: CartSyncReq = {
-          cartId,
+          cartId: cartId || null,
           globalAreaId: this.branchService.globalAreaId,
           productId: item.id,
           quantity: item.quantity,
@@ -1186,50 +1342,79 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
           memberId,
         };
         const cartRes = await firstValueFrom(this.apiService.syncCart(syncReq));
+        if (!cartRes.cartId || cartRes.cartId <= 0)
+          throw new Error('購物車同步失敗');
         cartId = cartRes.cartId;
       }
-      if (!cartId) throw new Error('購物車同步失敗');
       this.currentCartId.set(cartId);
     }
 
     /* Step 2：後端計算折扣金額 */
     const selectedGiftId = this.promoGiftIds.get(this.selectedPromoGift()) ?? 0;
     let finalTotal = this.discountedTotal();
-    try {
-      const calcRes = await firstValueFrom(
-        this.apiService.calculatePromotion({
-          cartId: cartId!,
-          memberId,
-          useCoupon: this.useDiscountCoupon(),
-          selectedGiftId,
-          originalAmount: this.cartTotal(),
-          country: this.branchService.country,
-        }),
-      );
-      if (calcRes?.finalAmount != null) finalTotal = calcRes.finalAmount;
-    } catch { /* 後端計算失敗時沿用前端計算值 */ }
+    const calcRes = await firstValueFrom(
+      this.apiService.calculatePromotion({
+        cartId: cartId!,
+        memberId,
+        useCoupon: this.useDiscountCoupon(),
+        selectedGiftId,
+        originalAmount: this.cartTotal(),
+        regionsId: this.branchService.regionsId,
+      }),
+    );
+    const calcAny = calcRes as any;
+    if (calcAny?.code != null && calcAny.code !== 200) {
+      const rawMsg: string = calcAny.message ?? '';
+      const userMsg = rawMsg
+        .replace('系統發生未預期錯誤，請連繫管理員。', '')
+        .trim();
+      throw new Error(userMsg || '折扣計算失敗，請確認折扣券是否有效');
+    }
+    if (calcRes?.finalAmount != null) finalTotal = calcRes.finalAmount;
 
     /* Step 3：建立訂單（不含付款方式，待付款頁選擇後處理） */
+    const giftProductId =
+      this.promoGiftProductIds.get(this.selectedPromoGift()) ?? 0;
+    const promotionsId =
+      this.promoNameToId.get(this.selectedPromoName()) ?? undefined;
     const giftDetailItem: OrderCartDetailItem[] =
       selectedGiftId > 0
-        ? [{ productId: 0, quantity: 1, gift: true, promotionsGiftsId: selectedGiftId }]
+        ? [
+            {
+              productId: giftProductId,
+              quantity: 1,
+              gift: true,
+              promotionsGiftsId: selectedGiftId,
+            },
+          ]
         : [];
 
     const orderReq: CreateOrdersReq = {
       orderCartId: String(cartId),
-      globalAreaId: 4,
+      globalAreaId: this.branchService.globalAreaId,
       memberId,
       phone,
       subtotalBeforeTax: this.cartTotal(),
       taxAmount: 0,
       totalAmount: finalTotal,
       orderCartDetailsList: [
-        ...items.map((i) => ({ productId: i.id, quantity: i.quantity, gift: false })),
+        ...items.map((i) => ({
+          productId: i.id,
+          quantity: i.quantity,
+          gift: false,
+        })),
         ...giftDetailItem,
       ],
+      ...(promotionsId !== undefined && { promotionsId }),
     };
 
-    const orderRes = await firstValueFrom(this.apiService.createOrder(orderReq));
+    const orderRes = await firstValueFrom(
+      this.apiService.createOrder(orderReq),
+    );
+
+    if (orderRes.code !== 200 || !orderRes.id) {
+      throw new Error(orderRes.message ?? '建立訂單失敗，請稍後再試');
+    }
 
     /* 儲存訂單資訊供付款步驟使用 */
     this.pendingOrderId.set(orderRes.id);
@@ -1266,24 +1451,36 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     this.useDiscountCoupon.update((v) => !v);
   }
 
-  /* ── 側邊欄：進度與折扣邏輯 (模擬 Database) ────────── */
-  memberOrderCount = signal(10);
+  /* ── 側邊欄：進度與折扣邏輯 ────────── */
+  memberOrderCount = signal(0);
+  discountThreshold = signal(2);
 
   ordersUntilDiscount = computed(() => {
     const total = this.memberOrderCount();
-    const remainder = total % 10;
+    const n = this.discountThreshold();
+    const remainder = total % n;
     if (remainder === 0 && total > 0) return 0;
-    return 10 - remainder;
+    return n - remainder;
+  });
+
+  discountProgressPct = computed(() => {
+    if (this.hasDiscountReady()) return 100;
+    const n = this.discountThreshold();
+    if (n <= 0) return 0;
+    return (this.memberOrderCount() % n) / n * 100;
   });
 
   hasDiscountReady = computed(() => {
-    return this.memberOrderCount() > 0 && this.memberOrderCount() % 10 === 0;
+    if (this.authService.currentMember?.isDiscount === true) return true;
+    const total = this.memberOrderCount();
+    const n = this.discountThreshold();
+    return n > 0 && total > 0 && total % n === 0;
   });
 
   /* 總計（使用折扣券時才生效，折扣上限 NT$200） */
   discountedTotal = computed(() => {
     if (this.useDiscountCoupon()) {
-      const raw = Math.round(this.cartTotal() * 0.8);
+      const raw = Math.round(this.cartTotal() * 0.9);
       const discount = Math.min(this.cartTotal() - raw, 200);
       return this.cartTotal() - discount;
     }
@@ -1342,7 +1539,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   });
 
   /* ── 訂單管理資料 ──────────────────────────────────── */
-  activeOrderTab = signal<'active' | 'completed' | 'cancelled' | 'refunded'>('active');
+  activeOrderTab = signal<'active' | 'completed' | 'cancelled' | 'refunded'>(
+    'active',
+  );
   activeOrders = signal<ActiveOrder[]>([]);
 
   /* ── 退款申請 Modal ─────────────────────────────────── */
@@ -1384,6 +1583,21 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   /* ── 取消追蹤中訂單（方案 A：tracker tab）────────── */
   cancelConfirmOpen = signal(false);
 
+  guestSuccessModalOpen = signal(false);
+
+  cartErrorModalOpen = signal(false);
+  private _cartErrorShouldReset = false;
+
+  closeCartErrorModal(): void {
+    this.cartErrorModalOpen.set(false);
+    if (this._cartErrorShouldReset) {
+      this._cartErrorShouldReset = false;
+      this.resetLocalCart();
+    }
+  }
+  guestSuccessPhone = signal('');
+  guestSuccessBranchName = signal('');
+
   openCancelConfirm(): void {
     this.cancelConfirmOpen.set(true);
   }
@@ -1424,22 +1638,32 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
   cancelActiveOrder(trackId: string): void {
     const dbId = this._activeOrderDbId;
     if (!dbId) {
-      this.activeOrders.set(this.activeOrders().filter((o) => o.id !== trackId));
+      this.activeOrders.set(
+        this.activeOrders().filter((o) => o.id !== trackId),
+      );
       localStorage.removeItem('lbb_tracking_order');
       return;
     }
     this.apiService
-      .updateOrderStatus({ id: dbId.id, orderDateId: dbId.orderDateId, ordersStatus: 'CANCELLED' })
+      .updateOrderStatus({
+        id: dbId.id,
+        orderDateId: dbId.orderDateId,
+        ordersStatus: 'CANCELLED',
+      })
       .subscribe({
         next: () => {
-          this.activeOrders.set(this.activeOrders().filter((o) => o.id !== trackId));
+          this.activeOrders.set(
+            this.activeOrders().filter((o) => o.id !== trackId),
+          );
           this._activeOrderDbId = null;
           if (this.statusPollInterval) clearInterval(this.statusPollInterval);
           this.statusPollInterval = null;
           localStorage.removeItem('lbb_tracking_order');
         },
         error: () => {
-          this.activeOrders.set(this.activeOrders().filter((o) => o.id !== trackId));
+          this.activeOrders.set(
+            this.activeOrders().filter((o) => o.id !== trackId),
+          );
           localStorage.removeItem('lbb_tracking_order');
         },
       });
@@ -1607,11 +1831,11 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     () => this.orderHistoryList().filter((o) => o.status === 'refunded').length,
   );
 
-filteredOrders = computed(() => {
-  const tab = this.activeOrderTab();
-  if (tab === 'active') return [];  // active tab 用 activeOrders() 直接顯示
-  return this.orderHistoryList().filter(o => o.status === tab);
-});
+  filteredOrders = computed(() => {
+    const tab = this.activeOrderTab();
+    if (tab === 'active') return []; // active tab 用 activeOrders() 直接顯示
+    return this.orderHistoryList().filter((o) => o.status === tab);
+  });
 
   /* ── 國家切換 ──────────────────────────────────────── */
   allCountries = signal<CountryConfig[]>([]);
@@ -1629,7 +1853,60 @@ filteredOrders = computed(() => {
     public orderService: OrderService,
     private apiService: ApiService,
     public branchService: BranchService,
-  ) {}
+  ) {
+    /* 當 BroadcastChannel 將 POS 的狀態廣播過來時，同步更新 activeOrders 的顯示步驟 */
+    effect(() => {
+      const live = this.orderService.orders();
+      if (this.activeOrders().length === 0) return;
+      this.activeOrders.update((list) => {
+        let changed = false;
+        const updated = list.map((ao) => {
+          const lo = live.find((o) => o.id === ao.id);
+          if (!lo) return ao;
+          const isCashOrder = ao.isCash ?? ao.payMethod === '現金';
+          const isTerminal = isCashOrder
+            ? lo.status === 'paid'
+            : lo.status === 'paid' || lo.status === 'done';
+          if (isTerminal) {
+            /* 排程 7 秒後移除（避免重複排程） */
+            if (!this._removalTimers.has(ao.id)) {
+              setTimeout(() => this._scheduleOrderCompletion(ao.id), 0);
+            }
+            /* 先顯示「取餐完畢」步驟（status='done'） */
+            if (ao.status === 'done') return ao;
+            changed = true;
+            return { ...ao, status: 'done' as ActiveOrder['status'] };
+          }
+          const mapped: ActiveOrder['status'] =
+            lo.status === 'ready' || lo.status === 'pending-cash'
+              ? 'ready'
+              : 'cooking';
+          if (ao.status === mapped) return ao;
+          changed = true;
+          return { ...ao, status: mapped };
+        });
+        return changed ? updated : list;
+      });
+    });
+    // 購物車金額低於門檻時，自動清除已選贈品（針對 PROMO_ACTIVITIES 選單頁進度條）
+    effect(() => {
+      const total = this.cartTotal();
+      const promoName = this.selectedPromoName();
+      if (!promoName || promoName === '不參加活動優惠') return;
+
+      const promo = this.PROMO_ACTIVITIES.find((p) => p.name === promoName);
+      if (promo && total < promo.minSpend) {
+        this.selectedPromoName.set('');
+        this.selectedPromoGift.set('');
+        this.promoGiftPanelOpen.set(false);
+      }
+    });
+    // 購物車金額變動時，即時向後端查詢可選贈品
+    effect(() => {
+      const total = this.cartTotal();
+      this._reloadCheckoutGifts(total);
+    });
+  }
 
   selectCountry(code: CountryCode): void {
     this.branchService.setCountry(code);
@@ -1663,6 +1940,27 @@ filteredOrders = computed(() => {
       this.phoneNumber.set(this.phoneToLocal(user.phone));
     }
 
+    /* 從後端 currentMember 初始化訂單累積次數 */
+    const memberData = this.authService.currentMember;
+    if (memberData?.orderCount != null) {
+      this.memberOrderCount.set(memberData.orderCount);
+    }
+
+    /* 載入折扣設定，依當前 regionsId 取得累積次數門檻，並正規化週期計數 */
+    this.apiService.getDiscountList().subscribe({
+      next: (res) => {
+        const rid = this.branchService.regionsId;
+        const disc = res?.discountList?.find((d) => d.regionsId === rid);
+        if (disc?.usageCap && disc.usageCap > 0) {
+          const n = disc.usageCap;
+          this.discountThreshold.set(n);
+          const totalOrders = this.authService.currentMember?.orderCount ?? 0;
+          const remainder = totalOrders % n;
+          this.memberOrderCount.set(remainder === 0 && totalOrders > 0 ? n : remainder);
+        }
+      },
+    });
+
     /* 載入促銷活動（API 成功則覆蓋靜態 Demo 資料，只顯示 active 的活動） */
     this.loadPromotions();
 
@@ -1692,10 +1990,13 @@ filteredOrders = computed(() => {
 
           // 同步還原至 activeOrders
           const restoredAoStatus =
-            t.status === 'waiting' ? 'cooking'
-            : t.status === 'cooking' ? 'cooking'
-            : t.status === 'ready' ? 'ready'
-            : 'done';
+            t.status === 'waiting'
+              ? 'cooking'
+              : t.status === 'cooking'
+                ? 'cooking'
+                : t.status === 'ready'
+                  ? 'ready'
+                  : 'done';
           this.activeOrders.set([
             {
               id: t.orderId,
@@ -1738,32 +2039,45 @@ filteredOrders = computed(() => {
 
                     const statusMap: Record<string, OrderStatus> = isCash
                       ? {
+                          PREPARING: 'waiting',
                           PENDING_CASH: 'waiting',
                           WAITING: 'waiting',
                           COOKING: 'cooking',
                           READY: 'ready',
                           AWAITING_PAYMENT: 'pending-cash',
+                          PICKED_UP: 'paid',
                           COMPLETED: 'paid',
                         }
                       : {
+                          PREPARING: 'waiting',
                           WAITING: 'waiting',
                           COOKING: 'cooking',
                           READY: 'done',
+                          PICKED_UP: 'done',
                         };
 
-                    const newStatus = statusMap[res.message] ?? 'waiting';
                     const cur = this.orderService
                       .orders()
                       .find((o) => o.id === t.orderId);
+                    /* 已達終態時停止輪詢（現金=paid，非現金=done） */
+                    if (cur?.status === endStatus || cur?.status === 'paid') {
+                      if (this.statusPollInterval)
+                        clearInterval(this.statusPollInterval);
+                      this.statusPollInterval = null;
+                      this._scheduleOrderCompletion(t.orderId);
+                      return;
+                    }
+                    const newStatus =
+                      statusMap[res.message] ?? cur?.status ?? 'waiting';
                     if (!cur || cur.status !== newStatus) {
                       this.orderService.updateStatus(t.orderId, newStatus);
                     }
 
                     if (newStatus === endStatus) {
-                      localStorage.removeItem('lbb_tracking_order');
                       if (this.statusPollInterval)
                         clearInterval(this.statusPollInterval);
                       this.statusPollInterval = null;
+                      this._scheduleOrderCompletion(t.orderId);
                     }
                   },
                   error: () => {},
@@ -1776,13 +2090,42 @@ filteredOrders = computed(() => {
       }
     }
 
-    /* 載入菜單商品（API 載入後動態填充；API 失敗則保留靜態 Demo 資料） */
-    const areaId = 4;
-    this.apiService.getActiveProducts(areaId).subscribe({
-      next: (res) => {
-        if (res?.data?.length) {
-          this.menuItems.set(
-            res.data.map((p) => {
+    /* 載入菜單商品（先嘗試 menu 端點；失敗或空回傳時改用庫存端點） */
+    const areaId = this.branchService.globalAreaId;
+
+    forkJoin({
+      menu: this.apiService.getActiveProducts(areaId),
+      inventory: this.apiService.getBranchInventory(areaId).pipe(
+        catchError(() => of(null)),
+      ),
+      allProducts: this.apiService.getAllProducts().pipe(
+        catchError(() => of(null)),
+      ),
+    }).subscribe({
+      next: ({ menu, inventory, allProducts }) => {
+        /* 以 getBranchInventory 的 style/category/price 作為補充來源（API 失敗時 inventory 為 null） */
+        const invData = inventory?.data ?? [];
+        const invStyleMap = new Map<number, string>(
+          invData.map((inv) => [inv.productId, inv.style ?? '']),
+        );
+        const invCatMap = new Map<number, string>(
+          invData.map((inv) => [inv.productId, inv.category ?? '']),
+        );
+        /* 當 menu API 回傳 basePrice=0 時，從庫存端點補正確售價 */
+        const invPriceMap = new Map<number, number>(
+          invData.map((inv) => [inv.productId, inv.basePrice]),
+        );
+        /* 管理端商品作為 style/category 的最終補充（productId 對應 admin id） */
+        const adminStyleMap = new Map<number, string>(
+          (allProducts?.productList ?? []).map((p) => [p.id, p.style ?? '']),
+        );
+        const adminCatMap = new Map<number, string>(
+          (allProducts?.productList ?? []).map((p) => [p.id, p.category ?? '']),
+        );
+
+        if (menu?.data?.length) {
+          const mapped = menu.data
+            .map((p) => {
               const i18n = CustomerHomeComponent.MENU_I18N[p.name] ?? {};
               return {
                 id: p.productId,
@@ -1790,17 +2133,57 @@ filteredOrders = computed(() => {
                 nameEn: i18n.nameEn ?? p.name,
                 nameJP: i18n.nameJP,
                 nameKR: i18n.nameKR,
-                price: p.basePrice,
+                price: p.basePrice || invPriceMap.get(p.productId) || 0,
                 image: p.foodImgBase64 ?? '',
-                category: p.category,
-                categoryEn: p.category,
+                category: p.category || invCatMap.get(p.productId) || adminCatMap.get(p.productId) || '',
+                categoryEn: p.category || invCatMap.get(p.productId) || adminCatMap.get(p.productId) || '',
+                style: p.style || invStyleMap.get(p.productId) || adminStyleMap.get(p.productId) || '',
                 description: p.description ?? '',
                 descriptionJP: i18n.descriptionJP,
                 descriptionKR: i18n.descriptionKR,
                 stock: p.stockQuantity,
               };
-            }),
-          );
+            })
+            .filter((item) => item.price > 0);
+          const hasCategories = mapped.some((p) => p.category);
+          if (hasCategories) {
+            this.menuItems.set(mapped);
+          } else {
+            this.menuItems.update((existing) =>
+              mapped.map((p) => {
+                const old = existing.find((e) => e.id === p.id);
+                return old
+                  ? { ...p, category: old.category, categoryEn: old.categoryEn, style: old.style || p.style }
+                  : p;
+              }),
+            );
+          }
+        } else if (inventory?.data?.length) {
+          /* menu API 無資料時改用庫存端點 */
+          const active = inventory.data.filter((i) => i.active && i.basePrice > 0);
+          if (active.length > 0) {
+            this.menuItems.set(
+              active.map((p) => {
+                const i18n = CustomerHomeComponent.MENU_I18N[p.productName] ?? {};
+                return {
+                  id: p.productId,
+                  name: p.productName,
+                  nameEn: i18n.nameEn ?? p.productName,
+                  nameJP: i18n.nameJP,
+                  nameKR: i18n.nameKR,
+                  price: p.basePrice,
+                  image: '',
+                  category: p.category,
+                  categoryEn: p.category,
+                  style: p.style ?? '',
+                  description: '',
+                  descriptionJP: i18n.descriptionJP,
+                  descriptionKR: i18n.descriptionKR,
+                  stock: p.stockQuantity,
+                };
+              }),
+            );
+          }
         }
         this._restoreCart();
       },
@@ -1822,7 +2205,11 @@ filteredOrders = computed(() => {
               res.getOrderVoList.map((o: GetOrdersVo) => ({
                 id: o.id,
                 date: o.completedAt?.slice(0, 10) ?? o.orderDateId ?? '',
-                items: (o.getOrdersDetailVoList ?? [])
+                items: (
+                  o.GetOrdersDetailVoList ??
+                  o.getOrdersDetailVoList ??
+                  []
+                )
                   .filter((d: GetOrdersDetailVo) => !d.gift)
                   .map(
                     (d: GetOrdersDetailVo) =>
@@ -1853,6 +2240,8 @@ filteredOrders = computed(() => {
 
   /* 客戶端廚房狀態輪詢計時器 */
   private statusPollInterval: ReturnType<typeof setInterval> | null = null;
+  /* LINE Pay 付款完成輪詢計時器 */
+  private linePayPollInterval: ReturnType<typeof setInterval> | null = null;
   /* 目前追蹤中訂單的 DB 識別碼 */
   private _activeOrderDbId: { id: string; orderDateId: string } | null = null;
 
@@ -1867,7 +2256,7 @@ filteredOrders = computed(() => {
     this.apiService.viewCart(savedCartId, memberId).subscribe({
       next: (res) => {
         if (res?.items?.length) {
-          this.currentCartId.set(res.cartId);
+          this.currentCartId.set(res.cartId || null);
           this.cartItems.set(
             res.items
               .filter((i) => !i.gift && validIds.has(i.productId))
@@ -1892,6 +2281,89 @@ filteredOrders = computed(() => {
     if (this.promoBannerTimer) clearInterval(this.promoBannerTimer);
     if (this.mobilePayTimer) clearTimeout(this.mobilePayTimer);
     if (this.statusPollInterval) clearInterval(this.statusPollInterval);
+    if (this.linePayPollInterval) clearInterval(this.linePayPollInterval);
+    this._giftsSubscription?.unsubscribe();
+    this._removalTimers.forEach((t) => clearTimeout(t));
+    this._removalTimers.clear();
+  }
+
+  /** 根據購物車金額向後端即時查詢可選贈品，並更新 promoGiftIds 對照表 */
+  private _reloadCheckoutGifts(total: number): void {
+    this._giftsSubscription?.unsubscribe();
+    if (total <= 0) {
+      this.checkoutGifts.set([]);
+      this.promoGiftIds.clear();
+      this.promoGiftProductIds.clear();
+      return;
+    }
+    this._giftsSubscription = this.apiService
+      .getAvailableGifts(total)
+      .pipe(catchError(() => of([])))
+      .subscribe((gifts) => {
+        const list = (gifts as GiftItem[]) ?? [];
+        this.checkoutGifts.set(list);
+        this.promoGiftIds.clear();
+        this.promoGiftProductIds.clear();
+        list.forEach((g) => {
+          const qty = g.quantity <= 0 ? 1 : g.quantity;
+          const key = `${g.productName} × ${qty}`;
+          this.promoGiftIds.set(key, g.promotionsGiftsId);
+          this.promoGiftProductIds.set(key, g.productId);
+        });
+        // 若已選的贈品不再可用，自動清除選擇
+        const sel = this.selectedPromoGift();
+        if (sel && !this.promoGiftIds.has(sel)) {
+          this.selectedPromoGift.set('');
+          this.selectedPromoName.set('');
+          this.promoGiftPanelOpen.set(false);
+        }
+      });
+  }
+
+  /* ── LINE Pay 輪詢：每 3 秒查一次訂單狀態直到 COMPLETED ── */
+  private _startLinePayPoll(orderId: string, orderDateId: string): void {
+    if (this.linePayPollInterval) clearInterval(this.linePayPollInterval);
+    this.linePayPollInterval = setInterval(() => {
+      this.apiService.getOrderStatus(orderId, orderDateId).subscribe({
+        next: (res) => {
+          if (
+            res?.code === 200 &&
+            res?.message !== 'UNPAID' &&
+            res?.message !== 'NOT_FOUND'
+          ) {
+            this._clearLinePayPoll();
+            this._afterOrderSuccess(orderId, orderDateId, 'waiting', false);
+          }
+        },
+        error: () => {},
+      });
+    }, 3000);
+  }
+
+  private _clearLinePayPoll(): void {
+    if (this.linePayPollInterval) {
+      clearInterval(this.linePayPollInterval);
+      this.linePayPollInterval = null;
+    }
+    this.linePayQrUrl.set(null);
+    this.linePayPollOrderId.set(null);
+    this.linePayPollOrderDateId.set('');
+  }
+
+  cancelLinePayQr(): void {
+    this._clearLinePayPoll();
+    this.isPlacingOrder.set(false); // 取消後才釋放按鈕
+  }
+
+  /** 顯示「取餐完畢」步驟 7 秒後，將訂單從未完成移至已完成 */
+  private _scheduleOrderCompletion(orderId: string): void {
+    if (this._removalTimers.has(orderId)) return;
+    const timer = setTimeout(() => {
+      this._removalTimers.delete(orderId);
+      this.activeOrders.update((list) => list.filter((o) => o.id !== orderId));
+      localStorage.removeItem('lbb_tracking_order');
+    }, 7000);
+    this._removalTimers.set(orderId, timer);
   }
 
   /* ── 切換頁籤 ─────────────────────────────────────── */
@@ -1936,21 +2408,18 @@ filteredOrders = computed(() => {
   }
 
   private loadPromotions(): void {
-    const BANNER_IMAGES = [
-      '/assets/主頁輪播圖1.jpg',
-      '/assets/主頁輪播圖2.jpg',
-      '/assets/主頁輪播圖3.jpg',
-    ];
-    // 國碼 → globalAreaId 對應（依 global_area 表 branch_id）
-    const areaIdMap: Record<string, number> = { TW: 4, JP: 5, KR: 2 };
-    const globalAreaId = areaIdMap[this.branchService.country] ?? 4;
-
-    this.apiService.getPromotionsList(globalAreaId).subscribe({
+    this.apiService.getPromotionsList().subscribe({
       next: (res) => {
-        const active = (res?.data ?? [])
-          .filter((p: PromotionDetailVo) => p.active && p.gifts && p.gifts.length > 0)
+        const allData = res?.data ?? [];
+        const active = allData
+          .filter(
+            (p: PromotionDetailVo) => p.active && p.gifts && p.gifts.length > 0,
+          )
           .sort((a: PromotionDetailVo, b: PromotionDetailVo) => b.id - a.id);
-        if (!active.length) return;
+        const allActive = allData
+          .filter((p: PromotionDetailVo) => p.active)
+          .sort((a: PromotionDetailVo, b: PromotionDetailVo) => b.id - a.id);
+        if (!allActive.length) return;
 
         // 根據目前分店語言選取正確的活動名稱
         const cc = this.branchService.country;
@@ -1961,102 +2430,123 @@ filteredOrders = computed(() => {
         };
 
         this.promoGiftIds.clear();
+        this.promoGiftProductIds.clear();
+        this.promoNameToId.clear();
         this.outOfStockGifts.clear();
-        this.PROMO_ACTIVITIES = active.map((p: PromotionDetailVo) => {
-          const minSpend = p.gifts.length
-            ? Math.min(...p.gifts.map((g) => g.fullAmount))
-            : 0;
-          const seen = new Set<string>();
-          const giftNames: string[] = [];
-          p.gifts.forEach((g) => {
-            // 庫存 0 → 記錄為無庫存，但顯示一律用 × 1
-            if (g.quantity === 0) this.outOfStockGifts.add(g.productName);
-            const key = `${g.productName} × 1`;
-            this.promoGiftIds.set(key, g.id);
-            if (!seen.has(key)) {
-              seen.add(key);
-              giftNames.push(key);
-            }
-          });
-          const lName = localName(p);
-          return {
-            name: lName,
-            nameJP: p.nameJP || lName,
-            nameKR: p.nameKR || lName,
-            minSpend,
-            gifts: giftNames,
-            giftsJP: giftNames,
-            giftsKR: giftNames,
-          };
-        }).sort((a, b) => a.minSpend - b.minSpend);
+        this.PROMO_ACTIVITIES = active
+          .map((p: PromotionDetailVo) => {
+            const minSpend = p.gifts.length
+              ? Math.min(...p.gifts.map((g) => g.fullAmount))
+              : 0;
+            const seen = new Set<string>();
+            const giftNames: string[] = [];
+            p.gifts.forEach((g) => {
+              // 庫存 0 → 記錄為無庫存，但顯示一律用 × 1
+              if (g.quantity === 0) this.outOfStockGifts.add(g.productName);
+              const key = `${g.productName} × 1`;
+              this.promoGiftIds.set(key, g.id);
+              this.promoGiftProductIds.set(key, g.giftProductId);
+              if (!seen.has(key)) {
+                seen.add(key);
+                giftNames.push(key);
+              }
+            });
+            const lName = localName(p);
+            this.promoNameToId.set(lName, p.id); // 活動名稱 → promotions.id（後端扣除配額用）
+            return {
+              name: lName,
+              nameJP: p.nameJP || lName,
+              nameKR: p.nameKR || lName,
+              minSpend,
+              gifts: giftNames,
+              giftsJP: giftNames,
+              giftsKR: giftNames,
+            };
+          })
+          .sort((a, b) => a.minSpend - b.minSpend);
 
-        this.PROMO_DISPLAY = active.map((p: PromotionDetailVo, i: number) => {
-          const minSpend = p.gifts.length
-            ? Math.min(...p.gifts.map((g) => g.fullAmount))
-            : 0;
-          const giftNames = [
-            ...new Set(
-              p.gifts.map(
-                (g) =>
-                  `${g.productName} × ${g.quantity === -1 ? 1 : g.quantity}`,
-              ),
-            ),
-          ];
-          const TAG_TYPES = ['new', 'promo', 'premium'] as const;
-          const COLOR_SCHEMES = [
-            'forest',
-            'burgundy',
-            'navy',
-            'bronze',
-            'plum',
-            'slate',
-          ] as const;
-          const id = Math.abs(p.id ?? i);
-          const tagIdx = id % TAG_TYPES.length;
-          const colorIdx = id % COLOR_SCHEMES.length;
-          const lName = localName(p);
-          return {
-            name: p.name,
-            nameJP: p.nameJP || p.name,
-            nameKR: p.nameKR || p.name,
-            tag: '期間限定',
-            tagType: TAG_TYPES[tagIdx],
-            colorScheme: COLOR_SCHEMES[colorIdx],
-            image: p.id
-              ? this.apiService.getPromotionImageUrl(p.id)
-              : BANNER_IMAGES[tagIdx % BANNER_IMAGES.length],
-            startDate: p.startTime,
-            endDate: p.endTime,
-            minSpend,
-            gifts: giftNames,
-            giftsJP: giftNames,
-            giftsKR: giftNames,
-            description:
-              p.description ||
-              `消費滿 $${minSpend} 即可獲得贈品，把握活動期間限定好禮！`,
-            descriptionJP:
-              p.description ||
-              `$${minSpend}以上のご購入でプレゼント！期間限定をお見逃しなく。`,
-            descriptionKR:
-              p.description ||
-              `$${minSpend} 이상 구매 시 선물 증정！기간 한정 혜택을 놓치지 마세요。`,
-            highlights: [
-              `消費滿 $${minSpend}`,
-              '可選贈品',
-              `${p.startTime} ～ ${p.endTime}`,
-            ],
-            highlightsJP: [
-              `$${minSpend}以上のご購入`,
-              'プレゼントをお選びください',
-              `${p.startTime} ～ ${p.endTime}`,
-            ],
-            highlightsKR: [
-              `$${minSpend} 이상 구매`,
-              '선물 선택 가능',
-              `${p.startTime} ～ ${p.endTime}`,
-            ],
-          };
-        });
+        this.PROMO_DISPLAY = allActive.map(
+          (p: PromotionDetailVo, i: number) => {
+            const hasGifts = p.gifts && p.gifts.length > 0;
+            const minSpend = hasGifts
+              ? Math.min(...p.gifts.map((g) => g.fullAmount))
+              : 0;
+            const giftNames = hasGifts
+              ? [
+                  ...new Set(
+                    p.gifts.map(
+                      (g) =>
+                        `${g.productName} × ${g.quantity === -1 ? 1 : g.quantity}`,
+                    ),
+                  ),
+                ]
+              : [];
+            const TAG_TYPES = ['new', 'promo', 'premium'] as const;
+            const COLOR_SCHEMES = [
+              'forest',
+              'burgundy',
+              'navy',
+              'bronze',
+              'plum',
+              'slate',
+            ] as const;
+            const id = Math.abs(p.id ?? i);
+            const tagIdx = id % TAG_TYPES.length;
+            const colorIdx = id % COLOR_SCHEMES.length;
+            const lName = localName(p);
+            return {
+              name: p.name,
+              nameJP: p.nameJP || p.name,
+              nameKR: p.nameKR || p.name,
+              tag: '期間限定',
+              tagType: TAG_TYPES[tagIdx],
+              colorScheme: COLOR_SCHEMES[colorIdx],
+              image: `${this.apiService.getPromotionImageUrl(p.id)}?v=${p.id}-${p.startTime}-${p.endTime}`,
+              startDate: p.startTime,
+              endDate: p.endTime,
+              minSpend,
+              gifts: giftNames,
+              giftsJP: giftNames,
+              giftsKR: giftNames,
+              description:
+                p.description ||
+                (hasGifts
+                  ? `消費滿 $${minSpend} 即可獲得贈品，把握活動期間限定好禮！`
+                  : '期間限定活動，敬請把握！'),
+              descriptionJP:
+                p.description ||
+                (hasGifts
+                  ? `$${minSpend}以上のご購入でプレゼント！期間限定をお見逃しなく。`
+                  : '期間限定イベント、お見逃しなく！'),
+              descriptionKR:
+                p.description ||
+                (hasGifts
+                  ? `$${minSpend} 이상 구매 시 선물 증정！기간 한정 혜택을 놓치지 마세요。`
+                  : '기간 한정 이벤트, 놓치지 마세요！'),
+              highlights: hasGifts
+                ? [
+                    `消費滿 $${minSpend}`,
+                    '可選贈品',
+                    `${p.startTime} ～ ${p.endTime}`,
+                  ]
+                : [`${p.startTime} ～ ${p.endTime}`],
+              highlightsJP: hasGifts
+                ? [
+                    `$${minSpend}以上のご購入`,
+                    'プレゼントをお選びください',
+                    `${p.startTime} ～ ${p.endTime}`,
+                  ]
+                : [`${p.startTime} ～ ${p.endTime}`],
+              highlightsKR: hasGifts
+                ? [
+                    `$${minSpend} 이상 구매`,
+                    '선물 선택 가능',
+                    `${p.startTime} ～ ${p.endTime}`,
+                  ]
+                : [`${p.startTime} ～ ${p.endTime}`],
+            };
+          },
+        );
       },
       error: () => {
         /* API 失敗時保留靜態 Demo 資料 */
@@ -2072,7 +2562,7 @@ filteredOrders = computed(() => {
         const user = this.authService.currentUser;
         const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
         const req: CartSyncReq = {
-          cartId: this.currentCartId(),
+          cartId: this.currentCartId() || null,
           globalAreaId: this.branchService.globalAreaId,
           productId,
           quantity,
@@ -2081,7 +2571,7 @@ filteredOrders = computed(() => {
         };
         const res = await firstValueFrom(this.apiService.syncCart(req));
         if (res.cartId && res.cartId > 0) {
-          this.currentCartId.set(res.cartId);
+          this.currentCartId.set(res.cartId || null);
           localStorage.setItem('lbb_cart_id', String(res.cartId));
         }
       })
@@ -2096,16 +2586,8 @@ filteredOrders = computed(() => {
     const newQty = item.quantity + delta;
     if (newQty <= 0) {
       this.cartItems.set(current.filter((c) => c.id !== id));
-      const cartId = this.currentCartId();
-      if (cartId !== null) {
-        const user = this.authService.currentUser;
-        const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
-        this.apiService
-          .removeCartItem({ cartId, productId: id, memberId })
-          .subscribe({
-            error: (err) => console.warn('[Cart] remove_item 失敗', err),
-          });
-      }
+      // 以 quantity=0 呼叫 sync 端點，後端不支援 DELETE /cart/item
+      this._syncCartItemToBackend(id, 0);
     } else {
       this.cartItems.set(
         current.map((c) => (c.id === id ? { ...c, quantity: newQty } : c)),
@@ -2116,31 +2598,27 @@ filteredOrders = computed(() => {
 
   /* ── 從購物車移除 ─────────────────────────────────── */
   removeFromCart(id: number): void {
-    const cartId = this.currentCartId();
-    if (cartId !== null) {
-      const user = this.authService.currentUser;
-      const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
-      this.apiService
-        .removeCartItem({ cartId, productId: id, memberId })
-        .subscribe({
-          error: (err) => console.warn('[Cart] remove_item 失敗', err),
-        });
-    }
+    // 以 quantity=0 呼叫 sync 端點，後端不支援 DELETE /cart/item
+    this._syncCartItemToBackend(id, 0);
     this.cartItems.set(this.cartItems().filter((c) => c.id !== id));
   }
 
   /* ── 清空購物車（同步後端，用於取消訂單）──────────── */
   clearCart(): void {
     const cartId = this.currentCartId();
+    /* 先清本地狀態，避免任何 API 錯誤影響 UI */
+    this.currentCartId.set(null);
+    this.cartItems.set([]);
+    localStorage.removeItem('lbb_cart_id');
+
     if (cartId !== null) {
       const user = this.authService.currentUser;
       const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
       this.apiService.clearCart({ cartId, memberId }).subscribe({
-        error: (err) => console.warn('[Cart] clear_cart 失敗', err),
+        /* 400 "Cart Already Checked Out" 視為成功：靜默忽略 */
+        error: () => {},
       });
-      this.currentCartId.set(null);
     }
-    this.cartItems.set([]);
   }
 
   /* ── 訂單成功後重置本地購物車（不刪後端明細，保留訂單歷史）── */
@@ -2164,60 +2642,66 @@ filteredOrders = computed(() => {
    * 6. 導向訂單追蹤頁
    * ────────────────────────────────────────────────── */
   placeOrder(): void {
-    if (!this.pendingOrderId()) return; /* 訂單尚未建立 */
+    if (!this.pendingOrderId()) return;
     if (this.isPlacingOrder()) return;
-    if (this.paymentMethod() === 'credit' && !this.isCreditCardValid()) return;
-
     this.isPlacingOrder.set(true);
 
     setTimeout(() => {
-      this._doPlaceOrder();
-      this.isPlacingOrder.set(false);
+      this._doPlaceOrderAsync()
+        .catch((err) => {
+          console.error('[Order] 下單失敗', err);
+          const msg: string = err?.error?.message ?? err?.message ?? '';
+          if (msg.includes('逾時') || msg.includes('登入')) {
+            alert('登入連線已逾時，請重新登入後再結帳');
+            this.authService.logout();
+            this.router.navigate(['/customer-login']);
+          } else {
+            alert('結帳失敗，請稍後再試');
+          }
+        })
+        .finally(() => {
+          /* LINE Pay：QR Modal 顯示中，isPlacingOrder 保持 true 直到 cancelLinePayQr() */
+          if (this.paymentMethod() !== 'linepay') {
+            this.isPlacingOrder.set(false);
+          }
+        });
     }, 1200);
-  }
-
-  private _doPlaceOrder(): void {
-    this._doPlaceOrderAsync().catch((err) => {
-      console.error('[Order] 下單失敗', err);
-      this.isPlacingOrder.set(false);
-      const msg: string = err?.error?.message ?? err?.message ?? '';
-      if (msg.includes('逾時') || msg.includes('登入')) {
-        alert('登入連線已逾時，請重新登入後再結帳');
-        this.authService.logout();
-        this.router.navigate(['/customer-login']);
-      } else {
-        alert('結帳失敗，請稍後再試');
-      }
-    });
   }
 
   private async _doPlaceOrderAsync(): Promise<void> {
     const orderId = this.pendingOrderId()!;
     const orderDateId = this.pendingOrderDateId();
-    const isCash = this.paymentMethod() === 'cash';
-    const finalTotal = this.backendConfirmedTotal() ?? this.discountedTotal();
 
-    /* ── 現金：直接進入待付款追蹤（不呼叫 pay()） ── */
-    if (isCash) {
+    /* ── 現金：直接進入待付款追蹤 ── */
+    if (this.paymentMethod() === 'cash') {
       this._afterOrderSuccess(orderId, orderDateId, 'waiting', true);
       return;
     }
 
-    /* ── 非現金付款 ── */
-    const payMethodMap: Record<string, string> = {
-      credit: 'CREDIT_CARD',
-      mobile: 'MOBILE_PAY',
-    };
-    const payReq: PayReq = {
-      id: orderId,
-      orderDateId,
-      paymentMethod: payMethodMap[this.paymentMethod()] ?? 'CREDIT_CARD',
-      transactionId: `DEMO_TXN_${Date.now()}`,
-      totalAmount: finalTotal,
-    };
-    await firstValueFrom(this.apiService.pay(payReq));
+    /* ── LINE Pay：取得付款 URL 後轉成 QR Code 顯示 ── */
+    if (this.paymentMethod() === 'linepay') {
+      const url = await firstValueFrom(
+        this.apiService.getLinePayUrl({ id: orderId, orderDateId }),
+      );
+      this.linePayQrUrl.set(url);
+      this.linePayPollOrderId.set(orderId);
+      this.linePayPollOrderDateId.set(orderDateId);
+      this._startLinePayPoll(orderId, orderDateId);
+      return;
+    }
 
-    this._afterOrderSuccess(orderId, orderDateId, 'waiting');
+    /* ── ECPay：後端回傳 HTML 表單，注入 DOM 後手動呼叫 submit() ── */
+    if (this.paymentMethod() === 'ecpay') {
+      const html = await firstValueFrom(
+        this.apiService.getEcpayForm({ id: orderId, orderDateId }),
+      );
+      const container = document.createElement('div');
+      container.innerHTML = html;
+      document.body.appendChild(container);
+      const formEl = container.querySelector('form') as HTMLFormElement | null;
+      if (formEl) formEl.submit();
+      return;
+    }
   }
 
   private _afterOrderSuccess(
@@ -2248,6 +2732,7 @@ filteredOrders = computed(() => {
     const payLabel = payLabels[this.paymentMethod()] ?? '現金';
 
     /* 推送至 POS 看板（本機 in-memory，同視窗時即時同步） */
+    const orderUser = this.authService.currentUser;
     this.orderService.addOrder({
       id: trackId,
       number: orderNum,
@@ -2258,8 +2743,9 @@ filteredOrders = computed(() => {
       createdAt: timeStr,
       payMethod: payLabel,
       source: 'customer',
-      customerName: this.authService.currentUser?.name,
-      isCash, // ← 新增
+      customerName: orderUser?.name,
+      orderType: orderUser?.isGuest ? '訪客' : '會員',
+      isCash,
     });
 
     // 寫入 localStorage，頁面重整後可重建追蹤狀態
@@ -2295,29 +2781,49 @@ filteredOrders = computed(() => {
               if (res?.code !== 200) return;
               const statusMap: Record<string, OrderStatus> = isCash
                 ? {
+                    PREPARING: 'waiting',
                     PENDING_CASH: 'waiting',
                     WAITING: 'waiting',
                     COOKING: 'cooking',
                     READY: 'ready',
                     AWAITING_PAYMENT: 'pending-cash',
+                    PICKED_UP: 'paid',
                     COMPLETED: 'paid',
                   }
-                : { WAITING: 'waiting', COOKING: 'cooking', READY: 'done' };
-              const newStatus = statusMap[res.message] ?? 'waiting';
+                : {
+                    PREPARING: 'waiting',
+                    WAITING: 'waiting',
+                    COOKING: 'cooking',
+                    READY: 'done',
+                    PICKED_UP: 'done',
+                  };
               const current = this.orderService
                 .orders()
                 .find((o) => o.id === trackId);
+              /* 已達終態時停止輪詢（現金=paid，非現金=done） */
+              const endStatus: OrderStatus = isCash ? 'paid' : 'done';
+              if (current?.status === endStatus || current?.status === 'paid') {
+                if (this.statusPollInterval)
+                  clearInterval(this.statusPollInterval);
+                this.statusPollInterval = null;
+                this._scheduleOrderCompletion(trackId);
+                return;
+              }
+              const newStatus =
+                statusMap[res.message] ?? current?.status ?? 'waiting';
               if (current && current.status !== newStatus) {
                 this.orderService.updateStatus(trackId, newStatus);
               }
-              const endStatus: OrderStatus = isCash ? 'paid' : 'done';
 
               // 同步 activeOrders 顯示狀態
               const aoStatus =
-                newStatus === 'waiting' ? 'cooking'
-                : newStatus === 'cooking' ? 'cooking'
-                : newStatus === 'ready' ? 'ready'
-                : 'done';
+                newStatus === 'waiting'
+                  ? 'cooking'
+                  : newStatus === 'cooking'
+                    ? 'cooking'
+                    : newStatus === 'ready'
+                      ? 'ready'
+                      : 'done';
               this.activeOrders.set(
                 this.activeOrders().map((o) =>
                   o.id === trackId
@@ -2327,31 +2833,11 @@ filteredOrders = computed(() => {
               );
 
               if (newStatus === endStatus) {
-                // 從未完成移至已完成
-                const d2 = new Date();
-                const p2 = (n: number) => String(n).padStart(2, '0');
-                const finished = this.activeOrders().find((o) => o.id === trackId);
-                if (finished) {
-                  this.activeOrders.set(
-                    this.activeOrders().filter((o) => o.id !== finished.id),
-                  );
-                  this.orderHistoryList.set([
-                    {
-                      id: orderId,
-                      date: `${d2.getFullYear()}-${p2(d2.getMonth() + 1)}-${p2(d2.getDate())}`,
-                      items: finished.items.join('、'),
-                      itemsJP: '',
-                      itemsKR: '',
-                      total: finished.total,
-                      status: 'completed' as const,
-                    },
-                    ...this.orderHistoryList(),
-                  ]);
-                }
-                localStorage.removeItem('lbb_tracking_order');
                 if (this.statusPollInterval)
                   clearInterval(this.statusPollInterval);
                 this.statusPollInterval = null;
+                /* 顯示「取餐完畢」7 秒後移除 */
+                this._scheduleOrderCompletion(trackId);
               }
             },
             error: () => {
@@ -2361,10 +2847,8 @@ filteredOrders = computed(() => {
       }, 5000);
     }
 
-    
-
     /* 加入本地歷史訂單 */
-/* 加入未完成訂單列表 */
+    /* 加入未完成訂單列表 */
     this.activeOrders.set([
       {
         id: trackId,
@@ -2387,15 +2871,34 @@ filteredOrders = computed(() => {
       this.memberOrderCount.set(1);
       this.useDiscountCoupon.set(false);
     } else {
-      this.memberOrderCount.update((c) => Math.min(c + 1, 10));
+      this.memberOrderCount.update((c) => Math.min(c + 1, this.discountThreshold()));
     }
 
     this.selectedPromoName.set('');
     this.selectedPromoGift.set('');
     this.promoGiftPanelOpen.set(false);
     this.isPlacingOrder.set(false);
-    this.setTab('orders');
-    this.activeOrderTab.set('active');
+
+    const isGuest = this.authService.currentUser?.isGuest === true;
+    if (isGuest) {
+      const gAreaId = this.branchService.globalAreaId;
+      const branch = this.branchService.currentBranches.find(
+        (b) => b.id === gAreaId,
+      );
+      this.guestSuccessPhone.set(this.phoneToIntl(this.phoneNumber()));
+      this.guestSuccessBranchName.set(
+        branch ? this.branchService.getLocalizedBranchName(branch) : '所選分店',
+      );
+      this.guestSuccessModalOpen.set(true);
+    } else {
+      this.setTab('orders');
+      this.activeOrderTab.set('active');
+    }
+  }
+
+  closeGuestSuccessModal(): void {
+    this.guestSuccessModalOpen.set(false);
+    this.setTab('home');
   }
 
   /* ── 取得頭像文字 ────────────────────────────────── */

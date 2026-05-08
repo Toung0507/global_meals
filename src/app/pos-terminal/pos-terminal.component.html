@@ -56,7 +56,7 @@
   }}</span>
   <div class="ms-auto d-flex align-items-center gap-3">
     <span class="pos-time">{{ clockStr() }}</span>
-    @if (isBM && authService.currentUser?.role === 'branch_manager') {
+    @if (isBM) {
       <button
         class="btn btn-sm btn-outline-success"
         style="font-size: 0.75rem"
@@ -133,30 +133,20 @@
     訂單看板
   </div>
 
-  <!-- 商品管理（全部可見，員工僅查看） -->
+  <!-- 商品管理：已移至後台管理（rm-dashboard），POS 隱藏
   <div
     class="pos-tab-btn"
     [class.active]="activeTab() === 'stock' && isBM"
     [class.staff-active]="activeTab() === 'stock' && !isBM"
     (click)="setTab('stock')"
   >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.8"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      class="tab-svg"
-    >
-      <path
-        d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
-      />
-      <path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="tab-svg">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+      <path d="M3.27 6.96 12 12.01l8.73-5.05M12 22.08V12"/>
     </svg>
     商品管理
   </div>
+  -->
 
   <!-- 活動管理（全部可見） -->
   <div
@@ -180,32 +170,20 @@
       />
       <circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none" />
     </svg>
-    活動管理
+    活動一覽
   </div>
 
-  <!-- 員工帳號（僅分店長可見） -->
+  <!-- 員工帳號：已移至後台管理（rm-dashboard），POS 隱藏
   @if (isBM) {
-    <div
-      class="pos-tab-btn"
-      [class.active]="activeTab() === 'staff'"
-      (click)="setTab('staff')"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.8"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="tab-svg"
-      >
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
+    <div class="pos-tab-btn" [class.active]="activeTab() === 'staff'" (click)="setTab('staff')">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="tab-svg">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
       </svg>
       員工帳號
     </div>
   }
+  -->
 
   <!-- 今日報表（暫時隱藏）
   <div class="pos-tab-btn"
@@ -225,143 +203,37 @@
   <div class="pos-main">
     <!-- ── 左側：商品瀏覽 ── -->
     <div class="pos-left">
-      <!-- 分類篩選（有效綁定） -->
+      <!-- 餐點分類篩選 -->
       <div class="category-bar">
-        <!-- 全部 -->
+        <span class="filter-label">分類</span>
         <span
           class="cat-btn"
           [class.active]="activeCategory() === 'all'"
           (click)="setCategory('all')"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="cat-svg"
-          >
-            <rect x="3" y="3" width="7" height="7" />
-            <rect x="14" y="3" width="7" height="7" />
-            <rect x="3" y="14" width="7" height="7" />
-            <rect x="14" y="14" width="7" height="7" />
-          </svg>
-          全部
-        </span>
-        <!-- 台式 -->
+        >全部</span>
+        @for (cat of uniqueCategories(); track cat) {
+          <span
+            class="cat-btn"
+            [class.active]="activeCategory() === cat"
+            (click)="setCategory(cat)"
+          >{{ cat }}</span>
+        }
+      </div>
+      <!-- 風格篩選 -->
+      <div class="category-bar style-bar">
+        <span class="filter-label">風格</span>
         <span
           class="cat-btn"
-          [class.active]="activeCategory() === '台式'"
-          (click)="setCategory('台式')"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="cat-svg"
-          >
-            <path d="M3 11h18M3 11c0 5 4.03 9 9 9s9-4 9-9" />
-            <path
-              d="M10.5 5.5c0 1.5-1.5 2-1.5 3.5M14 5.5c0 1.5-1.5 2-1.5 3.5"
-            />
-          </svg>
-          台式
-        </span>
-        <!-- 南洋 -->
-        <span
-          class="cat-btn"
-          [class.active]="activeCategory() === '南洋'"
-          (click)="setCategory('南洋')"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="cat-svg"
-          >
-            <path d="M12 22V12" />
-            <path
-              d="M8 8c1 2 2 3 4 4s4 0 6-2c-1-4-4-6-7-6C8 4 4 7 3 10c2 1 4 0 5-2z"
-            />
-          </svg>
-          南洋
-        </span>
-        <!-- 西式 -->
-        <span
-          class="cat-btn"
-          [class.active]="activeCategory() === '西式'"
-          (click)="setCategory('西式')"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="cat-svg"
-          >
-            <path
-              d="M3 2v6c0 1.1.9 2 2 2h2V2M5 12v10M21 9V2l-2 4-2-4v7l2 4v7"
-            />
-          </svg>
-          西式
-        </span>
-        <!-- 輕食 -->
-        <span
-          class="cat-btn"
-          [class.active]="activeCategory() === '輕食'"
-          (click)="setCategory('輕食')"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="cat-svg"
-          >
-            <path d="M12 22c0-7-8-11-8-16a8 8 0 0 1 16 0c0 5-8 9-8 16z" />
-            <path d="M12 14v-6M9 11l3-3 3 3" />
-          </svg>
-          輕食
-        </span>
-        <!-- 飲品 -->
-        <span
-          class="cat-btn"
-          [class.active]="activeCategory() === '飲品'"
-          (click)="setCategory('飲品')"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="cat-svg"
-          >
-            <path d="M8 3h8l1 10H7L8 3z" />
-            <path d="M7 13c0 3.87 2.24 7 5 7s5-3.13 5-7" />
-            <line x1="12" y1="13" x2="12" y2="20" />
-            <line x1="9.5" y1="20" x2="14.5" y2="20" />
-          </svg>
-          飲品
-        </span>
+          [class.active]="activeStyle() === 'all'"
+          (click)="setStyle('all')"
+        >全部</span>
+        @for (sty of uniqueStyles(); track sty) {
+          <span
+            class="cat-btn"
+            [class.active]="activeStyle() === sty"
+            (click)="setStyle(sty)"
+          >{{ sty }}</span>
+        }
       </div>
 
       <!-- 搜尋列（有效綁定） -->
@@ -417,11 +289,20 @@
       <!-- 訂單頭部 -->
       <div class="cart-header">
         <button class="cart-clear-full" (click)="clearCart()">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-            style="width:14px;height:14px;margin-right:5px">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
-            <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            style="width: 14px; height: 14px; margin-right: 5px"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14H6L5 6" />
+            <path d="M10 11v6M14 11v6" />
+            <path d="M9 6V4h6v2" />
           </svg>
           清除購物車
         </button>
@@ -753,21 +634,47 @@
               (click)="posPromoDrawerOpen.set(!posPromoDrawerOpen())"
               type="button"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px;flex-shrink:0">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                style="width: 14px; height: 14px; flex-shrink: 0"
+              >
                 <path d="M20 12v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4" />
                 <rect x="2" y="6" width="20" height="6" rx="1" />
-                <path d="M12 12v9" /><path d="M12 6c0-1.5-1-3-2-3S8 4 8 6" /><path d="M12 6c0-1.5 1-3 2-3s2 1 2 3" />
+                <path d="M12 12v9" />
+                <path d="M12 6c0-1.5-1-3-2-3S8 4 8 6" />
+                <path d="M12 6c0-1.5 1-3 2-3s2 1 2 3" />
               </svg>
               <span class="pos-pact-drawer-label">
                 優惠活動
-                <span class="pos-pact-drawer-count">{{ posEnrichedPromos().length }}</span>
+                <span class="pos-pact-drawer-count">{{
+                  posEnrichedPromos().length
+                }}</span>
               </span>
               @if (posSelectedGiftName()) {
-                <span class="pos-pact-drawer-selected">已選：{{ posSelectedGiftName() }}</span>
+                <span class="pos-pact-drawer-selected"
+                  >已選：{{ posSelectedGiftName() }}</span
+                >
               } @else if (selectedPosPromoId() === -1) {
                 <span class="pos-pact-drawer-skip">不參加</span>
               }
-              <svg class="pos-pact-drawer-chevron" [class.open]="posPromoDrawerOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;flex-shrink:0;margin-left:auto">
+              <svg
+                class="pos-pact-drawer-chevron"
+                [class.open]="posPromoDrawerOpen()"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                style="
+                  width: 13px;
+                  height: 13px;
+                  flex-shrink: 0;
+                  margin-left: auto;
+                "
+              >
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </button>
@@ -781,12 +688,32 @@
                 (click)="selectPosPromo(-1)"
                 type="button"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:15px;height:15px;flex-shrink:0">
-                  <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  style="width: 15px; height: 15px; flex-shrink: 0"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
                 </svg>
                 <span>不參加活動優惠</span>
                 @if (selectedPosPromoId() === -1) {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;margin-left:auto;flex-shrink:0">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    style="
+                      width: 13px;
+                      height: 13px;
+                      margin-left: auto;
+                      flex-shrink: 0;
+                    "
+                  >
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 }
@@ -799,19 +726,42 @@
                     <button
                       class="pos-pact-row"
                       [class.selected]="selectedPosPromoId() === item.id"
-                      [class.pos-pact-row--open]="selectedPosPromoId() === item.id"
+                      [class.pos-pact-row--open]="
+                        selectedPosPromoId() === item.id
+                      "
                       (click)="selectPosPromo(item.id)"
                       type="button"
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:15px;height:15px;flex-shrink:0">
-                        <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        style="width: 15px; height: 15px; flex-shrink: 0"
+                      >
+                        <path
+                          d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"
+                        />
                       </svg>
                       <div class="pos-par-text">
                         <span class="pos-par-name">{{ item.name }}</span>
-                        <span class="pos-par-hint">按此選擇此活動，點選免費贈品。</span>
+                        <span class="pos-par-hint"
+                          >按此選擇此活動，點選免費贈品。</span
+                        >
                       </div>
-                      <span class="pos-par-min-tag">滿 NT${{ item.minThreshold }}</span>
-                      <svg class="pos-par-chevron" [class.open]="selectedPosPromoId() === item.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;flex-shrink:0">
+                      <span class="pos-par-min-tag"
+                        >滿 NT${{ item.minThreshold }}</span
+                      >
+                      <svg
+                        class="pos-par-chevron"
+                        [class.open]="selectedPosPromoId() === item.id"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        style="width: 14px; height: 14px; flex-shrink: 0"
+                      >
                         <polyline points="6 9 12 15 18 9" />
                       </svg>
                     </button>
@@ -820,20 +770,43 @@
                         @for (gift of item.gifts; track gift.giftRuleId) {
                           <button
                             class="pos-pgp-gift-opt"
-                            [class.selected]="selectedPosGiftRuleId() === gift.giftRuleId"
+                            [class.selected]="
+                              selectedPosGiftRuleId() === gift.giftRuleId
+                            "
                             [class.oos]="!gift.available"
                             [disabled]="!gift.available"
                             (click)="pickPosGift(gift.giftRuleId)"
                             type="button"
                           >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px;flex-shrink:0">
-                              <circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" />
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="1.8"
+                              stroke-linecap="round"
+                              style="width: 14px; height: 14px; flex-shrink: 0"
+                            >
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="M12 8v4l3 3" />
                             </svg>
                             <span>{{ gift.giftProductName }}</span>
                             @if (!gift.available) {
                               <span class="pos-oos-tag">已售完</span>
-                            } @else if (selectedPosGiftRuleId() === gift.giftRuleId) {
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;flex-shrink:0;margin-left:auto">
+                            } @else if (
+                              selectedPosGiftRuleId() === gift.giftRuleId
+                            ) {
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.5"
+                                style="
+                                  width: 13px;
+                                  height: 13px;
+                                  flex-shrink: 0;
+                                  margin-left: auto;
+                                "
+                              >
                                 <polyline points="20 6 9 17 4 12" />
                               </svg>
                             }
@@ -845,14 +818,35 @@
                     <!-- 未達門檻：進度條提示 -->
                     <div class="pos-pact-progress">
                       <div class="pos-pact-prog-head">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px;flex-shrink:0;opacity:0.5">
-                          <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="1.8"
+                          stroke-linecap="round"
+                          style="
+                            width: 14px;
+                            height: 14px;
+                            flex-shrink: 0;
+                            opacity: 0.5;
+                          "
+                        >
+                          <path
+                            d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"
+                          />
                         </svg>
-                        <span class="pos-par-name pos-par-name--dim">{{ item.name }}</span>
-                        <span class="pos-par-min-tag">滿 NT${{ item.minThreshold }}</span>
+                        <span class="pos-par-name pos-par-name--dim">{{
+                          item.name
+                        }}</span>
+                        <span class="pos-par-min-tag"
+                          >滿 NT${{ item.minThreshold }}</span
+                        >
                       </div>
                       <div class="pos-pact-prog-bar">
-                        <div class="pos-pact-prog-fill" [style.width.%]="item.progressPct"></div>
+                        <div
+                          class="pos-pact-prog-fill"
+                          [style.width.%]="item.progressPct"
+                        ></div>
                       </div>
                       <span class="pos-pact-prog-hint">
                         再消費 NT${{ item.gapAmount }} 即可獲得贈品
@@ -1135,12 +1129,23 @@
     <!-- ── 報電話號碼取餐查詢 ── -->
     <div class="phone-pickup-section mb-4">
       <div class="phone-pickup-bar">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-             style="width:15px;height:15px;flex-shrink:0;color:#c49756">
-          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          style="width: 15px; height: 15px; flex-shrink: 0; color: #c49756"
+        >
+          <path
+            d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"
+          />
         </svg>
-        <span style="font-weight:600;font-size:.85rem;color:#c49756">報電話取餐</span>
+        <span style="font-weight: 600; font-size: 0.85rem; color: #c49756"
+          >報電話取餐</span
+        >
         <input
           class="phone-pickup-input"
           type="tel"
@@ -1149,44 +1154,93 @@
           (input)="phoneQuery.set($any($event.target).value)"
           (keydown.enter)="searchByPhone()"
         />
-        <button class="btn btn-sm btn-ghost-gold" (click)="searchByPhone()" [disabled]="phoneSearchLoading()">
-          @if (phoneSearchLoading()) { 查詢中... } @else { 查詢 }
+        <button
+          class="btn btn-sm btn-ghost-gold"
+          (click)="searchByPhone()"
+          [disabled]="phoneSearchLoading()"
+        >
+          @if (phoneSearchLoading()) {
+            查詢中...
+          } @else {
+            查詢
+          }
         </button>
         @if (phoneSearchDone()) {
-          <button class="btn btn-sm btn-outline-secondary" style="font-size:.75rem" (click)="clearPhoneSearch()">清除</button>
+          <button
+            class="btn btn-sm btn-outline-secondary"
+            style="font-size: 0.75rem"
+            (click)="clearPhoneSearch()"
+          >
+            清除
+          </button>
         }
       </div>
 
       @if (phoneSearchError()) {
-        <div class="phone-pickup-msg phone-pickup-msg--err">{{ phoneSearchError() }}</div>
+        <div class="phone-pickup-msg phone-pickup-msg--err">
+          {{ phoneSearchError() }}
+        </div>
       }
 
-      @if (phoneSearchDone() && phoneSearchResults().length === 0 && !phoneSearchError()) {
+      @if (
+        phoneSearchDone() &&
+        phoneSearchResults().length === 0 &&
+        !phoneSearchError()
+      ) {
         <div class="phone-pickup-msg">查無今日訂單</div>
       }
 
       @if (phoneSearchResults().length > 0) {
         <div class="phone-pickup-results">
           @for (order of phoneSearchResults(); track order.id) {
-            <div class="phone-pickup-card" [class.phone-pickup-card--diff]="!isSameBranch(order)">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="ob-num">{{ order.orderDateId }}-{{ order.id }}</span>
+            <div
+              class="phone-pickup-card"
+              [class.phone-pickup-card--diff]="!isSameBranch(order)"
+            >
+              <div
+                class="d-flex justify-content-between align-items-center mb-1"
+              >
+                <span class="ob-num"
+                  >{{ order.orderDateId }}-{{ order.id }}</span
+                >
                 @if (!isSameBranch(order)) {
-                  <span class="badge-err" title="此訂單屬於其他分店，無法在此取餐">⚠ 其他分店訂單</span>
+                  <span
+                    class="badge-err"
+                    title="此訂單屬於其他分店，無法在此取餐"
+                    >⚠ 其他分店訂單</span
+                  >
                 } @else {
-                  <span class="badge-ok" style="font-size:.7rem">本店訂單</span>
+                  <span class="badge-ok" style="font-size: 0.7rem"
+                    >本店訂單</span
+                  >
                 }
               </div>
-              <div style="font-size:.78rem;color:#8b949e;margin-bottom:4px">
+              <div
+                style="font-size: 0.78rem; color: #8b949e; margin-bottom: 4px"
+              >
                 狀態：{{ order.ordersStatus }} ／ 金額：${{ order.totalAmount }}
               </div>
-              @for (detail of (order.getOrdersDetailVoList ?? []); track $index) {
+              @for (
+                detail of order.GetOrdersDetailVoList ??
+                  order.getOrdersDetailVoList ??
+                  [];
+                track $index
+              ) {
                 @if (!detail.gift) {
-                  <div class="ob-item">{{ detail.name }} × {{ detail.quantity }}</div>
+                  <div class="ob-item">
+                    {{ detail.name }} × {{ detail.quantity }}
+                  </div>
                 }
               }
               @if (!isSameBranch(order)) {
-                <div style="margin-top:6px;font-size:.78rem;color:#f85149;font-weight:500">
+                <div
+                  style="
+                    margin-top: 6px;
+                    font-size: 0.78rem;
+                    color: #f85149;
+                    font-weight: 500;
+                  "
+                >
                   ⚠ 此訂單非本分店，請告知顧客至正確分店取餐
                 </div>
               }
@@ -1197,44 +1251,80 @@
     </div>
 
     <div class="ob-kanban">
-
       <!-- ── 欄一：待製作 ── -->
       <div class="ob-col">
         <div class="ob-col-hd ob-col-hd--waiting">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-               class="ob-col-icon">
-            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="ob-col-icon"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
           </svg>
           <span class="ob-col-title">待製作</span>
-          <span class="ob-col-badge ob-col-badge--waiting">{{ orderService.waiting().length }}</span>
+          <span class="ob-col-badge ob-col-badge--waiting">{{
+            orderService.waiting().length
+          }}</span>
         </div>
         <div class="ob-col-body">
           @if (orderService.waiting().length === 0) {
             <div class="ob-empty">目前無待製作訂單</div>
           }
           @for (order of orderService.waiting(); track order.id) {
-            <div class="order-board-card ob-waiting" [class.ob-customer]="order.source === 'customer'">
+            <div
+              class="order-board-card ob-waiting"
+              [class.ob-customer]="order.source === 'customer'"
+            >
               <div class="ob-card-top">
                 <span class="ob-num">{{ order.number }}</span>
                 <div class="ob-badges">
-                  @if (order.source === 'customer') { <span class="badge-customer">線上</span> }
-                  @if (order.orderType) { <span class="ob-type-badge">{{ order.orderType }}</span> }
+                  @if (order.orderType === "會員") {
+                    <span class="badge-customer">會員</span>
+                  } @else if (order.orderType === "訪客") {
+                    <span class="ob-type-badge">訪客</span>
+                  } @else if (order.orderType) {
+                    <span class="ob-type-badge">{{ order.orderType }}</span>
+                  }
+                  @if (order.source === 'pos') {
+                    <span class="badge-ok">已收款</span>
+                  }
                 </div>
               </div>
               <div class="ob-items-list">
-                @for (item of order.items; track item) { <div class="ob-item">{{ item }}</div> }
+                @for (item of order.items; track item) {
+                  <div class="ob-item">{{ item }}</div>
+                }
               </div>
-              @if (order.note) { <div class="ob-note">📝 {{ order.note }}</div> }
+              @if (order.note) {
+                <div class="ob-note">📝 {{ order.note }}</div>
+              }
               <div class="ob-meta">
                 <span>{{ order.createdAt }}</span>
                 <span>{{ order.payMethod }}</span>
                 <span class="ob-total">${{ order.total }}</span>
               </div>
-              <button class="ob-action-btn ob-action-btn--gold" (click)="startCooking(order.id)">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" class="ob-btn-icon">
-                  <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+              <button
+                class="ob-action-btn ob-action-btn--gold"
+                (click)="startCooking(order.id)"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  class="ob-btn-icon"
+                >
+                  <path
+                    d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"
+                  />
                 </svg>
                 開始製作
               </button>
@@ -1246,41 +1336,77 @@
       <!-- ── 欄二：製作中 ── -->
       <div class="ob-col">
         <div class="ob-col-hd ob-col-hd--cooking">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-               class="ob-col-icon">
-            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="ob-col-icon"
+          >
+            <path
+              d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"
+            />
           </svg>
           <span class="ob-col-title">製作中</span>
-          <span class="ob-col-badge ob-col-badge--cooking">{{ orderService.cooking().length }}</span>
+          <span class="ob-col-badge ob-col-badge--cooking">{{
+            orderService.cooking().length
+          }}</span>
         </div>
         <div class="ob-col-body">
           @if (orderService.cooking().length === 0) {
             <div class="ob-empty">目前無製作中訂單</div>
           }
           @for (order of orderService.cooking(); track order.id) {
-            <div class="order-board-card ob-cooking" [class.ob-customer]="order.source === 'customer'">
+            <div
+              class="order-board-card ob-cooking"
+              [class.ob-customer]="order.source === 'customer'"
+            >
               <div class="ob-card-top">
                 <span class="ob-num">{{ order.number }}</span>
                 <div class="ob-badges">
-                  @if (order.source === 'customer') { <span class="badge-customer">線上</span> }
-                  @if (order.orderType) { <span class="ob-type-badge">{{ order.orderType }}</span> }
+                  @if (order.orderType === "會員") {
+                    <span class="badge-customer">會員</span>
+                  } @else if (order.orderType === "訪客") {
+                    <span class="ob-type-badge">訪客</span>
+                  } @else if (order.orderType) {
+                    <span class="ob-type-badge">{{ order.orderType }}</span>
+                  }
+                  @if (order.source === 'pos') {
+                    <span class="badge-ok">已收款</span>
+                  }
                   <span class="badge-blue">製作中</span>
                 </div>
               </div>
               <div class="ob-items-list">
-                @for (item of order.items; track item) { <div class="ob-item">{{ item }}</div> }
+                @for (item of order.items; track item) {
+                  <div class="ob-item">{{ item }}</div>
+                }
               </div>
-              @if (order.note) { <div class="ob-note">📝 {{ order.note }}</div> }
+              @if (order.note) {
+                <div class="ob-note">📝 {{ order.note }}</div>
+              }
               <div class="ob-meta">
                 <span>{{ order.createdAt }}</span>
                 <span>預估 {{ order.estimatedMinutes }} 分</span>
                 <span class="ob-total">${{ order.total }}</span>
               </div>
-              <button class="ob-action-btn ob-action-btn--green" (click)="finishOrder(order.id)">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="ob-btn-icon">
-                  <polyline points="20 6 9 17 4 12"/>
+              <button
+                class="ob-action-btn ob-action-btn--green"
+                (click)="finishOrder(order.id)"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  class="ob-btn-icon"
+                >
+                  <polyline points="20 6 9 17 4 12" />
                 </svg>
                 完成出餐
               </button>
@@ -1292,59 +1418,34 @@
       <!-- ── 欄三：可取餐 / 已完成 ── -->
       <div class="ob-col">
         <div class="ob-col-hd ob-col-hd--done">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-               class="ob-col-icon">
-            <polyline points="20 6 9 17 4 12"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="ob-col-icon"
+          >
+            <polyline points="20 6 9 17 4 12" />
           </svg>
           <span class="ob-col-title">可取餐 / 完成</span>
           <span class="ob-col-badge ob-col-badge--done">
-            {{ orderService.ready().length + orderService.done().length + orderService.paid().length }}
+            {{
+              orderService.ready().length +
+                orderService.done().length +
+                orderService.paid().length
+            }}
           </span>
         </div>
         <div class="ob-col-body">
-          @if (orderService.ready().length === 0 && orderService.done().length === 0 && orderService.paid().length === 0) {
+          @if (
+            orderService.ready().length === 0 &&
+            orderService.done().length === 0 &&
+            orderService.paid().length === 0
+          ) {
             <div class="ob-empty">今日暫無完成訂單</div>
-          }
-          @for (order of orderService.ready(); track order.id) {
-            <div class="order-board-card ob-done">
-              <div class="ob-card-top">
-                <span class="ob-num">{{ order.number }}</span>
-                <span class="badge-ok ob-badge-pickup">可取餐</span>
-              </div>
-              <div class="ob-items-list">
-                @for (item of order.items; track item) { <div class="ob-item">{{ item }}</div> }
-              </div>
-              <div class="ob-meta">
-                <span>{{ order.createdAt }}</span>
-                <span>{{ order.payMethod }}</span>
-                <span class="ob-total">${{ order.total }}</span>
-              </div>
-              <button class="ob-action-btn ob-action-btn--cash" (click)="moveToCashPayment(order)">
-                💵 移至待付款
-              </button>
-            </div>
-          }
-          @for (order of orderService.done(); track order.id) {
-            <div class="order-board-card ob-done" [style.opacity]="order.isCash ? '1' : '0.6'">
-              <div class="ob-card-top">
-                <span class="ob-num">{{ order.number }}</span>
-                <span class="badge-ok">已完成</span>
-              </div>
-              <div class="ob-items-list">
-                @for (item of order.items; track item) { <div class="ob-item">{{ item }}</div> }
-              </div>
-              <div class="ob-meta">
-                <span>{{ order.createdAt }}</span>
-                <span>{{ order.payMethod }}</span>
-                <span class="ob-total">${{ order.total }}</span>
-              </div>
-              @if (order.isCash) {
-                <button class="ob-action-btn ob-action-btn--cash" (click)="moveToCashPayment(order)">
-                  💵 移至待付款
-                </button>
-              }
-            </div>
           }
           @for (order of orderService.paid(); track order.id) {
             <div class="order-board-card ob-done" style="opacity: 0.45">
@@ -1353,7 +1454,9 @@
                 <span class="badge-ok">已收款</span>
               </div>
               <div class="ob-items-list">
-                @for (item of order.items; track item) { <div class="ob-item">{{ item }}</div> }
+                @for (item of order.items; track item) {
+                  <div class="ob-item">{{ item }}</div>
+                }
               </div>
               <div class="ob-meta">
                 <span>{{ order.createdAt }}</span>
@@ -1362,17 +1465,72 @@
               </div>
             </div>
           }
+          @for (order of orderService.ready(); track order.id) {
+            <div class="order-board-card ob-done">
+              <div class="ob-card-top">
+                <span class="ob-num">{{ order.number }}</span>
+                <span class="badge-ok ob-badge-pickup">可取餐</span>
+              </div>
+              <div class="ob-items-list">
+                @for (item of order.items; track item) {
+                  <div class="ob-item">{{ item }}</div>
+                }
+              </div>
+              <div class="ob-meta">
+                <span>{{ order.createdAt }}</span>
+                <span>{{ order.payMethod }}</span>
+                <span class="ob-total">${{ order.total }}</span>
+              </div>
+              @if (order.isCash && order.source !== 'pos') {
+                <button
+                  class="ob-action-btn ob-action-btn--cash"
+                  (click)="moveToCashPayment(order)"
+                >
+                  💵 待付款
+                </button>
+              }
+            </div>
+          }
+          @for (order of orderService.done(); track order.id) {
+            <div
+              class="order-board-card ob-done"
+              [style.opacity]="order.isCash ? '1' : '0.6'"
+            >
+              <div class="ob-card-top">
+                <span class="ob-num">{{ order.number }}</span>
+                <span class="badge-ok">已完成</span>
+              </div>
+              <div class="ob-items-list">
+                @for (item of order.items; track item) {
+                  <div class="ob-item">{{ item }}</div>
+                }
+              </div>
+              <div class="ob-meta">
+                <span>{{ order.createdAt }}</span>
+                <span>{{ order.payMethod }}</span>
+                <span class="ob-total">${{ order.total }}</span>
+              </div>
+              @if (order.isCash && order.source !== 'pos') {
+                <button
+                  class="ob-action-btn ob-action-btn--cash"
+                  (click)="moveToCashPayment(order)"
+                >
+                  💵 移至待付款
+                </button>
+              }
+            </div>
+          }
         </div>
       </div>
-
     </div>
   </div>
 }
 
+<!-- 商品管理：已移至後台管理（rm-dashboard），POS 隱藏 -->
 <!-- ════════════════════════════════════════
      頁籤 3：商品管理（庫存 + 售價 + 最大購買量）
      ════════════════════════════════════════ -->
-@if (activeTab() === "stock") {
+@if (false) {
   <div class="page-panel" style="display: block">
     <div class="panel-title" style="margin-bottom: 4px">商品管理</div>
     <div class="panel-sub" style="margin-bottom: 14px">
@@ -1569,61 +1727,83 @@
     }
 
     <div class="mb-4">
-      <div class="panel-title" style="margin-bottom: 2px">活動管理</div>
+      <div class="panel-title" style="margin-bottom: 2px">活動一覽</div>
       <div class="panel-sub" style="margin: 0">
-        目前分店的促銷活動與公告（唯讀，如需修改請至老闆後台）
+        目前分店的促銷活動，可切換啟用／暫停狀態
       </div>
     </div>
 
-    <!-- 活動卡片列表 -->
-    @for (promo of posPromos(); track promo.id) {
-      <div
-        class="pos-promo-card"
-        [style.border-left-color]="promo.badgeColor || promo.color"
-        [style.opacity]="promo.ended ? '0.72' : '1'"
-      >
-        <!-- 封面圖片（有圖才顯示） -->
-        @if (promo.image) {
-          <div class="pos-promo-img-wrap">
-            <img [src]="promo.image" alt="{{ promo.title }}" class="pos-promo-img" />
-            <div class="pos-promo-img-overlay">
-              @if (promo.ended) {
-                <span class="pos-promo-img-badge badge-err">已結束</span>
-              } @else if (promo.isActive) {
-                <span class="pos-promo-img-badge badge-ok">進行中</span>
-              } @else {
-                <span class="pos-promo-img-badge badge-warn">已暫停</span>
+    <!-- 活動卡片格列 -->
+    @if (posPromos().length === 0) {
+      <div class="empty-state">目前無活動</div>
+    } @else {
+      <div class="pos-promo-grid">
+        @for (promo of posPromos(); track promo.id) {
+          <div
+            class="pos-promo-card"
+            [style.opacity]="promo.ended ? '0.62' : '1'"
+          >
+            <!-- 頂部色條 -->
+            <div
+              class="pos-promo-card-bar"
+              [style.background]="promo.badgeColor || promo.color"
+            ></div>
+            <div class="pos-promo-card-body">
+              <!-- 封面圖 -->
+              @if (promo.image) {
+                <img
+                  [src]="promo.image"
+                  alt="{{ promo.title }}"
+                  class="pos-promo-card-img"
+                />
               }
+              <div class="pos-promo-title">
+                {{ promo.title }}
+                @if (promo.giftCount && promo.giftCount > 0) {
+                  <span class="pos-promo-gift-badge"
+                    >{{ promo.giftCount }} 項贈品</span
+                  >
+                }
+              </div>
+              @if (promo.description) {
+                <div class="pos-promo-desc">{{ promo.description }}</div>
+              }
+              <div class="pos-promo-meta">
+                <span>{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span>
+                @if (promo.minAmount) {
+                  <span style="color: #6b7280">·</span>
+                  <span>滿 NT${{ promo.minAmount }}</span>
+                }
+              </div>
             </div>
+            <!-- 卡片底部：狀態 + 開關 -->
+            <div class="pos-promo-card-foot" (click)="$event.stopPropagation()">
+              <div class="pos-promo-card-foot-row">
+                @if (promo.ended) {
+                  <span class="badge-err">已結束</span>
+                } @else if (promo.isActive) {
+                  <span class="badge-ok">進行中</span>
+                } @else {
+                  <span class="badge-warn">已暫停</span>
+                }
+                @if (isBM) {
+                  <label
+                    class="pos-promo-toggle"
+                    [class.disabled]="promo.ended"
+                  >
+                    <input
+                      type="checkbox"
+                      [checked]="promo.isActive"
+                      [disabled]="promo.ended"
+                      (change)="togglePromo(promo.id)"
+                    />
+                    <span class="pos-promo-toggle-track"></span>
+                  </label>
+                }
+              </div>
+            </div>  
           </div>
         }
-
-        <div class="pos-promo-body d-flex justify-content-between align-items-start gap-2">
-          <div style="flex: 1; min-width: 0">
-            <div class="pos-promo-title">{{ promo.title }}</div>
-            @if (promo.description) {
-              <div class="pos-promo-desc">{{ promo.description }}</div>
-            }
-            <div class="pos-promo-meta">
-              <span>{{ promo.rawStartTime }} ～ {{ promo.rawEndTime }}</span>
-              @if (promo.minAmount) {
-                <span style="color: #6b7280">·</span>
-                <span>滿 NT${{ promo.minAmount }}</span>
-              }
-            </div>
-          </div>
-          @if (!promo.image) {
-            <div class="d-flex gap-2 align-items-center flex-shrink-0">
-              @if (promo.ended) {
-                <span class="badge-err">已結束</span>
-              } @else if (promo.isActive) {
-                <span class="badge-ok">進行中</span>
-              } @else {
-                <span class="badge-warn">已暫停</span>
-              }
-            </div>
-          }
-        </div>
       </div>
     }
   </div>
@@ -1808,10 +1988,11 @@
   }
 }
 
+<!-- 員工帳號：已移至後台管理（rm-dashboard），POS 隱藏 -->
 <!-- ════════════════════════════════════════
      頁籤 5：員工帳號管理（Signal 驅動，停/復權即時生效）
      ════════════════════════════════════════ -->
-@if (activeTab() === "staff" && isBM) {
+@if (false) {
   <div class="page-panel" style="display: block">
     <div class="panel-title">員工帳號管理</div>
     <div class="panel-sub">管理本分店員工帳號，點擊按鈕即時停/復權</div>
@@ -1926,12 +2107,31 @@
             [value]="newStaffPassword()"
             (input)="newStaffPassword.set($any($event.target).value)"
           />
-          <button type="button" class="modal-eye-btn" (click)="showAddStaffPwd.set(!showAddStaffPwd())">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <button
+            type="button"
+            class="modal-eye-btn"
+            (click)="showAddStaffPwd.set(!showAddStaffPwd())"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               @if (!showAddStaffPwd()) {
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
               } @else {
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                <path
+                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
+                />
+                <path
+                  d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
+                />
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
               }
             </svg>
           </button>
@@ -2003,12 +2203,31 @@
             [value]="editStaffDraft.password"
             (input)="editStaffDraft.password = $any($event.target).value"
           />
-          <button type="button" class="modal-eye-btn" (click)="showEditStaffPwd.set(!showEditStaffPwd())">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <button
+            type="button"
+            class="modal-eye-btn"
+            (click)="showEditStaffPwd.set(!showEditStaffPwd())"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               @if (!showEditStaffPwd()) {
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
               } @else {
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                <path
+                  d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
+                />
+                <path
+                  d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
+                />
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
               }
             </svg>
           </button>
@@ -2205,6 +2424,125 @@
     </div>
   </div>
 }
+<!-- ── 未選擇身份結帳攔截 Modal ─────────────────────── -->
+@if (showNoMemberModal()) {
+  <div class="modal-backdrop" (click)="showNoMemberModal.set(false)"></div>
+  <div class="add-staff-modal" style="max-width: 340px; text-align: center">
+    <div class="modal-header-row">
+      <span class="modal-title-text">無法結帳</span>
+      <button class="modal-close-btn" (click)="showNoMemberModal.set(false)">
+        ✕
+      </button>
+    </div>
+    <div
+      style="
+        padding: 20px 24px 8px;
+        font-size: 0.92rem;
+        line-height: 1.6;
+        color: #e2e8f0;
+      "
+    >
+      尚未填入會員手機號碼或是選擇訪客進行
+    </div>
+    <div class="modal-actions" style="padding-bottom: 20px">
+      <button
+        class="btn btn-sm"
+        style="background-color: #c49756; color: #0d1117; font-weight: 600"
+        (click)="showNoMemberModal.set(false)"
+      >
+        確認
+      </button>
+    </div>
+  </div>
+}
+
+@if (authService.sessionExpired()) {
+  <div
+    style="
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    "
+  >
+    <div
+      style="
+        background: #1a1a2e;
+        border: 1px solid #c49756;
+        border-radius: 12px;
+        padding: 2rem 2.5rem;
+        text-align: center;
+        max-width: 320px;
+      "
+    >
+      <div style="font-size: 2.5rem; margin-bottom: 0.75rem">⏱️</div>
+      <h3 style="color: #c49756; margin: 0 0 0.5rem">員工登入已過期</h3>
+      <p style="color: #aaa; font-size: 0.9rem; margin: 0 0 1.5rem">
+        後端 Session 已逾時，請重新以員工帳號登入。
+      </p>
+      <button
+        style="
+          background: #c49756;
+          color: #0d1117;
+          border: none;
+          border-radius: 8px;
+          padding: 0.6rem 1.5rem;
+          font-weight: 700;
+          cursor: pointer;
+          font-size: 1rem;
+        "
+        (click)="
+          authService.clearSessionExpired(); router.navigate(['/staff-login'])
+        "
+      >
+        重新登入
+      </button>
+    </div>
+  </div>
+}
+
+<!-- ── 會員模式未按查詢 → 結帳攔截 Modal ──────────── -->
+@if (showMemberNotQueriedModal()) {
+  <div
+    class="modal-backdrop"
+    (click)="showMemberNotQueriedModal.set(false)"
+  ></div>
+  <div class="add-staff-modal" style="max-width: 340px; text-align: center">
+    <div class="modal-header-row">
+      <span class="modal-title-text">無法結帳</span>
+      <button
+        class="modal-close-btn"
+        (click)="showMemberNotQueriedModal.set(false)"
+      >
+        ✕
+      </button>
+    </div>
+    <div
+      style="
+        padding: 20px 24px 8px;
+        font-size: 0.92rem;
+        line-height: 1.6;
+        color: #e2e8f0;
+      "
+    >
+      請先輸入手機號碼並按下「查詢」確認會員身分，<br />
+      或切換至訪客模式進行結帳。
+    </div>
+    <div class="modal-actions" style="padding-bottom: 20px">
+      <button
+        class="btn btn-sm"
+        style="background-color: #c49756; color: #0d1117; font-weight: 600"
+        (click)="showMemberNotQueriedModal.set(false)"
+      >
+        確認
+      </button>
+    </div>
+  </div>
+}
+
 <!-- ── 員工自改密碼 Modal ──────────────────────────── -->
 @if (changePwOpen()) {
   <div class="modal-backdrop" (click)="changePwOpen.set(false)"></div>
@@ -2219,24 +2557,123 @@
     <div class="modal-field">
       <label class="modal-label">舊密碼 *</label>
       <div class="modal-pw-wrap">
-        <input [type]="showChangePwOld() ? 'text' : 'password'" class="modal-input" placeholder="請輸入舊密碼" [value]="changePwOld()" (input)="changePwOld.set($any($event.target).value)"/>
-        <button type="button" class="modal-eye-btn" (click)="showChangePwOld.set(!showChangePwOld())"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@if (!showChangePwOld()) {<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>} @else {<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>}</svg></button>
+        <input
+          [type]="showChangePwOld() ? 'text' : 'password'"
+          class="modal-input"
+          placeholder="請輸入舊密碼"
+          [value]="changePwOld()"
+          (input)="changePwOld.set($any($event.target).value)"
+        />
+        <button
+          type="button"
+          class="modal-eye-btn"
+          (click)="showChangePwOld.set(!showChangePwOld())"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            @if (!showChangePwOld()) {
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            } @else {
+              <path
+                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
+              />
+              <path
+                d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
+              />
+              <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            }
+          </svg>
+        </button>
       </div>
     </div>
 
     <div class="modal-field">
       <label class="modal-label">新密碼 *</label>
       <div class="modal-pw-wrap">
-        <input [type]="showChangePwNew() ? 'text' : 'password'" class="modal-input" placeholder="請輸入新密碼（至少 6 碼）" [value]="changePwNew()" (input)="changePwNew.set($any($event.target).value)"/>
-        <button type="button" class="modal-eye-btn" (click)="showChangePwNew.set(!showChangePwNew())"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@if (!showChangePwNew()) {<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>} @else {<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>}</svg></button>
+        <input
+          [type]="showChangePwNew() ? 'text' : 'password'"
+          class="modal-input"
+          placeholder="請輸入新密碼（至少 6 碼）"
+          [value]="changePwNew()"
+          (input)="changePwNew.set($any($event.target).value)"
+        />
+        <button
+          type="button"
+          class="modal-eye-btn"
+          (click)="showChangePwNew.set(!showChangePwNew())"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            @if (!showChangePwNew()) {
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            } @else {
+              <path
+                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
+              />
+              <path
+                d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
+              />
+              <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            }
+          </svg>
+        </button>
       </div>
     </div>
 
     <div class="modal-field">
       <label class="modal-label">確認新密碼 *</label>
       <div class="modal-pw-wrap">
-        <input [type]="showChangePwConf() ? 'text' : 'password'" class="modal-input" placeholder="再次輸入新密碼" [value]="changePwConfirm()" (input)="changePwConfirm.set($any($event.target).value)"/>
-        <button type="button" class="modal-eye-btn" (click)="showChangePwConf.set(!showChangePwConf())"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@if (!showChangePwConf()) {<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>} @else {<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>}</svg></button>
+        <input
+          [type]="showChangePwConf() ? 'text' : 'password'"
+          class="modal-input"
+          placeholder="再次輸入新密碼"
+          [value]="changePwConfirm()"
+          (input)="changePwConfirm.set($any($event.target).value)"
+        />
+        <button
+          type="button"
+          class="modal-eye-btn"
+          (click)="showChangePwConf.set(!showChangePwConf())"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            @if (!showChangePwConf()) {
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            } @else {
+              <path
+                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
+              />
+              <path
+                d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
+              />
+              <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            }
+          </svg>
+        </button>
       </div>
     </div>
 

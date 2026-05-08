@@ -167,8 +167,9 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 .category-bar {
     background-color: #111927;
     border-bottom: 1px solid rgba(255,255,255,0.09);
-    padding: 10px 16px;
+    padding: 8px 16px;
     display: flex;
+    align-items: center;
     gap: 8px;
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -176,6 +177,14 @@ $pos-blue:        #4f8ef7;   // 員工藍色
     scrollbar-width: none;
 }
 .category-bar::-webkit-scrollbar { display: none; }
+.style-bar { background-color: #0d1520; padding-top: 6px; padding-bottom: 6px; }
+.filter-label {
+    font-size: 0.68rem;
+    color: #6b7a99;
+    white-space: nowrap;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+}
 
 .cat-btn {
     padding: 6px 14px;
@@ -1901,6 +1910,36 @@ select.modal-input option {
     margin-top: 6px;
 }
 
+/* 報電話取餐查詢列 */
+.phone-pickup-section {
+    background: rgba(196,151,86,0.06);
+    border: 1px solid rgba(196,151,86,0.18);
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+
+.phone-pickup-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.phone-pickup-input {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 11px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: #0d1117;
+    color: #e2e8f8;
+    font-size: 0.82rem;
+    font-family: 'Noto Sans TC', sans-serif;
+    outline: none;
+    transition: border-color 0.18s;
+    &:focus { border-color: rgba(196,151,86,0.5); }
+    &::placeholder { color: #4a5568; }
+}
+
 /* 查到的會員資料 */
 .omp-member-info {
     margin-bottom: 10px;
@@ -2406,19 +2445,104 @@ select.modal-input option {
     white-space: nowrap;
 }
 
+/* 活動卡片格列 */
+.pos-promo-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+}
+
 /* 活動卡片 */
 .pos-promo-card {
     background: #161b22;
     border: 1px solid rgba(255,255,255,0.08);
-    border-left: 5px solid #c49756;
     border-radius: 10px;
     overflow: hidden;
-    padding: 0;
-    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
     transition: opacity 150ms;
 }
 
-/* 活動卡片文字區 */
+.pos-promo-card-bar {
+    height: 5px;
+    background: #c49756;
+    flex-shrink: 0;
+}
+
+.pos-promo-card-body {
+    padding: 12px 14px;
+    flex: 1;
+}
+
+.pos-promo-card-img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    display: block;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.pos-promo-card-foot {
+    padding: 8px 14px 10px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.pos-promo-card-foot-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Toggle 開關 */
+.pos-promo-toggle {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+    &.disabled {
+        cursor: not-allowed;
+        opacity: 0.4;
+    }
+    input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+    }
+}
+
+.pos-promo-toggle-track {
+    position: absolute;
+    inset: 0;
+    background: #4a5568;
+    border-radius: 20px;
+    transition: background 200ms;
+    &::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 14px;
+        height: 14px;
+        background: #fff;
+        border-radius: 50%;
+        transition: transform 200ms;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+}
+
+.pos-promo-toggle input:checked + .pos-promo-toggle-track {
+    background: #48bb78;
+}
+
+.pos-promo-toggle input:checked + .pos-promo-toggle-track::after {
+    transform: translateX(16px);
+}
+
+/* 活動卡片文字區（舊） */
 .pos-promo-body {
     padding: 12px 14px 14px;
 }
@@ -2457,6 +2581,20 @@ select.modal-input option {
     font-weight: 600;
     color: #e2e8f8;
     margin-bottom: 4px;
+}
+
+.pos-promo-gift-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: #c49756;
+    background: rgba(196, 151, 86, 0.12);
+    border: 1px solid rgba(196, 151, 86, 0.3);
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 5px;
+    vertical-align: middle;
+    line-height: 1.5;
 }
 
 .pos-promo-desc {
@@ -2735,5 +2873,14 @@ select.modal-input option {
 @media (max-width: 500px) {
     .pos-promo-panel {
         width: 100vw;
+    }
+    .pos-promo-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .pos-promo-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }

@@ -79,7 +79,7 @@ export class CustomerGuestComponent implements OnInit {
       .registerGuest({
         name: '訪客',
         phone: this.phone.trim(),
-        countryCode: this.branchService.country,
+        regionsId: this.branchService.regionsId,
       })
       .subscribe({ next: proceed, error: proceed });
   }

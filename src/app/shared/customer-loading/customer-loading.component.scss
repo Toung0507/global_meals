@@ -632,3 +632,97 @@
   100% { opacity: 0.45; }
   50%  { opacity: 1;    }
 }
+
+
+/* ═══════════════════════════════════════════════════
+   RWD：手機版（≤ 600px）
+   版面：上下堆疊 — 頂部橘色橫條（logo + 品牌文字）
+                   底部白色區塊（Lottie 動畫 + 進度條）
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+
+  /* 卡片改為垂直排列，寬度貼齊螢幕（左右各留 14px） */
+  .card {
+    flex-direction: column;
+    width: calc(100vw - 28px);
+    max-width: 440px;
+    border-radius: 22px;
+  }
+
+  /* ── 頂部橘色區塊 ──────────────────────────────
+     直向排列（logo 置中在上，文字在下）
+     高度拉大與下方動畫區塊形成比例平衡
+  ────────────────────────────────────────────── */
+  .panel-left {
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 24px 24px;
+    gap: 0;
+  }
+
+  /* 軌道環縮小讓版面不過度擁擠 */
+  .orbit-1 {
+    width: 200px;
+    height: 200px;
+  }
+
+  .orbit-2 {
+    width: 160px;
+    height: 160px;
+  }
+
+  /* Logo 放大，成為視覺重心 */
+  .logo-img {
+    width: 130px;
+  }
+
+  /* 品牌文字維持置中 */
+  .left-text {
+    margin-top: 12px;
+    text-align: center;
+    align-items: center;
+  }
+
+  .left-brand {
+    font-size: 22px;
+    letter-spacing: 5px;
+  }
+
+  .left-en {
+    font-size: 12px;
+    letter-spacing: 3px;
+  }
+
+  .left-badge {
+    margin-top: 8px;
+    padding: 5px 14px;
+    font-size: 11px;
+  }
+
+  /* ── 底部白色區塊 ──────────────────────────────
+     縮小內距，讓內容在小螢幕上不被擠壓
+  ────────────────────────────────────────────── */
+  .panel-right {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 20px 22px 22px;
+  }
+
+  /* Lottie 框：手機上寬度自適應，高度等比縮小 */
+  .lottie-box {
+    width: min(220px, 100%);
+    height: 124px;
+  }
+
+  /* 分隔線間距縮小 */
+  .h-div {
+    margin: 14px 0;
+  }
+
+  /* 百分比數字稍微縮小 */
+  .pct-num {
+    font-size: 18px;
+  }
+}

@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-
 import { LoadingService } from '../../shared/loading.service';
 import { AuthService } from '../../shared/auth.service';
 import { ApiService } from '../../shared/api.service';
@@ -51,13 +50,18 @@ export class StaffLoginComponent {
     this.authService.loginStaffApi(this.email.trim(), this.password.trim()).subscribe({
       next: (res) => {
         if (res.code === 200 && this.authService.currentUser) {
-          this.navigateToDashboard();
-        } else if (res.message === 'First Login Change Password' && this.authService.currentUser) {
-          this._firstLoginAccount = this.authService.currentUser.email;
-          this.firstLoginNewPwd = '';
-          this.firstLoginConfirmPwd = '';
-          this.firstLoginError = null;
-          this.showFirstLoginModal = true;
+
+          // ← 核心改動：用後端回傳的 mustChangePassword 判斷
+          if (res.mustChangePassword) {
+            this._firstLoginAccount = this.authService.currentUser.email;
+            this.firstLoginNewPwd = '';
+            this.firstLoginConfirmPwd = '';
+            this.firstLoginError = null;
+            this.showFirstLoginModal = true;
+          } else {
+            this.navigateToDashboard();
+          }
+
         } else if (res.code === 403) {
           this.errorMsg = '此帳號已停用，請聯絡管理員';
         } else if (res.code === 404) {
@@ -74,6 +78,7 @@ export class StaffLoginComponent {
     });
   }
 
+  /* 跳過改密碼，直接進後台（每次登入都會繼續彈出）*/
   skipFirstLogin(): void {
     this.showFirstLoginModal = false;
     this.navigateToDashboard();
@@ -82,6 +87,7 @@ export class StaffLoginComponent {
   submitNewPassword(): void {
     const pwd = this.firstLoginNewPwd.trim();
     const confirm = this.firstLoginConfirmPwd.trim();
+
     if (!pwd) {
       this.firstLoginError = '請輸入新密碼';
       return;
@@ -94,8 +100,10 @@ export class StaffLoginComponent {
       this.firstLoginError = '兩次輸入的密碼不一致';
       return;
     }
+
     this.firstLoginLoading = true;
     this.firstLoginError = null;
+
     this.apiService.selfChangePassword({
       account: this._firstLoginAccount,
       oldPassword: '00000',
@@ -104,6 +112,8 @@ export class StaffLoginComponent {
       next: () => {
         this.firstLoginLoading = false;
         this.showFirstLoginModal = false;
+        // 清除 mustChangePassword 標記
+        sessionStorage.removeItem('mustChangePassword');
         this.navigateToDashboard();
       },
       error: () => {
@@ -120,7 +130,7 @@ export class StaffLoginComponent {
       setTimeout(() => {
         this.router.navigate(['/manager-dashboard']).then(() => this.loadingService.hide());
       }, 1400);
-    } else if (role === 'branch_manager') {
+    } else if (role === 'branch_manager' || role === 'deputy_manager') {
       this.loadingService.showStaffLoading();
       setTimeout(() => {
         this.router.navigate(['/rm-dashboard']).then(() => this.loadingService.hide());
@@ -140,5 +150,4 @@ export class StaffLoginComponent {
       this.router.navigate(['/customer-login']);
     }, 2300);
   }
-
 }

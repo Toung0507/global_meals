@@ -15,7 +15,7 @@
  * =====================================================
  */
 
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 /* Loading 服務：管理是否顯示 Loading 遮罩 */
@@ -36,15 +36,22 @@ import { CustomerLoadingComponent } from './shared/customer-loading/customer-loa
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
 
   title = 'global_meals';
 
-  /*
-   * constructor 建構函式
-   * Angular 依賴注入（DI）：Angular 自動建立 LoadingService 並傳進來
-   * public loadingService → 讓 HTML 模板可以存取 this.loadingService
-   */
   constructor(public loadingService: LoadingService) {}
+
+  ngOnInit(): void {
+    if (typeof window === 'undefined') return;
+    // 在 ngrok 免費版下，首次瀏覽會出現攔截警告頁。
+    // Angular 啟動後若偵測到 ngrok 網域且 URL 缺少 skip 參數，
+    // 立即重導向並帶入參數，讓 ngrok 設定 cookie，後續訪問不再顯示警告。
+    const { hostname, href, search } = window.location;
+    if (hostname.includes('ngrok-free') && !href.includes('ngrok-skip-browser-warning')) {
+      const sep = search ? '&' : '?';
+      window.location.replace(href + sep + 'ngrok-skip-browser-warning=1');
+    }
+  }
 
 }

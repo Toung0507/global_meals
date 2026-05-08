@@ -30,8 +30,27 @@
     </div>
   }
 
-  <!-- 載入提示 -->
-  <p class="qr-hint">正在載入您的桌位<span class="qr-dots" aria-hidden="true"></span></p>
+  <!-- 載入提示（loading 階段才顯示） -->
+  @if (status === 'loading') {
+    <p class="qr-hint">正在載入您的桌位<span class="qr-dots" aria-hidden="true"></span></p>
+  }
+
+  <!-- 身份選擇（select 階段） -->
+  @if (status === 'select') {
+    <p class="qr-select-title">請選擇您的入場方式</p>
+    <div class="qr-entry-btns">
+      <button class="qr-btn qr-btn--member" (click)="goMember()">
+        <span class="qr-btn-icon">👤</span>
+        <span class="qr-btn-label">會員登入</span>
+        <span class="qr-btn-sub">使用帳號點餐，享會員優惠</span>
+      </button>
+      <button class="qr-btn qr-btn--guest" (click)="goGuest()">
+        <span class="qr-btn-icon">🍜</span>
+        <span class="qr-btn-label">訪客快速點餐</span>
+        <span class="qr-btn-sub">免登入，直接開始點餐</span>
+      </button>
+    </div>
+  }
 
   <!-- 版權 -->
   <span class="qr-copy">© 懶飽飽 Global Meals</span>
