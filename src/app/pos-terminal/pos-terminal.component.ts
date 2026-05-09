@@ -679,7 +679,6 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
           const payStatus: string = o.payStatus ?? o.paymentStatus ?? '';
           const isCash =
             rawPayment === 'CASH' ||
-            (payStatus === 'UNPAID' && rawPayment === '') ||
             o.ordersStatus === 'PENDING_CASH' ||
             o.kitchenStatus === 'PENDING_CASH';
 
@@ -1331,7 +1330,6 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   /* ── 訂單看板：狀態流轉 ───────────────────────────── */
   startCooking(id: string): void {
     this.orderService.updateStatus(id, 'cooking');
-    this._pushOrdersStatus(id, 'COOKING');
   }
 
   finishOrder(id: string): void {
@@ -1341,11 +1339,12 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
 
   completePickup(id: string): void {
     this.orderService.updateStatus(id, 'done');
+    this._pushOrdersStatus(id, 'PICKED_UP');
   }
 
   private _pushOrdersStatus(
     orderId: string,
-    ordersStatus: 'COOKING' | 'READY' | 'PICKED_UP',
+    ordersStatus: 'READY' | 'PICKED_UP',
   ): void {
     const match = orderId.match(/^DB-(\d{8})-(\d+)$/);
     if (!match) return;
