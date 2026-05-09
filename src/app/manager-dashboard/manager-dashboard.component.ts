@@ -1034,6 +1034,10 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+
+
+  /** 根據 regionsId 查國家名稱，再從 CITY_DATA 取城市陣列；找不到回傳空陣列 */
+
   branchDraft = { regionsId: 0, city: '', address: '', phone: '' };
   editBranchDraft = { id: 0, regionsId: 0, city: '', address: '', phone: '' };
 
@@ -1772,25 +1776,15 @@ private loadCategories(): void {
       giftProductId: null,
       quantity: -1,
     };
-    if (this.giftProductList().length === 0) {
-      this.apiService.getBranchInventory(19).subscribe({
-        next: (res) =>
-          this.giftProductList.set(
-            (res?.data ?? []).map(
-              (inv: InventoryDetailVo) =>
-                ({
-                  id: inv.productId,
-                  name: inv.productName,
-                  category: '',
-                  description: '',
-                  active: true,
-                  foodImgBase64: '',
-                }) as ProductAdminVo,
-            ),
-          ),
-      });
-    }
-    this.activeModal.set('addGift');
+ if (this.giftProductList().length === 0) {
+  this.apiService.getAllProducts().subscribe({
+    next: (res) =>
+      this.giftProductList.set(
+        (res?.productList ?? []).filter(p => p.active),
+      ),
+  });
+}
+this.activeModal.set('addGift');
   }
 
   saveGift(): void {
@@ -2153,32 +2147,40 @@ private loadCategories(): void {
     if (!row) return;
     const { tax, disc } = row;
 
-    const regionReq$ = this.apiService.updateRegion({
-      id: regionsId,
-      taxRate: tax.rate / 100,
-      taxType: tax.taxType,
-      usageCap: limitAmount,
-    });
+    // ── Step 1：先儲存 discountLimit 至 localStorage（不依賴後端）
+    localStorage.setItem(`discountLimit_${regionsId}`, String(limitAmount));
+    this.taxes.update((list) =>
+      list.map((t) =>
+        t.id === regionsId
+          ? { ...t, discountLimit: limitAmount, editDiscountLimit: limitAmount }
+          : t,
+      ),
+    );
+
+    // ── Step 2：更新或建立 discount 記錄（獨立執行，不與 region 耦合）
     const discReq$ = disc
       ? this.apiService.updateDiscountSettings({ id: disc.id, usageCap: countThreshold, count: disc.count })
       : this.apiService.createDiscount({ regionsId, usageCap: countThreshold, count: 0 });
 
-    forkJoin([regionReq$, discReq$]).subscribe({
+    discReq$.subscribe({
       next: () => {
-        localStorage.setItem(`discountLimit_${regionsId}`, String(limitAmount));
-        this.taxes.update((list) =>
-          list.map((t) =>
-            t.id === regionsId
-              ? { ...t, discountLimit: limitAmount, editDiscountLimit: limitAmount }
-              : t,
-          ),
-        );
         this.loadDiscounts();
         this.closeModal();
         this.showToast('✅ 優惠上限已設定');
       },
-      error: () => this.showToast('⚠️ 設定失敗，請確認後端連線'),
+      error: () => {
+        this.closeModal();
+        this.showToast('⚠️ 折扣次數設定失敗，折扣上限金額已本機儲存');
+      },
     });
+
+    // ── Step 3：背景更新 region（不阻塞主流程）
+    this.apiService.updateRegion({
+      id: regionsId,
+      taxRate: tax.rate / 100,
+      taxType: tax.taxType,
+      usageCap: limitAmount,
+    }).subscribe({ error: () => {} });
   }
 
   /* ── 會員設定：啟動 / 儲存 / 取消 ─────────────── */
@@ -2214,23 +2216,31 @@ private loadCategories(): void {
       ? this.apiService.updateDiscountSettings({ id: disc.id, usageCap: newCap, count: disc.count })
       : this.apiService.createDiscount({ regionsId: taxId, usageCap: newCap, count: 0 });
 
-    forkJoin([regionReq$, discReq$]).subscribe({
+    // ── Step 1：先儲存至 localStorage（不依賴後端）
+    localStorage.setItem(`discountLimit_${taxId}`, String(newLimit));
+    this.taxes.update((list) =>
+      list.map((t) =>
+        t.id === taxId
+          ? { ...t, discountLimit: newLimit, editDiscountLimit: newLimit }
+          : t,
+      ),
+    );
+
+    // ── Step 2：更新或建立 discount 記錄（獨立執行）
+    discReq$.subscribe({
       next: () => {
-        // regions/update 後端不持久化 usageCap，改存 localStorage 保留 F5 後的值
-        localStorage.setItem(`discountLimit_${taxId}`, String(newLimit));
-        this.taxes.update((list) =>
-          list.map((t) =>
-            t.id === taxId
-              ? { ...t, discountLimit: newLimit, editDiscountLimit: newLimit }
-              : t,
-          ),
-        );
         this.loadDiscounts();
         this.editingMemberRegionId.set(null);
         this.showToast('✅ 會員設定已更新');
       },
-      error: () => this.showToast('⚠️ 更新失敗，請確認後端連線'),
+      error: () => {
+        this.editingMemberRegionId.set(null);
+        this.showToast('⚠️ 折扣次數設定失敗，折扣上限金額已本機儲存');
+      },
     });
+
+    // ── Step 3：背景更新 region（不阻塞主流程）
+    regionReq$.subscribe({ error: () => {} });
   }
 
   /* ── 匯率：載入全部（最新）──────────────────────── */
@@ -2618,24 +2628,14 @@ private loadCategories(): void {
       giftQuantity: -1,
     };
     if (this.giftProductList().length === 0) {
-      this.apiService.getBranchInventory(19).subscribe({
-        next: (res) =>
-          this.giftProductList.set(
-            (res?.data ?? []).map(
-              (inv: InventoryDetailVo) =>
-                ({
-                  id: inv.productId,
-                  name: inv.productName,
-                  category: '',
-                  description: '',
-                  active: true,
-                  foodImgBase64: '',
-                }) as ProductAdminVo,
-            ),
-          ),
-      });
-    }
-    this.showPromoPanel.set(true);
+  this.apiService.getAllProducts().subscribe({
+    next: (res) =>
+      this.giftProductList.set(
+        (res?.productList ?? []).filter(p => p.active),
+      ),
+  });
+}
+this.showPromoPanel.set(true);
   }
 
   closePromoPanel(): void {
@@ -2837,71 +2837,72 @@ private loadCategories(): void {
   }
 
   saveCountry(): void {
-    if (!this.taxDraft.country.trim()) {
-      this.showToast('請輸入國家／地區名稱');
-      return;
-    }
-    const saved = { ...this.taxDraft };
-    const currencyMap: Record<string, string> = {
-      台灣: 'TWD',
-      日本: 'JPY',
-      泰國: 'THB',
-      韓國: 'KRW',
-      美國: 'USD',
-      英國: 'GBP',
-      法國: 'EUR',
-      德國: 'EUR',
-      新加坡: 'SGD',
-      馬來西亞: 'MYR',
-      印尼: 'IDR',
-      越南: 'VND',
-    };
-    const resolvedCurrency =
-      saved.currency.trim() || currencyMap[saved.country.trim()] || 'USD';
-    const taxTypeLabel = saved.taxType === 'INCLUSIVE' ? '內含稅' : '外加稅';
-    this.apiService
-      .insertRegion({
-        country: saved.country.trim(),
-        countryCode: saved.countryCode.trim().toUpperCase(),
-        currencyCode: resolvedCurrency,
-        taxRate: saved.rate / 100,
-        taxType: saved.taxType as 'INCLUSIVE' | 'EXCLUSIVE',
-        usageCap: 0,
-      })
-      .subscribe({
-        next: () => {
-          this.loadTaxes();
-          this.closeModal();
-          this.showToast(
-            `已新增 ${saved.country}（${resolvedCurrency}）${taxTypeLabel} ${saved.rate}%`,
-          );
-        },
-        error: () => {
-          const ids = this.taxes().map((t) => t.id);
-          const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
-          this.taxes.update((list) => [
-            ...list,
-            {
-              id: newId,
-              country: saved.country,
-              countryCode: saved.countryCode.trim().toUpperCase(),
-              currency: resolvedCurrency,
-              taxType: saved.taxType,
-              rate: saved.rate,
-              discountLimit: 0,
-              editing: false,
-              editRate: saved.rate,
-              editTaxType: saved.taxType,
-              editDiscountLimit: 0,
-            },
-          ]);
-          this.closeModal();
-          this.showToast(
-            `後端暫不可用，已本地新增 ${saved.country}（${resolvedCurrency}）`,
-          );
-        },
-      });
+  if (!this.taxDraft.country.trim()) {
+    this.showToast('請輸入國家／地區名稱');
+    return;
   }
+  const saved = { ...this.taxDraft };
+  const currencyMap: Record<string, string> = {
+    台灣: 'TWD',
+    日本: 'JPY',
+    泰國: 'THB',
+    韓國: 'KRW',
+    美國: 'USD',
+    英國: 'GBP',
+    法國: 'EUR',
+    德國: 'EUR',
+    新加坡: 'SGD',
+    馬來西亞: 'MYR',
+    印尼: 'IDR',
+    越南: 'VND',
+  };
+  const resolvedCurrency =
+    saved.currency.trim() || currencyMap[saved.country.trim()] || 'USD';
+  const taxTypeLabel = saved.taxType === 'INCLUSIVE' ? '內含稅' : '外加稅';
+  this.apiService
+    .insertRegion({
+      country: saved.country.trim(),
+      countryCode: saved.countryCode.trim().toUpperCase(),
+      currencyCode: resolvedCurrency,
+      taxRate: saved.rate / 100,
+      taxType: saved.taxType as 'INCLUSIVE' | 'EXCLUSIVE',
+      // 不帶 usageCap：國家設定與會員折扣上限獨立管理，
+      // 折扣記錄請至「會員設定」頁籤單獨新增
+    })
+    .subscribe({
+      next: () => {
+        this.loadTaxes();
+        this.closeModal();
+        this.showToast(
+          `已新增 ${saved.country}（${resolvedCurrency}）${taxTypeLabel} ${saved.rate}%`,
+        );
+      },
+      error: () => {
+        const ids = this.taxes().map((t) => t.id);
+        const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+        this.taxes.update((list) => [
+          ...list,
+          {
+            id: newId,
+            country: saved.country,
+            countryCode: saved.countryCode.trim().toUpperCase(),
+            currency: resolvedCurrency,
+            taxType: saved.taxType,
+            rate: saved.rate,
+            discountLimit: 0,
+            editing: false,
+            editRate: saved.rate,
+            editTaxType: saved.taxType,
+            editDiscountLimit: 0,
+          },
+        ]);
+        this.closeModal();
+        this.showToast(
+          `後端暫不可用，已本地新增 ${saved.country}（${resolvedCurrency}）`,
+        );
+      },
+    });
+}
 
   /* ── 財務報表：匯出 CSV（isExporting spinner 保護）── */
   exportCsv(): void {

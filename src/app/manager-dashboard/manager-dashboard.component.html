@@ -1,4 +1,4 @@
-  <!--
+<!--
     =====================================================
     檔案名稱：manager-dashboard.component.html
     用途說明：老闆後台管理主控台的 HTML 結構
@@ -503,15 +503,16 @@
                   style="font-size: 0.75rem; color: #4a5a70"
                   >選擇分店</label
                 >
-                <select
-                  class="form-select form-select-sm form-ctrl"
-                  (change)="onBranchFilter($event)"
-                >
-                  <option>全部分店</option>
-                  @for (b of branches(); track b.id) {
-                    <option>{{ b.name }}</option>
-                  }
-                </select>
+              <select
+  class="form-select form-select-sm form-ctrl"
+  style="max-width: 150px"
+  (change)="onCategoryFilter($event)"
+>
+  <option value="">全部風格</option>
+  @for (s of styleOptions(); track s) {
+    <option [value]="s">{{ s }}</option>
+  }
+</select>
               </div>
               <div class="col-sm-2">
                 <label
@@ -707,6 +708,10 @@
                     </div>
                   </div>
                 </div>
+              </div>
+            } @empty {
+              <div style="text-align:center; color:#8892b0; padding:48px 0; font-size:0.88rem; width:100%">
+                尚無商品資料，請點擊右上角「＋ 新增商品」建立第一筆商品
               </div>
             }
           </div>
@@ -1427,7 +1432,7 @@
             </div>
 
             @if (memberData().length === 0) {
-              <div style="text-align:center; color:#8892b0; padding:32px">
+              <div style="text-align:center; color:#8892b0; padding:48px 0; font-size:0.88rem">
                 尚無國家資料，請先至「國家基本設定」新增國家
               </div>
             }
@@ -1485,7 +1490,6 @@
                             min="0" style="width:110px; text-align:right" />
                           <span style="color:#4a5a70; font-size:0.82rem">{{ row.tax.currency }}</span>
                         </div>
-                        <div style="font-size:0.66rem; color:#8892b0; margin-top:2px">0 = 無上限</div>
                       </div>
                       <div>
                         <label style="font-size:0.7rem; color:#8892b0; display:block; margin-bottom:4px">
@@ -1529,37 +1533,28 @@
           <!-- ── 查詢條件列 ─────────────────────────────── -->
           <div class="content-card mb-4">
             <div class="d-flex flex-wrap gap-3 align-items-end">
-              <!-- 國家 -->
-              <div>
-                <div
-                  style="font-size: 0.78rem; color: #8a9ab0; margin-bottom: 4px"
-                >
-                  國家
-                </div>
-                <select
-                  class="form-control form-ctrl"
-                  style="width: 120px"
-                  [ngModel]="financeCountry()"
-                  (ngModelChange)="onFinanceCountryChange($event)"
-                >
-                  <option value="全部">全部</option>
-                  @for (c of financeCountries(); track c) {
-                    <option [value]="c">{{ c }}</option>
-                  }
-                </select>
-                @if (financeMode() === "month" && financeCountry() === "全部") {
-                  <div
-                    style="
-                      font-size: 0.72rem;
-                      color: #8a9ab0;
-                      margin-top: 5px;
-                      line-height: 1.4;
-                    "
-                  >
-                    💡 選擇特定國家可顯示<br />商品銷售 Top 5
-                  </div>
-                }
-              </div>
+            <!-- 國家 -->
+<div>
+  <div style="font-size: 0.78rem; color: #8a9ab0; margin-bottom: 4px; display:flex; align-items:center; gap:6px">
+    國家
+    @if (financeMode() === "month" && financeCountry() === "全部") {
+      <span style="font-size:0.68rem; color:#c49756; background:rgba(196,151,86,0.1); border-radius:4px; padding:1px 6px; white-space:nowrap">
+        💡 選特定國家可顯示 Top 5
+      </span>
+    }
+  </div>
+  <select
+    class="form-control form-ctrl"
+    style="width: 120px"
+    [ngModel]="financeCountry()"
+    (ngModelChange)="onFinanceCountryChange($event)"
+  >
+    <option value="全部">全部</option>
+    @for (c of financeCountries(); track c) {
+      <option [value]="c">{{ c }}</option>
+    }
+  </select>
+</div>
 
               <!-- 分店 -->
               <div>
@@ -2107,9 +2102,11 @@
           ) {
             <div
               class="content-card"
-              style="text-align: center; padding: 48px 20px; color: #8a9ab0"
+              style="text-align: center; padding: 64px 20px; color: #8a9ab0"
             >
-              請選擇查詢條件後點擊「查詢報表」
+              <div style="font-size:2rem; margin-bottom:12px; opacity:0.35">📊</div>
+              <div style="font-size:0.9rem; font-weight:500; color:#4a5a70; margin-bottom:6px">尚無報表資料</div>
+              <div style="font-size:0.8rem">請選擇查詢條件後點擊「查詢報表」</div>
             </div>
           }
         </div>
@@ -2531,79 +2528,89 @@
               placeholder="例：紅燒牛肉麵"
             />
           </div>
-          <div class="row g-2 mb-3">
-    <div class="col-6">
-      <label class="modal-label">料理風格 <span class="required">*</span></label>
-      <input
-        type="text"
-        class="form-control form-ctrl"
-        list="style-list"
-        [(ngModel)]="productDraft.style"
-        placeholder="選擇或輸入料理風格"
-      />
-      <datalist id="style-list">
-        <option *ngFor="let s of styleOptions()" [value]="s">{{ s }}</option>
-      </datalist>
-    </div>
-    <div class="col-6">
-      <label class="modal-label">餐點分類 <span class="required">*</span></label>
-      <input
-        type="text"
-        class="form-control form-ctrl"
-        list="category-list"
-        [(ngModel)]="productDraft.category"
-        placeholder="選擇或輸入餐點分類"
-      />
-      <datalist id="category-list">
-        <option *ngFor="let c of categoryOptions()" [value]="c">{{ c }}</option>
-      </datalist>
-    </div>
+         <div class="row g-2 mb-3">
+  <div class="col-6">
+    <label class="modal-label">料理風格 <span class="required">*</span></label>
+    <input
+      type="text"
+      class="form-control form-ctrl"
+      list="style-list"
+      [(ngModel)]="productDraft.style"
+      placeholder="選擇或輸入料理風格"
+    />
+    <datalist id="style-list">
+      @for (s of styleOptions(); track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </datalist>
   </div>
+  <div class="col-6">
+    <label class="modal-label">餐點分類 <span class="required">*</span></label>
+    <input
+      type="text"
+      class="form-control form-ctrl"
+      list="category-list"
+      [(ngModel)]="productDraft.category"
+      placeholder="選擇或輸入餐點分類"
+    />
+    <datalist id="category-list">
+      @for (c of categoryOptions(); track c) {
+        <option [value]="c">{{ c }}</option>
+      }
+    </datalist>
+  </div>
+</div>
         
           
-          <div class="mb-3">
-            <div class="d-flex align-items-center justify-content-between mb-1">
-              <label class="modal-label">
-                商品描述
-                @if (editingProductId() === null) {
-                  <span class="required">*</span>
-                } @else {
-                  （選填）
-                }
-              </label>
-              <button
-                class="btn btn-sm"
-                style="
-                  font-size: 0.7rem;
-                  padding: 3px 10px;
-                  background: #1e3a5f;
-                  color: #c49756;
-                  border: 1px solid #c49756;
-                "
-                [disabled]="generatingAiDesc()"
-                (click)="generateAiDesc()"
-              >
-                {{ generatingAiDesc() ? "AI 生成中…" : "✨ AI 生成文案" }}
-              </button>
-            </div>
-            @if (productImagePreview()) {
-              <img [src]="productImagePreview()" class="product-img-preview" alt="預覽" />
-            }
-            <input
-              type="file"
-              accept="image/*"
-              class="form-control form-ctrl"
-              style="padding: 6px 10px; cursor: pointer"
-              (change)="onProductImageChange($event)"
-            />
-            <textarea
-              class="form-control form-ctrl mt-2"
-              rows="3"
-              style="resize: vertical"
-              placeholder="商品描述，可由 AI 自動生成"
-              [(ngModel)]="productDraft.description"
-            ></textarea>
-          </div>
+  <div class="mb-3">
+  <label class="modal-label">商品圖片（選填）</label>
+  @if (productImagePreview()) {
+    <img [src]="productImagePreview()" class="product-img-preview" alt="預覽" />
+  }
+  <input
+    type="file"
+    accept="image/*"
+    class="form-control form-ctrl"
+    style="padding: 6px 10px; cursor: pointer"
+    (change)="onProductImageChange($event)"
+  />
+</div>
+
+<div class="mb-3">
+  <div class="d-flex align-items-center justify-content-between mb-1">
+    <label class="modal-label">
+      商品描述
+      @if (editingProductId() === null) {
+        <span class="required">*</span>
+      } @else {
+        （選填）
+      }
+    </label>
+    <button
+      class="btn btn-sm"
+      style="
+        font-size: 0.7rem;
+        padding: 3px 10px;
+        background: #1e3a5f;
+        color: #c49756;
+        border: 1px solid #c49756;
+      "
+      [disabled]="generatingAiDesc()"
+      (click)="generateAiDesc()"
+    >
+      {{ generatingAiDesc() ? "AI 生成中…" : "✨ AI 生成文案" }}
+    </button>
+  </div>
+  <textarea
+    class="form-control form-ctrl mt-2"
+    rows="3"
+    style="resize: vertical"
+    placeholder="商品描述，可由 AI 自動生成"
+    [(ngModel)]="productDraft.description"
+  ></textarea>
+</div>
+
+
         </div>
       <div class="modal-ft">
           <button class="btn btn-sm btn-cancel" (click)="closeModal()">取消</button>
@@ -3014,7 +3021,7 @@
               >
                 <option [value]="null">— 請選擇商品 —</option>
                 @for (p of giftProductList(); track p.id) {
-                  <option [value]="p.id">{{ p.name }}（ID: {{ p.id }}）</option>
+                  <option [value]="p.id">{{ p.name }}</option>
                 }
               </select>
             } @else {
@@ -3157,11 +3164,17 @@
           <!-- end @else -->
         </div>
         <div class="modal-ft">
-          <button class="btn btn-sm btn-cancel" (click)="closeModal()">取消</button>
-          <button class="btn btn-sm btn-gold" (click)="confirmNewStaff()">
-            <span style="font-size: 0.85rem; font-weight: 700">✓</span> 確認
-          </button>
-        </div>
+  <button class="btn btn-sm btn-cancel" (click)="closeModal()">取消</button>
+  @if (newStaffResult()) {
+    <button class="btn btn-sm btn-gold" (click)="confirmNewStaff()">
+      <span style="font-size: 0.85rem; font-weight: 700">✓</span> 完成
+    </button>
+  } @else {
+    <button class="btn btn-sm btn-gold" (click)="saveAccount()">
+      <span style="font-size: 0.85rem; font-weight: 700">✓</span> 確認
+    </button>
+  }
+</div>
       </div>
     </div>
   }
@@ -3352,30 +3365,30 @@
 
           @let selectedTax = addLimitSelectedTax();
 
-          <!-- 折扣上限 -->
-          <div class="mb-3">
-            <label class="modal-label">
-              折扣上限{{ selectedTax ? '（' + selectedTax.currency + '）' : '' }}
-            </label>
-            <div class="tax-input-wrap">
-              <input type="number" class="form-control form-ctrl mono tax-rate-input"
-                [ngModel]="addLimitAmount()"
-                (ngModelChange)="addLimitAmount.set(+$event)"
-                min="0" placeholder="0" />
-              <span class="tax-input-unit">{{ selectedTax?.currency || '—' }}</span>
+          <!-- 折扣上限 + 累積次數：並排兩欄 -->
+          <div class="row g-3 mb-2">
+            <div class="col-6">
+              <label class="modal-label">
+                折扣上限{{ selectedTax ? '（' + selectedTax.currency + '）' : '' }}
+              </label>
+              <div class="tax-input-wrap" style="max-width:100%">
+                <input type="number" class="form-control form-ctrl mono tax-rate-input"
+                  [ngModel]="addLimitAmount()"
+                  (ngModelChange)="addLimitAmount.set(+$event)"
+                  min="0" placeholder="0" style="min-width:0; flex:1" />
+                <span class="tax-input-unit">{{ selectedTax?.currency || '—' }}</span>
+              </div>
             </div>
-            <div class="modal-helper-text">0 = 無上限</div>
-          </div>
-
-          <!-- 累積消費次數 -->
-          <div class="mb-3">
-            <label class="modal-label">折扣累積消費次數門檻</label>
-            <div class="tax-input-wrap">
-              <input type="number" class="form-control form-ctrl mono tax-rate-input"
-                [ngModel]="addLimitCount()"
-                (ngModelChange)="addLimitCount.set(+$event)"
-                min="0" placeholder="0" />
-              <span class="tax-input-unit">次</span>
+            <div class="col-6">
+              <label class="modal-label">折扣累積次數門檻</label>
+              <div class="tax-input-wrap" style="max-width:100%">
+                <input type="number" class="form-control form-ctrl mono tax-rate-input"
+                  [ngModel]="addLimitCount()"
+                  (ngModelChange)="addLimitCount.set(+$event)"
+                  min="0" placeholder="0" style="min-width:0; flex:1" />
+                <span class="tax-input-unit">次</span>
+              </div>
+              <div class="modal-helper-text">累積達此次數可折扣</div>
             </div>
           </div>
 
@@ -3420,40 +3433,13 @@
               <label class="modal-label"
                 >所在城市 <span class="required">*</span></label
               >
-              <select
-                class="form-select form-ctrl"
+              <input
+                type="text"
+                class="form-control form-ctrl"
                 [(ngModel)]="branchDraft.city"
-              >
-                <option value="">請選擇</option>
-                @if (getBranchCountryName(branchDraft.regionsId) === "台灣") {
-                  <option>台北</option>
-                  <option>台中</option>
-                  <option>台南</option>
-                  <option>高雄</option>
-                }
-                @if (getBranchCountryName(branchDraft.regionsId) === "日本") {
-                  <option>東京</option>
-                  <option>大阪</option>
-                  <option>京都</option>
-                  <option>名古屋</option>
-                }
-                @if (getBranchCountryName(branchDraft.regionsId) === "韓國") {
-                  <option>首爾</option>
-                  <option>釜山</option>
-                  <option>濟州</option>
-                }
-                @if (getBranchCountryName(branchDraft.regionsId) === "泰國") {
-                  <option>曼谷</option>
-                  <option>清邁</option>
-                  <option>普吉</option>
-                }
-                @if (getBranchCountryName(branchDraft.regionsId) === "新加坡") {
-                  <option>新加坡</option>
-                }
-                @if (!branchDraft.regionsId) {
-                  <option disabled>請先選擇國家</option>
-                }
-              </select>
+                [disabled]="!branchDraft.regionsId"
+                placeholder="請輸入城市名稱"
+              />
             </div>
           </div>
           @if (branchDraft.regionsId && branchDraft.city) {
@@ -3535,42 +3521,12 @@
               <label class="modal-label"
                 >所在城市 <span class="required">*</span></label
               >
-              <select
-                class="form-select form-ctrl"
+              <input
+                type="text"
+                class="form-control form-ctrl"
                 [(ngModel)]="editBranchDraft.city"
-              >
-                <option value="">請選擇</option>
-                @if (getBranchCountryName(editBranchDraft.regionsId) === "台灣") {
-                  <option>台北</option>
-                  <option>台中</option>
-                  <option>台南</option>
-                  <option>高雄</option>
-                }
-                @if (getBranchCountryName(editBranchDraft.regionsId) === "日本") {
-                  <option>東京</option>
-                  <option>大阪</option>
-                  <option>京都</option>
-                  <option>名古屋</option>
-                }
-                @if (getBranchCountryName(editBranchDraft.regionsId) === "韓國") {
-                  <option>首爾</option>
-                  <option>釜山</option>
-                  <option>濟州</option>
-                }
-                @if (getBranchCountryName(editBranchDraft.regionsId) === "泰國") {
-                  <option>曼谷</option>
-                  <option>清邁</option>
-                  <option>普吉</option>
-                }
-                @if (
-                  getBranchCountryName(editBranchDraft.regionsId) === "新加坡"
-                ) {
-                  <option>新加坡</option>
-                }
-                @if (!editBranchDraft.regionsId) {
-                  <option disabled>請先選擇國家</option>
-                }
-              </select>
+                placeholder="請輸入城市名稱"
+              />
             </div>
           </div>
           @if (editBranchDraft.regionsId && editBranchDraft.city) {
