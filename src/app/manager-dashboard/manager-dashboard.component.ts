@@ -47,7 +47,7 @@ import {
   DiscountRecord,
   DiscountReq,
 } from '../shared/api.service';
-import { GeminiService } from '../shared/gemini.service';
+
 
 /* ── 側邊欄頁籤型別 ─────────────────────────────────── */
 export type DashTab =
@@ -799,51 +799,31 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     if (!promo) return;
 
     const imageStr = this.editPromoInfoDraft.image;
-    if (imageStr) {
-      /* 有封面圖 → 走後端（自動存 ai_generated） */
-      this.generatingAiCopy.set(true);
-      const base64 = imageStr.startsWith('data:')
-        ? imageStr.split(',')[1]
-        : imageStr;
-      const binary = atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      const blob = new Blob([bytes], { type: 'image/jpeg' });
-
-      this.apiService.generateAiPromoCopy(id, promo.rawName, blob).subscribe({
-        next: (res: AiRes) => {
-          this.editPromoInfoDraft.description = res?.generatedDescription ?? '';
-          this.generatingAiCopy.set(false);
-        },
-        error: () => {
-          this.generatingAiCopy.set(false);
-          this.showToast('❌ AI 生成失敗，請確認後端連線');
-        },
-      });
-    } else {
-      /* 無封面圖 → 前端直接呼叫 Gemini（不存 ai_generated） */
-      this.generatingAiCopy.set(true);
-      const gifts =
-        promo.gifts?.filter((g) => g.active).map((g) => g.productName) ?? [];
-      this.geminiService
-        .generatePromoCopy({
-          name: promo.rawName,
-          startDate: promo.rawStartTime,
-          endDate: promo.rawEndTime,
-          minAmount: promo.minAmount,
-          gifts,
-        })
-        .subscribe({
-          next: (text) => {
-            this.editPromoInfoDraft.description = text;
-            this.generatingAiCopy.set(false);
-          },
-          error: () => {
-            this.generatingAiCopy.set(false);
-            this.showToast('❌ AI 生成失敗，請確認網路連線');
-          },
-        });
+    if (!imageStr) {
+      this.showToast('⚠️ 請先上傳活動封面圖片');
+      return;
     }
+
+    /* 有封面圖 → 走後端（自動存 ai_generated） */
+    this.generatingAiCopy.set(true);
+    const base64 = imageStr.startsWith('data:')
+      ? imageStr.split(',')[1]
+      : imageStr;
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'image/jpeg' });
+
+    this.apiService.generateAiPromoCopy(id, promo.rawName, blob).subscribe({
+      next: (res: AiRes) => {
+        this.editPromoInfoDraft.description = res?.generatedDescription ?? '';
+        this.generatingAiCopy.set(false);
+      },
+      error: () => {
+        this.generatingAiCopy.set(false);
+        this.showToast('❌ AI 生成失敗，請確認後端連線');
+      },
+    });
   }
 
   saveEditPromoInfo(): void {
@@ -1129,7 +1109,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     private router: Router,
     public authService: AuthService,
     private apiService: ApiService,
-    private geminiService: GeminiService,
   ) {}
 
   ngOnInit(): void {
