@@ -1043,88 +1043,6 @@
       即時廚房出餐進度（含客戶端點餐），可標記製作完成
     </div>
 
-    <!-- ── 待付款現金訂單區塊 ── -->
-    @if (
-      pendingCashOrders().length > 0 || orderService.pendingCash().length > 0
-    ) {
-      <div class="pending-cash-section mb-4">
-        <div class="pcs-header">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            style="width: 15px; height: 15px; flex-shrink: 0"
-          >
-            <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-            <line x1="1" y1="10" x2="23" y2="10" />
-          </svg>
-          待付款 ({{
-            pendingCashOrders().length + orderService.pendingCash().length
-          }})
-        </div>
-        <div class="pcs-cards">
-          <!-- 後端 PENDING_CASH 訂單 -->
-          @for (order of pendingCashOrders(); track order.posId) {
-            <div class="pcs-card">
-              <div
-                class="d-flex justify-content-between align-items-center mb-2"
-              >
-                <span class="ob-num">{{ order.number }}</span>
-                <span class="badge-unpaid">未付款</span>
-              </div>
-              @for (item of order.items; track item) {
-                <div class="ob-item">{{ item }}</div>
-              }
-              <div class="ob-meta">
-                <span>{{ order.createdAt }}</span>
-                <span>{{ order.phone }}</span>
-                <span class="mono">${{ order.total }}</span>
-              </div>
-              <button
-                class="btn btn-sm btn-confirm-cash mt-2"
-                [disabled]="confirmingCashId() === order.posId"
-                (click)="confirmCashPayment(order)"
-              >
-                @if (confirmingCashId() === order.posId) {
-                  處理中...
-                } @else {
-                  收款確認 ${{ order.total }}
-                }
-              </button>
-            </div>
-          }
-          <!-- 廚房完成後移來的現金訂單 -->
-          @for (order of orderService.pendingCash(); track order.id) {
-            <div class="pcs-card">
-              <div
-                class="d-flex justify-content-between align-items-center mb-2"
-              >
-                <span class="ob-num">{{ order.number }}</span>
-                <span class="badge-unpaid">待收款</span>
-              </div>
-              @for (item of order.items; track item) {
-                <div class="ob-item">{{ item }}</div>
-              }
-              <div class="ob-meta">
-                <span>{{ order.createdAt }}</span>
-                <span>{{ order.payMethod }}</span>
-                <span class="mono">${{ order.total }}</span>
-              </div>
-              <button
-                class="btn btn-sm btn-confirm-cash mt-2"
-                (click)="completeCashOrder(order)"
-              >
-                收款完成 ${{ order.total }}
-              </button>
-            </div>
-          }
-        </div>
-      </div>
-    }
 
     <!-- ── 報電話號碼取餐查詢 ── -->
     <div class="phone-pickup-section mb-4">
@@ -1251,298 +1169,373 @@
     </div>
 
     <div class="ob-kanban">
-      <!-- ── 欄一：待製作 ── -->
-      <div class="ob-col">
-        <div class="ob-col-hd ob-col-hd--waiting">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="ob-col-icon"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
-          <span class="ob-col-title">待製作</span>
-          <span class="ob-col-badge ob-col-badge--waiting">{{
-            orderService.waiting().length
-          }}</span>
-        </div>
-        <div class="ob-col-body">
-          @if (orderService.waiting().length === 0) {
-            <div class="ob-empty">目前無待製作訂單</div>
-          }
-          @for (order of orderService.waiting(); track order.id) {
-            <div
-              class="order-board-card ob-waiting"
-              [class.ob-customer]="order.source === 'customer'"
-            >
-              <div class="ob-card-top">
-                <span class="ob-num">{{ order.number }}</span>
-                <div class="ob-badges">
-                  @if (order.orderType === "會員") {
-                    <span class="badge-customer">會員</span>
-                  } @else if (order.orderType === "訪客") {
-                    <span class="ob-type-badge">訪客</span>
-                  } @else if (order.orderType) {
-                    <span class="ob-type-badge">{{ order.orderType }}</span>
-                  }
-                  @if (order.source === 'customer') {
-                    <span class="badge-online">線上</span>
-                  }
-                  @if (order.source === 'pos') {
-                    <span class="badge-ok">已收款</span>
-                  }
-                </div>
-              </div>
-              <div class="ob-items-list">
-                @for (item of order.items; track item) {
-                  <div class="ob-item">{{ item }}</div>
-                }
-              </div>
-              @if (order.note) {
-                <div class="ob-note">📝 {{ order.note }}</div>
-              }
-              <div class="ob-meta">
-                <span>{{ order.createdAt }}</span>
-                <span>{{ order.payMethod }}</span>
-                <span class="ob-total">${{ order.total }}</span>
-              </div>
-              <button
-                class="ob-action-btn ob-action-btn--gold"
-                (click)="startCooking(order.id)"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  class="ob-btn-icon"
-                >
-                  <path
-                    d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"
-                  />
-                </svg>
-                開始製作
-              </button>
-            </div>
-          }
-        </div>
-      </div>
-
-      <!-- ── 欄二：製作中 ── -->
+      <!-- ── 欄一：製作中（waiting + cooking 合併）── -->
       <div class="ob-col">
         <div class="ob-col-hd ob-col-hd--cooking">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="ob-col-icon"
-          >
-            <path
-              d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"
-            />
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ob-col-icon">
+            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
           </svg>
           <span class="ob-col-title">製作中</span>
-          <span class="ob-col-badge ob-col-badge--cooking">{{
-            orderService.cooking().length
-          }}</span>
+          <span class="ob-col-badge ob-col-badge--cooking">{{ orderService.waiting().length + orderService.cooking().length }}</span>
         </div>
         <div class="ob-col-body">
-          @if (orderService.cooking().length === 0) {
+          @if (orderService.waiting().length === 0 && orderService.cooking().length === 0) {
             <div class="ob-empty">目前無製作中訂單</div>
           }
-          @for (order of orderService.cooking(); track order.id) {
-            <div
-              class="order-board-card ob-cooking"
-              [class.ob-customer]="order.source === 'customer'"
-            >
+          @for (order of orderService.waiting(); track order.id) {
+            <div class="order-board-card ob-cooking" [class.ob-customer]="order.source === 'customer'">
               <div class="ob-card-top">
                 <span class="ob-num">{{ order.number }}</span>
                 <div class="ob-badges">
-                  @if (order.orderType === "會員") {
-                    <span class="badge-customer">會員</span>
-                  } @else if (order.orderType === "訪客") {
-                    <span class="ob-type-badge">訪客</span>
-                  } @else if (order.orderType) {
-                    <span class="ob-type-badge">{{ order.orderType }}</span>
-                  }
-                  @if (order.source === 'customer') {
-                    <span class="badge-online">線上</span>
-                  }
-                  @if (order.source === 'pos') {
-                    <span class="badge-ok">已收款</span>
-                  }
-                  <span class="badge-blue">製作中</span>
+                  @if (order.orderType === "會員") { <span class="badge-customer">會員</span> }
+                  @else if (order.orderType === "訪客") { <span class="ob-type-badge">訪客</span> }
+                  @else if (order.orderType) { <span class="ob-type-badge">{{ order.orderType }}</span> }
+                  @if (order.source === 'customer') { <span class="badge-online">線上</span> }
+                  @if (order.source === 'pos') { <span class="badge-ok">已收款</span> }
                 </div>
               </div>
               <div class="ob-items-list">
-                @for (item of order.items; track item) {
-                  <div class="ob-item">{{ item }}</div>
-                }
+                @for (item of order.items; track item) { <div class="ob-item">{{ item }}</div> }
               </div>
-              @if (order.note) {
-                <div class="ob-note">📝 {{ order.note }}</div>
-              }
+              @if (order.note) { <div class="ob-note">📝 {{ order.note }}</div> }
               <div class="ob-meta">
                 <span>{{ order.createdAt }}</span>
-                <span>預估 {{ order.estimatedMinutes }} 分</span>
+                <span>{{ order.payMethod }}</span>
                 <span class="ob-total">${{ order.total }}</span>
               </div>
-              <button
-                class="ob-action-btn ob-action-btn--green"
-                (click)="finishOrder(order.id)"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.2"
-                  stroke-linecap="round"
-                  class="ob-btn-icon"
-                >
-                  <polyline points="20 6 9 17 4 12" />
+              <button class="ob-action-btn ob-action-btn--green" (click)="finishOrder(order.id)">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="ob-btn-icon">
+                  <polyline points="20 6 9 17 4 12"/>
                 </svg>
-                完成出餐
+                餐點完成
+              </button>
+            </div>
+          }
+          @for (order of orderService.cooking(); track order.id) {
+            <div class="order-board-card ob-cooking" [class.ob-customer]="order.source === 'customer'">
+              <div class="ob-card-top">
+                <span class="ob-num">{{ order.number }}</span>
+                <div class="ob-badges">
+                  @if (order.orderType === "會員") { <span class="badge-customer">會員</span> }
+                  @else if (order.orderType === "訪客") { <span class="ob-type-badge">訪客</span> }
+                  @else if (order.orderType) { <span class="ob-type-badge">{{ order.orderType }}</span> }
+                  @if (order.source === 'customer') { <span class="badge-online">線上</span> }
+                  @if (order.source === 'pos') { <span class="badge-ok">已收款</span> }
+                </div>
+              </div>
+              <div class="ob-items-list">
+                @for (item of order.items; track item) { <div class="ob-item">{{ item }}</div> }
+              </div>
+              @if (order.note) { <div class="ob-note">📝 {{ order.note }}</div> }
+              <div class="ob-meta">
+                <span>{{ order.createdAt }}</span>
+                <span>{{ order.payMethod }}</span>
+                <span class="ob-total">${{ order.total }}</span>
+              </div>
+              <button class="ob-action-btn ob-action-btn--green" (click)="finishOrder(order.id)">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="ob-btn-icon">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                餐點完成
               </button>
             </div>
           }
         </div>
       </div>
 
-      <!-- ── 欄三：可取餐 / 已完成 ── -->
+      <!-- ── 欄二：餐點製作完成（ready）── -->
       <div class="ob-col">
-        <div class="ob-col-hd ob-col-hd--done">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="ob-col-icon"
-          >
-            <polyline points="20 6 9 17 4 12" />
+        <div class="ob-col-hd ob-col-hd--ready">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="ob-col-icon">
+            <path d="M12 22C6.48 22 2 17.52 2 12S6.48 2 12 2s10 4.48 10 10-4.48 10-10 10z"/>
+            <polyline points="9 12 11 14 15 10"/>
           </svg>
-          <span class="ob-col-title">可取餐 / 完成</span>
-          <span class="ob-col-badge ob-col-badge--done">
-            {{
-              orderService.ready().length +
-                orderService.done().length +
-                orderService.paid().length
-            }}
-          </span>
+          <span class="ob-col-title">餐點製作完成</span>
+          <span class="ob-col-badge ob-col-badge--ready">{{ orderService.ready().length }}</span>
         </div>
         <div class="ob-col-body">
-          @if (
-            orderService.ready().length === 0 &&
-            orderService.done().length === 0 &&
-            orderService.paid().length === 0
-          ) {
-            <div class="ob-empty">今日暫無完成訂單</div>
+          @if (orderService.ready().length === 0) {
+            <div class="ob-empty">目前無已完成餐點</div>
           }
-          @for (order of orderService.paid(); track order.id) {
-            <div class="order-board-card ob-done" style="opacity: 0.45">
+          @for (order of orderService.ready(); track order.id) {
+            <div class="order-board-card ob-ready" [class.ob-customer]="order.source === 'customer'">
               <div class="ob-card-top">
                 <span class="ob-num">{{ order.number }}</span>
                 <div class="ob-badges">
-                  @if (order.source === 'customer') {
-                    <span class="badge-online">線上</span>
-                  }
-                  <span class="badge-ok">已收款</span>
+                  @if (order.orderType === "會員") { <span class="badge-customer">會員</span> }
+                  @else if (order.orderType === "訪客") { <span class="ob-type-badge">訪客</span> }
+                  @else if (order.orderType) { <span class="ob-type-badge">{{ order.orderType }}</span> }
+                  @if (order.source === 'customer') { <span class="badge-online">線上</span> }
+                  @if (order.source === 'pos') { <span class="badge-ok">已收款</span> }
                 </div>
               </div>
               <div class="ob-items-list">
-                @for (item of order.items; track item) {
-                  <div class="ob-item">{{ item }}</div>
-                }
+                @for (item of order.items; track item) { <div class="ob-item">{{ item }}</div> }
               </div>
+              @if (order.note) { <div class="ob-note">📝 {{ order.note }}</div> }
               <div class="ob-meta">
                 <span>{{ order.createdAt }}</span>
                 <span>{{ order.payMethod }}</span>
                 <span class="ob-total">${{ order.total }}</span>
               </div>
+              @if (order.isCash && order.source === 'customer') {
+                <button class="ob-action-btn ob-action-btn--cash" (click)="moveToUnpaid(order.id)">
+                  移至未付款
+                </button>
+              } @else {
+                <button class="ob-action-btn ob-action-btn--green" (click)="completePickup(order.id)">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" class="ob-btn-icon">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  客戶取餐成功
+                </button>
+              }
             </div>
           }
-          @for (order of orderService.ready(); track order.id) {
+        </div>
+      </div>
+
+      <!-- ── 欄三：待付款（有訂單時才顯示）── -->
+      @if (pendingCashOrders().length > 0 || orderService.pendingCash().length > 0) {
+        <div class="ob-col ob-col--unpaid">
+          <div class="ob-col-hd ob-col-hd--unpaid">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="ob-col-icon"
+            >
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+              <line x1="1" y1="10" x2="23" y2="10" />
+            </svg>
+            <span class="ob-col-title">待付款</span>
+            <span class="ob-col-badge ob-col-badge--unpaid">{{
+              pendingCashOrders().length + orderService.pendingCash().length
+            }}</span>
+          </div>
+          <div class="ob-col-body">
+            @for (order of pendingCashOrders(); track order.posId) {
+              <div class="order-board-card ob-unpaid">
+                <div class="ob-card-top">
+                  <span class="ob-num">{{ order.number }}</span>
+                  <div class="ob-badges">
+                    <span class="badge-unpaid">未付款</span>
+                  </div>
+                </div>
+                <div class="ob-items-list">
+                  @for (item of order.items; track item) {
+                    <div class="ob-item">{{ item }}</div>
+                  }
+                </div>
+                <div class="ob-meta">
+                  <span>{{ order.createdAt }}</span>
+                  <span>{{ order.phone }}</span>
+                  <span class="ob-total">${{ order.total }}</span>
+                </div>
+                <button
+                  class="ob-action-btn ob-action-btn--red"
+                  [disabled]="confirmingCashId() === order.posId"
+                  (click)="confirmCashPayment(order)"
+                >
+                  @if (confirmingCashId() === order.posId) {
+                    處理中...
+                  } @else {
+                    收款完成 ${{ order.total }}
+                  }
+                </button>
+              </div>
+            }
+            @for (order of orderService.pendingCash(); track order.id) {
+              <div class="order-board-card ob-unpaid">
+                <div class="ob-card-top">
+                  <span class="ob-num">{{ order.number }}</span>
+                  <div class="ob-badges">
+                    <span class="badge-online">線上</span>
+                    <span class="badge-unpaid">待付款</span>
+                  </div>
+                </div>
+                <div class="ob-items-list">
+                  @for (item of order.items; track item) {
+                    <div class="ob-item">{{ item }}</div>
+                  }
+                </div>
+                <div class="ob-meta">
+                  <span>{{ order.createdAt }}</span>
+                  <span>{{ order.payMethod }}</span>
+                  <span class="ob-total">${{ order.total }}</span>
+                </div>
+                <button
+                  class="ob-action-btn ob-action-btn--red"
+                  (click)="openCheckoutModal(order)"
+                >
+                  💳 結帳 NT$ {{ order.total }}
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ── 欄四：取餐完畢（done + paid）── -->
+      <div class="ob-col">
+        <div class="ob-col-hd ob-col-hd--done">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="ob-col-icon">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          <span class="ob-col-title">取餐完畢</span>
+          <span class="ob-col-badge ob-col-badge--done">{{ orderService.done().length + orderService.paid().length }}</span>
+        </div>
+        <div class="ob-col-body">
+          @if (orderService.done().length === 0 && orderService.paid().length === 0) {
+            <div class="ob-empty">今日暫無完成訂單</div>
+          }
+          @for (order of orderService.done(); track order.id) {
             <div class="order-board-card ob-done">
               <div class="ob-card-top">
                 <span class="ob-num">{{ order.number }}</span>
                 <div class="ob-badges">
-                  @if (order.source === 'customer') {
-                    <span class="badge-online">線上</span>
-                  }
-                  <span class="badge-ok ob-badge-pickup">可取餐</span>
+                  @if (order.source === 'customer') { <span class="badge-online">線上</span> }
+                  @if (order.source === 'pos') { <span class="badge-ok">已收款</span> }
+                  <span class="badge-ok">取餐完畢</span>
                 </div>
               </div>
               <div class="ob-items-list">
-                @for (item of order.items; track item) {
-                  <div class="ob-item">{{ item }}</div>
-                }
+                @for (item of order.items; track item) { <div class="ob-item">{{ item }}</div> }
               </div>
               <div class="ob-meta">
                 <span>{{ order.createdAt }}</span>
                 <span>{{ order.payMethod }}</span>
                 <span class="ob-total">${{ order.total }}</span>
               </div>
-              @if (order.isCash && order.source !== 'pos') {
-                <button
-                  class="ob-action-btn ob-action-btn--cash"
-                  (click)="moveToCashPayment(order)"
-                >
-                  💵 待付款
-                </button>
-              }
             </div>
           }
-          @for (order of orderService.done(); track order.id) {
-            <div
-              class="order-board-card ob-done"
-              [style.opacity]="order.isCash ? '1' : '0.6'"
-            >
+          @for (order of orderService.paid(); track order.id) {
+            <div class="order-board-card ob-done" style="opacity: 0.5">
               <div class="ob-card-top">
                 <span class="ob-num">{{ order.number }}</span>
                 <div class="ob-badges">
-                  @if (order.source === 'customer') {
-                    <span class="badge-online">線上</span>
-                  }
-                  <span class="badge-ok">已完成</span>
+                  @if (order.source === 'customer') { <span class="badge-online">線上</span> }
+                  <span class="badge-ok">已收款</span>
                 </div>
               </div>
               <div class="ob-items-list">
-                @for (item of order.items; track item) {
-                  <div class="ob-item">{{ item }}</div>
-                }
+                @for (item of order.items; track item) { <div class="ob-item">{{ item }}</div> }
               </div>
               <div class="ob-meta">
                 <span>{{ order.createdAt }}</span>
                 <span>{{ order.payMethod }}</span>
                 <span class="ob-total">${{ order.total }}</span>
               </div>
-              @if (order.isCash && order.source !== 'pos') {
-                <button
-                  class="ob-action-btn ob-action-btn--cash"
-                  (click)="moveToCashPayment(order)"
-                >
-                  💵 移至待付款
-                </button>
-              }
             </div>
           }
         </div>
       </div>
+    </div>
+  </div>
+}
+
+<!-- ── 結帳 Modal ── -->
+<!-- ── 結帳 Modal（左：訂單明細 / 右：收款計算機）── -->
+@if (checkoutModalOrder()) {
+  <div class="checkout-backdrop" (click)="closeCheckoutModal()">
+    <div class="checkout-modal" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="checkout-modal-hd">
+        <div class="checkout-modal-hd-left">
+          <span class="checkout-modal-title">結帳</span>
+          <span class="checkout-modal-num">{{ checkoutModalOrder()!.number }}</span>
+        </div>
+        <button class="checkout-modal-close" (click)="closeCheckoutModal()">✕</button>
+      </div>
+
+      <!-- Body: 左右並排 -->
+      <div class="checkout-modal-body">
+
+        <!-- 左側：訂單明細 -->
+        <div class="checkout-details-panel">
+          <div class="checkout-details-label">訂單明細</div>
+          <div class="checkout-details-items">
+            @for (item of checkoutModalOrder()!.items; track item) {
+              <div class="checkout-details-item">{{ item }}</div>
+            }
+          </div>
+          @if (checkoutModalOrder()!.note) {
+            <div class="checkout-details-note">📝 {{ checkoutModalOrder()!.note }}</div>
+          }
+          <div class="checkout-details-divider"></div>
+          <div class="checkout-details-total-row">
+            <span class="checkout-details-total-label">應收金額</span>
+            <span class="checkout-details-total-val">NT$ {{ checkoutModalOrder()!.total }}</span>
+          </div>
+        </div>
+
+        <!-- 右側：收款計算機 -->
+        <div class="checkout-calc-panel">
+
+          <!-- 應收金額 -->
+          <div class="checkout-due-row">
+            <span class="checkout-due-label">應收</span>
+            <span class="checkout-due-val">NT$ {{ checkoutModalOrder()!.total }}</span>
+          </div>
+
+          <!-- 收取金額顯示 -->
+          <div class="checkout-display-row">
+            <span class="checkout-display-label">收取</span>
+            <span class="checkout-display-val">
+              {{ checkoutCashInput() || '0' }}
+            </span>
+          </div>
+
+          <!-- 快速金額按鈕 -->
+          <div class="checkout-quick-btns">
+            @for (amt of checkoutQuickAmounts(checkoutModalOrder()!.total); track amt) {
+              <button class="checkout-quick-btn" (click)="checkoutCashInput.set(amt.toString())">
+                {{ amt }}
+              </button>
+            }
+          </div>
+
+          <!-- 數字鍵盤 -->
+          <div class="checkout-numpad">
+            @for (key of ['7','8','9','4','5','6','1','2','3','C','0','BS']; track key) {
+              <button
+                class="checkout-key"
+                [class.checkout-key-fn]="key === 'C' || key === 'BS'"
+                (click)="checkoutKeyPress(key)"
+              >
+                {{ key === 'BS' ? '⌫' : key }}
+              </button>
+            }
+          </div>
+
+          <!-- 找零 -->
+          @if (checkoutCashReceived > 0) {
+            <div
+              class="checkout-change"
+              [class.checkout-change--ok]="checkoutCashChange >= 0"
+              [class.checkout-change--err]="checkoutCashChange < 0"
+            >
+              找零：NT$ {{ checkoutCashChange }}
+            </div>
+          }
+
+          <!-- 確認收款 -->
+          <button
+            class="checkout-confirm-btn"
+            [disabled]="checkoutCashReceived < checkoutModalOrder()!.total"
+            (click)="confirmCheckoutPayment()"
+          >
+            確認收款 NT$ {{ checkoutModalOrder()!.total }}
+          </button>
+
+        </div>
+      </div>
+
     </div>
   </div>
 }

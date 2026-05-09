@@ -1066,7 +1066,7 @@
                   </svg>
                   <span>{{ lang.catChef }}</span>
                 </button>
-                @for (cat of CATEGORY_DEFS; track cat.key) {
+                @for (cat of visibleCategoryDefs(); track cat.key) {
                   <button
                     class="menu-cat-btn"
                     [class.active]="activeMenuCategory() === cat.key"
@@ -1088,7 +1088,7 @@
                   [class.active]="activeMenuStyle() === 'all'"
                   (click)="setMenuStyle('all')"
                 >全部</button>
-                @for (sty of STYLE_DEFS; track sty.key) {
+                @for (sty of visibleStyleDefs(); track sty.key) {
                   <button
                     class="menu-cat-btn"
                     [class.active]="activeMenuStyle() === sty.key"

@@ -592,9 +592,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
               type: 'promotion' as const,
               description: p.description ?? '',
               image: p.promotionImg
-                ? p.promotionImg.startsWith('data:')
-                  ? p.promotionImg
-                  : `data:image/jpeg;base64,${p.promotionImg}`
+                ? `${this.apiService.getPromotionImageUrl(p.id)}?v=${p.id}`
                 : '',
               badgeColor: p.active ? '#c49756' : '#6b7280',
               minAmount: p.gifts?.length
@@ -741,17 +739,20 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
             } as LiveOrder);
           } else {
             const targetId = existing.id;
-            /* 輪詢只允許狀態往前推進，防止 API 延遲導致回彈 */
-            const statusLevel: Record<string, number> = {
-              waiting: 0, cooking: 1, ready: 2, done: 3,
-              'pending-cash': -1, paid: -1,
-            };
-            const existingLevel = statusLevel[existing.status] ?? 0;
-            const newLevel = statusLevel[status] ?? 0;
-            const isProtected =
-              existing.status === 'pending-cash' || existing.status === 'paid';
-            if (!isProtected && newLevel > existingLevel) {
-              this.orderService.updateStatus(targetId, status);
+            /* 輪詢只允許狀態往前推進，終態(done/paid/cancelled)完全鎖定 */
+            const isTerminal =
+              existing.status === 'done' ||
+              existing.status === 'paid' ||
+              existing.status === 'cancelled';
+            if (!isTerminal) {
+              const statusLevel: Record<string, number> = {
+                waiting: 0, cooking: 1, ready: 2, 'pending-cash': 3, done: 4,
+              };
+              const existingLevel = statusLevel[existing.status] ?? 0;
+              const newLevel = statusLevel[status] ?? 0;
+              if (newLevel > existingLevel) {
+                this.orderService.updateStatus(targetId, status);
+              }
             }
             if (
               isCash &&
@@ -940,6 +941,54 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   /* 找零金額 */
   get cashChange(): number {
     return this.cashReceived - this.discountedTotal;
+  }
+
+  /* ── 結帳 Modal（看板內現金結帳）─────────────────── */
+  checkoutModalOrder = signal<LiveOrder | null>(null);
+  checkoutCashInput = signal('');
+
+  get checkoutCashReceived(): number {
+    return parseInt(this.checkoutCashInput(), 10) || 0;
+  }
+
+  get checkoutCashChange(): number {
+    const order = this.checkoutModalOrder();
+    return order ? this.checkoutCashReceived - order.total : 0;
+  }
+
+  checkoutQuickAmounts(total: number): number[] {
+    const c100 = Math.ceil(total / 100) * 100;
+    const c500 = Math.ceil(total / 500) * 500;
+    const c1000 = Math.ceil(total / 1000) * 1000;
+    return [...new Set([c100, c500, c1000])].filter((v) => v >= total).slice(0, 3);
+  }
+
+  moveToUnpaid(id: string): void {
+    this.orderService.updateStatus(id, 'pending-cash');
+  }
+
+  openCheckoutModal(order: LiveOrder): void {
+    this.checkoutModalOrder.set(order);
+    this.checkoutCashInput.set('');
+  }
+
+  closeCheckoutModal(): void {
+    this.checkoutModalOrder.set(null);
+    this.checkoutCashInput.set('');
+  }
+
+  checkoutKeyPress(key: string): void {
+    if (key === 'C') { this.checkoutCashInput.set(''); return; }
+    if (key === 'BS') { this.checkoutCashInput.update(v => v.slice(0, -1)); return; }
+    if (this.checkoutCashInput().length >= 6) return;
+    this.checkoutCashInput.update(v => v + key);
+  }
+
+  async confirmCheckoutPayment(): Promise<void> {
+    const order = this.checkoutModalOrder();
+    if (!order) return;
+    await this.completeCashOrder(order);
+    this.closeCheckoutModal();
   }
 
   /* 常見快速金額按鈕 */
@@ -1286,8 +1335,12 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   finishOrder(id: string): void {
-    this.orderService.updateStatus(id, 'done');
+    this.orderService.updateStatus(id, 'ready');
     this._pushOrdersStatus(id, 'READY');
+  }
+
+  completePickup(id: string): void {
+    this.orderService.updateStatus(id, 'done');
   }
 
   private _pushOrdersStatus(

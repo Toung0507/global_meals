@@ -1244,6 +1244,10 @@ $pos-blue:        #4f8ef7;   // 員工藍色
     border-radius: 12px;
     overflow: hidden;
 }
+.ob-col--unpaid {
+    border-color: rgba(248,113,113,0.28);
+    background: rgba(30,18,18,0.65);
+}
 
 .ob-col-hd {
     display: flex;
@@ -1259,6 +1263,7 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 .ob-col-hd--waiting { color: #fbbf24; background: rgba(251,191,36,0.06); }
 .ob-col-hd--cooking { color: #818cf8; background: rgba(129,140,248,0.06); }
 .ob-col-hd--done    { color: #3ecf8e; background: rgba(62,207,142,0.06); }
+.ob-col-hd--unpaid  { color: #fca5a5; background: rgba(248,113,113,0.08); }
 
 .ob-col-icon { width: 14px; height: 14px; flex-shrink: 0; }
 
@@ -1277,6 +1282,7 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 .ob-col-badge--waiting { background: rgba(251,191,36,0.18); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
 .ob-col-badge--cooking { background: rgba(129,140,248,0.18); color: #818cf8; border: 1px solid rgba(129,140,248,0.3); }
 .ob-col-badge--done    { background: rgba(62,207,142,0.18);  color: #3ecf8e; border: 1px solid rgba(62,207,142,0.3); }
+.ob-col-badge--unpaid  { background: rgba(248,113,113,0.18); color: #fca5a5; border: 1px solid rgba(248,113,113,0.4); }
 
 .ob-col-body {
     flex: 1;
@@ -1346,6 +1352,7 @@ $pos-blue:        #4f8ef7;   // 員工藍色
 .ob-action-btn--gold  { background: rgba(196,151,86,0.15); color: #f0c68c; border: 1px solid rgba(196,151,86,0.35); }
 .ob-action-btn--green { background: rgba(52,211,153,0.15); color: #3ecf8e; border: 1px solid rgba(52,211,153,0.35); }
 .ob-action-btn--cash  { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+.ob-action-btn--red   { background: rgba(248,113,113,0.15); color: #fca5a5; border: 1px solid rgba(248,113,113,0.4); }
 
 .ob-btn-icon { width: 13px; height: 13px; flex-shrink: 0; }
 
@@ -1415,6 +1422,13 @@ $pos-blue:        #4f8ef7;   // 員工藍色
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
     background-color: rgba(52, 211, 153, 0.20) !important;
+    transition: background-color 150ms, border-color 150ms;
+}
+.ob-unpaid {
+    border-left: 6px solid #F87171 !important;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    background-color: rgba(248, 113, 113, 0.12) !important;
     transition: background-color 150ms, border-color 150ms;
 }
 
@@ -2884,4 +2898,332 @@ select.modal-input option {
     .pos-promo-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+}
+
+
+/* ══════════════════════════════════════════════════
+   餐點製作完成欄（ready 狀態）
+   色彩：青藍 #22d3ee，區別於 done（綠）和 cooking（靛藍）
+   ══════════════════════════════════════════════════ */
+
+.ob-col-hd--ready   { color: #22d3ee; background: rgba(34,211,238,0.06); }
+.ob-col-badge--ready { background: rgba(34,211,238,0.18); color: #22d3ee; border: 1px solid rgba(34,211,238,0.35); }
+.ob-col--ready {
+    border-color: rgba(34,211,238,0.25);
+    background: rgba(10,30,36,0.65);
+}
+
+.ob-ready {
+    border-left: 6px solid #22d3ee !important;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    background-color: rgba(34,211,238,0.10) !important;
+    transition: background-color 150ms, border-color 150ms;
+}
+
+
+/* ══════════════════════════════════════════════════
+   結帳 Modal（線上現金訂單：POS 掃碼結帳）
+   觸發：餐點製作完成欄按「💳 結帳」
+   ══════════════════════════════════════════════════ */
+
+.checkout-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.70);
+    z-index: 1000;
+    backdrop-filter: blur(3px);
+}
+
+.checkout-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1001;
+    background: #1c2130;
+    border: 1px solid rgba(34,211,238,0.28);
+    border-radius: 16px;
+    width: min(860px, 96vw);
+    max-height: 88dvh;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(34,211,238,0.08);
+    animation: modalPop 0.22s cubic-bezier(0.22, 1.56, 0.36, 1) both;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Header ── */
+.checkout-modal-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+}
+
+.checkout-modal-hd-left {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.checkout-modal-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #22d3ee;
+    letter-spacing: 0.4px;
+}
+
+.checkout-modal-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.88rem;
+    color: #f0c68c;
+    font-weight: 600;
+}
+
+.checkout-modal-close {
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-size: 1rem;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, background 0.15s;
+    flex-shrink: 0;
+    &:hover { color: #fca5a5; background: rgba(248,113,113,0.12); }
+}
+
+/* ── Body：左右並排 ── */
+.checkout-modal-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* ── 左側：訂單明細 ── */
+.checkout-details-panel {
+    flex: 1;
+    padding: 18px 20px;
+    border-right: 1px solid rgba(255,255,255,0.07);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+}
+
+.checkout-details-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.checkout-details-items {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.checkout-details-item {
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    &:last-child { border-bottom: none; }
+}
+
+.checkout-details-note {
+    font-size: 0.78rem;
+    color: #f0c68c;
+    background: rgba(240,198,140,0.08);
+    border-radius: 6px;
+    padding: 5px 10px;
+}
+
+.checkout-details-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.10);
+    margin-top: auto;
+}
+
+.checkout-details-total-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 10px 0 2px;
+}
+
+.checkout-details-total-label {
+    font-size: 0.8rem;
+    color: #a0aec0;
+}
+
+.checkout-details-total-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #f0c68c;
+}
+
+/* ── 右側：收款計算機 ── */
+.checkout-calc-panel {
+    width: 300px;
+    flex-shrink: 0;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+    background: rgba(13,17,23,0.5);
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+}
+
+/* 應收金額列 */
+.checkout-due-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 8px 12px;
+    background: rgba(196,151,86,0.09);
+    border: 1px solid rgba(196,151,86,0.22);
+    border-radius: 8px;
+}
+
+.checkout-due-label { font-size: 0.72rem; color: #a0aec0; }
+.checkout-due-val   { font-family: 'IBM Plex Mono', monospace; font-size: 1rem; font-weight: 700; color: #f0c68c; }
+
+/* 收取金額顯示 */
+.checkout-display-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px 12px;
+    background: #111927;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+}
+
+.checkout-display-label { font-size: 0.72rem; color: #718096; }
+.checkout-display-val   {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #e2e8f8;
+    letter-spacing: 1px;
+}
+
+/* 快速金額 */
+.checkout-quick-btns {
+    display: flex;
+    gap: 5px;
+}
+
+.checkout-quick-btn {
+    flex: 1;
+    padding: 6px 4px;
+    border-radius: 6px;
+    background: rgba(129,140,248,0.12);
+    border: 1px solid rgba(129,140,248,0.28);
+    color: #a5b4fc;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.12s, transform 0.08s;
+    &:hover { background: rgba(129,140,248,0.22); }
+    &:active { transform: scale(0.94); }
+}
+
+/* 數字鍵盤（3×4） */
+.checkout-numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+}
+
+.checkout-key {
+    padding: 12px 6px;
+    border-radius: 7px;
+    background: #1c2130;
+    border: 1px solid rgba(255,255,255,0.10);
+    color: #e2e8f8;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.10s, transform 0.08s, border-color 0.10s;
+    user-select: none;
+    &:hover { background: #202840; border-color: rgba(34,211,238,0.30); }
+    &:active { transform: scale(0.93); background: rgba(34,211,238,0.12); }
+}
+
+.checkout-key-fn {
+    background: #141a28;
+    color: #a0aec0;
+    font-size: 0.85rem;
+    &:hover { background: #1a2238; color: #f87171; }
+}
+
+/* 找零 */
+.checkout-change {
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: 'IBM Plex Mono', monospace;
+    animation: fadeUp 0.18s ease both;
+}
+
+.checkout-change--ok {
+    background: rgba(62,207,142,0.10);
+    border: 1px solid rgba(62,207,142,0.28);
+    color: #6ee7b7;
+}
+
+.checkout-change--err {
+    background: rgba(248,113,113,0.10);
+    border: 1px solid rgba(248,113,113,0.28);
+    color: #fca5a5;
+}
+
+/* 確認收款大按鈕 */
+.checkout-confirm-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #0e7490 0%, #22d3ee 50%, #0e7490 100%);
+    background-size: 200% auto;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    font-family: 'Noto Sans TC', sans-serif;
+    letter-spacing: 0.5px;
+    border: none;
+    cursor: pointer;
+    transition: background-position 0.3s, transform 0.12s, box-shadow 0.2s, opacity 0.2s;
+    box-shadow: 0 4px 14px rgba(34,211,238,0.28);
+    margin-top: auto;
+    &:hover:not(:disabled) {
+        background-position: right center;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(34,211,238,0.42);
+    }
+    &:active:not(:disabled) { transform: scale(0.97); }
+    &:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
 }

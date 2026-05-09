@@ -43,67 +43,15 @@ export interface LiveOrder {
 @Injectable({ providedIn: 'root' })
 export class OrderService {
   /* ── 全部訂單（含歷史） ─────────────────────────── */
-  private _orders = signal<LiveOrder[]>([
-    /* 預設假資料：模擬分店目前進行中訂單 */
-    {
-      id: 'LBB-INIT-049',
-      number: '20260424-0049',
-      status: 'waiting',
-      estimatedMinutes: 10,
-      items: ['招牌滷肉飯 × 1', '黑糖珍珠奶茶 × 2'],
-      total: 270,
-      createdAt: '13:45',
-      payMethod: '現金',
-      source: 'pos',
-    },
-    {
-      id: 'LBB-INIT-050',
-      number: '20260424-0050',
-      status: 'waiting',
-      estimatedMinutes: 8,
-      items: ['蚵仔麵線 × 1', '招牌滷蛋 × 2'],
-      total: 130,
-      createdAt: '13:52',
-      payMethod: '信用卡',
-      source: 'pos',
-    },
-    {
-      id: 'LBB-INIT-047',
-      number: '20260424-0047',
-      status: 'cooking',
-      estimatedMinutes: 8,
-      items: ['古早味排骨飯 × 2', '仙草奶茶 × 1'],
-      total: 355,
-      createdAt: '13:38',
-      payMethod: '行動支付',
-      source: 'pos',
-    },
-    {
-      id: 'LBB-INIT-046',
-      number: '20260424-0046',
-      status: 'done',
-      estimatedMinutes: 0,
-      items: ['三杯雞飯 × 1', '仙草奶茶 × 1'],
-      total: 215,
-      createdAt: '13:20',
-      payMethod: '現金',
-      source: 'pos',
-    },
-    {
-      id: 'LBB-INIT-045',
-      number: '20260424-0045',
-      status: 'done',
-      estimatedMinutes: 0,
-      items: ['蚵仔煎 × 2', '黑糖珍珠奶茶 × 1'],
-      total: 235,
-      createdAt: '13:05',
-      payMethod: '現金',
-      source: 'pos',
-    },
-  ]);
+  private _orders = signal<LiveOrder[]>([]);
 
   /* ── 跨 Tab 同步（BroadcastChannel） ───────────── */
   private _bc = new BroadcastChannel('lbb-order-sync');
+
+  /* 終態：一旦進入就不可再變更 */
+  private static readonly TERMINAL: ReadonlySet<OrderStatus> = new Set([
+    'done', 'paid', 'cancelled',
+  ]);
 
   constructor() {
     this._bc.onmessage = ({ data }) => {
@@ -117,11 +65,9 @@ export class OrderService {
           const idx = list.findIndex((o) => o.id === data.id);
           if (idx === -1) return list;
           const existing = list[idx];
+          /* 終態不可被任何廣播覆蓋 */
+          if (OrderService.TERMINAL.has(existing.status)) return list;
           const incoming = data.status as OrderStatus;
-          /* pending-cash 只能被升級為 paid，不可被其他 tab 廣播降回 ready/cooking 等 */
-          if (existing.status === 'pending-cash' && incoming !== 'paid') return list;
-          /* paid 是終態 */
-          if (existing.status === 'paid') return list;
           const updated = { ...existing, status: incoming };
           return [updated, ...list.filter((_, i) => i !== idx)];
         });
@@ -158,11 +104,12 @@ export class OrderService {
     this._bc.postMessage({ type: 'ADD_ORDER', order });
   }
 
-  /* ── 更新訂單狀態（狀態改變時移至該欄頂端） ─────── */
+  /* ── 更新訂單狀態（終態保護：done/paid/cancelled 不可回朔） ── */
   updateStatus(id: string, status: OrderStatus): void {
     this._orders.update((list) => {
       const idx = list.findIndex((o) => o.id === id);
       if (idx === -1) return list;
+      if (OrderService.TERMINAL.has(list[idx].status)) return list;
       const updated = { ...list[idx], status };
       return [updated, ...list.filter((_, i) => i !== idx)];
     });
@@ -201,7 +148,7 @@ export class OrderService {
       const m = o.number.match(/\d{8}-(\d+)/);
       return m ? parseInt(m[1]) : 0;
     });
-    const max = nums.length > 0 ? Math.max(...nums) : 50;
+    const max = nums.length > 0 ? Math.max(...nums) : 0;
     return `${dateStr}-${String(max + 1).padStart(4, '0')}`;
   }
 

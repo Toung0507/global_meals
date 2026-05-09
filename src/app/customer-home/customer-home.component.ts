@@ -436,10 +436,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       麵食: '🍜 麵食',
       飲品: '🧋 特調飲品',
       甜點: '🍰 甜點',
-      湯食: '🍲 湯品料理',
-      鍋類: '🫕 鍋類料理',
-      辣食: '🌶️ 辣食料理',
-      台食: '🍽️ 台灣美食',
+      湯品: '🍲 湯品料理',
+      前菜: '🥗 前菜',
+      熱炒: '🔥 熱炒料理',
     };
     const MAP_JP: Record<string, string> = {
       台式: '🏮 台湾スタイル',
@@ -448,10 +447,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       麵食: '🍜 麺料理',
       飲品: '🧋 ドリンク',
       甜點: '🍰 デザート',
-      湯食: '🍲 スープ料理',
-      鍋類: '🫕 鍋料理',
-      辣食: '🌶️ 辛い料理',
-      台食: '🍽️ 台湾料理',
+      湯品: '🍲 スープ料理',
+      前菜: '🥗 前菜',
+      熱炒: '🔥 炒め物',
     };
     const MAP_KR: Record<string, string> = {
       台式: '🏮 대만식',
@@ -460,10 +458,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       麵食: '🍜 면 요리',
       飲品: '🧋 음료',
       甜點: '🍰 디저트',
-      湯食: '🍲 국물요리',
-      鍋類: '🫕 냄비요리',
-      辣食: '🌶️ 매운요리',
-      台食: '🍽️ 대만음식',
+      湯品: '🍲 국물요리',
+      前菜: '🥗 전채요리',
+      熱炒: '🔥 볶음요리',
     };
     if (cc === 'JP') return MAP_JP[cat] ?? `🍽 ${cat}`;
     if (cc === 'KR') return MAP_KR[cat] ?? `🍽 ${cat}`;
@@ -487,7 +484,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     return MAP[item.name] ?? '';
   }
 
-  /* ── 菜單：分類定義（對應 category.json）─────────── */
+  /* ── 菜單：分類定義（對應 category.json，共 9 個）─────────── */
   readonly CATEGORY_DEFS: { key: string; emoji: string }[] = [
     { key: '台式', emoji: '🏮' },
     { key: '飯食', emoji: '🍱' },
@@ -495,10 +492,9 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     { key: '麵食', emoji: '🍜' },
     { key: '飲品', emoji: '🧋' },
     { key: '甜點', emoji: '🍰' },
-    { key: '湯食', emoji: '🍲' },
-    { key: '鍋類', emoji: '🫕' },
-    { key: '辣食', emoji: '🌶️' },
-    { key: '台食', emoji: '🍽️' },
+    { key: '湯品', emoji: '🍲' },
+    { key: '前菜', emoji: '🥗' },
+    { key: '熱炒', emoji: '🔥' },
   ];
 
   readonly STYLE_DEFS: { key: string; emoji: string }[] = [
@@ -525,6 +521,20 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       }
     }
     return styles;
+  });
+
+  /** 只顯示有商品的分類 tag（依 CATEGORY_DEFS 順序，過濾無商品分類） */
+  visibleCategoryDefs = computed(() => {
+    const cats = new Set(this.menuItems().map((item) => item.category));
+    return this.CATEGORY_DEFS.filter((def) => cats.has(def.key));
+  });
+
+  /** 只顯示有商品的風格 tag（依 STYLE_DEFS 順序，過濾無商品風格） */
+  visibleStyleDefs = computed(() => {
+    const styles = new Set(
+      this.menuItems().map((item) => item.style).filter(Boolean),
+    );
+    return this.STYLE_DEFS.filter((def) => styles.has(def.key));
   });
 
   /** 主廚推薦餐點（對應後端真實產品名稱） */
@@ -1737,80 +1747,15 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       });
   }
 
-  orderHistoryList = signal([
-    {
-      id: 'LBB-20260115-001',
-      date: '2026-01-15',
-      items: '紅燒牛肉麵 × 1、滷蛋 × 2',
-      itemsJP: '紅焼き牛肉麺 × 1、煮卵 × 2',
-      itemsKR: '홍사오 소고기 국수 × 1、반숙 달걀 × 2',
-      total: 185,
-      status: 'completed',
-    },
-    {
-      id: 'LBB-20260210-002',
-      date: '2026-02-10',
-      items: '三杯雞飯 × 1、味噌湯 × 1',
-      itemsJP: '三杯チキンライス × 1、味噌スープ × 1',
-      itemsKR: '산배이 닭고기 덮밥 × 1、된장국 × 1',
-      total: 150,
-      status: 'completed',
-    },
-    {
-      id: 'LBB-20260301-003',
-      date: '2026-03-01',
-      items: '咖哩雞飯 × 1、珍珠奶茶 × 2、小菜 × 1',
-      itemsJP: 'カレーチキンライス × 1、タピオカミルクティー × 2、小皿料理 × 1',
-      itemsKR: '카레 치킨 라이스 × 1、버블밀크티 × 2、사이드 메뉴 × 1',
-      total: 320,
-      status: 'completed',
-    },
-    {
-      id: 'LBB-20260318-004',
-      date: '2026-03-18',
-      items: '麻辣燙 × 1、白飯 × 1',
-      itemsJP: '麻辣湯（マーラータン）× 1、白ご飯 × 1',
-      itemsKR: '마라탕 × 1、흰밥 × 1',
-      total: 175,
-      status: 'completed',
-    },
-    {
-      id: 'LBB-20260325-005',
-      date: '2026-03-25',
-      items: '越南河粉 × 1、春捲 × 3',
-      itemsJP: 'ベトナムフォー × 1、生春巻き × 3',
-      itemsKR: '베트남 쌀국수（フォー）× 1、스프링롤 × 3',
-      total: 210,
-      status: 'completed',
-    },
-    {
-      id: 'LBB-20260401-006',
-      date: '2026-04-01',
-      items: '印度咖哩飯 × 2、饢餅 × 1、優格飲 × 2',
-      itemsJP: 'インドカレーライス × 2、ナン × 1、ラッシー × 2',
-      itemsKR: '인도 카레 라이스 × 2、난 × 1、라씨 × 2',
-      total: 395,
-      status: 'completed',
-    },
-    {
-      id: 'LBB-20260308-007',
-      date: '2026-03-08',
-      items: '鐵板燒套餐 × 2、冬瓜茶 × 2',
-      itemsJP: '鉄板焼きセット × 2、冬瓜茶 × 2',
-      itemsKR: '철판구이 세트 × 2、동과차 × 2',
-      total: 480,
-      status: 'cancelled',
-    },
-    {
-      id: 'LBB-20260220-008',
-      date: '2026-02-20',
-      items: '紅油抄手 × 2',
-      itemsJP: '紅油水餃子（ホンユーチャオショウ）× 2',
-      itemsKR: '훙유 완탕（홍유초우서우）× 2',
-      total: 120,
-      status: 'refunded',
-    },
-  ]);
+  orderHistoryList = signal<{
+    id: string;
+    date: string;
+    items: string;
+    itemsJP: string;
+    itemsKR: string;
+    total: number;
+    status: string;
+  }[]>([]);
 
   completedCount = computed(
     () =>
