@@ -290,71 +290,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 庫存清單（Signal） ─────────────────────────── */
   inventory = signal<DashInventory[]>([
-    {
-      id: 1,
-      productId: 1,
-      globalAreaId: 4,
-      name: '紅燒牛肉麵',
-      branch: '懶飽飽台北總店',
-      stock: 48,
-      safeStock: 10,
-      basePrice: 165,
-      costPrice: 0,
-      maxOrderQuantity: 10,
-      active: true,
-    },
-    {
-      id: 2,
-      productId: 3,
-      globalAreaId: 2,
-      name: '越南牛肉河粉',
-      branch: '韓國首爾',
-      stock: 5,
-      safeStock: 10,
-      basePrice: 155,
-      costPrice: 0,
-      maxOrderQuantity: 10,
-      active: true,
-    },
-    {
-      id: 3,
-      productId: 4,
-      globalAreaId: 5,
-      name: '義式肉醬寬麵',
-      branch: '懶飽飽東京店',
-      stock: 0,
-      safeStock: 10,
-      basePrice: 185,
-      costPrice: 0,
-      maxOrderQuantity: 10,
-      active: true,
-    },
-    {
-      id: 4,
-      productId: 2,
-      globalAreaId: 4,
-      name: '印度奶油咖哩飯',
-      branch: '懶飽飽台北總店',
-      stock: 32,
-      safeStock: 10,
-      basePrice: 175,
-      costPrice: 0,
-      maxOrderQuantity: 10,
-      active: true,
-    },
-    {
-      id: 5,
-      productId: 6,
-      globalAreaId: 4,
-      name: '珍珠奶茶',
-      branch: '懶飽飽台北總店',
-      stock: 120,
-      safeStock: 30,
-      basePrice: 65,
-      costPrice: 0,
-      maxOrderQuantity: 5,
-      active: true,
-    },
+  
   ]);
 
   /* 庫存調整狀態 */
@@ -383,69 +319,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 帳號清單（Signal） ─────────────────────────── */
   accounts = signal<DashAccount[]>([
-    {
-      id: 1,
-      name: '陳美玲',
-      account: 'chen.ml',
-      branch: '台灣台北店',
-      joinedAt: '2024-03-15',
-      isActive: true,
-      role: 'bm',
-      country: 'TW',
-    },
-    {
-      id: 2,
-      name: '田中一郎',
-      account: 'tanaka.i',
-      branch: '日本東京店',
-      joinedAt: '2024-06-01',
-      isActive: true,
-      role: 'bm',
-      country: 'JP',
-    },
-    {
-      id: 3,
-      name: 'Somchai P.',
-      account: 'somchai.p',
-      branch: '泰國曼谷店',
-      joinedAt: '2024-09-20',
-      isActive: true,
-      role: 'bm',
-      country: 'TH',
-    },
-    {
-      id: 4,
-      name: '王小明',
-      account: 'wang.xm',
-      shift: '早班',
-      joinedAt: '2025-01-10',
-      isActive: true,
-      role: 'staff',
-      branch: '台北店',
-      country: 'TW',
-    },
-    {
-      id: 5,
-      name: '李佳靜',
-      account: 'lee.jj',
-      shift: '晚班',
-      joinedAt: '2025-03-22',
-      isActive: true,
-      role: 'staff',
-      branch: '台北店',
-      country: 'TW',
-    },
-    {
-      id: 6,
-      name: 'Yuki T.',
-      account: 'yuki.t',
-      shift: '全天',
-      joinedAt: '2025-07-08',
-      isActive: true,
-      role: 'staff',
-      branch: '東京店',
-      country: 'JP',
-    },
+  
   ]);
 
   bmAccounts = computed(() => this.accounts().filter((a) => a.role === 'bm'));
@@ -677,46 +551,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 稅率清單（Signal） ─────────────────────────── */
   taxes = signal<DashTax[]>([
-    {
-      id: 1,
-      country: '台灣',
-      countryCode: 'TW',
-      currency: 'TWD',
-      taxType: 'EXCLUSIVE',
-      rate: 5,
-      discountLimit: 200,
-      editing: false,
-      editRate: 5,
-      editTaxType: 'EXCLUSIVE',
-      editDiscountLimit: 200,
-    },
-    // 其他筆同理
-    {
-      id: 2,
-      country: '日本',
-      countryCode: 'JP',
-      currency: 'JPY',
-      taxType: 'INCLUSIVE',
-      rate: 10,
-      discountLimit: 1000,
-      editing: false,
-      editRate: 10, // ✅
-      editTaxType: 'INCLUSIVE', // ✅
-      editDiscountLimit: 1000, // ✅
-    },
-    {
-      id: 3,
-      country: '韓國',
-      countryCode: 'KR',
-      currency: 'KRW',
-      taxType: 'EXCLUSIVE',
-      rate: 10,
-      discountLimit: 10000,
-      editing: false,
-      editRate: 10, // ✅
-      editTaxType: 'EXCLUSIVE', // ✅
-      editDiscountLimit: 10000, // ✅
-    },
+
   ]);
 
   /* ── 國家設定子頁籤 ──────────────────────────────── */
@@ -1064,42 +899,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 分店清單（Signal，對應 global_area 資料表）─── */
   branches = signal<DashBranch[]>([
-    {
-      id: 4,
-      name: '懶飽飽台北總店',
-      city: '台北',
-      country: '台灣',
-      regionsId: 4,
-      address: '台北市中正區重慶南路一段',
-      phone: '02-2345-6789',
-    },
-    {
-      id: 5,
-      name: '懶飽飽東京店',
-      city: '東京',
-      country: '日本',
-      regionsId: 3,
-      address: '東京都新宿区歌舞伎町',
-      phone: '03-1234-5678',
-    },
-    {
-      id: 14,
-      name: '台灣高雄店',
-      city: '高雄',
-      country: '台灣',
-      regionsId: 4,
-      address: '高雄市前鎮區四維四路156號之2',
-      phone: '+886796638706',
-    },
-    {
-      id: 16,
-      name: '台灣台中店',
-      city: '台中',
-      country: '台灣',
-      regionsId: 4,
-      address: '40646台中市北屯區北屯路156號',
-      phone: '+886422310300',
-    },
+
   ]);
 
   /* ── Modal 狀態 ─────────────────────────────────────── */
@@ -1308,72 +1108,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   orderFilterStatus = signal<string>('all');
 
   allOrders = signal<DashOrder[]>([
-    {
-      id: '#TW-2060',
-      branch: '台北',
-      branchClass: 'badge-blue',
-      summary: '紅燒牛肉麵×1, 滷蛋×2',
-      amount: '$285',
-      payMethod: '現金',
-      time: '14:32',
-      statusClass: 'badge-warn',
-      statusLabel: '製作中',
-    },
-    {
-      id: '#JP-1138',
-      branch: '東京',
-      branchClass: 'badge-teal',
-      summary: '印度咖哩飯×2, 饢餅×1',
-      amount: '¥1,900',
-      payMethod: '信用卡',
-      time: '14:28',
-      statusClass: 'badge-ok',
-      statusLabel: '已完成',
-    },
-    {
-      id: '#TH-0442',
-      branch: '曼谷',
-      branchClass: 'badge-ok',
-      summary: '越南河粉×1, 春捲×3',
-      amount: '฿380',
-      payMethod: 'QR Pay',
-      time: '14:25',
-      statusClass: 'badge-ok',
-      statusLabel: '已完成',
-    },
-    {
-      id: '#TW-2058',
-      branch: '台北',
-      branchClass: 'badge-blue',
-      summary: '麻辣燙×1, 白飯×2',
-      amount: '$220',
-      payMethod: '現金',
-      time: '14:05',
-      statusClass: 'badge-err',
-      statusLabel: '已取消',
-    },
-    {
-      id: '#JP-1137',
-      branch: '東京',
-      branchClass: 'badge-teal',
-      summary: '牛肉河粉×1, 炒飯×1',
-      amount: '¥2,400',
-      payMethod: '信用卡',
-      time: '14:10',
-      statusClass: 'badge-ok',
-      statusLabel: '已完成',
-    },
-    {
-      id: '#TW-2057',
-      branch: '台北',
-      branchClass: 'badge-blue',
-      summary: '三杯雞飯×2',
-      amount: '$300',
-      payMethod: '行動支付',
-      time: '13:55',
-      statusClass: 'badge-ok',
-      statusLabel: '已完成',
-    },
+
   ]);
 
   filteredOrders = computed(() => {
@@ -1638,18 +1373,24 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadStyles(): void {
-    this.apiService.getStyles().subscribe({
-      next: (list) => this.styleOptions.set(list.map((s) => s.name)),
-      error: (err) => console.error('❌ loadStyles 失敗:', err),
-    });
-  }
+  this.apiService.getStyles().subscribe({
+    next: (list) => {
+      const unique = [...new Set(list.map((s) => s.name).filter(Boolean))];
+      this.styleOptions.set(unique);
+    },
+    error: (err) => console.error('❌ loadStyles 失敗:', err),
+  });
+}
 
-  private loadCategories(): void {
-    this.apiService.getCategories().subscribe({
-      next: (list) => this.categoryOptions.set(list.map((c) => c.name)),
-      error: (err) => console.error('❌ loadCategories 失敗:', err),
-    });
-  }
+private loadCategories(): void {
+  this.apiService.getCategories().subscribe({
+    next: (list) => {
+      const unique = [...new Set(list.map((c) => c.name).filter(Boolean))];
+      this.categoryOptions.set(unique);
+    },
+    error: (err) => console.error('❌ loadCategories 失敗:', err),
+  });
+}
 
   private loadProducts(): void {
     forkJoin({
@@ -2614,8 +2355,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.editingProductId.set(null);
     this.productDraft = {
       name: '',
-      category: '台式',
-      style: '台式經典',
+      category: '',
+      style: '',
       price: 165,
       stock: 0,
       emoji: '🍜',
@@ -2633,8 +2374,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.editingProductId.set(id);
     this.productDraft = {
       name: p.name,
-      category: p.category || '台式',
-      style: p.style || '台式經典',
+      category: p.category || '',
+      style: p.style || '',
       price: p.price,
       stock: p.stock,
       emoji: p.emoji,
@@ -2816,7 +2557,10 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
             this.apiService
               .updateBranchInventory(invReq)
               .subscribe({ next: () => this.loadProducts(), error: () => this.loadProducts() }),
-          error: () => this.showToast('⚠️ 後端更新失敗，本地已儲存'),
+          error: (err) => {
+  const msg = err?.error?.message ?? '⚠️ 後端更新失敗，本地已儲存';
+  this.showToast(msg);
+},
         });
     } else {
       /* 新增商品 */
@@ -3491,6 +3235,14 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       this.showToast('⚠️ 請選擇國家與城市');
       return;
     }
+    if (!this.branchDraft.address.trim()) {
+      this.showToast('⚠️ 請填寫分店地址');
+      return;
+    }
+    if (!this.branchDraft.phone.trim()) {
+      this.showToast('⚠️ 請填寫分店電話');
+      return;
+    }
     const saved = { ...this.branchDraft };
     const countryName = this.getBranchCountryName(saved.regionsId);
     const autoName = `${countryName}${saved.city.trim()}店`;
@@ -3538,6 +3290,14 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       this.showToast('⚠️ 請選擇國家與城市');
       return;
     }
+    if (!this.editBranchDraft.address.trim()) {
+      this.showToast('⚠️ 請填寫分店地址');
+      return;
+    }
+    if (!this.editBranchDraft.phone.trim()) {
+      this.showToast('⚠️ 請填寫分店電話');
+      return;
+    }
     const saved = { ...this.editBranchDraft };
     const countryName = this.getBranchCountryName(saved.regionsId);
     const autoName = `${countryName}${saved.city.trim()}店`;
@@ -3567,22 +3327,33 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  /* ── 分店：刪除 ───────────────────────────────────── */
-  deleteBranch(id: number): void {
+  /* ── 分店：刪除確認 Modal ────────────────────────── */
+  deleteBranchConfirm = signal<{ id: number; name: string } | null>(null);
+
+  requestDeleteBranch(id: number): void {
     const b = this.branches().find((x) => x.id === id);
     if (!b) return;
-    if (!confirm(`確定刪除分店「${b.name}」？此操作無法復原。`)) return;
-    this.apiService.deleteBranch({ globalAreaIdList: [id] }).subscribe({
+    this.deleteBranchConfirm.set({ id, name: b.name });
+  }
+
+  confirmDeleteBranch(): void {
+    const target = this.deleteBranchConfirm();
+    if (!target) return;
+    this.deleteBranchConfirm.set(null);
+    this.apiService.deleteBranch({ globalAreaIdList: [target.id] }).subscribe({
       next: () => {
-        this.branches.update((list) => list.filter((x) => x.id !== id));
-        this.showToast(`🗑️ 分店「${b.name}」已刪除`);
+        this.branches.update((list) => list.filter((x) => x.id !== target.id));
+        this.showToast(`🗑️ 分店「${target.name}」已刪除`);
       },
       error: () => {
-        /* API 失敗時降級為本地刪除 */
-        this.branches.update((list) => list.filter((x) => x.id !== id));
-        this.showToast(`⚠️ 後端暫不可用，僅本地移除分店「${b.name}」`);
+        this.branches.update((list) => list.filter((x) => x.id !== target.id));
+        this.showToast(`⚠️ 後端暫不可用，僅本地移除分店「${target.name}」`);
       },
     });
+  }
+
+  cancelDeleteBranch(): void {
+    this.deleteBranchConfirm.set(null);
   }
 
   /* ── 訂單篩選 ─────────────────────────────────── */

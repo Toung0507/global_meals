@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ngrok http *)",
+      "Bash(curl -s http://localhost:4040/api/tunnels)",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(t['public_url']\\) for t in data.get\\('tunnels',[]\\)]\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\global_meals_gradle\\\\src\\\\main\\\\java\" -Recurse -Filter \"*Controller.java\")",
+      "Bash(Select-Object FullName)",
+      "Bash(powershell -Command \"Get-Content 'c:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\global_meals\\\\src\\\\app\\\\manager-dashboard\\\\manager-dashboard.component.html' | Measure-Object -Line\")",
+      "Bash(n\\\\\"\")",
+      "Bash(powershell -Command \"\\(Get-Content 'c:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\global_meals\\\\src\\\\app\\\\manager-dashboard\\\\manager-dashboard.component.html'\\)[-10..-1] -join \\\\\"`n\\\\\"\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\global_meals_gradle\\\\src\\\\main\\\\java\" -Recurse -Filter \"*Members*\" -File)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\joker\\\\OneDrive\\\\桌面\\\\global_meals_gradle\\\\src\\\\main\\\\java\" -Recurse -Filter \"*Members*\")"
+    ]
+  }
+}

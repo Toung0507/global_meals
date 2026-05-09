@@ -941,6 +941,20 @@ export class ApiService {
     return this.http.post<BasicRes>(`${this.BASE}/${imgPath}`, form);
   }
 
+  /** POST /promotions/updateDescription/:id — 更新促銷活動描述 */
+  updatePromotionDescription(
+    id: number,
+    description: string,
+  ): Observable<BasicRes> {
+    const path = API_CONFIG.ENDPOINTS.PROMOTIONS.UPDATE_DESCRIPTION.replace(
+      ':id',
+      String(id),
+    );
+    return this.http.post<BasicRes>(`${this.BASE}/${path}`, {
+      description,
+    });
+  }
+
   /* ══════════════════════════════════════════════════
    * GlobalArea API  →  /global_area/
    * ══════════════════════════════════════════════════ */

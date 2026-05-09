@@ -464,6 +464,27 @@ $admin-purple: #c084fc; // 側邊欄副標題紫色
 .btn-ghost-red:active {
     transform: scale(0.97);
 }
+/* Modal 取消按鈕：白底灰框，統一樣式 */
+.btn-cancel {
+    background-color: #ffffff;
+    color: #4A5A70;
+    border: 1px solid #D4DCE8;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: background-color $transition-base, border-color $transition-base, transform $transition-fast;
+}
+
+.btn-cancel:hover {
+    background-color: #F4F6FA;
+    border-color: #B0BCCC;
+    color: #1A2840;
+    transform: translateY(-1px);
+}
+
+.btn-cancel:active {
+    transform: scale(0.97);
+}
+
 
 @keyframes promo-delete-blink {
 
@@ -1788,17 +1809,17 @@ select.form-ctrl option {
 /* ── Toast 通知 ─────────────────────────────────────── */
 .mgr-toast {
     position: fixed;
-    bottom: 28px;
+    bottom: 36px;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(20, 30, 48, 0.97);
     color: #f0c68c;
     border: 1px solid rgba(196, 151, 86, 0.45);
-    border-radius: 10px;
-    padding: 10px 22px;
-    font-size: 0.82rem;
-    font-weight: 500;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+    border-radius: 12px;
+    padding: 14px 32px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.50);
     z-index: 9999;
     white-space: nowrap;
     pointer-events: none;
@@ -1893,9 +1914,11 @@ select.form-ctrl option {
     background: #fff;
     width: 520px;
     max-width: 90%;
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: 14px;
+    overflow: hidden;
+    padding: 0;
     z-index: 10000;
+    box-shadow: 0 8px 32px rgba(30, 58, 95, 0.18);
 }
 
 .modal-box.modal-sm {
@@ -1926,6 +1949,7 @@ select.form-ctrl option {
     padding: 16px 22px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     background: linear-gradient(135deg, #1E3A5F 0%, #2A4F7C 100%);
+    border-radius: 14px 14px 0 0;
 }
 
 .modal-hd-title {
@@ -1963,12 +1987,14 @@ select.form-ctrl option {
 
 /* 底部操作列：淺灰底 */
 .modal-ft {
-    padding: 13px 22px 17px;
+    padding: 14px 22px 18px;
     border-top: 1px solid #D4DCE8;
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     gap: 10px;
-    background: #F4F6FA;
+    background: #F8FAFC;
+    border-radius: 0 0 14px 14px;
 }
 
 /* 表單標籤 */
