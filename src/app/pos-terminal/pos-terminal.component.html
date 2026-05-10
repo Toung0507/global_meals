@@ -1797,20 +1797,6 @@
                 } @else {
                   <span class="badge-warn">已暫停</span>
                 }
-                @if (isBM) {
-                  <label
-                    class="pos-promo-toggle"
-                    [class.disabled]="promo.ended"
-                  >
-                    <input
-                      type="checkbox"
-                      [checked]="promo.isActive"
-                      [disabled]="promo.ended"
-                      (change)="togglePromo(promo.id)"
-                    />
-                    <span class="pos-promo-toggle-track"></span>
-                  </label>
-                }
               </div>
             </div>  
           </div>

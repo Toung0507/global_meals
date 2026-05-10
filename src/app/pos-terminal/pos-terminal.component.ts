@@ -41,7 +41,6 @@ import {
   CartViewRes,
   AvailableGiftVO,
   PromotionDetailVo,
-  PromotionsManageReq,
   CreateOrdersReq,
   OrderCartDetailItem,
   PayReq,
@@ -1721,32 +1720,6 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!confirm(`確定刪除活動「${promo.title}」？此操作無法復原。`)) return;
     this.posPromos.update((list) => list.filter((p) => p.id !== id));
     this.posShowToast(`活動「${promo.title}」已刪除`);
-  }
-
-  togglePromo(id: number): void {
-    const promo = this.posPromos().find((p) => p.id === id);
-    if (!promo || promo.ended) return;
-    const newActive = !promo.isActive;
-    this.posPromos.update((list) =>
-      list.map((p) => (p.id === id ? { ...p, isActive: newActive } : p)),
-    );
-    const req: PromotionsManageReq = {
-      name: promo.title,
-      startTime: promo.rawStartTime,
-      endTime: promo.rawEndTime,
-      promotionsId: id,
-      active: newActive,
-    };
-    this.apiService.togglePromotion(req).subscribe({
-      next: () =>
-        this.posShowToast(newActive ? '✅ 活動已啟用' : '⏸️ 活動已暫停'),
-      error: () => {
-        this.posPromos.update((list) =>
-          list.map((p) => (p.id === id ? { ...p, isActive: !newActive } : p)),
-        );
-        this.posShowToast('⚠️ 操作失敗，請確認後端連線');
-      },
-    });
   }
 
   openAddPromo(): void {
