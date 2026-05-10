@@ -4,14 +4,15 @@
  * 位置說明：src/app/manager-dashboard/manager-dashboard.component.ts
  * 用途說明：老闆（boss）後台管理主控台
  * 功能說明：
- *   - 側邊欄 8 個頁籤切換（綜合總覽 / 訂單 / 商品 / 活動 / 庫存 / 帳號 / 稅率 / 財報）
- *   - 帳號管理子頁籤切換（分店長 / 員工）
- *   - 商品上/下架切換（Signal 驅動）
- *   - 庫存量即時調整（inline 編輯）
- *   - 訂單狀態篩選（select 篩選 + 分頁）
- *   - 活動啟用/停用（toggle switch Signal 驅動）
- *   - 帳號停/復權（Signal 驅動）
- *   - 稅率修改（inline input Signal 驅動）
+ *   - 側邊欄 7 個頁籤切換（帳號管理 / 分店管理 / 國家基本設定 / 會員設定 / 商品管理 / 活動管理 / 財務報表）
+ *   - 帳號管理：依角色分頁（分店長 / 副店長 / 員工）、依分店篩選、國家與分店排序
+ *   - 帳號操作：新增帳號、停權 / 復權、重設密碼、升降職、調換分店
+ *   - 分店管理：新增 / 編輯 / 刪除分店
+ *   - 國家基本設定：稅率維護與即時匯率查詢
+ *   - 會員設定：各國折扣上限與累積次數設定
+ *   - 商品管理：商品新增 / 編輯 / 刪除、上下架、分類與風格管理
+ *   - 活動管理：活動新增 / 編輯 / 刪除、啟用 / 停用、贈品門檻設定
+ *   - 財務報表：月報表 / 區間查詢 / 匯率換算
  *   - 登入保護：非 boss 角色自動導回 staff-login
  *   - 即時時鐘顯示
  * =====================================================
@@ -31,12 +32,6 @@ import {
   PromotionDetailVo,
   GiftDetailVo,
   ProductAdminVo,
-  InventoryDetailVo,
-  MonthlyReportRes,
-  MonthlyReportDetail,
-  MonthRangeReportsReq,
-  RevenueQueryRes,
-  MonthlyProductsSalesVo,
   StaffVO,
   UpdatePromotionInfoReq,
   CreatePromotionRes,
@@ -46,21 +41,22 @@ import {
   PromotionsManageReq,
   DiscountRecord,
   DiscountReq,
+  MonthlyReportRes,
+  MonthlyReportDetail,
+  MonthRangeReportsRes,
+  RevenueQueryRes,
+  RevenueData,
 } from '../shared/api.service';
 
 
 /* ── 側邊欄頁籤型別 ─────────────────────────────────── */
 export type DashTab =
-  | 'dashboard'
-  | 'orders'
   | 'products'
   | 'promotions'
-  | 'inventory'
   | 'users'
   | 'tax'
   | 'finance'
   | 'branches'
-  | 'discount'
   | 'member';
 
 /* ── 帳號管理子頁籤型別 ─────────────────────────────── */
@@ -72,11 +68,8 @@ interface DashProduct {
   name: string;
   category: string;
   style: string;
-  price: number;
-  stock: number;
+  description?: string;
   isActive: boolean;
-  emoji: string;
-  emojiBg: string;
   foodImgBase64: string;
 }
 
@@ -95,23 +88,7 @@ interface DashPromo {
   description?: string;
   image?: string;
   badgeColor?: string;
-  minAmount?: number;
   gifts?: GiftDetailVo[];
-}
-
-/* ── 庫存型別 ──────────────────────────────────────── */
-interface DashInventory {
-  id: number;
-  productId: number;
-  globalAreaId: number;
-  name: string;
-  branch: string;
-  stock: number;
-  safeStock: number;
-  basePrice: number;
-  costPrice: number;
-  maxOrderQuantity: number;
-  active: boolean;
 }
 
 /* ── 帳號型別 ──────────────────────────────────────── */
@@ -131,12 +108,11 @@ interface DashAccount {
 /* ── 分店型別（對應 global_area 資料表）───────────── */
 interface DashBranch {
   id: number;
-  name: string; /* 完整分店名稱，例：台灣台北店 (= branch) */
-  city: string; /* 城市，例：台北 */
-  country: string; /* 國家，例：台灣（顯示用） */
-  regionsId: number; /* 對應 Regions 表 id（API 用） */
-  address: string; /* 地址 */
-  phone: string; /* 電話 */
+  name: string;      /* 分店名稱，對應 global_area.branch */
+  country: string;   /* 國家，透過 regionsId 對應 regions / taxes */
+  regionsId: number; /* 對應 global_area.regions_id */
+  address: string;   /* 對應 global_area.address */
+  phone: string;     /* 對應 global_area.phone */
 }
 
 /* ── 稅率型別 ──────────────────────────────────────── */
@@ -154,17 +130,21 @@ interface DashTax {
   editDiscountLimit: number;
 }
 
-/* ── 訂單型別 ──────────────────────────────────────── */
-interface DashOrder {
-  id: string;
-  branch: string;
-  branchClass: string;
-  summary: string;
-  amount: string;
-  payMethod: string;
-  time: string;
-  statusClass: string;
-  statusLabel: string;
+type FinanceMode = 'month' | 'monthRange' | 'dateRange';
+
+interface FinanceDisplayRow {
+  branchName: string;
+  regionsName: string;
+  currentAmount: number;
+  lastAmount?: number;
+  currentCost: number;
+  growth?: number;
+}
+
+interface FinanceChartRow {
+  label: string;
+  revenue: number;
+  cost: number;
 }
 
 @Component({
@@ -183,89 +163,16 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 頁籤標題 ──────────────────────────────────── */
   readonly TAB_TITLES: Record<DashTab, string> = {
-    dashboard: '📊 綜合總覽',
-    orders: '📋 我的訂單',
     products: '🛍️ 商品管理',
     promotions: '🎯 活動管理',
-    inventory: '📦 庫存管理',
     users: '👥 帳號管理',
     tax: '🌍 國家基本設定',
     finance: '💰 財務報表',
     branches: '🏪 分店管理',
-    discount: '🏷️ 折抵管理',
     member: '🎁 會員設定',
   };
-
   /* ── 商品清單（Signal） ─────────────────────────── */
-  products = signal<DashProduct[]>([
-    // {
-    //   id: 1,
-    //   name: '紅燒牛肉麵',
-    //   category: '台式',
-    //   price: 165,
-    //   stock: 48,
-    //   isActive: true,
-    //   emoji: '🍜',
-    //   emojiBg: 'linear-gradient(135deg,#c49756,#8b5e3c)',
-    //   foodImgBase64: '',
-    // },
-    // {
-    //   id: 2,
-    //   name: '印度奶油咖哩飯',
-    //   category: '南洋',
-    //   price: 175,
-    //   stock: 32,
-    //   isActive: true,
-    //   emoji: '🍛',
-    //   emojiBg: 'linear-gradient(135deg,#f59e0b,#d97706)',
-    //   foodImgBase64: '',
-    // },
-    // {
-    //   id: 3,
-    //   name: '越南牛肉河粉',
-    //   category: '南洋',
-    //   price: 155,
-    //   stock: 5,
-    //   isActive: true,
-    //   emoji: '🍲',
-    //   emojiBg: 'linear-gradient(135deg,#3ecf8e,#10b981)',
-    //   foodImgBase64: '',
-    // },
-    // {
-    //   id: 4,
-    //   name: '義式肉醬寬麵',
-    //   category: '西式',
-    //   price: 185,
-    //   stock: 0,
-    //   isActive: false,
-    //   emoji: '🍝',
-    //   emojiBg: 'linear-gradient(135deg,#818cf8,#6366f1)',
-    //   foodImgBase64: '',
-    // },
-    // {
-    //   id: 5,
-    //   name: '墨西哥辣雞捲',
-    //   category: '西式',
-    //   price: 145,
-    //   stock: 18,
-    //   isActive: true,
-    //   emoji: '🌮',
-    //   emojiBg: 'linear-gradient(135deg,#f87171,#ef4444)',
-    //   foodImgBase64: '',
-    // },
-    // {
-    //   id: 6,
-    //   name: '珍珠奶茶',
-    //   category: '飲品',
-    //   price: 65,
-    //   stock: 120,
-    //   isActive: true,
-    //   emoji: '🧋',
-    //   emojiBg: 'linear-gradient(135deg,#06b6d4,#0891b2)',
-    //   foodImgBase64: '',
-    // },
-  ]);
-
+  products = signal<DashProduct[]>([]);
   trashProducts = signal<DashProduct[]>([]);
   showTrash = signal(false);
 
@@ -288,45 +195,182 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     () => this.promos().filter((p) => p.type === 'announcement').length,
   );
 
-  /* ── 庫存清單（Signal） ─────────────────────────── */
-  inventory = signal<DashInventory[]>([
-  
-  ]);
-
-  /* 庫存調整狀態 */
-  adjustingInventoryId = signal<number | null>(null);
-  adjustInventoryAmt = signal<number>(0);
-  adjustInventorySavedId = signal<number | null>(null);
-
   /* ── 折抵清單（Signal） ─────────────────────────── */
   discounts = signal<DiscountRecord[]>([]);
   discountLoading = signal(false);
   editingDiscountId = signal<number | null>(null);
   editDiscountCap = signal(0);
   editDiscountCount = signal(0);
-  discountDraft: DiscountReq = { regionsId: 0, usageCap: 0, count: 0 };
 
   /* ── 會員設定：合併 taxes + discounts ───────────── */
+  /** 會員設定列表：以 discount 資料表為主，只顯示已建立優惠設定的國家 */
   memberData = computed(() =>
-    this.taxes().map((tax) => {
-      const disc = this.discounts().find((d) => d.regionsId === tax.id);
-      return { tax, disc };
-    }),
+    this.discounts()
+      .map((disc) => {
+        const tax = this.taxes().find((t) => t.id === disc.regionsId);
+        if (!tax) return null;
+
+        return { tax, disc };
+      })
+      .filter((row): row is { tax: DashTax; disc: DiscountRecord } => row !== null),
   );
   editingMemberRegionId = signal<number | null>(null);
   editMemberLimit = signal(0);
   editMemberCap = signal(0);
 
+  /** 新增會員設定下拉：只顯示尚未建立 discount 記錄的國家 */
+  availableMemberLimitCountries = computed(() => {
+    const existingRegionIds = new Set(
+      this.discounts()
+        .map((d) => d.regionsId)
+        .filter((id): id is number => typeof id === 'number' && id > 0),
+    );
+
+    return this.taxes().filter((tax) => !existingRegionIds.has(tax.id));
+  });
+
   /* ── 帳號清單（Signal） ─────────────────────────── */
   accounts = signal<DashAccount[]>([
-  
+
   ]);
 
-  bmAccounts = computed(() => this.accounts().filter((a) => a.role === 'bm'));
-  maAccounts = computed(() => this.accounts().filter((a) => a.role === 'ma'));
-  staffAccounts = computed(() =>
-    this.accounts().filter((a) => a.role === 'staff'),
+  /* ── 帳號管理：角色分頁、分店篩選與排序 ─────────────── */
+
+  /** 國家排序權重：常用市場優先，其餘國家再依名稱排序 */
+  private getCountrySortWeight(country?: string): number {
+    const order = ['台灣', '日本', '韓國', '泰國', '新加坡'];
+    const index = order.indexOf(country || '');
+    return index === -1 ? 999 : index;
+  }
+
+  /** 共用國家排序：確保下拉選單、帳號表格、缺職位提醒順序一致 */
+  private compareCountry(aCountry?: string, bCountry?: string): number {
+    const weightA = this.getCountrySortWeight(aCountry);
+    const weightB = this.getCountrySortWeight(bCountry);
+
+    if (weightA !== weightB) return weightA - weightB;
+
+    return (aCountry || '').localeCompare(bCountry || '', 'zh-Hant');
+  }
+
+  /** 共用分店排序：國家 → 分店名稱 */
+  private compareBranches(a: DashBranch, b: DashBranch): number {
+    const countryCompare = this.compareCountry(a.country, b.country);
+    if (countryCompare !== 0) return countryCompare;
+
+    return (a.name || '').localeCompare(b.name || '', 'zh-Hant');
+  }
+
+  /** 帳號列表頁目前選擇的分店；空字串代表全部分店 */
+  accountBranchFilter = signal<string>('');
+
+  /** 依角色分出三個子頁籤資料：分店長 */
+  bmAccounts = computed(() =>
+    this.accounts()
+      .filter((a) => a.role === 'bm')
+      .sort((a, b) => this.sortAccountsByCountryBranch(a, b)),
   );
+
+  /** 依角色分出三個子頁籤資料：副店長 */
+  maAccounts = computed(() =>
+    this.accounts()
+      .filter((a) => a.role === 'ma')
+      .sort((a, b) => this.sortAccountsByCountryBranch(a, b)),
+  );
+
+  /** 依角色分出三個子頁籤資料：員工 */
+  staffAccounts = computed(() =>
+    this.accounts()
+      .filter((a) => a.role === 'staff')
+      .sort((a, b) => this.sortAccountsByCountryBranch(a, b)),
+  );
+
+  /** 分店篩選條件：未選分店時顯示全部 */
+  private matchAccountBranch(acc: DashAccount): boolean {
+    const branch = this.accountBranchFilter();
+    return branch === '' || acc.branch === branch;
+  }
+
+  /** 分店長列表實際顯示資料 */
+  filteredBmAccounts = computed(() =>
+    this.bmAccounts()
+      .filter((a) => this.matchAccountBranch(a))
+      .sort((a, b) => this.sortAccountsByCountryBranch(a, b)),
+  );
+
+  /** 副店長列表實際顯示資料 */
+  filteredMaAccounts = computed(() =>
+    this.maAccounts()
+      .filter((a) => this.matchAccountBranch(a))
+      .sort((a, b) => this.sortAccountsByCountryBranch(a, b)),
+  );
+
+  /** 員工列表實際顯示資料 */
+  filteredStaffAccounts = computed(() =>
+    this.staffAccounts()
+      .filter((a) => this.matchAccountBranch(a))
+      .sort((a, b) => this.sortAccountsByCountryBranch(a, b)),
+  );
+
+  /** 分店下拉 / modal / 表格共用排序：國家 → 分店名稱 */
+  sortedBranches = computed(() =>
+    [...this.branches()].sort((a, b) => this.compareBranches(a, b)),
+  );
+
+  /** 分店管理表格顯示資料：沿用國家 / 分店名稱排序 */
+  branchRows = computed(() => this.sortedBranches());
+
+  /** 快速重置：回到全部分店 */
+  resetAccountBranchFilter(): void {
+    this.accountBranchFilter.set('');
+  }
+
+  /** 顯示角色中文 */
+  getRoleLabel(role: 'bm' | 'ma' | 'staff' = this.accountDraft.role): string {
+    if (role === 'bm') return '分店長';
+    if (role === 'ma') return '副店長';
+    return '員工';
+  }
+
+  /** 某分店是否已經有指定職位 */
+  private hasRoleInBranch(branchName: string, role: 'bm' | 'ma' | 'staff'): boolean {
+    return this.accounts().some((a) => a.branch === branchName && a.role === role);
+  }
+
+  /**
+   * 新增帳號 modal 使用：
+   * 依目前 accountDraft.role 找出「尚未有此職位」的分店，並依國家分組。
+   */
+  getMissingRoleBranchGroups(role: 'bm' | 'ma' | 'staff' = this.accountDraft.role): {
+    country: string;
+    branches: DashBranch[];
+  }[] {
+    const missingBranches = this.sortedBranches().filter(
+      (b) => !this.hasRoleInBranch(b.name, role),
+    );
+
+    const groups = new Map<string, DashBranch[]>();
+
+    missingBranches.forEach((b) => {
+      const country = b.country || '未分類國家';
+      const list = groups.get(country) ?? [];
+      list.push(b);
+      groups.set(country, list);
+    });
+
+    return Array.from(groups.entries()).map(([country, branches]) => ({
+      country,
+      branches,
+    }));
+  }
+
+  /** 指定職位總共有幾間分店尚未配置 */
+  getMissingRoleBranchCount(role: 'bm' | 'ma' | 'staff' = this.accountDraft.role): number {
+    return this.getMissingRoleBranchGroups(role).reduce(
+      (sum, group) => sum + group.branches.length,
+      0,
+    );
+  }
 
   private resolveAccountRole(
     account: string,
@@ -343,219 +387,561 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   }
 
   /* ── 帳號管理 computed ──────────────────────────── */
-  uniqueCountries = computed(() => [
-    ...new Set(
-      this.branches()
-        .map((b) => b.country)
-        .filter(Boolean),
-    ),
-  ]);
+  uniqueCountries = computed(() =>
+    [
+      ...new Set(
+        this.branches()
+          .map((b) => b.country)
+          .filter(Boolean),
+      ),
+    ].sort((a, b) => this.compareCountry(a, b)),
+  );
 
   accountModalCountry = signal('');
 
   filteredAccountBranches = computed(() => {
     const c = this.accountModalCountry();
-    if (!c) return this.branches();
-    return this.branches().filter((b) => b.country === c);
+
+    return this.sortedBranches().filter((b) => {
+      if (!c) return true;
+      return b.country === c;
+    });
   });
 
-  /* ── 財務報表 computed ──────────────────────────── */
+  /* ── 財務報表：重建版狀態 ─────────────────────────── */
+
+
+  financeMode = signal<FinanceMode>('month');
+  financeCountry = signal<string>('全部');
+  financeBranchName = signal<string>('');
+
+  financeMonth = signal<string>('2026-05');
+  financeStartMonth = signal<string>('2025-12');
+  financeEndMonth = signal<string>('2026-05');
+
+  financeStartDate = signal<string>('2026-05-01');
+  financeEndDate = signal<string>('2026-05-31');
+
+  financeLoading = signal(false);
+  financeError = signal<string>('');
+
+  showFinanceTwdConversion = signal(false);
+
+  readonly FINANCE_CONVERTIBLE_CURRENCIES = ['JPY', 'KRW'];
+
+  financeMonthlyResult = signal<MonthlyReportRes | null>(null);
+  financeMonthRangeResult = signal<MonthRangeReportsRes | null>(null);
+  financeRevenueResult = signal<RevenueQueryRes | null>(null);
+
+  /** 財報國家下拉：從國家設定 taxes() 取得 */
   financeCountries = computed(() => this.taxes().map((t) => t.country));
 
-  filteredFinanceBranches = computed(() => {
+  /** 財報分店下拉：國家選全部時顯示全部，選特定國家時只顯示該國分店 */
+  financeBranchOptions = computed(() => {
     const country = this.financeCountry();
-    if (country === '全部') return this.branches();
-    return this.branches().filter((b) => b.country === country);
+
+    if (country === '全部') {
+      return this.sortedBranches();
+    }
+
+    return this.sortedBranches().filter((b) => b.country === country);
   });
 
-  financeRegionsId = computed<number | null>(() => {
-    const country = this.financeCountry();
-    if (country === '全部') return null;
-    const tax = this.taxes().find((t) => t.country === country);
-    return tax?.id ?? null;
+  /** 目前選到的分店 */
+  selectedFinanceBranch = computed(() => {
+    const name = this.financeBranchName();
+    if (!name) return null;
+
+    return this.branches().find((b) => b.name === name) ?? null;
   });
 
-  financeCurrentData = computed(() => {
-    const report = this.financeMonthResult();
-    if (!report?.currentData) return [];
-    return this.filterFinanceData(report.currentData);
+  /** 實際查詢 / 顯示使用的國家：有選分店時，以分店國家為準 */
+  effectiveFinanceCountry = computed(() => {
+    const branch = this.selectedFinanceBranch();
+    if (branch) return branch.country;
+
+    return this.financeCountry();
   });
 
-  financeLastData = computed(() => {
-    const report = this.financeMonthResult();
-    if (!report?.lastData) return [];
-    return this.filterFinanceData(report.lastData);
+  /** 後端 getRevenueReports 只吃 regionsId，不吃 branchId */
+  financeRegionsId = computed<number | undefined>(() => {
+    const country = this.effectiveFinanceCountry();
+    if (country === '全部') return undefined;
+
+    return this.taxes().find((t) => t.country === country)?.id;
   });
 
-  financeLastDataMap = computed(() => {
-    const map = new Map<string, MonthlyReportDetail>();
-    this.financeLastData().forEach((d) => map.set(d.branchName, d));
-    return map;
+  /** 財報目前顯示幣別 */
+  financeCurrency = computed(() => {
+    const country = this.effectiveFinanceCountry();
+
+    if (country === '全部') return 'TWD';
+
+    return this.taxes().find((t) => t.country === country)?.currency || '';
   });
 
-  // 「各分店」表格只用國家過濾（不限分店），才能顯示全部分店的比較
-  private financeCurrentDataByCountry = computed(() => {
-    const report = this.financeMonthResult();
-    if (!report?.currentData) return [];
-    return this.filterByCountryOnly(report.currentData);
-  });
-  private financeLastDataByCountry = computed(() => {
-    const report = this.financeMonthResult();
-    if (!report?.lastData) return [];
-    return this.filterByCountryOnly(report.lastData);
-  });
-  private financeLastDataByCountryMap = computed(() => {
-    const map = new Map<string, MonthlyReportDetail>();
-    this.financeLastDataByCountry().forEach((d) => map.set(d.branchName, d));
-    return map;
+  canConvertFinanceToTwd = computed(() => {
+    const country = this.effectiveFinanceCountry();
+
+    if (country === '全部') return false;
+
+    return this.FINANCE_CONVERTIBLE_CURRENCIES.includes(this.financeCurrency());
   });
 
-  // 表格顯示資料：優先本月（國家層），沒有則保底上月
-  financeDisplayCurrentData = computed(() => {
-    const current = this.financeCurrentDataByCountry();
-    if (current.length > 0) return current;
-    return this.financeLastDataByCountry();
+  financeDisplayCurrency = computed(() => {
+    if (this.showFinanceTwdConversion() && this.canConvertFinanceToTwd()) {
+      return 'TWD';
+    }
+
+    return this.financeCurrency();
   });
 
-  // 表格「上月」欄：本月有資料時用上月國家層，否則無上月資料
-  financeDisplayLastDataMap = computed(() =>
-    this.financeCurrentDataByCountry().length > 0
-      ? this.financeLastDataByCountryMap()
-      : new Map<string, MonthlyReportDetail>(),
-  );
+  /** 選國家時，若目前分店不屬於該國，清掉分店 */
+  onFinanceCountryChange(country: string): void {
+    this.financeCountry.set(country);
+    this.showFinanceTwdConversion.set(false);
 
-  financeUsingLastFallback = computed(
-    () =>
-      this.financeCurrentDataByCountry().length === 0 &&
-      this.financeLastDataByCountry().length > 0,
-  );
+    const branch = this.selectedFinanceBranch();
+    if (country !== '全部' && branch && branch.country !== country) {
+      this.financeBranchName.set('');
+    }
 
-  financeCurrentTotal = computed(() => {
-    const isAll = this.financeCountry() === '全部';
-    return this.financeCurrentData().reduce(
-      (s, d) =>
-        s +
-        (isAll
-          ? this.convertToTwd(Number(d.totalAmount), d.regionsName)
-          : Number(d.totalAmount)),
-      0,
-    );
-  });
+    this.clearFinanceResults();
+  }
 
-  financeLastTotal = computed(() => {
-    const isAll = this.financeCountry() === '全部';
-    return this.financeLastData().reduce(
-      (s, d) =>
-        s +
-        (isAll
-          ? this.convertToTwd(Number(d.totalAmount), d.regionsName)
-          : Number(d.totalAmount)),
-      0,
-    );
-  });
+  /** 選分店時，自動帶入分店所屬國家 */
+  onFinanceBranchChange(branchName: string): void {
+    this.financeBranchName.set(branchName);
+    this.showFinanceTwdConversion.set(false);
 
-  financeCurrentCostTotal = computed(() => {
-    const isAll = this.financeCountry() === '全部';
-    return this.financeCurrentData().reduce(
-      (s, d) =>
-        s +
-        (isAll
-          ? this.convertToTwd(Number(d.totalCost ?? 0), d.regionsName)
-          : Number(d.totalCost ?? 0)),
-      0,
-    );
-  });
+    const branch = this.branches().find((b) => b.name === branchName);
+    if (branch) {
+      this.financeCountry.set(branch.country);
+    }
 
-  financeLastCostTotal = computed(() => {
-    const isAll = this.financeCountry() === '全部';
-    return this.financeLastData().reduce(
-      (s, d) =>
-        s +
-        (isAll
-          ? this.convertToTwd(Number(d.totalCost ?? 0), d.regionsName)
-          : Number(d.totalCost ?? 0)),
-      0,
-    );
-  });
+    this.clearFinanceResults();
+  }
 
-  financeGrowth = computed(() => {
-    const last = this.financeLastTotal();
-    if (last === 0) return 0;
-    return ((this.financeCurrentTotal() - last) / last) * 100;
-  });
+  /** 切換報表類型時清掉舊結果，避免資料混在一起 */
+  onFinanceModeChange(mode: FinanceMode): void {
+    this.financeMode.set(mode);
+    this.showFinanceTwdConversion.set(false);
+    this.clearFinanceResults();
+  }
 
-  financeRangeData = computed(
-    () => this.financeRangeResult()?.revenueData ?? [],
-  );
+  private clearFinanceResults(): void {
+    this.financeError.set('');
+    this.financeMonthlyResult.set(null);
+    this.financeMonthRangeResult.set(null);
+    this.financeRevenueResult.set(null);
+  }
 
-  financeRangeTotal = computed(() => {
-    const isAll = this.financeCountry() === '全部';
-    return this.financeRangeData().reduce(
-      (s, d) =>
-        s +
-        (isAll
-          ? this.convertToTwd(Number(d.totalAmount), d.regionsName)
-          : Number(d.totalAmount)),
-      0,
-    );
-  });
+  resetFinanceFilters(): void {
+    this.financeMode.set('month');
+    this.financeCountry.set('全部');
+    this.financeBranchName.set('');
+    this.financeMonth.set('2026-05');
+    this.financeStartMonth.set('2025-12');
+    this.financeEndMonth.set('2026-05');
+    this.financeStartDate.set('2026-05-01');
+    this.financeEndDate.set('2026-05-31');
+    this.showFinanceTwdConversion.set(false);
+    this.clearFinanceResults();
+  }
 
-  /* ── 財務報表：台幣匯率換算 ─────────────────────── */
-  showTwdConversion = signal(false);
+  queryFinanceReport(): void {
+    this.financeError.set('');
 
-  financeRateToTwd = computed<number>(() => {
-    const currency = this.getFinanceCurrencyLabel();
+    if (this.financeMode() === 'month') {
+      this.queryFinanceMonthly();
+      return;
+    }
+
+    if (this.financeMode() === 'monthRange') {
+      this.queryFinanceMonthRange();
+      return;
+    }
+
+    this.queryFinanceDateRange();
+  }
+
+  private queryFinanceMonthly(): void {
+    const reportDate = this.financeMonth();
+
+    if (!reportDate) {
+      this.showToast('⚠️ 請選擇查詢月份');
+      return;
+    }
+
+    this.financeLoading.set(true);
+    this.clearFinanceResults();
+
+    this.apiService.getMonthlyReport({ reportDate }).subscribe({
+      next: (res) => {
+        this.financeLoading.set(false);
+
+        if (res?.code !== 200) {
+          this.financeError.set(res?.message || '查無月報表資料');
+          return;
+        }
+
+        this.financeMonthlyResult.set(res);
+      },
+      error: () => {
+        this.financeLoading.set(false);
+        this.financeError.set('月報表載入失敗，請確認後端連線');
+      },
+    });
+  }
+
+  private queryFinanceMonthRange(): void {
+    const startMonth = this.financeStartMonth();
+    const endMonth = this.financeEndMonth();
+
+    if (!startMonth || !endMonth) {
+      this.showToast('⚠️ 請選擇月份區間');
+      return;
+    }
+
+    if (startMonth > endMonth) {
+      this.showToast('⚠️ 開始月份不能晚於結束月份');
+      return;
+    }
+
+    this.financeLoading.set(true);
+    this.clearFinanceResults();
+
+    this.apiService
+      .getMonthlyReportByRange({
+        startMonth,
+        endMonth,
+      })
+      .subscribe({
+        next: (res) => {
+          this.financeLoading.set(false);
+
+          if (res?.code !== 200) {
+            this.financeError.set(res?.message || '查無月份區間報表資料');
+            return;
+          }
+
+          this.financeMonthRangeResult.set(res);
+        },
+        error: () => {
+          this.financeLoading.set(false);
+          this.financeError.set('月份區間報表載入失敗，請確認後端連線');
+        },
+      });
+  }
+
+  private queryFinanceDateRange(): void {
+    const startDate = this.financeStartDate();
+    const endDate = this.financeEndDate();
+
+    if (!startDate || !endDate) {
+      this.showToast('⚠️ 請選擇日期區間');
+      return;
+    }
+
+    if (startDate > endDate) {
+      this.showToast('⚠️ 開始日期不能晚於結束日期');
+      return;
+    }
+
+    this.financeLoading.set(true);
+    this.clearFinanceResults();
+
+    this.apiService
+      .getRevenueReports({
+        startDate,
+        endDate,
+        regionsId: this.financeRegionsId(),
+      })
+      .subscribe({
+        next: (res) => {
+          this.financeLoading.set(false);
+
+          if (res?.code !== 200) {
+            this.financeError.set(res?.message || '查無日期區間報表資料');
+            return;
+          }
+
+          this.financeRevenueResult.set(res);
+        },
+        error: () => {
+          this.financeLoading.set(false);
+          this.financeError.set('日期區間報表載入失敗，請確認後端連線');
+        },
+      });
+  }
+
+  private matchFinanceRow(row: { branchName: string; regionsName: string }): boolean {
+    const country = this.effectiveFinanceCountry();
+    const branchName = this.financeBranchName();
+
+    if (country !== '全部' && row.regionsName !== country) {
+      return false;
+    }
+
+    if (branchName && row.branchName !== branchName) {
+      return false;
+    }
+
+    return true;
+  }
+
+  financeCurrencyByCountry(country: string): string {
+    return this.taxes().find((t) => t.country === country)?.currency || 'TWD';
+  }
+
+  private getRateToTwdByCurrency(currency: string): number {
     if (!currency || currency === 'TWD') return 1;
-    // rateToTwd = X 外幣 / 1 TWD，取倒數得「1 外幣 = ? TWD」
+
     const rate = this.allRates().find((r) => r.currencyCode === currency)?.rateToTwd ?? 0;
+
+    // rateToTwd = 1 TWD 可換多少外幣，所以外幣轉 TWD 要除以 rate
     return rate > 0 ? 1 / rate : 0;
+  }
+
+  private getRateToTwdByCountry(country: string): number {
+    const currency = this.financeCurrencyByCountry(country);
+    return this.getRateToTwdByCurrency(currency);
+  }
+
+  private convertFinanceAmountIfNeeded(amount: number, country: string): number {
+    const value = Number(amount || 0);
+
+    if (!this.showFinanceTwdConversion() || !this.canConvertFinanceToTwd()) {
+      return value;
+    }
+
+    const rate = this.getRateToTwdByCountry(country);
+    return rate > 0 ? value * rate : value;
+  }
+
+  toggleFinanceTwdConversion(): void {
+    if (!this.canConvertFinanceToTwd()) return;
+
+    this.showFinanceTwdConversion.update((v) => !v);
+  }
+
+  /**
+   * 財報金額顯示：
+   * - 選「全部」時，不做跨幣別加總，不轉換。
+   * - 選日本 / 韓國且開啟台幣換算時，才轉為 TWD。
+   * - 其他情況保留原幣別。
+   */
+  private normalizeFinanceAmount(amount: number, country: string): number {
+    return this.convertFinanceAmountIfNeeded(amount, country);
+  }
+
+  private calcGrowth(current: number, last: number): number {
+    if (!last) return 0;
+    return ((current - last) / last) * 100;
+  }
+
+  financeDisplayRows = computed<FinanceDisplayRow[]>(() => {
+    const mode = this.financeMode();
+
+    if (mode === 'month') {
+      const result = this.financeMonthlyResult();
+      if (!result) return [];
+
+      const currentRows = (result.currentData ?? []).filter((r) =>
+        this.matchFinanceRow(r),
+      );
+
+      const lastRows = (result.lastData ?? []).filter((r) =>
+        this.matchFinanceRow(r),
+      );
+
+      const lastMap = new Map(lastRows.map((r) => [r.branchName, r]));
+
+      return currentRows.map((row) => {
+        const last = lastMap.get(row.branchName);
+        const currentAmount = this.normalizeFinanceAmount(row.totalAmount, row.regionsName);
+        const lastAmount = last
+          ? this.normalizeFinanceAmount(last.totalAmount, last.regionsName)
+          : 0;
+        const currentCost = this.normalizeFinanceAmount(row.totalCost, row.regionsName);
+
+        return {
+          branchName: row.branchName,
+          regionsName: row.regionsName,
+          currentAmount,
+          lastAmount,
+          currentCost,
+          growth: this.calcGrowth(currentAmount, lastAmount),
+        };
+      });
+    }
+
+    if (mode === 'monthRange') {
+      const result = this.financeMonthRangeResult();
+      if (!result) return [];
+
+      const map = new Map<string, FinanceDisplayRow>();
+
+      (result.reportList ?? [])
+        .filter((r) => this.matchFinanceRow(r))
+        .forEach((row) => {
+          const key = `${row.regionsName}-${row.branchName}`;
+          const prev = map.get(key) ?? {
+            branchName: row.branchName,
+            regionsName: row.regionsName,
+            currentAmount: 0,
+            currentCost: 0,
+          };
+
+          map.set(key, {
+            ...prev,
+            currentAmount:
+              prev.currentAmount +
+              this.normalizeFinanceAmount(row.totalAmount, row.regionsName),
+            currentCost:
+              prev.currentCost +
+              this.normalizeFinanceAmount(row.totalCost, row.regionsName),
+          });
+        });
+
+      return Array.from(map.values());
+    }
+
+    const result = this.financeRevenueResult();
+    if (!result) return [];
+
+    return (result.revenueData ?? [])
+      .filter((r) => this.matchFinanceRow(r))
+      .map((row) => ({
+        branchName: row.branchName,
+        regionsName: row.regionsName,
+        currentAmount: this.normalizeFinanceAmount(row.totalAmount, row.regionsName),
+        currentCost: this.normalizeFinanceAmount(row.totalCost, row.regionsName),
+      }));
   });
 
-  // 從長條圖取最新 / 前一個 bar（與圖表顯示的資料一致）
-  private financeChartLastBar = computed(() => {
-    const d = this.financeChartData();
-    return d.length ? d[d.length - 1] : null;
-  });
-  private financeChartPrevBar = computed(() => {
-    const d = this.financeChartData();
-    return d.length >= 2 ? d[d.length - 2] : null;
-  });
-
-  // 台幣換算用數值：優先用 filterFinanceData 合計，為 0 時保底用長條圖
-  financeRevenueForTwd = computed(() => {
-    const v = this.financeCurrentTotal();
-    return v > 0 ? v : (this.financeChartLastBar()?.revenue ?? 0);
-  });
-  financePrevRevenueForTwd = computed(() => {
-    const v = this.financeLastTotal();
-    if (v > 0) return v;
-    // 沒有上月 filtered 資料時，取長條圖倒數第二 bar（若只有一 bar 則取最後一 bar）
-    return this.financeChartPrevBar()?.revenue ?? this.financeChartLastBar()?.revenue ?? 0;
-  });
-  financeCostForTwd = computed(() => {
-    const v = this.financeCurrentCostTotal();
-    return v > 0 ? v : (this.financeChartLastBar()?.cost ?? 0);
-  });
-
-  financeCurrentTotalTwd = computed(() =>
-    Math.round(this.financeRevenueForTwd() * this.financeRateToTwd()),
+  financeTotalAmount = computed(() =>
+    this.financeDisplayRows().reduce((sum, row) => sum + row.currentAmount, 0),
   );
 
-  financeLastTotalTwd = computed(() =>
-    Math.round(this.financePrevRevenueForTwd() * this.financeRateToTwd()),
+  financeLastTotalAmount = computed(() =>
+    this.financeDisplayRows().reduce((sum, row) => sum + (row.lastAmount ?? 0), 0),
   );
 
-  financeCurrentCostTotalTwd = computed(() =>
-    Math.round(this.financeCostForTwd() * this.financeRateToTwd()),
+  financeTotalCost = computed(() =>
+    this.financeDisplayRows().reduce((sum, row) => sum + row.currentCost, 0),
   );
+
+  financeCostRatio = computed(() => {
+    const total = this.financeTotalAmount();
+    if (!total) return 0;
+    return (this.financeTotalCost() / total) * 100;
+  });
+
+  financeGrowth = computed(() =>
+    this.calcGrowth(this.financeTotalAmount(), this.financeLastTotalAmount()),
+  );
+
+  financeChartRows = computed<FinanceChartRow[]>(() => {
+    if (this.financeMode() === 'month') {
+      const result = this.financeMonthlyResult();
+      if (!result) return [];
+
+      const rows = [
+        ...(result.lastData ?? []),
+        ...(result.currentData ?? []),
+      ].filter((r) => this.matchFinanceRow(r));
+
+      const map = new Map<string, FinanceChartRow>();
+
+      rows.forEach((row) => {
+        const prev = map.get(row.reportDate) ?? {
+          label: row.reportDate,
+          revenue: 0,
+          cost: 0,
+        };
+
+        map.set(row.reportDate, {
+          label: row.reportDate,
+          revenue:
+            prev.revenue +
+            this.normalizeFinanceAmount(row.totalAmount, row.regionsName),
+          cost:
+            prev.cost +
+            this.normalizeFinanceAmount(row.totalCost, row.regionsName),
+        });
+      });
+
+      return Array.from(map.values()).sort((a, b) =>
+        a.label.localeCompare(b.label),
+      );
+    }
+
+    if (this.financeMode() === 'monthRange') {
+      const result = this.financeMonthRangeResult();
+      if (!result) return [];
+
+      const map = new Map<string, FinanceChartRow>();
+
+      (result.reportList ?? [])
+        .filter((r) => this.matchFinanceRow(r))
+        .forEach((row) => {
+          const prev = map.get(row.reportDate) ?? {
+            label: row.reportDate,
+            revenue: 0,
+            cost: 0,
+          };
+
+          map.set(row.reportDate, {
+            label: row.reportDate,
+            revenue:
+              prev.revenue +
+              this.normalizeFinanceAmount(row.totalAmount, row.regionsName),
+            cost:
+              prev.cost +
+              this.normalizeFinanceAmount(row.totalCost, row.regionsName),
+          });
+        });
+
+      return Array.from(map.values()).sort((a, b) =>
+        a.label.localeCompare(b.label),
+      );
+    }
+
+    return this.financeDisplayRows().map((row) => ({
+      label: row.branchName,
+      revenue: row.currentAmount,
+      cost: row.currentCost,
+    }));
+  });
+
+  financeChartMax = computed(() => {
+    const rows = this.financeChartRows();
+    if (!rows.length) return 1;
+
+    return Math.max(...rows.map((r) => Math.max(r.revenue, r.cost)), 1);
+  });
+
+  shouldShowFinanceSummary = computed(() => {
+    return this.hasFinanceResult() && !this.isFinanceAllCountryMode();
+  });
+
+  hasFinanceResult = computed(() => {
+    return (
+      this.financeMonthlyResult() !== null ||
+      this.financeMonthRangeResult() !== null ||
+      this.financeRevenueResult() !== null
+    );
+  });
+
+  isFinanceAllCountryMode = computed(() => {
+    return this.effectiveFinanceCountry() === '全部';
+  });
 
   /* ── 稅率清單（Signal） ─────────────────────────── */
   taxes = signal<DashTax[]>([
 
   ]);
-
-  /* ── 國家設定子頁籤 ──────────────────────────────── */
-  showRates = signal(false);
 
   /* ── 匯率查詢 ────────────────────────────────────── */
   allRates = signal<ExchangeRateVO[]>([]);
@@ -571,97 +957,50 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   });
 
   /* ── 商品篩選 ─────────────────────────────────── */
+  /** 料理風格篩選 */
+  productStyleFilter = signal<string>('');
+
+  /** 餐點分類篩選 */
   productCategoryFilter = signal<string>('');
+
+  /** 商品名稱搜尋 */
   productSearch = signal<string>('');
 
+  /** 商品篩選結果：料理風格 + 餐點分類 + 名稱搜尋 */
   filteredProducts = computed(() => {
-    const styleKey = this.productCategoryFilter();
-    const q = this.productSearch().toLowerCase();
+    const styleKey = this.productStyleFilter();
+    const categoryKey = this.productCategoryFilter();
+    const q = this.productSearch().trim().toLowerCase();
+
     return this.products().filter((p) => {
       const styleOk = styleKey === '' || p.style === styleKey;
+      const categoryOk = categoryKey === '' || p.category === categoryKey;
       const qOk = q === '' || p.name.toLowerCase().includes(q);
-      return styleOk && qOk;
+
+      return styleOk && categoryOk && qOk;
     });
   });
+
+  /** 是否正在套用商品篩選 */
+  hasProductFilter = computed(
+    () =>
+      !!this.productStyleFilter() ||
+      !!this.productCategoryFilter() ||
+      !!this.productSearch().trim(),
+  );
+
+  /** 重置商品篩選條件 */
+  resetProductFilters(): void {
+    this.productStyleFilter.set('');
+    this.productCategoryFilter.set('');
+    this.productSearch.set('');
+  }
 
   /* ── Toast 通知 ─────────────────────────────────── */
   toastMsg = signal<string>('');
   toastLeaving = signal<boolean>(false); /* true 時觸發 CSS 淡出動畫 */
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
   private toastLeaveTimer: ReturnType<typeof setTimeout> | null = null;
-
-  /* ── CSV 匯出中狀態 ──────────────────────────────── */
-  isExporting = signal<boolean>(false);
-
-  /* ── 財務頁籤：數字計數動畫目前值 ─────────────────── */
-  financeRevenue = signal<number>(0);
-  financeOrders = signal<number>(0);
-  financeAvgPrice = signal<number>(0);
-
-  /* ── 財務報表查詢狀態 ────────────────────────────── */
-  financeCountry = signal<string>('全部');
-  financeBranchId = signal<number | null>(null);
-  financeMode = signal<'month' | 'range'>('month');
-  financeMonth = signal<string>(
-    (() => {
-      const now = new Date();
-      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    })(),
-  );
-  financeStart = signal<string>('');
-  financeEnd = signal<string>('');
-  financeLoading = signal<boolean>(false);
-  financeMonthResult = signal<MonthlyReportRes | null>(null);
-  financeRangeResult = signal<RevenueQueryRes | null>(null);
-  financeTopProducts = signal<MonthlyProductsSalesVo[]>([]);
-  financeChartData = signal<{ month: string; revenue: number; cost: number }[]>([]);
-  chartAnimKey = signal(0);
-  animatedChartData = computed(() => {
-    const k = this.chartAnimKey();
-    return this.financeChartData().map((d) => ({ ...d, _k: k }));
-  });
-
-  financeChartMax = computed(() => {
-    const data = this.financeChartData();
-    if (!data.length) return 1;
-    return Math.max(...data.map((d) => Math.max(d.revenue, d.cost)), 1);
-  });
-
-  get currentYearMonth(): string {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  }
-
-  /* ── 財務數字動畫當前顯示值 ─────────────────────── */
-  animatedCurrentTotal = signal<number>(0);
-  animatedLastTotal = signal<number>(0);
-  animatedBranchCount = signal<number>(0);
-  private animTimer1: ReturnType<typeof setInterval> | null = null;
-  private animTimer2: ReturnType<typeof setInterval> | null = null;
-  private animTimer3: ReturnType<typeof setInterval> | null = null;
-
-  private animateValue(
-    targetSignal: ReturnType<typeof signal<number>>,
-    target: number,
-    timerRef: 'animTimer1' | 'animTimer2' | 'animTimer3',
-    duration = 1800,
-  ): void {
-    if (this[timerRef]) clearInterval(this[timerRef]!);
-    const fps = 60;
-    const steps = Math.round(duration / (1000 / fps));
-    let step = 0;
-    targetSignal.set(0);
-    this[timerRef] = setInterval(() => {
-      step++;
-      const eased = 1 - Math.pow(1 - step / steps, 3);
-      targetSignal.set(Math.round(target * eased));
-      if (step >= steps) {
-        clearInterval(this[timerRef]!);
-        this[timerRef] = null;
-        targetSignal.set(target);
-      }
-    }, 1000 / fps);
-  }
 
   /* ── 批次刪除模式 ───────────────────────────────── */
   bulkDeleteMode = signal(false);
@@ -842,12 +1181,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
           list.map((p) =>
             p.id === id
               ? {
-                  ...p,
-                  description: saved.description,
-                  image: saved.image.startsWith('data:')
-                    ? `${this.apiService.getPromotionImageUrl(id)}?t=${Date.now()}`
-                    : saved.image,
-                }
+                ...p,
+                description: saved.description,
+                image: saved.image.startsWith('data:')
+                  ? `${this.apiService.getPromotionImageUrl(id)}?t=${Date.now()}`
+                  : saved.image,
+              }
               : p,
           ),
         );
@@ -857,12 +1196,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
           this.selectedPromo.update((s) =>
             s
               ? {
-                  ...s,
-                  description: saved.description,
-                  image: saved.image.startsWith('data:')
-                    ? `${this.apiService.getPromotionImageUrl(id)}?t=${Date.now()}`
-                    : saved.image,
-                }
+                ...s,
+                description: saved.description,
+                image: saved.image.startsWith('data:')
+                  ? `${this.apiService.getPromotionImageUrl(id)}?t=${Date.now()}`
+                  : saved.image,
+              }
               : null,
           );
         }
@@ -884,7 +1223,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── Modal 狀態 ─────────────────────────────────────── */
   activeModal = signal<
-    | 'orderDetail'
     | 'addProduct'
     | 'addPromo'
     | 'addGift'
@@ -892,31 +1230,81 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     | 'addCountry'
     | 'addBranch'
     | 'editBranch'
-    | 'addDiscount'
     | 'transferBranch'
     | 'addMemberLimit'
     | null
   >(null);
   transferTargetId = signal<number | null>(null);
   transferNewAreaId = signal<number | null>(null);
-  selectedOrder = signal<DashOrder | null>(null);
   editingAccountId = signal<number | null>(null);
   newStaffResult = signal<{ name: string; account: string } | null>(null);
   editingProductId = signal<number | null>(null);
   styleOptions = signal<string[]>([]);
   categoryOptions = signal<string[]>([]);
 
+  readonly PRODUCT_CUSTOM_VALUE = '__CUSTOM__';
+
+  private normalizeProductOptions(list: { name?: string }[] = []): string[] {
+    return [
+      ...new Set(
+        list
+          .map((x) => x.name?.trim())
+          .filter((name): name is string => !!name),
+      ),
+    ];
+  }
+
+  private ensureProductOptionExists(
+    target: 'style' | 'category',
+    value: string,
+  ): void {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+
+    if (target === 'style') {
+      if (!this.styleOptions().includes(trimmed)) {
+        this.styleOptions.update((list) => [...list, trimmed]);
+      }
+      return;
+    }
+
+    if (!this.categoryOptions().includes(trimmed)) {
+      this.categoryOptions.update((list) => [...list, trimmed]);
+    }
+  }
+
+  private getFinalProductStyle(): string {
+    return this.productDraft.style === this.PRODUCT_CUSTOM_VALUE
+      ? this.customProductStyle.trim()
+      : this.productDraft.style.trim();
+  }
+
+  private getFinalProductCategory(): string {
+    return this.productDraft.category === this.PRODUCT_CUSTOM_VALUE
+      ? this.customProductCategory.trim()
+      : this.productDraft.category.trim();
+  }
+
+  private refreshProductOptionLists(): void {
+    this.loadStyles();
+    this.loadCategories();
+  }
+
   /* ── 表單草稿（普通屬性，開啟 modal 時重置） ─────────── */
   productDraft = {
     name: '',
-    category: '台式',
-    style: '台式經典',
-    price: 165,
-    stock: 0,
-    emoji: '🍜',
+    category: '',
+    style: '',
     description: '',
     active: true,
   };
+
+  /** 商品 modal：自定義料理風格 */
+  customProductStyle = '';
+
+  /** 商品 modal：自定義餐點分類 */
+  customProductCategory = '';
+
   productImageFile: File | null = null;
   productImagePreview = signal<string>('');
   generatingAiDesc = signal(false);
@@ -957,15 +1345,15 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     isActive: boolean;
     country: string;
   } = {
-    name: '',
-    account: '',
-    password: '',
-    branch: '台灣台北店',
-    shift: '早班',
-    role: 'bm',
-    isActive: true,
-    country: '台灣',
-  };
+      name: '',
+      account: '',
+      password: '',
+      branch: '台灣台北店',
+      shift: '早班',
+      role: 'bm',
+      isActive: true,
+      country: '台灣',
+    };
   readonly COUNTRY_DATA: { name: string; code: string; currency: string }[] = [
     // 東亞
     { name: '台灣', code: 'TW', currency: 'TWD' },
@@ -1012,6 +1400,19 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     { name: '伊朗', code: 'IR', currency: 'IRR' },
   ];
 
+  /** 新增國家下拉選單：排除已存在於國家基本設定的國家 */
+  availableCountryOptions = computed(() => {
+    const existingCountries = new Set(
+      this.taxes()
+        .map((t) => t.country.trim())
+        .filter(Boolean),
+    );
+
+    return this.COUNTRY_DATA.filter(
+      (c) => !existingCountries.has(c.name.trim()),
+    );
+  });
+
   taxDraft: {
     country: string;
     countryCode: string;
@@ -1019,12 +1420,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     taxType: 'INCLUSIVE' | 'EXCLUSIVE';
     rate: number;
   } = {
-    country: '',
-    countryCode: '',
-    currency: '',
-    taxType: 'INCLUSIVE',
-    rate: 0,
-  };
+      country: '',
+      countryCode: '',
+      currency: '',
+      taxType: 'INCLUSIVE',
+      rate: 0,
+    };
 
   onCountrySelect(name: string): void {
     const found = this.COUNTRY_DATA.find((c) => c.name === name);
@@ -1034,12 +1435,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-
-
-  /** 根據 regionsId 查國家名稱，再從 CITY_DATA 取城市陣列；找不到回傳空陣列 */
-
-  branchDraft = { regionsId: 0, city: '', address: '', phone: '' };
-  editBranchDraft = { id: 0, regionsId: 0, city: '', address: '', phone: '' };
+  branchDraft = { regionsId: 0, branch: '', address: '', phone: '' };
+  editBranchDraft = { id: 0, regionsId: 0, branch: '', address: '', phone: '' };
 
   showToast(msg: string): void {
     /* 清除所有計時器，重置離場狀態 */
@@ -1058,54 +1455,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     }, 2300);
   }
 
-  /* 財務頁籤數字計數動畫（GSAP countTo 效果，純 JS 實作） */
-  runFinanceCounter(): void {
-    const duration = 900; /* 動畫時長 ms */
-    const fps = 60;
-    const steps = Math.round(duration / (1000 / fps));
-
-    const targets = [
-      { signal: this.financeRevenue, target: 1248000 },
-      { signal: this.financeOrders, target: 6284 },
-      { signal: this.financeAvgPrice, target: 198 },
-    ];
-
-    targets.forEach(({ signal, target }) => {
-      signal.set(0);
-      let step = 0;
-      const interval = setInterval(() => {
-        step++;
-        const progress = step / steps;
-        /* ease-out: 1 - (1 - t)^3 */
-        const eased = 1 - Math.pow(1 - progress, 3);
-        signal.set(Math.round(target * eased));
-        if (step >= steps) {
-          clearInterval(interval);
-          signal.set(target);
-        }
-      }, 1000 / fps);
-    });
-  }
-
-  /* ── 訂單篩選 ─────────────────────────────────── */
-  orderFilterBranch = signal<string>('all');
-  orderFilterStatus = signal<string>('all');
-
-  allOrders = signal<DashOrder[]>([
-
-  ]);
-
-  filteredOrders = computed(() => {
-    return this.allOrders().filter((o) => {
-      const bf = this.orderFilterBranch();
-      const sf = this.orderFilterStatus();
-      /* 以完整分店名稱包含簡稱來比對（例：'台灣台北店'.includes('台北')） */
-      const branchOk = bf === 'all' || bf.includes(o.branch);
-      const statusOk = sf === 'all' || o.statusLabel === sf;
-      return branchOk && statusOk;
-    });
-  });
-
   /* 計時器 ID */
   private clockInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -1113,7 +1462,7 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     private router: Router,
     public authService: AuthService,
     private apiService: ApiService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const user = this.authService.currentUser;
@@ -1129,17 +1478,14 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.loadStyles();
     this.loadCategories();
     this.loadProducts();
-    this.loadInventory();
     this.loadDiscounts();
+    this.loadAllRates();
   }
 
   ngOnDestroy(): void {
     if (this.clockInterval !== null) clearInterval(this.clockInterval);
     if (this.toastTimer !== null) clearTimeout(this.toastTimer);
     if (this.toastLeaveTimer !== null) clearTimeout(this.toastLeaveTimer);
-    if (this.animTimer1) clearInterval(this.animTimer1);
-    if (this.animTimer2) clearInterval(this.animTimer2);
-    if (this.animTimer3) clearInterval(this.animTimer3);
   }
 
   /* ── 國家 → 旗幟 Emoji 對照 ─────────────────────── */
@@ -1166,37 +1512,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   }
 
   /* ── 從後端重新載入分店清單 ──────────────────────── */
-  private readonly KNOWN_COUNTRIES = ['台灣', '日本', '韓國', '泰國', '新加坡'];
-  private readonly KNOWN_CITIES = [
-    '台北',
-    '台中',
-    '台南',
-    '高雄',
-    '東京',
-    '大阪',
-    '京都',
-    '名古屋',
-    '首爾',
-    '釜山',
-    '濟州',
-    '曼谷',
-    '清邁',
-    '普吉',
-    '新加坡',
-  ];
-
-  private extractCity(branch: string): string {
-    let s = branch;
-    for (const c of this.KNOWN_COUNTRIES) {
-      s = s.split(c).join(''); /* replaceAll 相容寫法 */
-    }
-    s = s.replace(/店$/, '').trim();
-    /* 若剩餘字串剛好是已知城市，直接用 */
-    if (this.KNOWN_CITIES.includes(s)) return s;
-    /* 嘗試在原始 branch 名稱中找到已知城市關鍵字 */
-    const found = this.KNOWN_CITIES.find((c) => branch.includes(c));
-    return found ?? s;
-  }
 
   private loadBranches(onComplete?: () => void): void {
     this.apiService.getAllBranches().subscribe({
@@ -1209,11 +1524,9 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
                 this.taxes().find((t) => t.id === (b.regionsId ?? 0))
                   ?.country ||
                 '';
-              const city = this.extractCity(b.branch ?? '');
               return {
                 id: b.id,
                 name: b.branch,
-                city,
                 country,
                 regionsId: b.regionsId ?? 0,
                 address: b.address,
@@ -1281,9 +1594,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         this.promos.set(
           (res?.data ?? []).map((p: PromotionDetailVo) => {
             const imageUrl = `${this.apiService.getPromotionImageUrl(p.id)}?v=${p.id}-${p.startTime}-${p.endTime}`;
-            const minAmount = p.gifts?.length
-              ? Math.min(...p.gifts.map((g: { fullAmount: number }) => +g.fullAmount))
-              : undefined;
             return {
               id: p.id,
               title: p.name + (p.gifts?.length ? `（${p.gifts.length} 項贈品）` : ''),
@@ -1298,7 +1608,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
               type: 'promotion' as const,
               description: p.description ?? '',
               image: imageUrl,
-              minAmount,
               gifts: p.gifts ?? [],
             };
           }),
@@ -1311,36 +1620,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   }
 
   /* ── 從後端載入商品清單 ──────────────────────────── */
-  private readonly EMOJI_MAP: Record<string, string> = {
-    台式: '🍜',
-    飯食: '🍱',
-    小吃: '🦪',
-    麵食: '🍜',
-    飲品: '🧋',
-    甜點: '🍰',
-    湯食: '🍲',
-    鍋類: '🫕',
-    辣食: '🌶️',
-    台食: '🍽️',
-    南洋: '🍛',
-    西式: '🍝',
-  };
-  private readonly BG_MAP: Record<string, string> = {
-    台式: 'linear-gradient(135deg,#c49756,#8b5e3c)',
-    飯食: 'linear-gradient(135deg,#e8834a,#c05a20)',
-    小吃: 'linear-gradient(135deg,#3ecf8e,#10b981)',
-    麵食: 'linear-gradient(135deg,#c49756,#8b5e3c)',
-    飲品: 'linear-gradient(135deg,#06b6d4,#0891b2)',
-    甜點: 'linear-gradient(135deg,#f472b6,#db2777)',
-    湯食: 'linear-gradient(135deg,#f59e0b,#d97706)',
-    鍋類: 'linear-gradient(135deg,#ef4444,#b91c1c)',
-    辣食: 'linear-gradient(135deg,#dc2626,#991b1b)',
-    台食: 'linear-gradient(135deg,#a78bfa,#7c3aed)',
-    南洋: 'linear-gradient(135deg,#f59e0b,#d97706)',
-    西式: 'linear-gradient(135deg,#818cf8,#6366f1)',
-  };
 
-  // ↓ 新增這個函式
+  //
   private cleanBase64(raw: string): string {
     if (!raw) return '';
     if (raw.startsWith('data:')) return raw.replace(/[\r\n\s]/g, '');
@@ -1356,179 +1637,47 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   }
 
   private loadStyles(): void {
-  this.apiService.getStyles().subscribe({
-    next: (list) => {
-      const unique = [...new Set(list.map((s) => s.name).filter(Boolean))];
-      this.styleOptions.set(unique);
-    },
-    error: (err) => console.error('❌ loadStyles 失敗:', err),
-  });
-}
+    this.apiService.getStyles().subscribe({
+      next: (list) => {
+        this.styleOptions.set(this.normalizeProductOptions(list));
+      },
+      error: (err) => console.error('❌ loadStyles 失敗:', err),
+    });
+  }
 
-private loadCategories(): void {
-  this.apiService.getCategories().subscribe({
-    next: (list) => {
-      const unique = [...new Set(list.map((c) => c.name).filter(Boolean))];
-      this.categoryOptions.set(unique);
-    },
-    error: (err) => console.error('❌ loadCategories 失敗:', err),
-  });
-}
+  private loadCategories(): void {
+    this.apiService.getCategories().subscribe({
+      next: (list) => {
+        this.categoryOptions.set(this.normalizeProductOptions(list));
+      },
+      error: (err) => console.error('❌ loadCategories 失敗:', err),
+    });
+  }
+
+  private mapAdminProductToDashProduct(p: ProductAdminVo): DashProduct {
+    return {
+      id: p.id,
+      name: p.name,
+      category: p.category || '',
+      style: p.style || '',
+      description: p.description || '',
+      isActive: p.active,
+      foodImgBase64: this.toImg(p.foodImgBase64 ?? ''),
+    };
+  }
 
   private loadProducts(): void {
-    forkJoin({
-      inventory: this.apiService.getBranchInventory(19),
-      allProducts: this.apiService.getAllProducts(),
-    }).subscribe({
-      next: ({ inventory, allProducts }) => {
-        const invData = inventory?.data ?? [];
-        const prodMap = new Map(
-          (allProducts?.productList ?? []).map((p) => [p.id, p]),
-        );
-
-        const toInit = invData.filter(
-          (inv) => inv.stockQuantity === 0 && inv.basePrice === 0,
-        );
-        if (toInit.length > 0) {
-          this.apiService
-            .deductInventoryBatch(
-              toInit.map((inv) => ({
-                productId: inv.productId,
-                globalAreaId: inv.globalAreaId,
-                stockQuantity: 100,
-                basePrice: 100,
-                costPrice: 0,
-                maxOrderQuantity: 10,
-                active: inv.active,
-              })),
-            )
-            .subscribe({
-              next: () => this.loadProducts(),
-              error: () => console.error('❌ 批量初始化庫存失敗'),
-            });
-          return;
-        }
-
-        this.products.set(
-          invData.map((inv) => {
-            const prod = prodMap.get(inv.productId);
-            const cat = inv.category || prod?.category || '';
-            return {
-              id: inv.productId,
-              name: inv.productName,
-              category: cat,
-              style: inv.style || prod?.style || '台式經典',
-              price: inv.basePrice,
-              stock: inv.stockQuantity,
-              isActive: prod?.active ?? inv.active,
-              emoji: this.EMOJI_MAP[cat] ?? '🍽️',
-              emojiBg:
-                this.BG_MAP[cat] ?? 'linear-gradient(135deg,#6b7280,#374151)',
-              foodImgBase64: this.toImg(prod?.foodImgBase64 ?? ''),
-            };
-          }),
-        );
-      },
-      error: (err) => console.error('❌ loadProducts 失敗:', err),
-    });
-  }
-
-  private loadTrashProducts(): void {
-    this.apiService.getTrashProducts().subscribe({
+    this.apiService.getAllProducts().subscribe({
       next: (res) => {
-        this.trashProducts.set(
-          (res?.productList ?? []).map((p) => {
-            const cat = p.category ?? '';
-            return {
-              id: p.id,
-              name: p.name,
-              category: cat,
-              style: p.style ?? '台式經典',
-              price: 0,
-              stock: 0,
-              isActive: false,
-              emoji: this.EMOJI_MAP[cat] ?? '🍽️',
-              emojiBg:
-                this.BG_MAP[cat] ?? 'linear-gradient(135deg,#6b7280,#374151)',
-              foodImgBase64: this.toImg(p.foodImgBase64 ?? ''),
-            };
-          }),
-        );
+        const list = res?.productList ?? [];
+        this.products.set(list.map((p) => this.mapAdminProductToDashProduct(p)));
       },
-      error: (err) => console.error('❌ loadTrashProducts 失敗:', err),
-    });
-  }
-
-  toggleTrash(): void {
-    const next = !this.showTrash();
-    this.showTrash.set(next);
-    if (next) this.loadTrashProducts();
-  }
-
-  deleteProductItem(id: number): void {
-    this.apiService.deleteProduct(id).subscribe({
-      next: (res) => {
-        if (res?.code === 200) {
-          this.products.update((list) => list.filter((p) => p.id !== id));
-          this.showToast('✅ 商品已刪除');
-          if (this.showTrash()) this.loadTrashProducts();
-        } else {
-          this.showToast('⚠️ 刪除失敗：' + res?.message);
-        }
+      error: (err) => {
+        console.error('❌ loadProducts 失敗:', err);
+        this.products.set([]);
+        this.showToast('⚠️ 商品資料載入失敗，請確認後端連線');
       },
-      error: () => this.showToast('❌ 刪除失敗'),
     });
-  }
-
-  /* ── 從後端載入庫存清單 ──────────────────────────── */
-  private loadInventory(globalAreaId = 19): void {
-    this.apiService.getBranchInventory(globalAreaId).subscribe({
-      next: (res) => {
-        if (res?.data?.length) {
-          this.inventory.set(
-            res.data.map((inv: InventoryDetailVo) => ({
-              id: inv.productId,
-              productId: inv.productId,
-              globalAreaId: inv.globalAreaId,
-              name: inv.productName,
-              branch: inv.branchName,
-              stock: inv.stockQuantity,
-              safeStock: 10,
-              basePrice: inv.basePrice,
-              costPrice: inv.costPrice,
-              maxOrderQuantity: inv.maxOrderQuantity,
-              active: inv.active,
-            })),
-          );
-        }
-        /* 若後端回空清單，保留 mock 初始值供 Demo 使用 */
-      },
-      error: () => console.warn('[Manager] 庫存 API 連線失敗，使用 Demo 資料'),
-    });
-  }
-
-  /* ── 庫存：切換上下架狀態 ────────────────────────── */
-  toggleInventoryActive(item: DashInventory): void {
-    const newActive = !item.active;
-    this.inventory.update((list) =>
-      list.map((i) => (i.id === item.id ? { ...i, active: newActive } : i)),
-    );
-    this.apiService
-      .toggleBranchActiveStatus(item.productId, item.globalAreaId, newActive)
-      .subscribe({
-        next: () =>
-          this.showToast(
-            newActive ? `✅ ${item.name} 已上架` : `🔒 ${item.name} 已下架`,
-          ),
-        error: () => {
-          this.inventory.update((list) =>
-            list.map((i) =>
-              i.id === item.id ? { ...i, active: !newActive } : i,
-            ),
-          );
-          this.showToast('⚠️ 狀態更新失敗');
-        },
-      });
   }
 
   /* ── 折抵：載入清單 ──────────────────────────────── */
@@ -1585,27 +1734,6 @@ private loadCategories(): void {
     });
   }
 
-  /* ── 折抵：新增 Modal ─────────────────────────────── */
-  openAddDiscount(): void {
-    this.discountDraft = { regionsId: 0, usageCap: 0, count: 0 };
-    this.activeModal.set('addDiscount');
-  }
-
-  saveCreateDiscount(): void {
-    if (!this.discountDraft.regionsId || !this.discountDraft.usageCap) {
-      this.showToast('⚠️ 請填寫地區與折抵上限');
-      return;
-    }
-    this.apiService.createDiscount(this.discountDraft).subscribe({
-      next: () => {
-        this.loadDiscounts();
-        this.closeModal();
-        this.showToast('✅ 折抵記錄已新增');
-      },
-      error: () => this.showToast('❌ 新增失敗'),
-    });
-  }
-
   /* ── 折抵：依 regionsId 取得國家名稱 ──────────────── */
   getDiscountCountryName(regionsId: number): string {
     return (
@@ -1639,12 +1767,31 @@ private loadCategories(): void {
                   country: branchData?.country ?? '',
                 };
               })
-              .sort((a, b) => a.account.localeCompare(b.account)),
+              .sort((a, b) => this.sortAccountsByCountryBranch(a, b)),
           );
         }
       },
       error: () => console.warn('[Manager] 員工 API 連線失敗，使用 Demo 資料'),
     });
+  }
+
+  private sortAccountsByCountryBranch(a: DashAccount, b: DashAccount): number {
+    const countryCompare = this.compareCountry(a.country, b.country);
+    if (countryCompare !== 0) return countryCompare;
+
+    const branchCompare = (a.branch || '').localeCompare(b.branch || '', 'zh-Hant');
+    if (branchCompare !== 0) return branchCompare;
+
+    const roleOrder: Record<DashAccount['role'], number> = {
+      bm: 1,
+      ma: 2,
+      staff: 3,
+    };
+
+    const roleCompare = roleOrder[a.role] - roleOrder[b.role];
+    if (roleCompare !== 0) return roleCompare;
+
+    return (a.account || '').localeCompare(b.account || '', 'zh-Hant');
   }
 
   private updateClock(): void {
@@ -1706,6 +1853,52 @@ private loadCategories(): void {
     });
   }
 
+  /* ── 商品：回收桶 / 軟刪除 ─────────────────────────── */
+
+  /** 切換一般商品 / 已刪除商品列表 */
+  toggleProductTrash(): void {
+    const next = !this.showTrash();
+    this.showTrash.set(next);
+
+    if (next) {
+      this.resetProductFilters();
+      this.loadTrashProducts();
+    }
+  }
+
+  /** 載入已刪除商品清單 */
+  private loadTrashProducts(): void {
+    this.apiService.getTrashProducts().subscribe({
+      next: (res) => {
+        const list = res?.productList ?? [];
+        this.trashProducts.set(list.map((p) => this.mapAdminProductToDashProduct(p)));
+      },
+      error: () => {
+        this.trashProducts.set([]);
+        this.showToast('⚠️ 已刪除商品載入失敗，請確認後端連線');
+      },
+    });
+  }
+
+  /** 軟刪除商品 */
+  deleteProduct(id: number): void {
+    const p = this.products().find((x) => x.id === id);
+    if (!p) return;
+
+    const ok = window.confirm(`確定要刪除商品「${p.name}」嗎？\n刪除後可在「已刪除商品」中查看。`);
+    if (!ok) return;
+
+    this.apiService.deleteProduct(id).subscribe({
+      next: () => {
+        this.products.update((list) => list.filter((x) => x.id !== id));
+        this.showToast(`🗑️ 商品「${p.name}」已移至已刪除商品`);
+      },
+      error: () => {
+        this.showToast('⚠️ 商品刪除失敗，請確認後端連線');
+      },
+    });
+  }
+
   /* ── 今日日期（YYYY-MM-DD），供活動開始日期 [min] 使用 ── */
   today(): string {
     return new Date().toISOString().slice(0, 10);
@@ -1727,10 +1920,10 @@ private loadCategories(): void {
       list.map((p) =>
         p.id === id
           ? {
-              ...p,
-              isActive: newActive,
-              color: newActive ? '#c49756' : 'rgba(255,255,255,0.18)',
-            }
+            ...p,
+            isActive: newActive,
+            color: newActive ? '#c49756' : 'rgba(255,255,255,0.18)',
+          }
           : p,
       ),
     );
@@ -1751,10 +1944,10 @@ private loadCategories(): void {
             list.map((p) =>
               p.id === id
                 ? {
-                    ...p,
-                    isActive: !newActive,
-                    color: !newActive ? '#c49756' : 'rgba(255,255,255,0.18)',
-                  }
+                  ...p,
+                  isActive: !newActive,
+                  color: !newActive ? '#c49756' : 'rgba(255,255,255,0.18)',
+                }
                 : p,
             ),
           );
@@ -1776,15 +1969,15 @@ private loadCategories(): void {
       giftProductId: null,
       quantity: -1,
     };
- if (this.giftProductList().length === 0) {
-  this.apiService.getAllProducts().subscribe({
-    next: (res) =>
-      this.giftProductList.set(
-        (res?.productList ?? []).filter(p => p.active),
-      ),
-  });
-}
-this.activeModal.set('addGift');
+    if (this.giftProductList().length === 0) {
+      this.apiService.getAllProducts().subscribe({
+        next: (res) =>
+          this.giftProductList.set(
+            (res?.productList ?? []).filter(p => p.active),
+          ),
+      });
+    }
+    this.activeModal.set('addGift');
   }
 
   saveGift(): void {
@@ -1818,71 +2011,6 @@ this.activeModal.set('addGift');
         },
         error: () => this.showToast('❌ 新增失敗，請確認後端連線'),
       });
-  }
-
-  onDeactivateGift(giftRuleId: number, promo: DashPromo): void {
-    this.apiService.deactivateGift(giftRuleId).subscribe({
-      next: () => {
-        this.promos.update(list =>
-          list.map(p =>
-            p.id !== promo.id ? p : {
-              ...p,
-              gifts: (p.gifts ?? []).map(g =>
-                g.id === giftRuleId ? { ...g, active: false } : g
-              ),
-            }
-          )
-        );
-        this.showToast('✅ 贈品規則已停用');
-      },
-      error: () => this.showToast('❌ 停用失敗，請確認後端連線'),
-    });
-  }
-
-  /* ── 庫存：inline 調整 ─────────────────────────── */
-  startAdjustInventory(id: number): void {
-    const item = this.inventory().find((i) => i.id === id);
-    if (!item) return;
-    this.adjustingInventoryId.set(id);
-    this.adjustInventoryAmt.set(item.stock);
-  }
-
-  cancelAdjustInventory(): void {
-    this.adjustingInventoryId.set(null);
-  }
-
-  onInventoryInput(event: Event): void {
-    const val = parseInt((event.target as HTMLInputElement).value, 10);
-    if (!isNaN(val) && val >= 0) this.adjustInventoryAmt.set(val);
-  }
-
-  confirmAdjustInventory(): void {
-    const id = this.adjustingInventoryId();
-    const amt = this.adjustInventoryAmt();
-    if (id === null) return;
-    const item = this.inventory().find((i) => i.id === id);
-    this.inventory.update((list) =>
-      list.map((i) => (i.id === id ? { ...i, stock: amt } : i)),
-    );
-    this.adjustingInventoryId.set(null);
-    this.adjustInventorySavedId.set(id);
-    setTimeout(() => this.adjustInventorySavedId.set(null), 1800);
-    if (item) {
-      this.apiService
-        .updateBranchInventory({
-          productId: item.productId,
-          globalAreaId: item.globalAreaId,
-          stockQuantity: amt,
-          basePrice: item.basePrice,
-          costPrice: item.costPrice,
-          maxOrderQuantity: item.maxOrderQuantity,
-          active: item.active,
-        })
-        .subscribe({
-          next: () => this.loadInventory(),
-          error: () => this.showToast('⚠️ 庫存更新失敗，本地已儲存'),
-        });
-    }
   }
 
   /* ── 帳號：停/復權 ─────────────────────────────── */
@@ -2093,12 +2221,12 @@ this.activeModal.set('addGift');
       list.map((t) =>
         t.id === id
           ? {
-              ...t,
-              editing: true,
-              editRate: t.rate,
-              editTaxType: t.taxType,
-              editDiscountLimit: t.discountLimit,
-            }
+            ...t,
+            editing: true,
+            editRate: t.rate,
+            editTaxType: t.taxType,
+            editDiscountLimit: t.discountLimit,
+          }
           : t,
       ),
     );
@@ -2113,28 +2241,40 @@ this.activeModal.set('addGift');
   saveTax(id: number): void {
     const target = this.taxes().find((t) => t.id === id);
     if (!target) return;
-    this.taxes.update((list) =>
-      list.map((t) =>
-        t.id === id
-          ? {
-              ...t,
-              rate: t.editRate,
-              taxType: target.editTaxType || target.taxType,
-              discountLimit: t.editDiscountLimit,
-              editing: false,
-            }
-          : t,
-      ),
-    );
+
+    const nextRate = Number(target.editRate);
+    const nextTaxType = target.editTaxType || target.taxType;
+
+    if (Number.isNaN(nextRate) || nextRate < 0) {
+      this.showToast('⚠️ 請輸入正確稅率');
+      return;
+    }
+
     this.apiService
       .updateRegion({
         id,
-        taxRate: target.editRate / 100,
-        taxType: target.editTaxType,
-        usageCap: target.editDiscountLimit,
+        taxRate: nextRate / 100,
+        taxType: nextTaxType,
       })
       .subscribe({
-        next: () => this.showToast('✅ 設定已更新'),
+        next: () => {
+          this.taxes.update((list) =>
+            list.map((t) =>
+              t.id === id
+                ? {
+                  ...t,
+                  rate: nextRate,
+                  taxType: nextTaxType,
+                  editRate: nextRate,
+                  editTaxType: nextTaxType,
+                  editing: false,
+                }
+                : t,
+            ),
+          );
+
+          this.showToast('✅ 稅率設定已更新');
+        },
         error: () => this.showToast('⚠️ 更新失敗，請確認後端連線'),
       });
   }
@@ -2144,7 +2284,9 @@ this.activeModal.set('addGift');
   addLimitAmount = signal(0);
   addLimitCount = signal(0);
   addLimitSelectedTax = computed(() =>
-    this.taxes().find((t) => t.id === this.addLimitRegionsId()),
+    this.availableMemberLimitCountries().find(
+      (t) => t.id === this.addLimitRegionsId(),
+    ),
   );
 
   openAddMemberLimit(): void {
@@ -2156,50 +2298,46 @@ this.activeModal.set('addGift');
 
   saveAddMemberLimit(): void {
     const regionsId = this.addLimitRegionsId();
-    const limitAmount = this.addLimitAmount();
-    const countThreshold = this.addLimitCount();
+    const usageCap = Number(this.addLimitAmount());
+    const count = Number(this.addLimitCount());
+
     if (!regionsId) {
-      this.showToast('請選擇國家／地區');
+      this.showToast('⚠️ 請選擇國家／地區');
       return;
     }
-    const row = this.memberData().find((r) => r.tax.id === regionsId);
-    if (!row) return;
-    const { tax, disc } = row;
 
-    // ── Step 1：先儲存 discountLimit 至 localStorage（不依賴後端）
-    localStorage.setItem(`discountLimit_${regionsId}`, String(limitAmount));
-    this.taxes.update((list) =>
-      list.map((t) =>
-        t.id === regionsId
-          ? { ...t, discountLimit: limitAmount, editDiscountLimit: limitAmount }
-          : t,
-      ),
-    );
+    if (usageCap < 0 || Number.isNaN(usageCap)) {
+      this.showToast('⚠️ 請輸入正確的折扣上限金額');
+      return;
+    }
 
-    // ── Step 2：更新或建立 discount 記錄（獨立執行，不與 region 耦合）
-    const discReq$ = disc
-      ? this.apiService.updateDiscountSettings({ id: disc.id, count: countThreshold, usageCap: limitAmount })
-      : this.apiService.createDiscount({ regionsId, count: countThreshold, usageCap: limitAmount });
+    if (count < 0 || Number.isNaN(count)) {
+      this.showToast('⚠️ 請輸入正確的累積次數');
+      return;
+    }
 
-    discReq$.subscribe({
-      next: () => {
-        this.loadDiscounts();
-        this.closeModal();
-        this.showToast('✅ 優惠上限已設定');
-      },
-      error: () => {
-        this.closeModal();
-        this.showToast('⚠️ 折扣次數設定失敗，折扣上限金額已本機儲存');
-      },
-    });
+    const exists = this.discounts().some((d) => d.regionsId === regionsId);
+    if (exists) {
+      this.showToast('⚠️ 此國家已建立會員優惠設定');
+      return;
+    }
 
-    // ── Step 3：背景更新 region（不阻塞主流程）
-    this.apiService.updateRegion({
-      id: regionsId,
-      taxRate: tax.rate / 100,
-      taxType: tax.taxType,
-      usageCap: limitAmount,
-    }).subscribe({ error: () => {} });
+    this.apiService
+      .createDiscount({
+        regionsId,
+        count,
+        usageCap,
+      })
+      .subscribe({
+        next: () => {
+          this.loadDiscounts();
+          this.closeModal();
+          this.showToast('✅ 會員優惠設定已新增');
+        },
+        error: () => {
+          this.showToast('⚠️ 新增失敗，請確認後端連線');
+        },
+      });
   }
 
   /* ── 會員設定：啟動 / 儲存 / 取消 ─────────────── */
@@ -2207,8 +2345,8 @@ this.activeModal.set('addGift');
     const row = this.memberData().find((r) => r.tax.id === taxId);
     if (!row) return;
     this.editingMemberRegionId.set(taxId);
-    this.editMemberLimit.set(row.tax.discountLimit);
-    this.editMemberCap.set(row.disc?.count ?? 0);
+    this.editMemberLimit.set(row.disc.usageCap);
+    this.editMemberCap.set(row.disc.count);
   }
 
   cancelEditMember(): void {
@@ -2218,48 +2356,43 @@ this.activeModal.set('addGift');
   saveMemberSettings(taxId: number): void {
     const row = this.memberData().find((r) => r.tax.id === taxId);
     if (!row) return;
-    const { tax, disc } = row;
-    const newLimit = this.editMemberLimit();
-    const newCap = this.editMemberCap();
 
-    // 更新 region discountLimit（需帶入現有 taxRate 與 taxType）
-    const regionReq$ = this.apiService.updateRegion({
-      id: taxId,
-      taxRate: tax.rate / 100,
-      taxType: tax.taxType,
-      usageCap: newLimit,
-    });
+    const { disc } = row;
+    const usageCap = Number(this.editMemberLimit());
+    const count = Number(this.editMemberCap());
 
-    // 更新 or 新增 discount 累積次數
-    const discReq$ = disc
-      ? this.apiService.updateDiscountSettings({ id: disc.id, count: newCap, usageCap: newLimit })
-      : this.apiService.createDiscount({ regionsId: taxId, count: newCap, usageCap: newLimit });
+    if (usageCap < 0 || Number.isNaN(usageCap)) {
+      this.showToast('⚠️ 請輸入正確的折扣上限金額');
+      return;
+    }
 
-    // ── Step 1：先儲存至 localStorage（不依賴後端）
-    localStorage.setItem(`discountLimit_${taxId}`, String(newLimit));
-    this.taxes.update((list) =>
-      list.map((t) =>
-        t.id === taxId
-          ? { ...t, discountLimit: newLimit, editDiscountLimit: newLimit }
-          : t,
-      ),
-    );
+    if (count < 0 || Number.isNaN(count)) {
+      this.showToast('⚠️ 請輸入正確的累積次數');
+      return;
+    }
 
-    // ── Step 2：更新或建立 discount 記錄（獨立執行）
-    discReq$.subscribe({
-      next: () => {
-        this.loadDiscounts();
-        this.editingMemberRegionId.set(null);
-        this.showToast('✅ 會員設定已更新');
-      },
-      error: () => {
-        this.editingMemberRegionId.set(null);
-        this.showToast('⚠️ 折扣次數設定失敗，折扣上限金額已本機儲存');
-      },
-    });
+    if (!disc?.id) {
+      this.showToast('⚠️ 此國家尚未建立會員優惠設定，請先新增上限');
+      return;
+    }
 
-    // ── Step 3：背景更新 region（不阻塞主流程）
-    regionReq$.subscribe({ error: () => {} });
+    this.apiService
+      .updateDiscountSettings({
+        id: disc.id,
+        regionsId: taxId,
+        count,
+        usageCap,
+      })
+      .subscribe({
+        next: () => {
+          this.loadDiscounts();
+          this.editingMemberRegionId.set(null);
+          this.showToast('✅ 會員設定已更新');
+        },
+        error: () => {
+          this.showToast('⚠️ 更新失敗，請確認後端連線');
+        },
+      });
   }
 
   /* ── 匯率：載入全部（最新）──────────────────────── */
@@ -2304,14 +2437,6 @@ this.activeModal.set('addGift');
     });
   }
 
-  toggleRatesPanel(): void {
-    const next = !this.showRates();
-    this.showRates.set(next);
-    if (next && this.allRates().length === 0 && !this.ratesLoading()) {
-      this.loadAllRates();
-    }
-  }
-
   private normalizeRates(rates: ExchangeRateVO[]): ExchangeRateVO[] {
     return rates
       .map((r) => ({
@@ -2336,7 +2461,11 @@ this.activeModal.set('addGift');
   }
 
   /* ── 商品篩選 ─────────────────────────────────── */
-  onCategoryFilter(event: Event): void {
+  onProductStyleFilter(event: Event): void {
+    this.productStyleFilter.set((event.target as HTMLSelectElement).value);
+  }
+
+  onProductCategoryFilter(event: Event): void {
     this.productCategoryFilter.set((event.target as HTMLSelectElement).value);
   }
 
@@ -2347,78 +2476,84 @@ this.activeModal.set('addGift');
   /* ── Modal 關閉 ─────────────────────────────────────── */
   closeModal(): void {
     this.activeModal.set(null);
-    this.selectedOrder.set(null);
     this.editingProductId.set(null);
     this.newStaffResult.set(null);
-  }
-
-  /* ── 訂單：詳情 Modal ─────────────────────────────── */
-  openOrderDetail(order: DashOrder): void {
-    this.selectedOrder.set(order);
-    this.activeModal.set('orderDetail');
   }
 
   /* ── 新增 / 編輯商品 Modal ─────────────────────────── */
   openAddProduct(): void {
     this.editingProductId.set(null);
+
     this.productDraft = {
       name: '',
       category: '',
       style: '',
-      price: 165,
-      stock: 0,
-      emoji: '🍜',
       description: '',
       active: true,
     };
+
+    this.customProductStyle = '';
+    this.customProductCategory = '';
+
     this.productImageFile = null;
     this.productImagePreview.set('');
+
+    this.refreshProductOptionLists();
     this.activeModal.set('addProduct');
   }
 
   openEditProduct(id: number): void {
     const p = this.products().find((x) => x.id === id);
     if (!p) return;
+
     this.editingProductId.set(id);
+
     this.productDraft = {
       name: p.name,
       category: p.category || '',
       style: p.style || '',
-      price: p.price,
-      stock: p.stock,
-      emoji: p.emoji,
-      description: '',
+      description: p.description || '',
       active: p.isActive,
     };
+
+    this.customProductStyle = '';
+    this.customProductCategory = '';
+
+    this.ensureProductOptionExists('style', this.productDraft.style);
+    this.ensureProductOptionExists('category', this.productDraft.category);
+
     this.productImageFile = null;
-    this.productImagePreview.set('');
+    this.productImagePreview.set(p.foodImgBase64 || '');
+
+    this.refreshProductOptionLists();
     this.activeModal.set('addProduct');
 
-    /* 呼叫 API 補齊後端 description 與圖片 */
     this.apiService.getProductDetail(id).subscribe({
       next: (res) => {
-        if (res?.product) {
-          this.productDraft = {
-            ...this.productDraft,
-            description: res.product.description ?? '',
-            category: res.product.category || this.productDraft.category,
-            style: res.product.style || this.productDraft.style,
-          };
-        }
-        if (res?.product?.foodImgBase64) {
-          const raw = res.product.foodImgBase64;
-          // PR #52: 後端現在回傳 URL 路徑，直接使用；舊版 Base64 也相容
-          const src =
-            raw.startsWith('/') || raw.startsWith('http')
-              ? raw
-              : raw.startsWith('data:')
-                ? raw
-                : `data:image/jpeg;base64,${raw}`;
-          this.productImagePreview.set(src);
+        if (!res?.product) return;
+
+        const product = res.product;
+        const style = product.style || this.productDraft.style;
+        const category = product.category || this.productDraft.category;
+
+        this.ensureProductOptionExists('style', style);
+        this.ensureProductOptionExists('category', category);
+
+        this.productDraft = {
+          ...this.productDraft,
+          name: product.name || this.productDraft.name,
+          description: product.description ?? '',
+          category,
+          style,
+          active: product.active ?? this.productDraft.active,
+        };
+
+        if (product.foodImgBase64) {
+          this.productImagePreview.set(this.toImg(product.foodImgBase64));
         }
       },
       error: () => {
-        /* 靜默失敗，保留本地資料 */
+        this.showToast('⚠️ 商品詳細資料載入失敗');
       },
     });
   }
@@ -2446,8 +2581,8 @@ this.activeModal.set('addGift');
     this.apiService
       .generateAiProductDesc(
         this.productDraft.name,
-        this.productDraft.category,
-        this.productDraft.style,
+        this.getFinalProductCategory(),
+        this.getFinalProductStyle(),
         this.productImageFile,
       )
       .subscribe({
@@ -2497,136 +2632,67 @@ this.activeModal.set('addGift');
   }
 
   saveProduct(): void {
+    const editingId = this.editingProductId();
+    const finalStyle = this.getFinalProductStyle();
+    const finalCategory = this.getFinalProductCategory();
+
     if (!this.productDraft.name.trim()) {
-      this.showToast('⚠️ 請輸入商品名稱');
+      this.showToast('⚠️ 請填寫商品名稱');
       return;
     }
-    if (this.editingProductId() === null && !this.productImageFile) {
+
+    if (!finalStyle) {
+      this.showToast('⚠️ 請選擇或輸入料理風格');
+      return;
+    }
+
+    if (!finalCategory) {
+      this.showToast('⚠️ 請選擇或輸入餐點分類');
+      return;
+    }
+
+    if (editingId === null && !this.productImageFile) {
       this.showToast('⚠️ 新增商品需要上傳圖片');
       return;
     }
-    const emojiGradients: Record<string, string> = {
-      '🍜': 'linear-gradient(135deg,#c49756,#8b5e3c)',
-      '🍛': 'linear-gradient(135deg,#f59e0b,#d97706)',
-      '🍲': 'linear-gradient(135deg,#3ecf8e,#10b981)',
-      '🍝': 'linear-gradient(135deg,#818cf8,#6366f1)',
-      '🌮': 'linear-gradient(135deg,#f87171,#ef4444)',
-      '🧋': 'linear-gradient(135deg,#06b6d4,#0891b2)',
-      '🍱': 'linear-gradient(135deg,#a78bfa,#7c3aed)',
-      '🍣': 'linear-gradient(135deg,#fb923c,#ea580c)',
-      '🍔': 'linear-gradient(135deg,#fbbf24,#d97706)',
-      '🥗': 'linear-gradient(135deg,#4ade80,#16a34a)',
+
+    const req = {
+      name: this.productDraft.name.trim(),
+      category: finalCategory,
+      style: finalStyle,
+      description: this.productDraft.description?.trim() || '',
+      active: this.productDraft.active,
     };
-    const editId = this.editingProductId();
-    const savedName = this.productDraft.name;
-    if (editId !== null) {
-      /* 編輯既有商品 */
-      this.products.update((list) =>
-        list.map((p) =>
-          p.id === editId
-            ? {
-                ...p,
-                name: this.productDraft.name,
-                category: this.productDraft.category,
-                price: this.productDraft.price,
-                stock: this.productDraft.stock,
-                emoji: this.productDraft.emoji,
-                emojiBg: emojiGradients[this.productDraft.emoji] ?? p.emojiBg,
-                foodImgBase64: '',
-              }
-            : p,
-        ),
-      );
-      this.closeModal();
-      this.showToast(`✅ 商品「${savedName}」已更新`);
-      const invReq = {
-        productId: editId,
-        globalAreaId: 19,
-        stockQuantity: this.productDraft.stock,
-        basePrice: this.productDraft.price,
-        costPrice: 0,
-        maxOrderQuantity: 10,
-        active: this.productDraft.active,
-      };
-      this.apiService
-        .updateProduct(
-          {
-            id: editId,
-            name: this.productDraft.name,
-            category: this.productDraft.category,
-            style: this.productDraft.style,
-            description: this.productDraft.description,
-            active: this.productDraft.active,
-          },
+
+    const request$ =
+      editingId === null
+        ? this.apiService.createProduct(req, this.productImageFile ?? undefined)
+        : this.apiService.updateProduct(
+          { id: editingId, ...req },
           this.productImageFile ?? undefined,
-        )
-        .subscribe({
-          next: () =>
-            this.apiService
-              .updateBranchInventory(invReq)
-              .subscribe({ next: () => this.loadProducts(), error: () => this.loadProducts() }),
-          error: (err) => {
-  const msg = err?.error?.message ?? '⚠️ 後端更新失敗，本地已儲存';
-  this.showToast(msg);
-},
-        });
-    } else {
-      /* 新增商品 */
-      const ids = this.products().map((p) => p.id);
-      const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
-      this.products.update((list) => [
-        ...list,
-        {
-          id: newId,
-          name: this.productDraft.name,
-          category: this.productDraft.category,
-          style: this.productDraft.style,
-          price: this.productDraft.price,
-          stock: this.productDraft.stock,
-          isActive: true,
-          emoji: this.productDraft.emoji,
-          emojiBg:
-            emojiGradients[this.productDraft.emoji] ??
-            'linear-gradient(135deg,#c49756,#8b5e3c)',
-          foodImgBase64: '',
-        },
-      ]);
-      this.closeModal();
-      this.showToast(`✅ 商品「${savedName}」已新增`);
-      const draftPrice = this.productDraft.price;
-      const draftStock = this.productDraft.stock;
-      this.apiService
-        .createProduct(
-          {
-            name: this.productDraft.name,
-            category: this.productDraft.category,
-            style: this.productDraft.style,
-            description: this.productDraft.description,
-          },
-          this.productImageFile ?? undefined,
-        )
-        .subscribe({
-          next: (res) => {
-            const pid = res?.product?.id;
-            if (pid) {
-              this.apiService
-                .updateBranchInventory({
-                  productId: pid,
-                  globalAreaId: 19,
-                  stockQuantity: draftStock,
-                  basePrice: draftPrice,
-                  costPrice: 0,
-                  maxOrderQuantity: 10,
-                  active: true,
-                })
-                .subscribe({ next: () => this.loadProducts(), error: () => this.loadProducts() });
-            } else {
-              this.loadProducts();
-            }
-          },
-          error: () => this.showToast('⚠️ 後端新增失敗，本地已儲存'),
-        });
-    }
+        );
+
+    request$.subscribe({
+      next: (res) => {
+        if (res?.code === 200) {
+          this.ensureProductOptionExists('style', finalStyle);
+          this.ensureProductOptionExists('category', finalCategory);
+
+          this.refreshProductOptionLists();
+          this.loadProducts();
+          this.resetProductFilters();
+          this.closeModal();
+
+          this.showToast(editingId === null ? '✅ 商品已新增' : '✅ 商品已更新');
+          return;
+        }
+
+        this.showToast(`⚠️ 儲存失敗：${res?.message ?? '請稍後再試'}`);
+      },
+      error: () => {
+        this.showToast('⚠️ 儲存失敗，請確認後端連線');
+      },
+    });
   }
 
   /* ── 新增活動 Slide-in Panel ───────────────────────── */
@@ -2647,14 +2713,14 @@ this.activeModal.set('addGift');
       giftQuantity: -1,
     };
     if (this.giftProductList().length === 0) {
-  this.apiService.getAllProducts().subscribe({
-    next: (res) =>
-      this.giftProductList.set(
-        (res?.productList ?? []).filter(p => p.active),
-      ),
-  });
-}
-this.showPromoPanel.set(true);
+      this.apiService.getAllProducts().subscribe({
+        next: (res) =>
+          this.giftProductList.set(
+            (res?.productList ?? []).filter(p => p.active),
+          ),
+      });
+    }
+    this.showPromoPanel.set(true);
   }
 
   closePromoPanel(): void {
@@ -2789,17 +2855,17 @@ this.showPromoPanel.set(true);
         list.map((a) =>
           a.id === editId
             ? {
-                ...a,
-                name: this.accountDraft.name,
-                branch: this.accountDraft.branch,
-                shift:
-                  this.accountDraft.role === 'staff'
-                    ? this.accountDraft.shift
-                    : undefined,
-                role: this.accountDraft.role,
-                isActive: this.accountDraft.isActive,
-                country: this.accountDraft.country,
-              }
+              ...a,
+              name: this.accountDraft.name,
+              branch: this.accountDraft.branch,
+              shift:
+                this.accountDraft.role === 'staff'
+                  ? this.accountDraft.shift
+                  : undefined,
+              role: this.accountDraft.role,
+              isActive: this.accountDraft.isActive,
+              country: this.accountDraft.country,
+            }
             : a,
         ),
       );
@@ -2811,8 +2877,8 @@ this.showPromoPanel.set(true);
         1;
       const backendRole =
         this.accountDraft.role === 'bm' ? 'REGION_MANAGER'
-        : this.accountDraft.role === 'ma' ? 'MANAGER_AGENT'
-        : 'STAFF';
+          : this.accountDraft.role === 'ma' ? 'MANAGER_AGENT'
+            : 'STAFF';
       this.apiService
         .createStaff({
           name: this.accountDraft.name,
@@ -2856,354 +2922,74 @@ this.showPromoPanel.set(true);
   }
 
   saveCountry(): void {
-  if (!this.taxDraft.country.trim()) {
-    this.showToast('請輸入國家／地區名稱');
-    return;
-  }
-  const saved = { ...this.taxDraft };
-  const currencyMap: Record<string, string> = {
-    台灣: 'TWD',
-    日本: 'JPY',
-    泰國: 'THB',
-    韓國: 'KRW',
-    美國: 'USD',
-    英國: 'GBP',
-    法國: 'EUR',
-    德國: 'EUR',
-    新加坡: 'SGD',
-    馬來西亞: 'MYR',
-    印尼: 'IDR',
-    越南: 'VND',
-  };
-  const resolvedCurrency =
-    saved.currency.trim() || currencyMap[saved.country.trim()] || 'USD';
-  const taxTypeLabel = saved.taxType === 'INCLUSIVE' ? '內含稅' : '外加稅';
-  this.apiService
-    .insertRegion({
-      country: saved.country.trim(),
-      countryCode: saved.countryCode.trim().toUpperCase(),
-      currencyCode: resolvedCurrency,
-      taxRate: saved.rate / 100,
-      taxType: saved.taxType as 'INCLUSIVE' | 'EXCLUSIVE',
-      // 不帶 usageCap：國家設定與會員折扣上限獨立管理，
-      // 折扣記錄請至「會員設定」頁籤單獨新增
-    })
-    .subscribe({
-      next: () => {
-        this.loadTaxes();
-        this.closeModal();
-        this.showToast(
-          `已新增 ${saved.country}（${resolvedCurrency}）${taxTypeLabel} ${saved.rate}%`,
-        );
-      },
-      error: () => {
-        const ids = this.taxes().map((t) => t.id);
-        const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
-        this.taxes.update((list) => [
-          ...list,
-          {
-            id: newId,
-            country: saved.country,
-            countryCode: saved.countryCode.trim().toUpperCase(),
-            currency: resolvedCurrency,
-            taxType: saved.taxType,
-            rate: saved.rate,
-            discountLimit: 0,
-            editing: false,
-            editRate: saved.rate,
-            editTaxType: saved.taxType,
-            editDiscountLimit: 0,
-          },
-        ]);
-        this.closeModal();
-        this.showToast(
-          `後端暫不可用，已本地新增 ${saved.country}（${resolvedCurrency}）`,
-        );
-      },
-    });
-}
-
-  /* ── 財務報表：匯出 CSV（isExporting spinner 保護）── */
-  exportCsv(): void {
-    if (this.isExporting()) return;
-    this.isExporting.set(true);
-
-    /* 模擬非同步處理 600ms（實際串接後可改為真實 API call） */
-    setTimeout(() => {
-      const headers = [
-        '訂單編號',
-        '分店',
-        '品項摘要',
-        '金額',
-        '付款方式',
-        '時間',
-        '狀態',
-      ];
-      const rows = this.allOrders().map((o) => [
-        o.id,
-        o.branch,
-        o.summary,
-        o.amount,
-        o.payMethod,
-        o.time,
-        o.statusLabel,
-      ]);
-      const csv = [headers, ...rows]
-        .map((r) =>
-          r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','),
-        )
-        .join('\n');
-      const blob = new Blob(['\ufeff' + csv], {
-        type: 'text/csv;charset=utf-8;',
+    if (!this.taxDraft.country.trim()) {
+      this.showToast('請輸入國家／地區名稱');
+      return;
+    }
+    const saved = { ...this.taxDraft };
+    const currencyMap: Record<string, string> = {
+      台灣: 'TWD',
+      日本: 'JPY',
+      泰國: 'THB',
+      韓國: 'KRW',
+      美國: 'USD',
+      英國: 'GBP',
+      法國: 'EUR',
+      德國: 'EUR',
+      新加坡: 'SGD',
+      馬來西亞: 'MYR',
+      印尼: 'IDR',
+      越南: 'VND',
+    };
+    const resolvedCurrency =
+      saved.currency.trim() || currencyMap[saved.country.trim()] || 'USD';
+    const taxTypeLabel = saved.taxType === 'INCLUSIVE' ? '內含稅' : '外加稅';
+    this.apiService
+      .insertRegion({
+        country: saved.country.trim(),
+        countryCode: saved.countryCode.trim().toUpperCase(),
+        currencyCode: resolvedCurrency,
+        taxRate: saved.rate / 100,
+        taxType: saved.taxType as 'INCLUSIVE' | 'EXCLUSIVE',
+        // 不帶 usageCap：國家設定與會員折扣上限獨立管理，
+        // 折扣記錄請至「會員設定」頁籤單獨新增
+      })
+      .subscribe({
+        next: () => {
+          this.loadTaxes();
+          this.closeModal();
+          this.showToast(
+            `已新增 ${saved.country}（${resolvedCurrency}）${taxTypeLabel} ${saved.rate}%`,
+          );
+        },
+        error: () => {
+          const ids = this.taxes().map((t) => t.id);
+          const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
+          this.taxes.update((list) => [
+            ...list,
+            {
+              id: newId,
+              country: saved.country,
+              countryCode: saved.countryCode.trim().toUpperCase(),
+              currency: resolvedCurrency,
+              taxType: saved.taxType,
+              rate: saved.rate,
+              discountLimit: 0,
+              editing: false,
+              editRate: saved.rate,
+              editTaxType: saved.taxType,
+              editDiscountLimit: 0,
+            },
+          ]);
+          this.closeModal();
+          this.showToast(
+            `後端暫不可用，已本地新增 ${saved.country}（${resolvedCurrency}）`,
+          );
+        },
       });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `orders_${new Date().toISOString().slice(0, 10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      this.isExporting.set(false);
-      this.showToast(
-        '✅ CSV 匯出成功，共 ' + this.allOrders().length + ' 筆訂單',
-      );
-    }, 600);
   }
 
   /* ── 財務報表：查詢入口 ─────────────────────────── */
-  onFinanceCountryChange(country: string): void {
-    this.financeCountry.set(country);
-    this.financeBranchId.set(null);
-    this.financeMonthResult.set(null);
-    this.financeRangeResult.set(null);
-    this.financeTopProducts.set([]);
-    this.financeChartData.set([]);
-    this.showTwdConversion.set(false);
-  }
-
-  queryFinance(): void {
-    if (this.financeMode() === 'month') {
-      this.queryFinanceMonth();
-    } else {
-      this.queryFinanceRange();
-    }
-  }
-
-  private queryFinanceMonth(): void {
-    const month = this.financeMonth();
-    if (!month) {
-      this.showToast('⚠️ 請選擇月份');
-      return;
-    }
-    this.financeLoading.set(true);
-    this.financeMonthResult.set(null);
-    this.financeTopProducts.set([]);
-    this.financeChartData.set([]);
-
-    this.apiService.getMonthlyReport({ reportDate: month }).subscribe({
-      next: (res) => {
-        this.financeMonthResult.set(res);
-        this.financeLoading.set(false);
-        this.animateValue(
-          this.animatedCurrentTotal,
-          this.financeCurrentTotal(),
-          'animTimer1',
-        );
-        this.animateValue(
-          this.animatedLastTotal,
-          this.financeLastTotal(),
-          'animTimer2',
-        );
-        this.animateValue(
-          this.animatedBranchCount,
-          this.financeCurrentData().length,
-          'animTimer3',
-          600,
-        );
-        const [year, monthNum] = month.split('-').map(Number);
-        const regionsId = this.financeRegionsId();
-        if (regionsId) {
-          this.apiService
-            .getTop5MonthlySales(year, monthNum, regionsId)
-            .subscribe({
-              next: (r) =>
-                this.financeTopProducts.set(r?.salesList ?? []),
-              error: () =>
-                this.financeTopProducts.set([]),
-            });
-        }
-
-        // 保底圖表：用本月 + 上月兩筆資料先渲染
-        this.financeChartData.set(
-          this.buildChartFrom2Months(res?.currentData ?? [], res?.lastData ?? []),
-        );
-        this.chartAnimKey.update((n) => n + 1);
-
-        // 嘗試取近 6 個月趨勢（成功則覆蓋保底資料）
-        const [cy, cm] = month.split('-').map(Number);
-        const startDate = new Date(cy, cm - 6, 1);
-        const startMonth = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
-        this.apiService
-          .getMonthlyReportByRange({ startMonth, endMonth: month } as MonthRangeReportsReq)
-          .subscribe({
-            next: (rangeRes) => {
-              const rows = rangeRes?.reportList ?? [];
-              if (rows.length === 0) return; // 沒資料就保留保底兩個月
-              const country = this.financeCountry();
-              const isAll = country === '全部';
-              const filtered = isAll ? rows : rows.filter((r) => r.regionsName === country);
-              const monthMap = new Map<string, { revenue: number; cost: number }>();
-              filtered.forEach((r) => {
-                const prev = monthMap.get(r.reportDate) ?? { revenue: 0, cost: 0 };
-                monthMap.set(r.reportDate, {
-                  revenue:
-                    prev.revenue +
-                    (isAll
-                      ? this.convertToTwd(Number(r.totalAmount), r.regionsName)
-                      : Number(r.totalAmount)),
-                  cost:
-                    prev.cost +
-                    (isAll
-                      ? this.convertToTwd(Number(r.totalCost ?? 0), r.regionsName)
-                      : Number(r.totalCost ?? 0)),
-                });
-              });
-              const chartData = Array.from(monthMap.entries())
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([m, v]) => ({ month: m, ...v }));
-              if (chartData.length > 0) {
-                this.financeChartData.set(chartData);
-                this.chartAnimKey.update((n) => n + 1);
-              }
-            },
-            error: () => {}, // 保底資料已設定，不需處理
-          });
-      },
-      error: () => {
-        this.financeLoading.set(false);
-        this.showToast('⚠️ 報表載入失敗，請確認後端連線');
-      },
-    });
-  }
-
-  private buildChartFrom2Months(
-    currentData: MonthlyReportDetail[],
-    lastData: MonthlyReportDetail[],
-  ): { month: string; revenue: number; cost: number }[] {
-    const country = this.financeCountry();
-    const isAll = country === '全部';
-    const filterFn = (rows: MonthlyReportDetail[]) =>
-      isAll ? rows : rows.filter((r) => r.regionsName === country);
-    const sumFn = (
-      rows: MonthlyReportDetail[],
-    ): { revenue: number; cost: number } =>
-      filterFn(rows).reduce(
-        (s, r) => ({
-          revenue:
-            s.revenue +
-            (isAll
-              ? this.convertToTwd(Number(r.totalAmount), r.regionsName)
-              : Number(r.totalAmount)),
-          cost:
-            s.cost +
-            (isAll
-              ? this.convertToTwd(Number(r.totalCost ?? 0), r.regionsName)
-              : Number(r.totalCost ?? 0)),
-        }),
-        { revenue: 0, cost: 0 },
-      );
-
-    const result: { month: string; revenue: number; cost: number }[] = [];
-    const lastMonth = lastData[0]?.reportDate;
-    const currMonth = currentData[0]?.reportDate;
-    if (lastMonth) result.push({ month: lastMonth, ...sumFn(lastData) });
-    if (currMonth && currMonth !== lastMonth)
-      result.push({ month: currMonth, ...sumFn(currentData) });
-    return result;
-  }
-
-  private queryFinanceRange(): void {
-    const start = this.financeStart();
-    const end = this.financeEnd();
-    if (!start || !end) {
-      this.showToast('⚠️ 請選擇日期區間');
-      return;
-    }
-    if (start > end) {
-      this.showToast('⚠️ 開始日期不能晚於結束日期');
-      return;
-    }
-    this.financeLoading.set(true);
-    this.financeRangeResult.set(null);
-    const branchId = this.financeBranchId() ?? undefined;
-    const regionsId = this.financeRegionsId() ?? undefined;
-    this.apiService
-      .getRevenueReports({
-        startDate: start,
-        endDate: end,
-        branchId,
-        regionsId,
-      })
-      .subscribe({
-        next: (res) => {
-          this.financeRangeResult.set(res);
-          this.financeLoading.set(false);
-        },
-        error: () => {
-          this.financeLoading.set(false);
-          this.showToast('⚠️ 查詢失敗，請確認後端連線');
-        },
-      });
-  }
-
-  private filterFinanceData(
-    data: MonthlyReportDetail[],
-  ): MonthlyReportDetail[] {
-    const country = this.financeCountry();
-    const branchId = this.financeBranchId();
-    let filtered = data;
-    if (country !== '全部') {
-      filtered = filtered.filter((d) => d.regionsName === country);
-    }
-    if (branchId !== null) {
-      const branch = this.branches().find((b) => b.id === branchId);
-      if (branch)
-        filtered = filtered.filter((d) => d.branchName === branch.name);
-    }
-    return filtered;
-  }
-
-  // 只用國家過濾（給「各分店」表格用，不受分店下拉影響）
-  private filterByCountryOnly(data: MonthlyReportDetail[]): MonthlyReportDetail[] {
-    const country = this.financeCountry();
-    if (country === '全部') return data;
-    return data.filter((d) => d.regionsName === country);
-  }
-
-  private convertToTwd(amount: number, regionsName: string): number {
-    const currency = this.taxes().find(
-      (t) => t.country === regionsName,
-    )?.currency;
-    if (!currency || currency === 'TWD') return amount;
-    // rateToTwd 語意：X 單位外幣 = 1 TWD，故換算為 amount / rate
-    const rate =
-      this.allRates().find((r) => r.currencyCode === currency)?.rateToTwd ?? 1;
-    return rate > 0 ? amount / rate : amount;
-  }
-
-  getFinanceCurrencyLabel(): string {
-    const country = this.financeCountry();
-    if (country === '全部') return 'TWD';
-    return this.taxes().find((t) => t.country === country)?.currency ?? '';
-  }
-
-  toggleTwdConversion(): void {
-    const next = !this.showTwdConversion();
-    this.showTwdConversion.set(next);
-    if (next && this.allRates().length === 0 && !this.ratesLoading()) {
-      this.loadAllRates();
-    }
-  }
-
   formatChartMonth(ym: string): string {
     return `${+ym.slice(5)}月`;
   }
@@ -3214,9 +3000,6 @@ this.showPromoPanel.set(true);
     return `${Math.round(n)}`;
   }
 
-  getRowCurrencyLabel(regionsName: string): string {
-    return this.taxes().find((t) => t.country === regionsName)?.currency ?? '';
-  }
 
   /* ── 分店：輔助 — 依 regionsId 查國家名稱 ────────── */
   getBranchCountryName(regionsId: number): string {
@@ -3225,30 +3008,38 @@ this.showPromoPanel.set(true);
 
   /* ── 分店：新增 Modal ─────────────────────────────── */
   openAddBranch(): void {
-    this.branchDraft = { regionsId: 0, city: '', address: '', phone: '' };
+    this.branchDraft = { regionsId: 0, branch: '', address: '', phone: '' };
     this.activeModal.set('addBranch');
   }
 
   saveBranch(): void {
-    if (!this.branchDraft.regionsId || !this.branchDraft.city.trim()) {
-      this.showToast('⚠️ 請選擇國家與城市');
+    if (!this.branchDraft.regionsId) {
+      this.showToast('⚠️ 請選擇國家');
       return;
     }
+
+    if (!this.branchDraft.branch.trim()) {
+      this.showToast('⚠️ 請填寫分店名稱');
+      return;
+    }
+
     if (!this.branchDraft.address.trim()) {
       this.showToast('⚠️ 請填寫分店地址');
       return;
     }
+
     if (!this.branchDraft.phone.trim()) {
       this.showToast('⚠️ 請填寫分店電話');
       return;
     }
+
     const saved = { ...this.branchDraft };
-    const countryName = this.getBranchCountryName(saved.regionsId);
-    const autoName = `${countryName}${saved.city.trim()}店`;
+    const branchName = saved.branch.trim();
+
     this.apiService
       .createBranch({
         regionsId: saved.regionsId,
-        branch: autoName,
+        branch: branchName,
         address: saved.address.trim(),
         phone: saved.phone.trim(),
       })
@@ -3257,7 +3048,7 @@ this.showPromoPanel.set(true);
           if (res?.code === 200) {
             this.loadBranches();
             this.closeModal();
-            this.showToast(`✅ 分店「${autoName}」已新增`);
+            this.showToast(`✅ 分店「${branchName}」已新增`);
           } else {
             this.showToast(
               `⚠️ 新增失敗：${res?.message ?? '請確認電話格式是否正確'}`,
@@ -3277,7 +3068,7 @@ this.showPromoPanel.set(true);
     this.editBranchDraft = {
       id: b.id,
       regionsId: b.regionsId,
-      city: b.city,
+      branch: b.name,
       address: b.address,
       phone: b.phone,
     };
@@ -3285,26 +3076,34 @@ this.showPromoPanel.set(true);
   }
 
   saveEditBranch(): void {
-    if (!this.editBranchDraft.regionsId || !this.editBranchDraft.city.trim()) {
-      this.showToast('⚠️ 請選擇國家與城市');
+    if (!this.editBranchDraft.regionsId) {
+      this.showToast('⚠️ 請選擇國家');
       return;
     }
+
+    if (!this.editBranchDraft.branch.trim()) {
+      this.showToast('⚠️ 請填寫分店名稱');
+      return;
+    }
+
     if (!this.editBranchDraft.address.trim()) {
       this.showToast('⚠️ 請填寫分店地址');
       return;
     }
+
     if (!this.editBranchDraft.phone.trim()) {
       this.showToast('⚠️ 請填寫分店電話');
       return;
     }
+
     const saved = { ...this.editBranchDraft };
-    const countryName = this.getBranchCountryName(saved.regionsId);
-    const autoName = `${countryName}${saved.city.trim()}店`;
+    const branchName = saved.branch.trim();
+
     this.apiService
       .updateBranch({
         id: saved.id,
         regionsId: saved.regionsId,
-        branch: autoName,
+        branch: branchName,
         address: saved.address.trim(),
         phone: saved.phone.trim(),
       })
@@ -3313,7 +3112,7 @@ this.showPromoPanel.set(true);
           if (res?.code === 200) {
             this.loadBranches();
             this.closeModal();
-            this.showToast(`✅ 分店「${autoName}」已更新`);
+            this.showToast(`✅ 分店「${branchName}」已更新`);
           } else {
             this.showToast(
               `⚠️ 更新失敗：${res?.message ?? '請確認電話格式是否正確'}`,
@@ -3327,11 +3126,27 @@ this.showPromoPanel.set(true);
   }
 
   /* ── 分店：刪除確認 Modal ────────────────────────── */
+
+  /** 檢查指定分店底下是否仍有員工帳號 */
+  private getAccountsByBranchName(branchName: string): DashAccount[] {
+    return this.accounts().filter((acc) => acc.branch === branchName);
+  }
+
   deleteBranchConfirm = signal<{ id: number; name: string } | null>(null);
 
   requestDeleteBranch(id: number): void {
     const b = this.branches().find((x) => x.id === id);
     if (!b) return;
+
+    const relatedAccounts = this.getAccountsByBranchName(b.name);
+
+    if (relatedAccounts.length > 0) {
+      this.showToast(
+        `⚠️ 無法刪除「${b.name}」，此分店仍有 ${relatedAccounts.length} 個帳號，請先調換分店。`,
+      );
+      return;
+    }
+
     this.deleteBranchConfirm.set({ id, name: b.name });
   }
 
@@ -3353,24 +3168,5 @@ this.showPromoPanel.set(true);
 
   cancelDeleteBranch(): void {
     this.deleteBranchConfirm.set(null);
-  }
-
-  /* ── 訂單篩選 ─────────────────────────────────── */
-  onBranchFilter(event: Event): void {
-    const val = (event.target as HTMLSelectElement).value;
-    /* '全部分店' → 'all'；其餘直接使用完整分店名稱供 filteredOrders 比對 */
-    this.orderFilterBranch.set(val === '全部分店' ? 'all' : val);
-  }
-
-  onStatusFilter(event: Event): void {
-    const val = (event.target as HTMLSelectElement).value;
-    const map: Record<string, string> = {
-      全部: 'all',
-      待製作: '待製作',
-      製作中: '製作中',
-      已完成: '已完成',
-      已取消: '已取消',
-    };
-    this.orderFilterStatus.set(map[val] ?? 'all');
   }
 }

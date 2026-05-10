@@ -221,7 +221,7 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
     private router: Router,
     public authService: AuthService,
     private apiService: ApiService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const user = this.authService.currentUser;
@@ -257,7 +257,7 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
           this.loadMemberSettings();
         }
       },
-      error: () => {},
+      error: () => { },
     });
   }
 
@@ -275,7 +275,7 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
         const disc = discRes?.discountList?.find((d: DiscountRecord) => d.regionsId === rid);
         this.rmDiscount.set(disc ?? null);
       },
-      error: () => {},
+      error: () => { },
     });
   }
 
@@ -302,7 +302,6 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
       id: region.id,
       taxRate: region.taxRate,
       taxType: region.taxType,
-      usageCap: newLimit,
     });
     const discReq$ = disc
       ? this.apiService.updateDiscountSettings({ id: disc.id, usageCap: newCap, count: disc.count })

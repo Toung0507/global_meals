@@ -217,79 +217,79 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       'nameEn' | 'nameJP' | 'nameKR' | 'descriptionJP' | 'descriptionKR'
     >
   > = {
-    招牌滷肉飯: {
-      nameEn: 'Braised Pork Rice',
-      nameJP: '魯肉飯（台湾風豚角煮丼）',
-      nameKR: '루러우판（대만식 돼지고기 덮밥）',
-      descriptionJP:
-        '豚バラ肉をじっくり煮込んだ濃厚タレ、半熟煮卵とさっぱりキムチ添え',
-      descriptionKR:
-        '천천히 조린 삼겹살, 진한 간장 소스, 반숙 달걀과 아삭한 겉절이 곁들임',
-    },
-    古早味排骨飯: {
-      nameEn: 'Pork Chop Rice',
-      nameJP: '台湾風ポークカツ丼（懐かし風）',
-      nameKR: '전통식 돼지갈비 덮밥',
-      descriptionJP: '台湾式の揚げポークチョップ、大根の煮物と白ご飯',
-      descriptionKR: '대만식 튀긴 돼지갈비, 무 조림과 흰 쌀밥',
-    },
-    牛排: {
-      nameEn: 'Beef Steak',
-      nameJP: 'ビーフステーキ',
-      nameKR: '비프 스테이크',
-      descriptionJP:
-        'オーストラリア産牛肉、炭火焼きで旨みを閉じ込め、季節野菜とソース添え',
-      descriptionKR:
-        '호주산 소고기, 직화구이로 육즙 봉인, 제철 채소와 소스 곁들임',
-    },
-    三杯雞: {
-      nameEn: 'Three Cup Chicken',
-      nameJP: '三杯鶏（台湾風醤油バジル煮）',
-      nameKR: '삼배계（대만식 간장 바질 닭요리）',
-      descriptionJP: 'ごま油・醤油・紹興酒で炒め煮、バジルの香り豊か',
-      descriptionKR: '참기름·간장·쌀술 삼배 조리, 바질 향이 가득',
-    },
-    蚵仔煎: {
-      nameEn: 'Oyster Pancake',
-      nameJP: '牡蠣オムレツ（台湾風）',
-      nameKR: '대만식 굴전',
-      descriptionJP:
-        '新鮮な牡蠣を使ったさつまいも粉のパンケーキ、特製甘辛ソースがけ',
-      descriptionKR:
-        '신선한 굴을 넣은 고구마 전분 전, 특제 매콤달콤 소스 곁들임',
-    },
-    蚵仔麵線: {
-      nameEn: 'Oyster Vermicelli',
-      nameJP: '牡蠣そうめん（台湾風とろみ麺）',
-      nameKR: '굴 국수（대만식 걸쭉한 면）',
-      descriptionJP:
-        '新鮮な牡蠣と細麺のスープ、甘辛ソースで味付けした夜市の定番',
-      descriptionKR:
-        '신선한 굴과 가는 국수의 조화, 매콤달콤 소스의 야시장 명물',
-    },
-    阿三陽春麵: {
-      nameEn: 'Traditional Noodle',
-      nameJP: 'アサン陽春麺（台湾式あっさり麺）',
-      nameKR: '아산 양춘면（담백한 대만식 국수）',
-      descriptionJP: '昔ながら製法のクリアスープ、手打ち麺のもちもち食感',
-      descriptionKR: '전통 방식으로 우린 맑은 육수, 수제 면의 탱글탱글한 식감',
-    },
-    黑糖珍珠奶茶: {
-      nameEn: 'Brown Sugar Boba',
-      nameJP: '黒糖タピオカミルクティー',
-      nameKR: '흑당 버블 밀크티',
-      descriptionJP: '出来たてタピオカ、手作り黒糖タイガーストライプ',
-      descriptionKR: '갓 삶은 타피오카, 수제 흑당 호랑이 무늬',
-    },
-    仙草奶茶: {
-      nameEn: 'Grass Jelly Milk Tea',
-      nameJP: '仙草ミルクティー',
-      nameKR: '선초 밀크티',
-      descriptionJP:
-        '台湾産仙草ゼリー入り、濃厚ミルクティーとの絶妙な組み合わせ',
-      descriptionKR: '대만산 선초 젤리, 진한 밀크티와의 절묘한 조합',
-    },
-  };
+      招牌滷肉飯: {
+        nameEn: 'Braised Pork Rice',
+        nameJP: '魯肉飯（台湾風豚角煮丼）',
+        nameKR: '루러우판（대만식 돼지고기 덮밥）',
+        descriptionJP:
+          '豚バラ肉をじっくり煮込んだ濃厚タレ、半熟煮卵とさっぱりキムチ添え',
+        descriptionKR:
+          '천천히 조린 삼겹살, 진한 간장 소스, 반숙 달걀과 아삭한 겉절이 곁들임',
+      },
+      古早味排骨飯: {
+        nameEn: 'Pork Chop Rice',
+        nameJP: '台湾風ポークカツ丼（懐かし風）',
+        nameKR: '전통식 돼지갈비 덮밥',
+        descriptionJP: '台湾式の揚げポークチョップ、大根の煮物と白ご飯',
+        descriptionKR: '대만식 튀긴 돼지갈비, 무 조림과 흰 쌀밥',
+      },
+      牛排: {
+        nameEn: 'Beef Steak',
+        nameJP: 'ビーフステーキ',
+        nameKR: '비프 스테이크',
+        descriptionJP:
+          'オーストラリア産牛肉、炭火焼きで旨みを閉じ込め、季節野菜とソース添え',
+        descriptionKR:
+          '호주산 소고기, 직화구이로 육즙 봉인, 제철 채소와 소스 곁들임',
+      },
+      三杯雞: {
+        nameEn: 'Three Cup Chicken',
+        nameJP: '三杯鶏（台湾風醤油バジル煮）',
+        nameKR: '삼배계（대만식 간장 바질 닭요리）',
+        descriptionJP: 'ごま油・醤油・紹興酒で炒め煮、バジルの香り豊か',
+        descriptionKR: '참기름·간장·쌀술 삼배 조리, 바질 향이 가득',
+      },
+      蚵仔煎: {
+        nameEn: 'Oyster Pancake',
+        nameJP: '牡蠣オムレツ（台湾風）',
+        nameKR: '대만식 굴전',
+        descriptionJP:
+          '新鮮な牡蠣を使ったさつまいも粉のパンケーキ、特製甘辛ソースがけ',
+        descriptionKR:
+          '신선한 굴을 넣은 고구마 전분 전, 특제 매콤달콤 소스 곁들임',
+      },
+      蚵仔麵線: {
+        nameEn: 'Oyster Vermicelli',
+        nameJP: '牡蠣そうめん（台湾風とろみ麺）',
+        nameKR: '굴 국수（대만식 걸쭉한 면）',
+        descriptionJP:
+          '新鮮な牡蠣と細麺のスープ、甘辛ソースで味付けした夜市の定番',
+        descriptionKR:
+          '신선한 굴과 가는 국수의 조화, 매콤달콤 소스의 야시장 명물',
+      },
+      阿三陽春麵: {
+        nameEn: 'Traditional Noodle',
+        nameJP: 'アサン陽春麺（台湾式あっさり麺）',
+        nameKR: '아산 양춘면（담백한 대만식 국수）',
+        descriptionJP: '昔ながら製法のクリアスープ、手打ち麺のもちもち食感',
+        descriptionKR: '전통 방식으로 우린 맑은 육수, 수제 면의 탱글탱글한 식감',
+      },
+      黑糖珍珠奶茶: {
+        nameEn: 'Brown Sugar Boba',
+        nameJP: '黒糖タピオカミルクティー',
+        nameKR: '흑당 버블 밀크티',
+        descriptionJP: '出来たてタピオカ、手作り黒糖タイガーストライプ',
+        descriptionKR: '갓 삶은 타피오카, 수제 흑당 호랑이 무늬',
+      },
+      仙草奶茶: {
+        nameEn: 'Grass Jelly Milk Tea',
+        nameJP: '仙草ミルクティー',
+        nameKR: '선초 밀크티',
+        descriptionJP:
+          '台湾産仙草ゼリー入り、濃厚ミルクティーとの絶妙な組み合わせ',
+        descriptionKR: '대만산 선초 젤리, 진한 밀크티와의 절묘한 조합',
+      },
+    };
 
   /* ── 菜單品項（API 載入後動態填充；MOCK_MODE 下使用靜態 Demo 資料）── */
   menuItems = signal<MenuItem[]>([
@@ -1370,7 +1370,6 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
         selectedGiftId,
         originalAmount: this.cartTotal(),
         regionsId: this.branchService.regionsId,
-        country: this.branchService.config.name,
       }),
     );
     const calcAny = calcRes as any;
@@ -1391,13 +1390,13 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
     const giftDetailItem: OrderCartDetailItem[] =
       selectedGiftId > 0
         ? [
-            {
-              productId: giftProductId,
-              quantity: 1,
-              gift: true,
-              promotionsGiftsId: selectedGiftId,
-            },
-          ]
+          {
+            productId: giftProductId,
+            quantity: 1,
+            gift: true,
+            promotionsGiftsId: selectedGiftId,
+          },
+        ]
         : [];
 
     const orderReq: CreateOrdersReq = {
@@ -1997,23 +1996,23 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
 
                     const statusMap: Record<string, OrderStatus> = isCash
                       ? {
-                          PREPARING: 'waiting',
-                          PENDING_CASH: 'waiting',
-                          WAITING: 'waiting',
-                          COOKING: 'cooking',
-                          READY: 'ready',
-                          AWAITING_PAYMENT: 'pending-cash',
-                          PICKED_UP: 'paid',
-                          COMPLETED: 'paid',
-                        }
+                        PREPARING: 'waiting',
+                        PENDING_CASH: 'waiting',
+                        WAITING: 'waiting',
+                        COOKING: 'cooking',
+                        READY: 'ready',
+                        AWAITING_PAYMENT: 'pending-cash',
+                        PICKED_UP: 'paid',
+                        COMPLETED: 'paid',
+                      }
                       : {
-                          PREPARING: 'waiting',
-                          WAITING: 'waiting',
-                          COOKING: 'cooking',
-                          READY: 'done',
-                          PICKED_UP: 'done',
-                          COMPLETED: 'done',
-                        };
+                        PREPARING: 'waiting',
+                        WAITING: 'waiting',
+                        COOKING: 'cooking',
+                        READY: 'done',
+                        PICKED_UP: 'done',
+                        COMPLETED: 'done',
+                      };
 
                     const cur = this.orderService
                       .orders()
@@ -2033,8 +2032,8 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
                     /* 同步更新 activeOrders 顯示狀態 */
                     const aoStatus =
                       newStatus === 'waiting' ? 'cooking' :
-                      newStatus === 'cooking' ? 'cooking' :
-                      newStatus === 'ready' ? 'ready' : 'done';
+                        newStatus === 'cooking' ? 'cooking' :
+                          newStatus === 'ready' ? 'ready' : 'done';
                     this.activeOrders.set(
                       this.activeOrders().map((o) =>
                         o.id === t.orderId ? { ...o, status: aoStatus as ActiveOrder['status'] } : o,
@@ -2047,7 +2046,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
                       this._scheduleOrderCompletion(t.orderId);
                     }
                   },
-                  error: () => {},
+                  error: () => { },
                 });
             }, 5000));
           }
@@ -2294,7 +2293,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
             this._afterOrderSuccess(orderId, orderDateId, 'waiting', false);
           }
         },
-        error: () => {},
+        error: () => { },
       });
     }, 3000);
   }
@@ -2436,13 +2435,13 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
               : 0;
             const giftNames = hasGifts
               ? [
-                  ...new Set(
-                    p.gifts.map(
-                      (g) =>
-                        `${g.productName} × ${g.quantity === -1 ? 1 : g.quantity}`,
-                    ),
+                ...new Set(
+                  p.gifts.map(
+                    (g) =>
+                      `${g.productName} × ${g.quantity === -1 ? 1 : g.quantity}`,
                   ),
-                ]
+                ),
+              ]
               : [];
             const TAG_TYPES = ['new', 'promo', 'premium'] as const;
             const COLOR_SCHEMES = [
@@ -2488,24 +2487,24 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
                   : '기간 한정 이벤트, 놓치지 마세요！'),
               highlights: hasGifts
                 ? [
-                    `消費滿 $${minSpend}`,
-                    '可選贈品',
-                    `${p.startTime} ～ ${p.endTime}`,
-                  ]
+                  `消費滿 $${minSpend}`,
+                  '可選贈品',
+                  `${p.startTime} ～ ${p.endTime}`,
+                ]
                 : [`${p.startTime} ～ ${p.endTime}`],
               highlightsJP: hasGifts
                 ? [
-                    `$${minSpend}以上のご購入`,
-                    'プレゼントをお選びください',
-                    `${p.startTime} ～ ${p.endTime}`,
-                  ]
+                  `$${minSpend}以上のご購入`,
+                  'プレゼントをお選びください',
+                  `${p.startTime} ～ ${p.endTime}`,
+                ]
                 : [`${p.startTime} ～ ${p.endTime}`],
               highlightsKR: hasGifts
                 ? [
-                    `$${minSpend} 이상 구매`,
-                    '선물 선택 가능',
-                    `${p.startTime} ～ ${p.endTime}`,
-                  ]
+                  `$${minSpend} 이상 구매`,
+                  '선물 선택 가능',
+                  `${p.startTime} ～ ${p.endTime}`,
+                ]
                 : [`${p.startTime} ～ ${p.endTime}`],
             };
           },
@@ -2579,7 +2578,7 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
       const memberId = user?.isGuest ? 1 : (user?.id ?? 1);
       this.apiService.clearCart({ cartId, memberId }).subscribe({
         /* 400 "Cart Already Checked Out" 視為成功：靜默忽略 */
-        error: () => {},
+        error: () => { },
       });
     }
   }
@@ -2741,23 +2740,23 @@ export class CustomerHomeComponent implements OnInit, OnDestroy {
               if (res?.code !== 200) return;
               const statusMap: Record<string, OrderStatus> = isCash
                 ? {
-                    PREPARING: 'waiting',
-                    PENDING_CASH: 'waiting',
-                    WAITING: 'waiting',
-                    COOKING: 'cooking',
-                    READY: 'ready',
-                    AWAITING_PAYMENT: 'pending-cash',
-                    PICKED_UP: 'paid',
-                    COMPLETED: 'paid',
-                  }
+                  PREPARING: 'waiting',
+                  PENDING_CASH: 'waiting',
+                  WAITING: 'waiting',
+                  COOKING: 'cooking',
+                  READY: 'ready',
+                  AWAITING_PAYMENT: 'pending-cash',
+                  PICKED_UP: 'paid',
+                  COMPLETED: 'paid',
+                }
                 : {
-                    PREPARING: 'waiting',
-                    WAITING: 'waiting',
-                    COOKING: 'cooking',
-                    READY: 'done',
-                    PICKED_UP: 'done',
-                    COMPLETED: 'done',
-                  };
+                  PREPARING: 'waiting',
+                  WAITING: 'waiting',
+                  COOKING: 'cooking',
+                  READY: 'done',
+                  PICKED_UP: 'done',
+                  COMPLETED: 'done',
+                };
               const current = this.orderService
                 .orders()
                 .find((o) => o.id === trackId);

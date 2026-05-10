@@ -430,6 +430,7 @@ export interface RevenueData {
   branchName: string;
   regionsName: string;
   totalAmount: number;
+  totalCost: number;
 }
 
 export interface RevenueQueryRes extends BasicRes {
@@ -593,7 +594,6 @@ export interface PromotionsReq {
   selectedGiftId: number;
   originalAmount: number;
   regionsId: number;
-  country?: string;
 }
 
 export interface PromotionsRes {
@@ -672,7 +672,7 @@ export interface GiftDetailVo {
 export class ApiService {
   private readonly BASE = API_CONFIG.BASE_URL;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   /* ══════════════════════════════════════════════════
    * Cart API  →  /cart/
@@ -1033,7 +1033,6 @@ export class ApiService {
       id: req.id,
       taxRate: req.taxRate,
       taxType: req.taxType,
-      usageCap: req.usageCap,
     });
   }
 
@@ -1063,6 +1062,7 @@ export class ApiService {
     return this.http.post<RevenueQueryRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.REPORTS.REVENUE}`,
       req,
+      { withCredentials: true },
     );
   }
 
