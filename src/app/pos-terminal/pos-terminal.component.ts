@@ -1344,8 +1344,8 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   private loadStockList(): void {
     const globalAreaId = this.authService.currentStaff?.globalAreaId ?? 19;
     forkJoin({
-      inventory: this.apiService.getBranchInventory(globalAreaId),
-      allProducts: this.apiService.getAllProducts(),
+      inventory: this.apiService.getBranchInventory(globalAreaId).pipe(catchError(() => of(null))),
+      allProducts: this.apiService.getAllProducts().pipe(catchError(() => of(null))),
       menu: this.apiService.getActiveProducts(globalAreaId).pipe(catchError(() => of(null))),
       categories: this.apiService.getCategories().pipe(catchError(() => of([]))),
       styles: this.apiService.getStyles().pipe(catchError(() => of([]))),
