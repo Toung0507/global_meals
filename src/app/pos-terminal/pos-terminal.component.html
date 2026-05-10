@@ -1753,6 +1753,8 @@
           <div
             class="pos-promo-card"
             [style.opacity]="promo.ended ? '0.62' : '1'"
+            (click)="openPromoDetail(promo.id)"
+            style="cursor:pointer"
           >
             <!-- 頂部色條 -->
             <div
@@ -1804,6 +1806,45 @@
       </div>
     }
   </div>
+
+  <!-- ── 活動詳細檢視 Modal ── -->
+  @if (selectedPromoDetail()) {
+    <div class="pos-promo-detail-overlay" (click)="closePromoDetail()">
+      <div class="pos-promo-detail-modal" (click)="$event.stopPropagation()">
+        <div class="pos-promo-detail-hd">
+          <span class="pos-promo-detail-title">{{ selectedPromoDetail()!.name }}</span>
+          <button class="pos-pp-close" (click)="closePromoDetail()">✕</button>
+        </div>
+        <div class="pos-promo-detail-body">
+          @if (selectedPromoDetail()!.promotionImg) {
+            <img
+              class="pos-promo-detail-img"
+              [src]="apiService.getPromotionImageUrl(selectedPromoDetail()!.id)"
+              [alt]="selectedPromoDetail()!.name"
+            />
+          }
+          @if (selectedPromoDetail()!.description) {
+            <p class="pos-promo-detail-desc">{{ selectedPromoDetail()!.description }}</p>
+          }
+          <div class="pos-promo-detail-meta">
+            <span>{{ selectedPromoDetail()!.startTime }} ～ {{ selectedPromoDetail()!.endTime }}</span>
+          </div>
+          @if (selectedPromoDetail()!.gifts.length) {
+            <div class="pos-promo-detail-gifts">
+              <div class="pos-promo-detail-gifts-title">贈品門檻</div>
+              @for (g of selectedPromoDetail()!.gifts; track g.id) {
+                <div class="pos-promo-detail-gift-row">
+                  <span class="pos-promo-detail-gift-amount">滿 NT${{ g.fullAmount }}</span>
+                  <span class="pos-promo-detail-gift-arrow">→</span>
+                  <span class="pos-promo-detail-gift-name">{{ g.productName }} × {{ g.quantity }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
 
   <!-- 新增活動 Slide-in Panel -->
   @if (showPosPromoPanel()) {

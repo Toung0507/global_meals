@@ -291,6 +291,16 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /* ── 活動/贈品選擇（後端驅動）──────────────────────── */
   posAllPromos = signal<PromotionDetailVo[]>([]);
+  selectedPromoDetail = signal<PromotionDetailVo | null>(null);
+
+  openPromoDetail(id: number): void {
+    const detail = this.posAllPromos().find((p) => p.id === id) ?? null;
+    this.selectedPromoDetail.set(detail);
+  }
+
+  closePromoDetail(): void {
+    this.selectedPromoDetail.set(null);
+  }
   posPromoDrawerOpen = signal(false);
   selectedPosPromoId = signal<number | null>(null); // null=未選, -1=不參加
   selectedPosGiftRuleId = signal<number | null>(null);
@@ -562,7 +572,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     public router: Router,
     public authService: AuthService,
     public orderService: OrderService,
-    private apiService: ApiService,
+    protected apiService: ApiService,
   ) {}
 
   ngOnInit(): void {
