@@ -42,6 +42,7 @@ export const API_CONFIG = {
       CALCULATE: 'lazybaobao/promotions/calculate', // POST
       AVAILABLE_GIFTS: 'lazybaobao/promotions/getAvailableGifts', // POST
       ADD_GIFT: 'lazybaobao/promotions/addPromotionGift', // POST
+      DEACTIVATE_GIFT: 'lazybaobao/promotions/deactivateGift/:id', // POST 關閉單一贈品規則
       UPLOAD_IMAGE: 'lazybaobao/promotions/uploadImage/:id', // POST (multipart)
       UPDATE_DESCRIPTION: 'lazybaobao/promotions/updateDescription/:id', // POST
       GET_IMAGE: 'lazybaobao/promotions/image/:id', // GET

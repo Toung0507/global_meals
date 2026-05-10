@@ -1280,7 +1280,7 @@
               </div>
               @if (order.isCash && order.source === 'customer') {
                 <button class="ob-action-btn ob-action-btn--cash" (click)="moveToUnpaid(order.id)">
-                  移至未付款
+                  移至結帳
                 </button>
               } @else {
                 <button class="ob-action-btn ob-action-btn--green" (click)="completePickup(order.id)">
@@ -1295,90 +1295,91 @@
         </div>
       </div>
 
-      <!-- ── 欄三：待付款（有訂單時才顯示）── -->
-      @if (pendingCashOrders().length > 0 || orderService.pendingCash().length > 0) {
-        <div class="ob-col ob-col--unpaid">
-          <div class="ob-col-hd ob-col-hd--unpaid">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="ob-col-icon"
-            >
-              <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-              <line x1="1" y1="10" x2="23" y2="10" />
-            </svg>
-            <span class="ob-col-title">待付款</span>
-            <span class="ob-col-badge ob-col-badge--unpaid">{{
-              pendingCashOrders().length + orderService.pendingCash().length
-            }}</span>
-          </div>
-          <div class="ob-col-body">
-            @for (order of pendingCashOrders(); track order.posId) {
-              <div class="order-board-card ob-unpaid">
-                <div class="ob-card-top">
-                  <span class="ob-num">{{ order.number }}</span>
-                  <div class="ob-badges">
-                    <span class="badge-unpaid">未付款</span>
-                  </div>
-                </div>
-                <div class="ob-items-list">
-                  @for (item of order.items; track item) {
-                    <div class="ob-item">{{ item }}</div>
-                  }
-                </div>
-                <div class="ob-meta">
-                  <span>{{ order.createdAt }}</span>
-                  <span>{{ order.phone }}</span>
-                  <span class="ob-total">${{ order.total }}</span>
-                </div>
-                <button
-                  class="ob-action-btn ob-action-btn--red"
-                  [disabled]="confirmingCashId() === order.posId"
-                  (click)="confirmCashPayment(order)"
-                >
-                  @if (confirmingCashId() === order.posId) {
-                    處理中...
-                  } @else {
-                    收款完成 ${{ order.total }}
-                  }
-                </button>
-              </div>
-            }
-            @for (order of orderService.pendingCash(); track order.id) {
-              <div class="order-board-card ob-unpaid">
-                <div class="ob-card-top">
-                  <span class="ob-num">{{ order.number }}</span>
-                  <div class="ob-badges">
-                    <span class="badge-online">線上</span>
-                    <span class="badge-unpaid">待付款</span>
-                  </div>
-                </div>
-                <div class="ob-items-list">
-                  @for (item of order.items; track item) {
-                    <div class="ob-item">{{ item }}</div>
-                  }
-                </div>
-                <div class="ob-meta">
-                  <span>{{ order.createdAt }}</span>
-                  <span>{{ order.payMethod }}</span>
-                  <span class="ob-total">${{ order.total }}</span>
-                </div>
-                <button
-                  class="ob-action-btn ob-action-btn--red"
-                  (click)="openCheckoutModal(order)"
-                >
-                  💳 結帳 NT$ {{ order.total }}
-                </button>
-              </div>
-            }
-          </div>
+      <!-- ── 欄三：待付款（永遠顯示）── -->
+      <div class="ob-col ob-col--unpaid">
+        <div class="ob-col-hd ob-col-hd--unpaid">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="ob-col-icon"
+          >
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+            <line x1="1" y1="10" x2="23" y2="10" />
+          </svg>
+          <span class="ob-col-title">待付款</span>
+          <span class="ob-col-badge ob-col-badge--unpaid">{{
+            pendingCashOrders().length + orderService.pendingCash().length
+          }}</span>
         </div>
-      }
+        <div class="ob-col-body">
+          @if (pendingCashOrders().length === 0 && orderService.pendingCash().length === 0) {
+            <div class="ob-empty">目前無待付款訂單</div>
+          }
+          @for (order of pendingCashOrders(); track order.posId) {
+            <div class="order-board-card ob-unpaid">
+              <div class="ob-card-top">
+                <span class="ob-num">{{ order.number }}</span>
+                <div class="ob-badges">
+                  <span class="badge-unpaid">未付款</span>
+                </div>
+              </div>
+              <div class="ob-items-list">
+                @for (item of order.items; track item) {
+                  <div class="ob-item">{{ item }}</div>
+                }
+              </div>
+              <div class="ob-meta">
+                <span>{{ order.createdAt }}</span>
+                <span>{{ order.phone }}</span>
+                <span class="ob-total">${{ order.total }}</span>
+              </div>
+              <button
+                class="ob-action-btn ob-action-btn--red"
+                [disabled]="confirmingCashId() === order.posId"
+                (click)="confirmCashPayment(order)"
+              >
+                @if (confirmingCashId() === order.posId) {
+                  處理中...
+                } @else {
+                  收款完成 ${{ order.total }}
+                }
+              </button>
+            </div>
+          }
+          @for (order of orderService.pendingCash(); track order.id) {
+            <div class="order-board-card ob-unpaid">
+              <div class="ob-card-top">
+                <span class="ob-num">{{ order.number }}</span>
+                <div class="ob-badges">
+                  <span class="badge-online">線上</span>
+                  <span class="badge-unpaid">待付款</span>
+                </div>
+              </div>
+              <div class="ob-items-list">
+                @for (item of order.items; track item) {
+                  <div class="ob-item">{{ item }}</div>
+                }
+              </div>
+              <div class="ob-meta">
+                <span>{{ order.createdAt }}</span>
+                <span>{{ order.payMethod }}</span>
+                <span class="ob-total">${{ order.total }}</span>
+              </div>
+              <button
+                class="ob-action-btn ob-action-btn--red"
+                (click)="openCheckoutModal(order)"
+              >
+                💳 結帳 NT$ {{ order.total }}
+              </button>
+            </div>
+          }
+        </div>
+      </div>
 
       <!-- ── 欄四：取餐完畢（done + paid）── -->
       <div class="ob-col">

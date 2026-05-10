@@ -659,11 +659,12 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
         const now = new Date();
         const nowStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
-        const formatOrderNum = (orderDateId: string, id: string) =>
-          `${orderDateId}-${id}`;
+        /* 依 DB id 升序排序，index + 1 即為今日流水號（0001、0002…） */
+        const sortedList = [...res.getOrderVoList].sort(
+          (a, b) => parseInt(a.id) - parseInt(b.id),
+        );
 
-        /* 後端回傳新→舊；reverse 後逐筆 prepend，確保最新訂單排在最上方 */
-        [...res.getOrderVoList].reverse().forEach((o) => {
+        sortedList.forEach((o, idx) => {
           const existingId = `DB-${o.orderDateId}-${o.id}`;
 
           const rawDetails: GetOrdersDetailVo[] =
@@ -679,11 +680,11 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
           const payStatus: string = o.payStatus ?? o.paymentStatus ?? '';
           const isCash =
             rawPayment === 'CASH' ||
+            (payStatus === 'UNPAID' && rawPayment === '') ||
             o.ordersStatus === 'PENDING_CASH' ||
             o.kitchenStatus === 'PENDING_CASH';
 
-          /* ── 狀態映射：現金訂單 READY → 'ready'（讓客戶追蹤步驟3亮起）
-           *            非現金 READY → 'done'（一般完成）────────────────── */
+          /* ── 狀態映射：所有 READY 訂單進「餐點製作完成」，由員工手動完成 ── */
           const statusMap: Record<
             string,
             'pending-cash' | 'waiting' | 'cooking' | 'ready' | 'done'
@@ -692,7 +693,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
             UNPAID: 'waiting',
             WAITING: 'waiting',
             COOKING: 'cooking',
-            READY: isCash ? 'ready' : 'done',
+            READY: 'ready',
             AWAITING_PAYMENT: 'pending-cash',
             COMPLETED: 'done',
           };
@@ -715,7 +716,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
                     ? '行動支付'
                     : '待付款';
 
-          const orderNumber = formatOrderNum(o.orderDateId, o.id);
+          const orderNumber = `${o.orderDateId}-${String(idx + 1).padStart(4, '0')}`;
           /* 同時比對 DB id 和 number，避免 POS 下單後 polling 重複新增 */
           const existing =
             this.orderService.orders().find((x) => x.id === existingId) ??
@@ -733,8 +734,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
               isCash,
               source: 'customer',
               customerName: '',
-              orderType:
-                (o.phone ?? '').startsWith('GUEST') || !o.memberId ? '訪客' : '會員',
+              orderType: (o.phone ?? '').startsWith('GUEST') ? '訪客' : '會員',
             } as LiveOrder);
           } else {
             const targetId = existing.id;
@@ -1137,6 +1137,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
             })),
             ...giftDetailItem,
           ],
+          promotionsId: giftRuleId > 0 ? (this.selectedPosPromoId() ?? 0) : 0,
         } as CreateOrdersReq),
       );
 
@@ -1302,26 +1303,9 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /* ── 現金收款完成（POS 看板內移動的訂單）────────── */
   async completeCashOrder(order: LiveOrder): Promise<void> {
-    /* 後端同步訂單（id 格式：DB-{orderDateId}-{orderId}）→ 呼叫 cash_confirm API
-     * pay() 只接受 UNPAID 狀態，現金訂單到此已是 READY，需用 cash_confirm */
-    if (order.id.startsWith('DB-')) {
-      const parts = order.id.split('-');
-      if (parts.length >= 3) {
-        const orderDateId = parts[1];
-        const orderId = parts.slice(2).join('-');
-        try {
-          await firstValueFrom(
-            this.apiService.confirmCashPayment(
-              orderId,
-              orderDateId,
-              order.total,
-            ),
-          );
-        } catch {
-          /* 靜默失敗，本地狀態仍更新 */
-        }
-      }
-    }
+    /* 線上現金訂單建立時未傳 paymentMethod，後端 DB 存空字串，
+     * 故 cash_confirm 永遠回傳 400（paymentMethod != CASH）。
+     * 改以 orders_status(PICKED_UP) 直接標記取餐完成。 */
     this.orderService.updateStatus(order.id, 'paid');
     this._pushOrdersStatus(order.id, 'PICKED_UP');
     this.posShowToast(`收款完成：${order.number}`);

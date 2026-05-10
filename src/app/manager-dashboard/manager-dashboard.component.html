@@ -2316,6 +2316,12 @@
                       >
                       @if (!gift.active) {
                         <span class="promo-gift-inactive">已停用</span>
+                      } @else {
+                        <button
+                          class="promo-gift-deactivate-btn"
+                          (click)="onDeactivateGift(gift.id, promo)"
+                          title="關閉此贈品規則"
+                        >停用</button>
                       }
                     </div>
                   }

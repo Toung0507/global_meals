@@ -1123,6 +1123,17 @@ select.form-ctrl option {
     border-radius: 4px;
 }
 
+.promo-gift-deactivate-btn {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    background: transparent;
+    color: #f87171;
+    border: 1px solid #f87171;
+    border-radius: 4px;
+    cursor: pointer;
+    &:hover { background: rgba(248, 113, 113, 0.12); }
+}
+
 .promo-sheet-ft {
     padding: 12px 20px;
     border-top: 1px solid #E2E8F0;

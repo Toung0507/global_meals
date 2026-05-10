@@ -941,6 +941,15 @@ export class ApiService {
     return this.http.post<BasicRes>(`${this.BASE}/${imgPath}`, form);
   }
 
+  /** POST /promotions/deactivateGift/:id — 關閉單一贈品規則 */
+  deactivateGift(giftRuleId: number): Observable<BasicRes> {
+    const path = API_CONFIG.ENDPOINTS.PROMOTIONS.DEACTIVATE_GIFT.replace(
+      ':id',
+      String(giftRuleId),
+    );
+    return this.http.post<BasicRes>(`${this.BASE}/${path}`, {});
+  }
+
   /** POST /promotions/updateDescription/:id — 更新促銷活動描述 */
   updatePromotionDescription(
     id: number,

@@ -1820,6 +1820,25 @@ this.activeModal.set('addGift');
       });
   }
 
+  onDeactivateGift(giftRuleId: number, promo: DashPromo): void {
+    this.apiService.deactivateGift(giftRuleId).subscribe({
+      next: () => {
+        this.promos.update(list =>
+          list.map(p =>
+            p.id !== promo.id ? p : {
+              ...p,
+              gifts: (p.gifts ?? []).map(g =>
+                g.id === giftRuleId ? { ...g, active: false } : g
+              ),
+            }
+          )
+        );
+        this.showToast('✅ 贈品規則已停用');
+      },
+      error: () => this.showToast('❌ 停用失敗，請確認後端連線'),
+    });
+  }
+
   /* ── 庫存：inline 調整 ─────────────────────────── */
   startAdjustInventory(id: number): void {
     const item = this.inventory().find((i) => i.id === id);
