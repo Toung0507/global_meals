@@ -4,7 +4,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { AuthService } from '../shared/auth.service';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
+
 import {
   ApiService,
   InventoryDetailVo,
@@ -12,10 +13,10 @@ import {
   GiftDetailVo,
   StaffVO,
   RegisterStaffReq,
-  MonthlyReportDetail,
-  MonthlyProductsSalesVo,
   RegionVO,
   DiscountRecord,
+  MonthlyReportDetail,
+  MonthlyProductsSalesVo,
 } from '../shared/api.service';
 
 /* ── 頁籤型別 ────────────────────────────────────── */
@@ -32,7 +33,6 @@ interface DashInventory {
   category: string;
   style: string;
   stock: number;
-  safeStock: number;
   basePrice: number;
   costPrice: number;
   maxOrderQuantity: number;
@@ -76,8 +76,8 @@ interface DashPromo {
 })
 export class RmDashboardComponent implements OnInit, OnDestroy {
   /* ── 頁籤狀態 ────────────────────────────────────── */
-  activeTab = signal<RmTab>('inventory');
-  userSubTab = signal<RmUserSubTab>('staff');
+  activeTab = signal<RmTab>('users');
+  userSubTab = signal<RmUserSubTab>('bm');
   clockStr = signal('');
   private clockInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -102,30 +102,72 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 庫存 ────────────────────────────────────────── */
   inventory = signal<DashInventory[]>([]);
+  inventoryLoading = signal(false);
+  private productMetaCache = new Map<
+    number,
+    {
+      category: string;
+      style: string;
+    }
+  >();
   inventorySearch = signal('');
+  inventorySortKey = signal<
+    'name' | 'category' | 'style' | 'stock' | 'costPrice' | 'basePrice' | 'maxOrderQuantity'
+  >('name');
+
+  inventorySortDir = signal<'asc' | 'desc'>('asc');
 
   filteredInventory = computed(() => {
     const q = this.inventorySearch().toLowerCase().trim();
-    if (!q) return this.inventory();
-    return this.inventory().filter((i) => i.name.toLowerCase().includes(q));
+    const sortKey = this.inventorySortKey();
+    const sortDir = this.inventorySortDir();
+
+    const list = q
+      ? this.inventory().filter((i) => i.name.toLowerCase().includes(q))
+      : this.inventory();
+
+    return [...list].sort((a, b) => {
+      const aValue = a[sortKey];
+      const bValue = b[sortKey];
+
+      let result = 0;
+
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        result = aValue - bValue;
+      } else {
+        result = String(aValue || '').localeCompare(
+          String(bValue || ''),
+          'zh-Hant',
+        );
+      }
+
+      return sortDir === 'asc' ? result : -result;
+    });
   });
 
-  availableCategories = computed(() => [
-    ...new Set(
-      this.inventory()
-        .map((i) => i.category)
-        .filter(Boolean),
-    ),
-  ]);
+  setInventorySort(
+    key: 'name' | 'category' | 'style' | 'stock' | 'costPrice' | 'basePrice' | 'maxOrderQuantity',
+  ): void {
+    if (this.inventorySortKey() === key) {
+      this.inventorySortDir.update((dir) => (dir === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
 
-  readonly STYLE_OPTIONS = ['台式經典', '日式簡約', '韓式風情', '美式辣食', '義式浪漫'];
+    this.inventorySortKey.set(key);
+    this.inventorySortDir.set('asc');
+  }
+
+  sortIcon(
+    key: 'name' | 'category' | 'style' | 'stock' | 'costPrice' | 'basePrice' | 'maxOrderQuantity',
+  ): string {
+    if (this.inventorySortKey() !== key) return '↕';
+    return this.inventorySortDir() === 'asc' ? '↑' : '↓';
+  }
 
   /* ── 調整庫存 Modal ────────────────────────────────── */
   showAdjustModal = signal(false);
   adjustModalItem = signal<DashInventory | null>(null);
   adjustDraft = {
-    category: '',
-    style: '',
     stock: 0,
     costPrice: 0,
     basePrice: 0,
@@ -163,52 +205,76 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
   /* ── 活動 ────────────────────────────────────────── */
   promos = signal<DashPromo[]>([]);
   selectedPromo = signal<DashPromo | null>(null);
+  failedPromoImageIds = signal<Set<number>>(new Set());
+
+  isPromoImageFailed(id: number): boolean {
+    return this.failedPromoImageIds().has(id);
+  }
+
+  onPromoImageError(id: number): void {
+    this.failedPromoImageIds.update((set) => {
+      const next = new Set(set);
+      next.add(id);
+      return next;
+    });
+  }
 
   /* ── 財務報表 ─────────────────────────────────────── */
-  financeStart = signal('');
-  financeEnd = signal('');
+  financeStart = signal('2026-01');
+  financeEnd = signal('2026-05');
   financeLoading = signal(false);
+  financeHasQueried = signal(false);
   financeMonthlyData = signal<MonthlyReportDetail[]>([]);
 
-  financeChartData = computed(() => {
-    const rows = this.financeMonthlyData();
-    if (!rows.length) return [] as { month: string; revenue: number; cost: number }[];
-    const monthMap = new Map<string, { revenue: number; cost: number }>();
-    rows.forEach((r) => {
-      const prev = monthMap.get(r.reportDate) ?? { revenue: 0, cost: 0 };
-      monthMap.set(r.reportDate, {
-        revenue: prev.revenue + Number(r.totalAmount ?? 0),
-        cost: prev.cost + Number(r.totalCost ?? 0),
-      });
-    });
-    return Array.from(monthMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([month, v]) => ({ month, ...v }));
+  financeTrendData = computed(() => {
+    return [...this.financeMonthlyData()]
+      .sort((a, b) => String(a.reportDate).localeCompare(String(b.reportDate)))
+      .map((row) => ({
+        month: row.reportDate,
+        branchName: row.branchName,
+        revenue: Number(row.totalAmount ?? 0),
+        cost: Number(row.totalCost ?? 0),
+      }));
   });
 
   financeChartMax = computed(() => {
-    const data = this.financeChartData();
-    if (!data.length) return 1;
-    return Math.max(...data.map((d) => Math.max(d.revenue, d.cost)), 1);
+    const rows = this.financeTrendData();
+    if (!rows.length) return 1;
+
+    return Math.max(
+      ...rows.map((row) => Math.max(row.revenue, row.cost)),
+      1,
+    );
   });
 
-  financeTotal = computed(() =>
-    this.financeChartData().reduce((s, d) => s + d.revenue, 0),
-  );
-  financeCostTotal = computed(() =>
-    this.financeChartData().reduce((s, d) => s + d.cost, 0),
-  );
-  financeGrossProfit = computed(() => this.financeTotal() - this.financeCostTotal());
-  financeMarginPct = computed(() => {
-    const rev = this.financeTotal();
-    if (!rev) return 0;
-    return (this.financeGrossProfit() / rev) * 100;
+  currentMonthReport = computed(() => {
+    const rows = this.financeTrendData();
+    return rows.length ? rows[rows.length - 1] : null;
+  });
+
+  previousMonthReport = computed(() => {
+    const rows = this.financeTrendData();
+    return rows.length >= 2 ? rows[rows.length - 2] : null;
+  });
+
+  currentMonthRevenue = computed(() => this.currentMonthReport()?.revenue ?? 0);
+  previousMonthRevenue = computed(() => this.previousMonthReport()?.revenue ?? 0);
+  currentMonthCost = computed(() => this.currentMonthReport()?.cost ?? 0);
+
+  revenueGrowthRate = computed(() => {
+    const previous = this.previousMonthRevenue();
+    const current = this.currentMonthRevenue();
+
+    if (!previous) return 0;
+
+    return ((current - previous) / previous) * 100;
   });
 
   /* ── 商品月銷售報表 ────────────────────────────────── */
   salesYear = signal(new Date().getFullYear());
   salesMonth = signal(new Date().getMonth() + 1);
   salesLoading = signal(false);
+  salesHasQueried = signal(false);
   salesData = signal<MonthlyProductsSalesVo[]>([]);
 
   /* ── Toast ───────────────────────────────────────── */
@@ -318,39 +384,131 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
   }
 
   /* ── 庫存 ────────────────────────────────────────── */
+
   private loadInventory(): void {
     if (!this.branchId) return;
+
+    this.inventoryLoading.set(true);
+
     this.apiService.getBranchInventory(this.branchId).subscribe({
       next: (res) => {
-        if (res?.data?.length) {
-          this.inventory.set(
-            res.data.map((inv: InventoryDetailVo) => ({
-              id: inv.productId,
-              productId: inv.productId,
-              globalAreaId: inv.globalAreaId,
-              name: inv.productName,
-              branch: inv.branchName,
-              category: inv.category ?? '',
-              style: inv.style ?? '',
-              stock: inv.stockQuantity,
-              safeStock: 10,
-              basePrice: inv.basePrice,
-              costPrice: inv.costPrice,
-              maxOrderQuantity: inv.maxOrderQuantity,
-              active: inv.active,
-            })),
-          );
+        const inventoryList = res?.data ?? [];
+
+        if (inventoryList.length === 0) {
+          this.inventory.set([]);
+          this.inventoryLoading.set(false);
+          return;
         }
+
+        const productIds = Array.from(
+          new Set(inventoryList.map((inv: InventoryDetailVo) => inv.productId)),
+        );
+
+        const missingProductIds = productIds.filter(
+          (id) => !this.productMetaCache.has(id),
+        );
+
+        if (missingProductIds.length === 0) {
+          this.setInventoryWithProductMeta(inventoryList);
+          this.inventoryLoading.set(false);
+          return;
+        }
+
+        forkJoin(
+          missingProductIds.map((id) =>
+            this.apiService.getProductDetail(id).pipe(
+              catchError(() =>
+                of({
+                  code: 404,
+                  message: 'Product Not Found!!',
+                  inventoryList: null,
+                  product: null,
+                  productList: null,
+                }),
+              ),
+            ),
+          ),
+        ).subscribe({
+          next: (detailList) => {
+            detailList.forEach((detailRes, index) => {
+              const productId = missingProductIds[index];
+
+              if (detailRes?.code === 200 && detailRes.product) {
+                this.productMetaCache.set(productId, {
+                  category: detailRes.product.category ?? '',
+                  style: detailRes.product.style ?? '',
+                });
+                return;
+              }
+
+              // 商品不存在 / 404 / product 為 null
+              // 標記為 null，等等 setInventoryWithProductMeta 會直接排除
+              this.productMetaCache.set(productId, {
+                category: '__PRODUCT_NOT_FOUND__',
+                style: '__PRODUCT_NOT_FOUND__',
+              });
+            });
+
+            this.setInventoryWithProductMeta(inventoryList);
+            this.inventoryLoading.set(false);
+          },
+          error: () => {
+            this.inventory.set([]);
+            this.inventoryLoading.set(false);
+            this.showToast('⚠️ 商品資料載入失敗');
+          },
+        });
       },
-      error: () => this.showToast('⚠️ 庫存載入失敗'),
+      error: () => {
+        this.inventoryLoading.set(false);
+        this.showToast('⚠️ 庫存載入失敗');
+      },
     });
+  }
+
+  private setInventoryWithProductMeta(inventoryList: InventoryDetailVo[]): void {
+    const validInventory = inventoryList
+      .map((inv: InventoryDetailVo) => {
+        const meta = this.productMetaCache.get(inv.productId);
+
+        // 如果商品 detail 回傳 404 / product null，就不顯示這筆庫存
+        if (
+          meta?.category === '__PRODUCT_NOT_FOUND__' &&
+          meta?.style === '__PRODUCT_NOT_FOUND__'
+        ) {
+          return null;
+        }
+
+        return {
+          id: inv.productId,
+          productId: inv.productId,
+          globalAreaId: inv.globalAreaId,
+          name: inv.productName,
+          branch: inv.branchName,
+          category: meta?.category ?? inv.category ?? '',
+          style: meta?.style ?? inv.style ?? '',
+          stock: inv.stockQuantity,
+          basePrice: inv.basePrice,
+          costPrice: inv.costPrice,
+          maxOrderQuantity: inv.maxOrderQuantity,
+          active: inv.active,
+        } satisfies DashInventory;
+      })
+      .filter((item): item is DashInventory => item !== null);
+    validInventory.sort((a, b) => {
+      return (
+        (a.category || '').localeCompare(b.category || '', 'zh-Hant') ||
+        (a.style || '').localeCompare(b.style || '', 'zh-Hant') ||
+        a.name.localeCompare(b.name, 'zh-Hant')
+      );
+    });
+
+    this.inventory.set(validInventory);
   }
 
   openAdjustModal(item: DashInventory): void {
     this.adjustModalItem.set(item);
     this.adjustDraft = {
-      category: item.category,
-      style: item.style,
       stock: item.stock,
       costPrice: item.costPrice,
       basePrice: item.basePrice,
@@ -367,11 +525,30 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
   confirmAdjustModal(): void {
     const item = this.adjustModalItem();
     if (!item) return;
-    this.adjustLoading.set(true);
 
-    const { category, style, stock, costPrice, basePrice, maxOrderQuantity } =
-      this.adjustDraft;
-    const metaChanged = category !== item.category || style !== item.style;
+    const { stock, costPrice, basePrice, maxOrderQuantity } = this.adjustDraft;
+
+    if (stock < 0) {
+      this.showToast('⚠️ 庫存不可小於 0');
+      return;
+    }
+
+    if (costPrice < 0) {
+      this.showToast('⚠️ 成本價不可小於 0');
+      return;
+    }
+
+    if (basePrice <= 0) {
+      this.showToast('⚠️ 單價需大於 0');
+      return;
+    }
+
+    if (maxOrderQuantity <= 0) {
+      this.showToast('⚠️ 最大購買量需大於 0');
+      return;
+    }
+
+    this.adjustLoading.set(true);
 
     this.apiService
       .updateBranchInventory({
@@ -385,34 +562,7 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
       })
       .subscribe({
         next: () => {
-          if (!metaChanged) {
-            this.finishAdjust('✅ 庫存資料已更新');
-            return;
-          }
-          this.apiService.getProductDetail(item.productId).subscribe({
-            next: (res) => {
-              const desc = res?.product?.description ?? '';
-              if (!desc) {
-                this.finishAdjust('⚠️ 原商品描述為空，無法更新分類');
-                return;
-              }
-              this.apiService
-                .updateProduct({
-                  id: item.productId,
-                  name: item.name,
-                  category,
-                  style,
-                  description: desc,
-                  active: item.active,
-                })
-                .subscribe({
-                  next: () => this.finishAdjust('✅ 庫存資料已更新'),
-                  error: () =>
-                    this.finishAdjust('⚠️ 分類/風格更新失敗，其餘資料已儲存'),
-                });
-            },
-            error: () => this.finishAdjust('⚠️ 分類/風格更新失敗，其餘資料已儲存'),
-          });
+          this.finishAdjust('✅ 庫存資料已更新');
         },
         error: () => {
           this.adjustLoading.set(false);
@@ -624,8 +774,8 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
     this.editStaffId.set(null);
   }
 
-  openAddStaffModal(): void {
-    this.newStaff = { name: '', role: 'STAFF' };
+  openAddStaffModal(role: 'STAFF' | 'MANAGER_AGENT' = 'STAFF'): void {
+    this.newStaff = { name: '', role };
     this.addStaffError.set(null);
     this.newStaffResult.set(null);
     this.activeModal.set('addStaff');
@@ -677,6 +827,7 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 活動 ────────────────────────────────────────── */
   private loadPromos(): void {
+    this.failedPromoImageIds.set(new Set());
     this.apiService.getPromotionsList().subscribe({
       next: (res) => {
         if (res?.data?.length) {
@@ -748,28 +899,44 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
         },
       });
   }
-
   /* ── 財務報表 ─────────────────────────────────────── */
   queryFinance(): void {
     const start = this.financeStart();
     const end = this.financeEnd();
+
     if (!start || !end) {
       this.showToast('⚠️ 請選擇月份區間');
       return;
     }
+
     if (start > end) {
       this.showToast('⚠️ 起始月份不能晚於結束月份');
       return;
     }
+
     this.financeLoading.set(true);
+    this.financeHasQueried.set(true);
     this.financeMonthlyData.set([]);
+
     this.apiService
-      .getMonthlyReportByRange({ startMonth: start, endMonth: end })
+      .getMonthlyReportByRange({
+        startMonth: start,
+        endMonth: end,
+      })
       .subscribe({
         next: (res) => {
-          this.financeMonthlyData.set(res?.reportList ?? []);
+          const currentBranchName = this.branchName();
+
+          const rows = (res?.reportList ?? []).filter((row) => {
+            return row.branchName === currentBranchName;
+          });
+
+          this.financeMonthlyData.set(rows);
           this.financeLoading.set(false);
-          if (!res?.reportList?.length) this.showToast('ℹ️ 此區間無報表資料');
+
+          if (rows.length === 0) {
+            this.showToast('ℹ️ 本分店於此區間無報表資料');
+          }
         },
         error: () => {
           this.financeLoading.set(false);
@@ -778,17 +945,27 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  /* ── 商品月銷售報表 ────────────────────────────────── */
   queryRmSales(): void {
     const year = this.salesYear();
     const month = this.salesMonth();
+
+    if (!year || month < 1 || month > 12) {
+      this.showToast('⚠️ 請輸入正確年月');
+      return;
+    }
+
     this.salesLoading.set(true);
+    this.salesHasQueried.set(true);
     this.salesData.set([]);
+
     this.apiService.getRmMonthlySales(year, month).subscribe({
       next: (res) => {
         this.salesData.set(res?.salesList ?? []);
         this.salesLoading.set(false);
-        if (!res?.salesList?.length) this.showToast('ℹ️ 此月份無銷售資料');
+
+        if (!res?.salesList?.length) {
+          this.showToast('ℹ️ 此月份無商品銷售資料');
+        }
       },
       error: () => {
         this.salesLoading.set(false);
@@ -797,15 +974,26 @@ export class RmDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  abbreviateNum(n: number): string {
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-    if (n >= 1000) return Math.round(n / 1000) + 'K';
-    return String(Math.round(n));
+  formatMoney(value: number): string {
+    return `NT$ ${Math.round(value).toLocaleString('zh-TW')}`;
   }
 
-  formatChartMonth(m: string): string {
-    const parts = m.split('-');
-    return parts.length >= 2 ? parts[1] + '月' : m;
+  formatGrowthRate(value: number): string {
+    const sign = value > 0 ? '+' : '';
+    return `${sign}${value.toFixed(1)}%`;
+  }
+
+  getTrendWidth(value: number): number {
+    const max = this.financeChartMax();
+    if (!max) return 0;
+
+    return Math.max((value / max) * 100, value > 0 ? 4 : 0);
+  }
+
+  formatShortNumber(value: number): string {
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `${Math.round(value / 1000)}K`;
+    return `${Math.round(value)}`;
   }
 
   /* ── 工具 ────────────────────────────────────────── */
