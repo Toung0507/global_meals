@@ -1836,7 +1836,7 @@
                 <div class="pos-promo-detail-gift-row">
                   <span class="pos-promo-detail-gift-amount">滿 NT${{ g.fullAmount }}</span>
                   <span class="pos-promo-detail-gift-arrow">→</span>
-                  <span class="pos-promo-detail-gift-name">{{ g.productName }} × {{ g.quantity }}</span>
+                  <span class="pos-promo-detail-gift-name">{{ g.productName }} × {{ g.quantity === -1 ? '∞' : g.quantity }}</span>
                 </div>
               }
             </div>
