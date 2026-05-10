@@ -723,6 +723,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
             READY: 'ready',
             AWAITING_PAYMENT: 'pending-cash',
             COMPLETED: 'done',
+            PICKED_UP: 'done',
           };
           const rawStatus = (o.kitchenStatus ?? '') || o.ordersStatus;
           const status =
@@ -749,6 +750,8 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
             this.orderService.orders().find((x) => x.id === existingId) ??
             this.orderService.orders().find((x) => x.number === orderNumber);
           if (!existing) {
+            /* 頁面載入時，已是終態的舊訂單不塞進看板 */
+            if (status === 'done') return;
             this.orderService.addOrder({
               id: existingId,
               number: orderNumber,
