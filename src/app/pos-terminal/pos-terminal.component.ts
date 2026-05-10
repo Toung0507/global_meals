@@ -428,6 +428,9 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /* 本次 Session 的會員訂單次數（getMemberByPhone 回傳後載入，結帳後即時更新） */
   posOrderCount = signal<number>(0);
+  /* 該會員所在國家的折扣門檻（從 regions.usageCap 讀取，預設 2） */
+  posDiscountThreshold = signal<number>(2);
+  private regionsUsageCap = new Map<number, number>();
 
   /* 切換成會員點餐模式 */
   enterMemberMode(): void {
@@ -480,10 +483,13 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
             orderCount: d.orderCount ?? 0,
           });
           this.posOrderCount.set(d.orderCount ?? 0);
+          const threshold = this.regionsUsageCap.get(d.regionsId ?? 0) ?? 2;
+          this.posDiscountThreshold.set(threshold);
           this.memberQueryError.set('');
         } else {
           this.foundMember.set(null);
           this.posOrderCount.set(0);
+          this.posDiscountThreshold.set(2);
           this.memberQueryError.set('查無此會員，請確認手機號碼');
         }
       },
@@ -491,25 +497,28 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  /* 會員訂單次數累積進度（佔 10 次的百分比） */
+  /* 會員訂單次數累積進度（依折扣門檻計算百分比） */
   get memberOrderCountPct(): number {
     const count = this.posOrderCount();
-    if (count === 0) return 0;
-    return Math.min(100, (count % 10 === 0 ? 10 : count % 10) * 10);
+    const n = this.posDiscountThreshold();
+    if (count === 0 || n === 0) return 0;
+    return Math.min(100, (count % n === 0 ? n : count % n) * (100 / n));
   }
 
   /* 距離下一張折扣券還差幾次 */
   get memberOrdersUntilCoupon(): number {
     const count = this.posOrderCount();
-    const rem = count % 10;
+    const n = this.posDiscountThreshold();
+    const rem = count % n;
     if (rem === 0 && count > 0) return 0;
-    return 10 - rem;
+    return n - rem;
   }
 
-  /* 會員訂單是否達成折扣券（每 10 次） */
+  /* 會員訂單是否達成折扣券 */
   get memberHasDiscountReady(): boolean {
     const count = this.posOrderCount();
-    return count > 0 && count % 10 === 0;
+    const n = this.posDiscountThreshold();
+    return count > 0 && count % n === 0;
   }
 
   /* 折扣後合計（使用折扣券時 8 折） */
@@ -576,6 +585,15 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     this.boardPollInterval = setInterval(() => this._fetchTodayOrders(), 5000);
 
     this.loadStockList();
+    this.apiService.getAllTax().subscribe({
+      next: (res) => {
+        if (res.code === 200) {
+          res.regionsList?.forEach((r) => {
+            if (r.id && r.usageCap) this.regionsUsageCap.set(r.id, r.usageCap);
+          });
+        }
+      },
+    });
     this.apiService.getPromotionsList().subscribe({
       next: (res) => {
         if (res?.data?.length) {
@@ -1129,6 +1147,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
           subtotalBeforeTax: total,
           taxAmount: 0,
           totalAmount: total,
+          useDiscount: this.useDiscountCoupon(),
           orderCartDetailsList: [
             ...items.map((i) => ({
               productId: i.id,
@@ -1227,12 +1246,12 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
       this.showCashCalc.set(false);
       this.cashInput.set('');
 
-      /* 更新會員訂單次數：使用折扣券 → 重設為 1；未使用 → +1（上限 10，不超過） */
+      /* 更新會員訂單次數：使用折扣券 → 歸零；未使用 → +1（上限為折扣門檻） */
       if (this.foundMember()) {
         if (this.useDiscountCoupon()) {
-          this.posOrderCount.set(1);
+          this.posOrderCount.set(0);
         } else {
-          this.posOrderCount.update((c) => Math.min(c + 1, 10));
+          this.posOrderCount.update((c) => Math.min(c + 1, this.posDiscountThreshold()));
         }
       }
 
