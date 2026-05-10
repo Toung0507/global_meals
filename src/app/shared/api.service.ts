@@ -866,24 +866,34 @@ export class ApiService {
     imageBase64: string,
   ): Observable<CreatePromotionRes> {
     const formData = new FormData();
+
     const dataBlob = new Blob([JSON.stringify(req)], {
       type: 'application/json',
     });
+
     formData.append('data', dataBlob);
+
     const base64 = imageBase64.startsWith('data:')
       ? imageBase64.split(',')[1]
       : imageBase64;
+
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
     formData.append(
       'image',
       new Blob([bytes], { type: 'image/jpeg' }),
       'promotion.jpg',
     );
+
     return this.http.post<CreatePromotionRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.PROMOTIONS.CREATE}`,
       formData,
+      { withCredentials: true },
     );
   }
 
@@ -1110,41 +1120,54 @@ export class ApiService {
 
   /** POST /ai/promo-copy（multipart：data JSON + file 圖片），回傳含 generatedDescription，並存 ai_generated */
   generateAiPromoCopy(
-    promotionsId: number,
-    activityName: string,
-    imageBlob: Blob,
+    req: {
+      promotionsId?: number;
+      activityName: string;
+      promotionItems: {
+        productId: number;
+        fullAmount: number;
+      }[];
+    },
+    file: Blob | File,
   ): Observable<AiRes> {
-    const form = new FormData();
-    const dataBlob = new Blob(
-      [JSON.stringify({ promotionsId, activityName })],
-      { type: 'application/json' },
-    );
-    form.append('data', dataBlob);
-    form.append('file', imageBlob, 'promo.jpg');
+    const formData = new FormData();
+
+    const dataBlob = new Blob([JSON.stringify(req)], {
+      type: 'application/json',
+    });
+
+    formData.append('data', dataBlob);
+    formData.append('file', file, 'promotion.jpg');
+
     return this.http.post<AiRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.AI.PROMO_COPY}`,
-      form,
+      formData,
       { withCredentials: true },
     );
   }
 
   /** POST /ai/product-desc (multipart/form-data)，回傳含 generatedDescription */
   generateAiProductDesc(
-    productName: string,
-    category: string,
-    style: string,
+    req: {
+      productid?: number;
+      productName: string;
+      category: string;
+      style: string;
+    },
     file: File,
   ): Observable<AiRes> {
-    const form = new FormData();
-    const dataBlob = new Blob(
-      [JSON.stringify({ productName, category, style })],
-      { type: 'application/json' },
-    );
-    form.append('data', dataBlob);
-    form.append('file', file, file.name);
+    const formData = new FormData();
+
+    const dataBlob = new Blob([JSON.stringify(req)], {
+      type: 'application/json',
+    });
+
+    formData.append('data', dataBlob);
+    formData.append('file', file);
+
     return this.http.post<AiRes>(
       `${this.BASE}/${API_CONFIG.ENDPOINTS.AI.PRODUCT_DESC}`,
-      form,
+      formData,
       { withCredentials: true },
     );
   }

@@ -34,18 +34,14 @@ import {
   ProductAdminVo,
   StaffVO,
   UpdatePromotionInfoReq,
-  CreatePromotionRes,
   ExchangeRateVO,
-  ExchangeRatesByDateReq,
   AiRes,
   PromotionsManageReq,
   DiscountRecord,
   DiscountReq,
   MonthlyReportRes,
-  MonthlyReportDetail,
   MonthRangeReportsRes,
   RevenueQueryRes,
-  RevenueData,
 } from '../shared/api.service';
 
 
@@ -178,22 +174,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   /* ── 活動清單（Signal） ─────────────────────────── */
   promos = signal<DashPromo[]>([]);
-
-  /* ── 活動分類篩選 Tab ────────────────────────────── */
-  promoTypeTab = signal<'all' | 'promotion' | 'announcement'>('all');
-
-  filteredPromos = computed(() => {
-    const tab = this.promoTypeTab();
-    if (tab === 'all') return this.promos();
-    return this.promos().filter((p) => p.type === tab);
-  });
-
-  promoPromotionCount = computed(
-    () => this.promos().filter((p) => p.type === 'promotion').length,
-  );
-  promoAnnouncementCount = computed(
-    () => this.promos().filter((p) => p.type === 'announcement').length,
-  );
 
   /* ── 折抵清單（Signal） ─────────────────────────── */
   discounts = signal<DiscountRecord[]>([]);
@@ -580,8 +560,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.financeLoading.set(false);
 
-        if (res?.code !== 200) {
-          this.financeError.set(res?.message || '查無月報表資料');
+        if (!this.isSuccessRes(res)) {
+          this.financeError.set(this.getApiErrorMessage(res, '查無月報表資料'));
           return;
         }
 
@@ -620,8 +600,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         next: (res) => {
           this.financeLoading.set(false);
 
-          if (res?.code !== 200) {
-            this.financeError.set(res?.message || '查無月份區間報表資料');
+          if (!this.isSuccessRes(res)) {
+            this.financeError.set(this.getApiErrorMessage(res, '查無月份區間報表資料'));
             return;
           }
 
@@ -661,8 +641,8 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         next: (res) => {
           this.financeLoading.set(false);
 
-          if (res?.code !== 200) {
-            this.financeError.set(res?.message || '查無日期區間報表資料');
+          if (!this.isSuccessRes(res)) {
+            this.financeError.set(this.getApiErrorMessage(res, '查無日期區間報表資料'));
             return;
           }
 
@@ -1002,47 +982,11 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
   private toastLeaveTimer: ReturnType<typeof setTimeout> | null = null;
 
-  /* ── 批次刪除模式 ───────────────────────────────── */
-  bulkDeleteMode = signal(false);
-  selectedPromoIds = signal<Set<number>>(new Set());
-  /** 刪除確認狀態：active-warning / confirm / bulk */
+  /** 刪除確認狀態：active-warning / confirm */
   deleteConfirmState = signal<null | {
-    type: 'active-warning' | 'confirm' | 'bulk';
+    type: 'active-warning' | 'confirm';
     ids: number[];
   }>(null);
-
-  toggleBulkDeleteMode(): void {
-    const next = !this.bulkDeleteMode();
-    this.bulkDeleteMode.set(next);
-    if (!next) this.selectedPromoIds.set(new Set());
-  }
-
-  isPromoSelected(id: number): boolean {
-    return this.selectedPromoIds().has(id);
-  }
-
-  togglePromoSelection(id: number): void {
-    this.selectedPromoIds.update((s) => {
-      const next = new Set(s);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }
-
-  selectedCount(): number {
-    return this.selectedPromoIds().size;
-  }
-
-  requestBulkDelete(): void {
-    if (!this.selectedPromoIds().size) {
-      this.showToast('請先勾選要刪除的活動');
-      return;
-    }
-    this.deleteConfirmState.set({
-      type: 'bulk',
-      ids: Array.from(this.selectedPromoIds()),
-    });
-  }
 
   /** 點刪除按鈕時呼叫，依狀態顯示對應 modal */
   requestDeletePromo(promo: DashPromo): void {
@@ -1061,7 +1005,13 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     forkJoin(
       state.ids.map((id) => this.apiService.deletePromotion(id)),
     ).subscribe({
-      next: () => {
+      next: (results) => {
+        const failed = results.find((res) => !this.isSuccessRes(res));
+        if (failed) {
+          this.showToast(this.getApiErrorMessage(failed, '⚠️ 刪除失敗'));
+          return;
+        }
+
         state.ids.forEach((id) =>
           this.promos.update((list) => list.filter((p) => p.id !== id)),
         );
@@ -1070,8 +1020,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
             ? `🗑️ 已刪除 ${state.ids.length} 個活動`
             : '🗑️ 活動已刪除',
         );
-        this.bulkDeleteMode.set(false);
-        this.selectedPromoIds.set(new Set());
         this.selectedPromo.set(null);
       },
       error: () => this.showToast('⚠️ 刪除失敗，請確認後端連線'),
@@ -1153,16 +1101,34 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     const blob = new Blob([bytes], { type: 'image/jpeg' });
 
-    this.apiService.generateAiPromoCopy(id, promo.rawName, blob).subscribe({
-      next: (res: AiRes) => {
-        this.editPromoInfoDraft.description = res?.generatedDescription ?? '';
-        this.generatingAiCopy.set(false);
-      },
-      error: () => {
-        this.generatingAiCopy.set(false);
-        this.showToast('❌ AI 生成失敗，請確認後端連線');
-      },
-    });
+    this.apiService
+      .generateAiPromoCopy(
+        {
+          promotionsId: id,
+          activityName: promo.rawName,
+          promotionItems: (promo.gifts ?? []).map((gift) => ({
+            productId: gift.giftProductId,
+            fullAmount: Number(gift.fullAmount),
+          })),
+        },
+        blob,
+      )
+      .subscribe({
+        next: (res: AiRes) => {
+          if (!this.isSuccessRes(res)) {
+            this.generatingAiCopy.set(false);
+            this.showToast(this.getApiErrorMessage(res, '❌ AI 生成失敗'));
+            return;
+          }
+
+          this.editPromoInfoDraft.description = res?.generatedDescription ?? '';
+          this.generatingAiCopy.set(false);
+        },
+        error: () => {
+          this.generatingAiCopy.set(false);
+          this.showToast('❌ AI 生成失敗，請確認後端連線');
+        },
+      });
   }
 
   saveEditPromoInfo(): void {
@@ -1175,7 +1141,13 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       promotionImg: this.editPromoInfoDraft.image || undefined,
     };
     this.apiService.updatePromotionInfo(req).subscribe({
-      next: () => {
+      next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.editPromoInfoSaving.set(false);
+          this.showToast(this.getApiErrorMessage(res, '❌ 更新失敗'));
+          return;
+        }
+
         const saved = { ...this.editPromoInfoDraft };
         this.promos.update((list) =>
           list.map((p) =>
@@ -1311,15 +1283,10 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   generatingPromoAiDesc = signal(false);
   promoDraft = {
     name: '',
-    type: 'promotion' as 'promotion' | 'announcement',
     description: '',
     startTime: '',
     endTime: '',
-    color: '#c49756',
-    badgeColor: '#c49756',
-    minAmount: null as number | null,
     image: '',
-    currency: 'NT$',
     giftFullAmount: null as number | null,
     giftProductId: null as number | null,
     giftQuantity: -1,
@@ -1438,6 +1405,19 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   branchDraft = { regionsId: 0, branch: '', address: '', phone: '' };
   editBranchDraft = { id: 0, regionsId: 0, branch: '', address: '', phone: '' };
 
+  /** API 共用成功判斷：只有 code === 200 才視為成功 */
+  private isSuccessRes(res: { code?: number | null } | null | undefined): boolean {
+    return res?.code === 200;
+  }
+
+  /** API 共用錯誤訊息：優先顯示後端 message，沒有才使用預設文字 */
+  private getApiErrorMessage(
+    res: { code?: number | null; message?: string | null } | null | undefined,
+    fallback: string,
+  ): string {
+    return res?.message || fallback;
+  }
+
   showToast(msg: string): void {
     /* 清除所有計時器，重置離場狀態 */
     if (this.toastTimer !== null) clearTimeout(this.toastTimer);
@@ -1516,6 +1496,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   private loadBranches(onComplete?: () => void): void {
     this.apiService.getAllBranches().subscribe({
       next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          console.warn('[Manager] 分店 API 回傳失敗:', res?.message);
+          onComplete?.();
+          return;
+        }
+
         if (res?.globalAreaList?.length) {
           this.branches.set(
             res.globalAreaList.map((b: GlobalAreaVO) => {
@@ -1549,6 +1535,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   private loadTaxes(onComplete?: () => void): void {
     this.apiService.getAllTax().subscribe({
       next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          console.warn('[Manager] 稅率 API 回傳失敗:', res?.message);
+          onComplete?.();
+          return;
+        }
+
         if (res?.regionsList?.length) {
           const seen = new Set<string>();
           const deduped = res.regionsList.filter((r: RegionVO) => {
@@ -1591,6 +1583,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   private loadPromos(): void {
     this.apiService.getPromotionsList().subscribe({
       next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.promos.set([]);
+          this.showToast(this.getApiErrorMessage(res, '活動資料載入失敗'));
+          return;
+        }
+
         this.promos.set(
           (res?.data ?? []).map((p: PromotionDetailVo) => {
             const imageUrl = `${this.apiService.getPromotionImageUrl(p.id)}?v=${p.id}-${p.startTime}-${p.endTime}`;
@@ -1669,6 +1667,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   private loadProducts(): void {
     this.apiService.getAllProducts().subscribe({
       next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.products.set([]);
+          this.showToast(this.getApiErrorMessage(res, '⚠️ 商品資料載入失敗'));
+          return;
+        }
+
         const list = res?.productList ?? [];
         this.products.set(list.map((p) => this.mapAdminProductToDashProduct(p)));
       },
@@ -1685,6 +1689,13 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.discountLoading.set(true);
     this.apiService.getDiscountList().subscribe({
       next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.discounts.set([]);
+          this.discountLoading.set(false);
+          console.warn('[Manager] 折抵 API 回傳失敗:', res?.message);
+          return;
+        }
+
         this.discounts.set(res?.discountList ?? []);
         this.discountLoading.set(false);
       },
@@ -1714,7 +1725,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       usageCap: this.editDiscountCap(),
     };
     this.apiService.updateDiscountSettings(req).subscribe({
-      next: () => {
+      next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.showToast(this.getApiErrorMessage(res, '❌ 更新失敗'));
+          return;
+        }
+
         this.loadDiscounts();
         this.editingDiscountId.set(null);
         this.showToast('✅ 折抵設定已更新');
@@ -1726,7 +1742,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   /* ── 折抵：刪除 ──────────────────────────────────── */
   deleteDiscountRecord(id: number): void {
     this.apiService.deleteDiscount(id).subscribe({
-      next: () => {
+      next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.showToast(this.getApiErrorMessage(res, '❌ 刪除失敗'));
+          return;
+        }
+
         this.discounts.update((list) => list.filter((d) => d.id !== id));
         this.showToast('🗑️ 折抵記錄已刪除');
       },
@@ -1745,6 +1766,11 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   private loadStaff(): void {
     this.apiService.getAllStaff().subscribe({
       next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          console.warn('[Manager] 員工 API 回傳失敗:', res?.message);
+          return;
+        }
+
         if (res?.staffList?.length) {
           this.accounts.set(
             res.staffList
@@ -1840,7 +1866,15 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       list.map((x) => (x.id === id ? { ...x, isActive: newActive } : x)),
     );
     this.apiService.toggleProduct(id, newActive).subscribe({
-      next: () => {
+      next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.products.update((list) =>
+            list.map((x) => (x.id === id ? { ...x, isActive: !newActive } : x)),
+          );
+          this.showToast(this.getApiErrorMessage(res, '⚠️ 切換上下架失敗，請重試'));
+          return;
+        }
+
         // loadProducts() 已移除，避免覆蓋 isActive
         this.showToast(newActive ? '✅ 商品已上架' : '⏸️ 商品已下架');
       },
@@ -1870,6 +1904,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   private loadTrashProducts(): void {
     this.apiService.getTrashProducts().subscribe({
       next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.trashProducts.set([]);
+          this.showToast(this.getApiErrorMessage(res, '⚠️ 已刪除商品載入失敗'));
+          return;
+        }
+
         const list = res?.productList ?? [];
         this.trashProducts.set(list.map((p) => this.mapAdminProductToDashProduct(p)));
       },
@@ -1889,7 +1929,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     if (!ok) return;
 
     this.apiService.deleteProduct(id).subscribe({
-      next: () => {
+      next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.showToast(this.getApiErrorMessage(res, '⚠️ 商品刪除失敗'));
+          return;
+        }
+
         this.products.update((list) => list.filter((x) => x.id !== id));
         this.showToast(`🗑️ 商品「${p.name}」已移至已刪除商品`);
       },
@@ -1936,8 +1981,25 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         active: newActive,
       })
       .subscribe({
-        next: () =>
-          this.showToast(newActive ? '✅ 活動已啟用' : '⏸️ 活動已暫停'),
+        next: (res) => {
+          if (!this.isSuccessRes(res)) {
+            this.promos.update((list) =>
+              list.map((p) =>
+                p.id === id
+                  ? {
+                    ...p,
+                    isActive: !newActive,
+                    color: !newActive ? '#c49756' : 'rgba(255,255,255,0.18)',
+                  }
+                  : p,
+              ),
+            );
+            this.showToast(this.getApiErrorMessage(res, '❌ 切換失敗'));
+            return;
+          }
+
+          this.showToast(newActive ? '✅ 活動已啟用' : '⏸️ 活動已暫停');
+        },
         error: () => {
           /* API 失敗時還原 */
           this.promos.update((list) =>
@@ -1971,21 +2033,24 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     };
     if (this.giftProductList().length === 0) {
       this.apiService.getAllProducts().subscribe({
-        next: (res) =>
+        next: (res) => {
+          if (!this.isSuccessRes(res)) {
+            this.showToast(this.getApiErrorMessage(res, '⚠️ 贈品商品清單載入失敗'));
+            return;
+          }
+
           this.giftProductList.set(
             (res?.productList ?? []).filter(p => p.active),
-          ),
+          );
+        },
       });
     }
     this.activeModal.set('addGift');
   }
 
   saveGift(): void {
-    if (
-      this.giftDraft.giftProductId == null ||
-      this.giftDraft.giftProductId < 1
-    ) {
-      this.showToast('⚠️ 請輸入贈品商品 ID（需大於 0）');
+    if (this.giftDraft.quantity === 0 || this.giftDraft.quantity < -1) {
+      this.showToast('⚠️ 贈品數量請輸入 -1 或大於 0 的正整數');
       return;
     }
     if (this.giftDraft.fullAmount <= 0) {
@@ -2004,7 +2069,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         quantity: d.quantity,
       })
       .subscribe({
-        next: () => {
+        next: (res) => {
+          if (!this.isSuccessRes(res)) {
+            this.showToast(this.getApiErrorMessage(res, '❌ 新增失敗'));
+            return;
+          }
+
           this.loadPromos();
           this.closeModal();
           this.showToast('✅ 贈品規則已新增');
@@ -2022,12 +2092,21 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       list.map((a) => (a.id === id ? { ...a, isActive: newStatus } : a)),
     );
     this.apiService.updateStaffStatus(id, { newStatus: newStatus }).subscribe({
-      next: () =>
+      next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.accounts.update((list) =>
+            list.map((a) => (a.id === id ? { ...a, isActive: !newStatus } : a)),
+          );
+          this.showToast(this.getApiErrorMessage(res, '⚠️ 更新失敗'));
+          return;
+        }
+
         this.showToast(
           newStatus
             ? `✅ 帳號「${target.name}」已復權`
             : `🔒 帳號「${target.name}」已停權`,
-        ),
+        );
+      },
       error: () => {
         this.accounts.update((list) =>
           list.map((a) => (a.id === id ? { ...a, isActive: !newStatus } : a)),
@@ -2042,7 +2121,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     const target = this.accounts().find((a) => a.id === id);
     if (!target) return;
     this.apiService.toggleStaff(id).subscribe({
-      next: () => {
+      next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.showToast(this.getApiErrorMessage(res, '⚠️ 晉升失敗'));
+          return;
+        }
+
         this.showToast(`✅ 帳號「${target.name}」已晉升為副店長`);
         this.loadStaff();
       },
@@ -2055,7 +2139,14 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     const target = this.accounts().find((a) => a.id === id);
     if (!target) return;
     this.apiService.changeStaffPassword(id).subscribe({
-      next: () => this.showToast(`✅「${target.name}」密碼已重設為預設值 00000`),
+      next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.showToast(this.getApiErrorMessage(res, '⚠️ 重設密碼失敗'));
+          return;
+        }
+
+        this.showToast(`✅「${target.name}」密碼已重設為預設值 00000`);
+      },
       error: () => this.showToast('⚠️ 重設密碼失敗，請確認後端連線'),
     });
   }
@@ -2070,7 +2161,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       STAFF: '員工',
     };
     this.apiService.adminChangeStaffRole(id, targetRole).subscribe({
-      next: () => {
+      next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.showToast(this.getApiErrorMessage(res, '⚠️ 職務調整失敗'));
+          return;
+        }
+
         this.showToast(`✅「${target.name}」已調整為${roleLabel[targetRole]}`);
         this.loadStaff();
       },
@@ -2098,7 +2194,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     }
     const target = this.accounts().find((a) => a.id === id);
     this.apiService.transferStaff(id, newAreaId).subscribe({
-      next: () => {
+      next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.showToast(this.getApiErrorMessage(res, '⚠️ 調換分店失敗'));
+          return;
+        }
+
         this.showToast(`✅「${target?.name}」已調換至新分店`);
         this.closeModal();
         this.loadStaff();
@@ -2257,7 +2358,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         taxType: nextTaxType,
       })
       .subscribe({
-        next: () => {
+        next: (res) => {
+          if (!this.isSuccessRes(res)) {
+            this.showToast(this.getApiErrorMessage(res, '⚠️ 稅率更新失敗'));
+            return;
+          }
+
           this.taxes.update((list) =>
             list.map((t) =>
               t.id === id
@@ -2329,7 +2435,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         usageCap,
       })
       .subscribe({
-        next: () => {
+        next: (res) => {
+          if (!this.isSuccessRes(res)) {
+            this.showToast(this.getApiErrorMessage(res, '⚠️ 新增失敗'));
+            return;
+          }
+
           this.loadDiscounts();
           this.closeModal();
           this.showToast('✅ 會員優惠設定已新增');
@@ -2384,7 +2495,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         usageCap,
       })
       .subscribe({
-        next: () => {
+        next: (res) => {
+          if (!this.isSuccessRes(res)) {
+            this.showToast(this.getApiErrorMessage(res, '⚠️ 更新失敗'));
+            return;
+          }
+
           this.loadDiscounts();
           this.editingMemberRegionId.set(null);
           this.showToast('✅ 會員設定已更新');
@@ -2402,6 +2518,13 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.ratesLoading.set(true);
     this.apiService.getAllRates().subscribe({
       next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.allRates.set([]);
+          this.rateError.set(this.getApiErrorMessage(res, '匯率載入失敗'));
+          this.ratesLoading.set(false);
+          return;
+        }
+
         this.allRates.set(this.normalizeRates(res?.exchangeRatesList ?? []));
         this.ratesLoading.set(false);
       },
@@ -2425,6 +2548,13 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     this.ratesLoading.set(true);
     this.apiService.getRatesByDate({ date: d }).subscribe({
       next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.allRates.set([]);
+          this.rateError.set(this.getApiErrorMessage(res, '日期查詢失敗'));
+          this.ratesLoading.set(false);
+          return;
+        }
+
         this.allRates.set(this.normalizeRates(res?.exchangeRatesList ?? []));
         this.ratesLoading.set(false);
       },
@@ -2530,6 +2660,11 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
     this.apiService.getProductDetail(id).subscribe({
       next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.showToast(this.getApiErrorMessage(res, '⚠️ 商品詳情載入失敗'));
+          return;
+        }
+
         if (!res?.product) return;
 
         const product = res.product;
@@ -2569,24 +2704,48 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   }
 
   generateAiDesc(): void {
-    if (!this.productDraft.name.trim()) {
+    const productName = this.productDraft.name.trim();
+
+    if (!productName) {
       this.showToast('⚠️ 請先填寫商品名稱');
       return;
     }
+
+    if (!this.productDraft.category.trim()) {
+      this.showToast('⚠️ 請先選擇或填寫餐點分類');
+      return;
+    }
+
+    if (!this.productDraft.style.trim()) {
+      this.showToast('⚠️ 請先選擇或填寫料理風格');
+      return;
+    }
+
     if (!this.productImageFile) {
       this.showToast('⚠️ 請先上傳商品圖片，AI 需要圖片才能生成描述');
       return;
     }
+
     this.generatingAiDesc.set(true);
+
     this.apiService
       .generateAiProductDesc(
-        this.productDraft.name,
-        this.getFinalProductCategory(),
-        this.getFinalProductStyle(),
+        {
+          productid: undefined,
+          productName,
+          category: this.productDraft.category.trim(),
+          style: this.productDraft.style.trim(),
+        },
         this.productImageFile,
       )
       .subscribe({
         next: (res: AiRes) => {
+          if (!this.isSuccessRes(res)) {
+            this.showToast(this.getApiErrorMessage(res, '⚠️ AI 生成失敗'));
+            this.generatingAiDesc.set(false);
+            return;
+          }
+
           this.productDraft.description = res?.generatedDescription ?? '';
           this.generatingAiDesc.set(false);
         },
@@ -2602,25 +2761,59 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       this.showToast('⚠️ 請先填寫活動名稱');
       return;
     }
+
     if (!this.promoDraft.image) {
       this.showToast('⚠️ 請先上傳封面圖片才能 AI 生成文案');
       return;
     }
+
+    if (!this.promoDraft.giftProductId || this.promoDraft.giftProductId <= 0) {
+      this.showToast('⚠️ 請先選擇贈品商品');
+      return;
+    }
+
+    if (!this.promoDraft.giftFullAmount || this.promoDraft.giftFullAmount <= 0) {
+      this.showToast('⚠️ 請先填寫滿額門檻');
+      return;
+    }
+
     this.generatingPromoAiDesc.set(true);
 
     const base64 = this.promoDraft.image.startsWith('data:')
       ? this.promoDraft.image.split(',')[1]
       : this.promoDraft.image;
+
     const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
     const blob = new Blob([bytes], { type: 'image/jpeg' });
 
-    // promotionsId 新增時後端還沒建立，傳 0 讓後端只生成文案不儲存
     this.apiService
-      .generateAiPromoCopy(0, this.promoDraft.name.trim(), blob)
+      .generateAiPromoCopy(
+        {
+          promotionsId: 0,
+          activityName: this.promoDraft.name.trim(),
+          promotionItems: [
+            {
+              productId: Number(this.promoDraft.giftProductId),
+              fullAmount: Number(this.promoDraft.giftFullAmount),
+            },
+          ],
+        },
+        blob,
+      )
       .subscribe({
         next: (res: AiRes) => {
+          if (!this.isSuccessRes(res)) {
+            this.showToast(this.getApiErrorMessage(res, '❌ AI 生成失敗'));
+            this.generatingPromoAiDesc.set(false);
+            return;
+          }
+
           this.promoDraft.description = res?.generatedDescription ?? '';
           this.generatingPromoAiDesc.set(false);
         },
@@ -2674,20 +2867,20 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
     request$.subscribe({
       next: (res) => {
-        if (res?.code === 200) {
-          this.ensureProductOptionExists('style', finalStyle);
-          this.ensureProductOptionExists('category', finalCategory);
-
-          this.refreshProductOptionLists();
-          this.loadProducts();
-          this.resetProductFilters();
-          this.closeModal();
-
-          this.showToast(editingId === null ? '✅ 商品已新增' : '✅ 商品已更新');
+        if (!this.isSuccessRes(res)) {
+          this.showToast(`⚠️ 儲存失敗：${this.getApiErrorMessage(res, '請稍後再試')}`);
           return;
         }
 
-        this.showToast(`⚠️ 儲存失敗：${res?.message ?? '請稍後再試'}`);
+        this.ensureProductOptionExists('style', finalStyle);
+        this.ensureProductOptionExists('category', finalCategory);
+
+        this.refreshProductOptionLists();
+        this.loadProducts();
+        this.resetProductFilters();
+        this.closeModal();
+
+        this.showToast(editingId === null ? '✅ 商品已新增' : '✅ 商品已更新');
       },
       error: () => {
         this.showToast('⚠️ 儲存失敗，請確認後端連線');
@@ -2699,25 +2892,26 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   openAddPromo(): void {
     this.promoDraft = {
       name: '',
-      type: 'promotion',
       description: '',
       startTime: '',
       endTime: '',
-      color: '#c49756',
-      badgeColor: '#c49756',
-      minAmount: null,
       image: '',
-      currency: 'NT$',
       giftFullAmount: null,
       giftProductId: null,
       giftQuantity: -1,
     };
     if (this.giftProductList().length === 0) {
       this.apiService.getAllProducts().subscribe({
-        next: (res) =>
+        next: (res) => {
+          if (!this.isSuccessRes(res)) {
+            this.showToast(this.getApiErrorMessage(res, '⚠️ 贈品商品清單載入失敗'));
+            return;
+          }
+
           this.giftProductList.set(
             (res?.productList ?? []).filter(p => p.active),
-          ),
+          );
+        },
       });
     }
     this.showPromoPanel.set(true);
@@ -2725,11 +2919,6 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
 
   closePromoPanel(): void {
     this.showPromoPanel.set(false);
-  }
-
-  onPromoBadgeColorPick(color: string): void {
-    this.promoDraft.badgeColor = color;
-    this.promoDraft.color = color;
   }
 
   onPromoImageChange(event: Event): void {
@@ -2743,52 +2932,77 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
   }
 
   savePromo(): void {
-    if (!this.promoDraft.name.trim()) {
-      this.showToast('請輸入活動名稱');
-      return;
-    }
-    if (!this.promoDraft.startTime || !this.promoDraft.endTime) {
-      this.showToast('請填寫活動開始與結束日期');
-      return;
-    }
-    if (!this.promoDraft.image) {
+    const name = this.promoDraft.name.trim();
+    const description = this.promoDraft.description.trim();
+    const startTime = this.promoDraft.startTime;
+    const endTime = this.promoDraft.endTime;
+    const image = this.promoDraft.image;
+    const fullAmount = Number(this.promoDraft.giftFullAmount);
+    const giftProductId = Number(this.promoDraft.giftProductId);
+    const quantity = Number(this.promoDraft.giftQuantity);
+
+    if (!image) {
       this.showToast('請上傳活動封面圖片（必填）');
       return;
     }
-    if (
-      !this.promoDraft.giftFullAmount ||
-      this.promoDraft.giftFullAmount <= 0
-    ) {
-      this.showToast('⚠️ 請填寫滿額門檻');
+
+    if (!name) {
+      this.showToast('請輸入活動名稱');
       return;
     }
-    if (!this.promoDraft.giftProductId) {
+
+    if (!fullAmount || fullAmount <= 0) {
+      this.showToast('⚠️ 請填寫贈品規則的滿額門檻');
+      return;
+    }
+
+    if (!giftProductId || giftProductId <= 0) {
       this.showToast('⚠️ 請選擇贈品商品');
       return;
     }
 
-    const saved = { ...this.promoDraft };
-    const req: PromotionsManageReq = {
-      name: saved.name.trim(),
-      startTime: saved.startTime,
-      endTime: saved.endTime,
-      description: saved.description?.trim() || undefined,
-    };
-    if (
-      saved.giftProductId != null &&
-      saved.giftProductId > 0 &&
-      saved.giftFullAmount != null &&
-      saved.giftFullAmount > 0
-    ) {
-      req.giftProductId = saved.giftProductId;
-      req.fullAmount = saved.giftFullAmount;
-      req.quantity = saved.giftQuantity;
+    if (quantity === 0 || quantity < -1) {
+      this.showToast('⚠️ 贈品數量請輸入 -1 或大於 0 的正整數');
+      return;
     }
-    this.apiService.createPromotion(req, saved.image).subscribe({
-      next: () => {
+
+    if (!startTime || !endTime) {
+      this.showToast('請填寫活動開始與結束日期');
+      return;
+    }
+
+    if (startTime > endTime) {
+      this.showToast('⚠️ 開始日期不能晚於結束日期');
+      return;
+    }
+
+    if (!description) {
+      this.showToast('請輸入活動描述');
+      return;
+    }
+
+    const req: PromotionsManageReq = {
+      active: true,
+      fullAmount,
+      endTime,
+      quantity,
+      promotionsId: 0,
+      name,
+      startTime,
+      giftProductId,
+      description,
+    };
+
+    this.apiService.createPromotion(req, image).subscribe({
+      next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.showToast(this.getApiErrorMessage(res, '活動新增失敗'));
+          return;
+        }
+
         this.loadPromos();
         this.closePromoPanel();
-        this.showToast(`活動「${saved.name.trim()}」已新增`);
+        this.showToast(`活動「${name}」已新增`);
       },
       error: () => {
         this.showToast('活動新增失敗，請確認後端服務是否正常');
@@ -2887,6 +3101,11 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         })
         .subscribe({
           next: (res) => {
+            if (!this.isSuccessRes(res)) {
+              this.showToast(this.getApiErrorMessage(res, '⚠️ 新增失敗'));
+              return;
+            }
+
             this.loadStaff();
             const created = res?.staffList?.[0];
             if (created?.account) {
@@ -2955,7 +3174,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
         // 折扣記錄請至「會員設定」頁籤單獨新增
       })
       .subscribe({
-        next: () => {
+        next: (res) => {
+          if (!this.isSuccessRes(res)) {
+            this.showToast(this.getApiErrorMessage(res, '⚠️ 新增國家失敗'));
+            return;
+          }
+
           this.loadTaxes();
           this.closeModal();
           this.showToast(
@@ -3045,15 +3269,16 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       })
       .subscribe({
         next: (res) => {
-          if (res?.code === 200) {
-            this.loadBranches();
-            this.closeModal();
-            this.showToast(`✅ 分店「${branchName}」已新增`);
-          } else {
+          if (!this.isSuccessRes(res)) {
             this.showToast(
-              `⚠️ 新增失敗：${res?.message ?? '請確認電話格式是否正確'}`,
+              `⚠️ 新增失敗：${this.getApiErrorMessage(res, '請確認電話格式是否正確')}`,
             );
+            return;
           }
+
+          this.loadBranches();
+          this.closeModal();
+          this.showToast(`✅ 分店「${branchName}」已新增`);
         },
         error: () => {
           this.showToast('⚠️ 後端連線失敗，請確認伺服器是否啟動');
@@ -3109,15 +3334,16 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
       })
       .subscribe({
         next: (res) => {
-          if (res?.code === 200) {
-            this.loadBranches();
-            this.closeModal();
-            this.showToast(`✅ 分店「${branchName}」已更新`);
-          } else {
+          if (!this.isSuccessRes(res)) {
             this.showToast(
-              `⚠️ 更新失敗：${res?.message ?? '請確認電話格式是否正確'}`,
+              `⚠️ 更新失敗：${this.getApiErrorMessage(res, '請確認電話格式是否正確')}`,
             );
+            return;
           }
+
+          this.loadBranches();
+          this.closeModal();
+          this.showToast(`✅ 分店「${branchName}」已更新`);
         },
         error: () => {
           this.showToast('⚠️ 後端連線失敗，請確認伺服器是否啟動');
@@ -3155,7 +3381,12 @@ export class ManagerDashboardComponent implements OnInit, OnDestroy {
     if (!target) return;
     this.deleteBranchConfirm.set(null);
     this.apiService.deleteBranch({ globalAreaIdList: [target.id] }).subscribe({
-      next: () => {
+      next: (res) => {
+        if (!this.isSuccessRes(res)) {
+          this.showToast(this.getApiErrorMessage(res, `⚠️ 分店「${target.name}」刪除失敗`));
+          return;
+        }
+
         this.branches.update((list) => list.filter((x) => x.id !== target.id));
         this.showToast(`🗑️ 分店「${target.name}」已刪除`);
       },
