@@ -52,7 +52,23 @@
         <p>{{ lang.registerSubtitle }}</p>
       </div>
 
-      <p class="c-required-hint">{{ lang.requiredHint }}</p>
+      <!-- 必填提示 + 居住地選擇 -->
+      <div class="c-hint-row">
+        <p class="c-required-hint">{{ lang.requiredHint }}</p>
+        <div class="c-region-select-wrap">
+          <span class="c-region-icon">🌏</span>
+          <select
+            class="c-region-select"
+            [value]="selectedRegionsId"
+            (change)="onRegionChange($event)"
+          >
+            @for (r of regions; track r.id) {
+              <option [value]="r.id">{{ r.country }}</option>
+            }
+          </select>
+          <span class="c-region-arrow">▾</span>
+        </div>
+      </div>
 
       <!-- 會員名稱 -->
       <div class="c-field">

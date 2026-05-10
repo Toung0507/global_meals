@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BranchService, CountryCode, CountryConfig } from '../../shared/branch.service';
-import { ApiService } from '../../shared/api.service';
+import { ApiService, RegionVO } from '../../shared/api.service';
 
 @Component({
   selector: 'app-customer-register',
@@ -19,6 +19,9 @@ export class CustomerRegisterComponent implements OnInit {
   showPassword = false;
   showConfirmPassword = false;
 
+  regions: RegionVO[] = [];
+  selectedRegionsId = 0;
+
   nameError = false;
   phoneError = false;
   phoneErrorMsg = '';
@@ -26,7 +29,7 @@ export class CustomerRegisterComponent implements OnInit {
   confirmError = false;
   registering = false;
   registerError = '';
-  showSuccessModal = false; // ✅ 正確位置：class 屬性區
+  showSuccessModal = false;
 
   constructor(
     public branchService: BranchService,
@@ -36,6 +39,16 @@ export class CustomerRegisterComponent implements OnInit {
 
   ngOnInit(): void {
     this.branchService.init();
+    this.apiService.getAllTax().subscribe({
+      next: res => {
+        if (res.code === 200) {
+          this.regions = res.regionsList ?? [];
+          if (this.regions.length > 0) {
+            this.selectedRegionsId = this.regions[0].id;
+          }
+        }
+      }
+    });
   }
 
   get lang() {
@@ -52,6 +65,10 @@ export class CustomerRegisterComponent implements OnInit {
 
   selectCountry(code: CountryCode): void {
     this.branchService.setCountry(code);
+  }
+
+  onRegionChange(event: Event): void {
+    this.selectedRegionsId = Number((event.target as HTMLSelectElement).value);
   }
 
   togglePassword(): void {
@@ -98,7 +115,7 @@ export class CustomerRegisterComponent implements OnInit {
 
     if (!valid) return;
 
-    if (this.branchService.regionsId === 0) {
+    if (this.selectedRegionsId === 0) {
       this.registerError = '地區資料讀取中，請稍後再試';
       return;
     }
@@ -112,7 +129,7 @@ export class CustomerRegisterComponent implements OnInit {
       .registerMember({
         name: this.name.trim(),
         phone: fullPhone,
-        regionsId: this.branchService.regionsId,
+        regionsId: this.selectedRegionsId,
         password: this.password,
       })
       .subscribe({

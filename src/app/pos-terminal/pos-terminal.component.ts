@@ -684,13 +684,13 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
             o.ordersStatus === 'PENDING_CASH' ||
             o.kitchenStatus === 'PENDING_CASH';
 
-          /* ── 狀態映射：所有 READY 訂單進「餐點製作完成」，由員工手動完成 ── */
+         /* ── 狀態映射：所有 READY 訂單進「餐點製作完成」，由員工手動完成 ── */
           const statusMap: Record<
             string,
             'pending-cash' | 'waiting' | 'cooking' | 'ready' | 'done'
           > = {
-            PENDING_CASH: 'waiting',
-            UNPAID: 'waiting',
+            PENDING_CASH: 'pending-cash',
+            UNPAID: 'pending-cash',
             WAITING: 'waiting',
             COOKING: 'cooking',
             READY: 'ready',
@@ -1314,6 +1314,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   /* ── 訂單看板：狀態流轉 ───────────────────────────── */
   startCooking(id: string): void {
     this.orderService.updateStatus(id, 'cooking');
+    this._pushOrdersStatus(id, 'COOKING');
   }
 
   finishOrder(id: string): void {
@@ -1328,7 +1329,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private _pushOrdersStatus(
     orderId: string,
-    ordersStatus: 'READY' | 'PICKED_UP',
+    ordersStatus: 'COOKING' | 'READY' | 'PICKED_UP',
   ): void {
     const match = orderId.match(/^DB-(\d{8})-(\d+)$/);
     if (!match) return;
@@ -1339,7 +1340,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
           console.warn(`[POS] ordersStatus ${ordersStatus} 更新失敗`),
       });
   }
-
+  
   /* ── 載入庫存管理頁清單，同步作為 POS 點餐商品來源 ── */
   private loadStockList(): void {
     const globalAreaId = this.authService.currentStaff?.globalAreaId ?? 19;

@@ -3553,7 +3553,7 @@
             <div class="pr-progress-bar">
               <div
                 class="pr-progress-fill"
-                [style.width.%]="(memberOrderCount() % 10) * 10"
+                [style.width.%]="discountProgressPct()"
               ></div>
             </div>
             <p class="pr-status-desc">
@@ -3971,6 +3971,21 @@
       <h3 class="cart-err-title">訂單建立失敗</h3>
       <p class="cart-err-desc">此購物車已轉換為訂單或已過期，請重新加入商品後再結帳。</p>
       <button class="cart-err-btn" (click)="closeCartErrorModal()">確認</button>
+    </div>
+  </div>
+}
+
+<!-- ── 贈品兌換完畢 Modal ─────────────────────────── -->
+@if (giftErrorModalOpen()) {
+  <div class="cart-err-overlay" (click)="closeGiftErrorModal()">
+    <div class="cart-err-modal" (click)="$event.stopPropagation()">
+      <div class="cart-err-icon">🎁</div>
+      <h3 class="cart-err-title">贈品已兌換完畢</h3>
+      <p class="cart-err-desc">{{ giftErrorMessage() }}</p>
+      <p class="cart-err-desc" style="font-size:0.82rem; color:#b07040; margin-top:4px">
+        已自動取消贈品選取，請重新選擇或直接結帳。
+      </p>
+      <button class="cart-err-btn" (click)="closeGiftErrorModal()">確認</button>
     </div>
   </div>
 }

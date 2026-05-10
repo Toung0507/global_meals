@@ -426,11 +426,78 @@
     margin-top: 5px;
 }
 
+/* 必填提示 + 居住地選擇的橫向列 */
+.c-hint-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
 /* 必填說明小字（全部欄位均為必填） */
 .c-required-hint {
     font-size: clamp(10px, 1.3vh, 12px);
     color: #C8A888;
     flex-shrink: 0;
+}
+
+/* 居住地下拉選單外層 */
+.c-region-select-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #FFF5DC, #FFE8B0);
+    border: 1.5px solid rgba(217, 92, 26, 0.28);
+    border-radius: 20px;
+    padding: 6px 12px 6px 10px;
+    box-shadow: 0 2px 8px rgba(217, 92, 26, 0.10);
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    cursor: pointer;
+
+    &:hover {
+        border-color: rgba(217, 92, 26, 0.50);
+        box-shadow: 0 4px 14px rgba(217, 92, 26, 0.18);
+        background: linear-gradient(135deg, #FFEECC, #FFD990);
+    }
+
+    &:focus-within {
+        border-color: #D95C1A;
+        box-shadow: 0 0 0 3px rgba(217, 92, 26, 0.14), 0 2px 8px rgba(217, 92, 26, 0.10);
+        background: linear-gradient(135deg, #FFF0CC, #FFDE9A);
+    }
+}
+
+/* 地球 emoji 圖示 */
+.c-region-icon {
+    font-size: 15px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* 原生 select：移除預設外觀 */
+.c-region-select {
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: clamp(12px, 1.5vh, 14px);
+    font-weight: 700;
+    color: #A84210;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+}
+
+/* 自訂下拉箭頭 */
+.c-region-arrow {
+    font-size: 11px;
+    color: #D95C1A;
+    opacity: 0.75;
+    pointer-events: none;
+    flex-shrink: 0;
+    line-height: 1;
 }
 
 /* 必填星號（紅色小字） */

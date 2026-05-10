@@ -107,6 +107,9 @@ export class AuthService {
     return this.apiService.memberLogin(req).pipe(
       tap(res => {
         if (res.code === 200) {
+          // 將 members 嵌套欄位提升到頂層，讓元件可直接讀 currentMember.orderCount / isDiscount
+          if (res.members?.orderCount != null) res.orderCount = res.members.orderCount;
+          if (res.members?.discount != null)   res.isDiscount = res.members.discount;
           this.currentMember = res;
           sessionStorage.setItem('currentMember', JSON.stringify(res));
           // 同步更新 currentUser 以維持向後相容（舊元件讀 currentUser）

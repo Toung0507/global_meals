@@ -2178,8 +2178,8 @@ this.activeModal.set('addGift');
 
     // ── Step 2：更新或建立 discount 記錄（獨立執行，不與 region 耦合）
     const discReq$ = disc
-      ? this.apiService.updateDiscountSettings({ id: disc.id, usageCap: countThreshold, count: disc.count })
-      : this.apiService.createDiscount({ regionsId, usageCap: countThreshold, count: 0 });
+      ? this.apiService.updateDiscountSettings({ id: disc.id, count: countThreshold, usageCap: limitAmount })
+      : this.apiService.createDiscount({ regionsId, count: countThreshold, usageCap: limitAmount });
 
     discReq$.subscribe({
       next: () => {
@@ -2208,7 +2208,7 @@ this.activeModal.set('addGift');
     if (!row) return;
     this.editingMemberRegionId.set(taxId);
     this.editMemberLimit.set(row.tax.discountLimit);
-    this.editMemberCap.set(row.disc?.usageCap ?? 0);
+    this.editMemberCap.set(row.disc?.count ?? 0);
   }
 
   cancelEditMember(): void {
@@ -2232,8 +2232,8 @@ this.activeModal.set('addGift');
 
     // 更新 or 新增 discount 累積次數
     const discReq$ = disc
-      ? this.apiService.updateDiscountSettings({ id: disc.id, usageCap: newCap, count: disc.count })
-      : this.apiService.createDiscount({ regionsId: taxId, usageCap: newCap, count: 0 });
+      ? this.apiService.updateDiscountSettings({ id: disc.id, count: newCap, usageCap: newLimit })
+      : this.apiService.createDiscount({ regionsId: taxId, count: newCap, usageCap: newLimit });
 
     // ── Step 1：先儲存至 localStorage（不依賴後端）
     localStorage.setItem(`discountLimit_${taxId}`, String(newLimit));

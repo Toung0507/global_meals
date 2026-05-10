@@ -593,6 +593,7 @@ export interface PromotionsReq {
   selectedGiftId: number;
   originalAmount: number;
   regionsId: number;
+  country?: string;
 }
 
 export interface PromotionsRes {
