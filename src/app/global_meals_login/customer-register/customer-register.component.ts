@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { BranchService } from '../../shared/branch.service';
+import { BranchService, CountryCode, CountryConfig } from '../../shared/branch.service';
 import { ApiService } from '../../shared/api.service';
 
 @Component({
@@ -41,11 +41,17 @@ export class CustomerRegisterComponent implements OnInit {
   get lang() {
     return this.branchService.lang();
   }
+  get allCountries(): CountryConfig[] { return this.branchService.allCountries; }
+  get activeCountry(): CountryCode    { return this.branchService.country; }
   get dialCode(): string {
     return this.branchService.config.dialCode;
   }
   get dialLabel(): string {
     return `${this.branchService.config.nameLocal} ${this.branchService.config.dialCode}`;
+  }
+
+  selectCountry(code: CountryCode): void {
+    this.branchService.setCountry(code);
   }
 
   togglePassword(): void {
@@ -81,7 +87,7 @@ export class CustomerRegisterComponent implements OnInit {
       valid = false;
     }
 
-    if (this.password.length < 8) {
+    if (this.password.length < 6) {
       this.passwordError = true;
       valid = false;
     }
@@ -92,7 +98,12 @@ export class CustomerRegisterComponent implements OnInit {
 
     if (!valid) return;
 
-    const fullPhone = `${this.dialCode}${this.phone.trim()}`;
+    if (this.branchService.regionsId === 0) {
+      this.registerError = '地區資料讀取中，請稍後再試';
+      return;
+    }
+
+    const fullPhone = this.phone.trim();
     this.registering = true;
     this.registerError = '';
     // ✅ 這行已刪除（不需要在方法內重置）
@@ -101,7 +112,7 @@ export class CustomerRegisterComponent implements OnInit {
       .registerMember({
         name: this.name.trim(),
         phone: fullPhone,
-        country: this.branchService.country,
+        regionsId: this.branchService.regionsId,
         password: this.password,
       })
       .subscribe({

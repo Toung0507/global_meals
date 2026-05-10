@@ -239,6 +239,55 @@
 }
 
 
+/* 品牌副標語 */
+.s-brand-slogan {
+    font-size: clamp(11px, 1.4vh, 13px);
+    color: rgba(255, 255, 255, 0.45);
+    letter-spacing: 2px;
+    margin-top: 6px;
+}
+
+/* 顧客 QR Code 掃碼區 */
+.s-qr-area {
+    flex: 0;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px 20px;
+    z-index: 2;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.s-qr-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.s-qr-box {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 10px;
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.s-qr-hint {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.35);
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
 /* 角色說明徽章列表 */
 .s-role-badges {
     flex: 0;
@@ -456,6 +505,29 @@
 /* 輸入框的提示文字顏色（淺灰藍色） */
 .s-field input::placeholder {
     color: #A0AABB;
+}
+
+.s-pw-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    input { width: 100%; padding-right: 40px; }
+}
+
+.s-eye-btn {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: #6B7F99;
+    display: flex;
+    align-items: center;
+
+    svg { width: 18px; height: 18px; }
+    &:hover { color: #1E3A5F; }
 }
 
 
@@ -698,4 +770,221 @@
     .s-submit {
         height: 42px;
     }
+}
+
+/* ── 首次登入 Modal ───────────────────────────────────── */
+.sl-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 25, 50, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: sl-fade-in 0.2s ease;
+}
+
+@keyframes sl-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.sl-modal {
+  background: #fff;
+  border-radius: 20px;
+  padding: 0;
+  width: min(440px, calc(100vw - 32px));
+  box-shadow:
+    0 32px 80px rgba(15, 25, 60, 0.22),
+    0 8px 24px rgba(0, 0, 0, 0.10);
+  overflow: hidden;
+  animation: sl-slide-up 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes sl-slide-up {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+/* ── Modal 頂部色帶 ── */
+.sl-modal-header {
+  background: linear-gradient(135deg, #1E3A5F 0%, #2C5282 100%);
+  padding: 28px 32px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -40px;
+    right: -40px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(240,165,0,0.18) 0%, transparent 70%);
+  }
+}
+
+.sl-modal-icon {
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));
+}
+
+.sl-modal-title {
+  font-family: 'LXGW WenKai TC', 'Noto Serif TC', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 1px;
+}
+
+/* ── Modal 內容區 ── */
+.sl-modal-body {
+  padding: 24px 28px 28px;
+}
+
+.sl-modal-desc {
+  font-size: 0.855rem;
+  color: #5a6a8a;
+  line-height: 1.7;
+  margin: 0 0 20px;
+  text-align: center;
+  padding: 12px 16px;
+  background: #f4f6fb;
+  border-radius: 10px;
+  border-left: 3px solid #F0A500;
+}
+
+.sl-modal-field {
+  text-align: left;
+  margin-bottom: 14px;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #1a2840;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #F0A500;
+      flex-shrink: 0;
+    }
+  }
+
+  .s-pw-wrap input {
+    width: 100%;
+    height: 46px;
+    border: 2px solid #D4DCE8;
+    border-radius: 10px;
+    padding: 0 42px 0 14px;
+    font-size: 0.95rem;
+    font-family: 'Noto Sans TC', sans-serif;
+    background: #f8f9fc;
+    color: #1A2840;
+    outline: none;
+    box-sizing: border-box;
+    transition: all 0.2s;
+
+    &:focus {
+      border-color: #1E3A5F;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.08);
+    }
+
+    &::placeholder { color: #A0AABB; }
+  }
+}
+
+.sl-modal-error {
+  font-size: 0.82rem;
+  color: #dc2626;
+  margin: -6px 0 12px;
+  padding: 8px 12px;
+  background: #fff5f5;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* ── Modal 底部按鈕列 ── */
+.sl-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.sl-btn-skip {
+  padding: 11px 0;
+  border: 1.5px solid #D4DCE8;
+  border-radius: 10px;
+  background: #fff;
+  color: #6a7a90;
+  font-size: 0.88rem;
+  font-family: 'Noto Sans TC', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #f4f6fb;
+    border-color: #b0bcd0;
+    color: #3a4a60;
+  }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+}
+
+.sl-btn-confirm {
+  padding: 11px 0;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2C5282 0%, #1E3A5F 100%);
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 700;
+  font-family: 'Noto Sans TC', sans-serif;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow:
+    0 4px 14px rgba(30, 58, 95, 0.30),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #3A6298 0%, #2C5282 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(30, 58, 95, 0.36);
+  }
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
 }

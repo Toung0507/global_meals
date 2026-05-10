@@ -99,21 +99,16 @@ export class CustomerLoadingComponent implements AfterViewInit {
     /* ────────────────────────────────────────────────
      * ③ 百分比計數器（requestAnimationFrame 插值）
      *    對應 loading_v4.html 的 % counter 邏輯
-<<<<<<< HEAD
-     *    時間節點：{t:0,v:0}→{t:700,v:35}→{t:1600,v:65}→{t:2500,v:88}→{t:3200,v:100}
+     *    時間節點：0ms→0%  550ms→35%  1250ms→65%  1950ms→88%  2500ms→100%
      * ──────────────────────────────────────────────── */
 
-    /*
-     * 時間-數值節點陣列（對應 loading_v4.html 的 kf，整體 4.7s 版）
-     * 0ms → 0%  |  1030ms → 35%  |  2350ms → 65%
-     * 3670ms → 88%  |  4700ms → 100%
-     */
+    /* 時間-數值節點陣列，整體 1.8s */
     const kf: Array<{ t: number; v: number }> = [
       { t: 0,    v: 0   },
-      { t: 1030, v: 35  },
-      { t: 2350, v: 65  },
-      { t: 3670, v: 88  },
-      { t: 4700, v: 100 }
+      { t: 396,  v: 35  },
+      { t: 900,  v: 65  },
+      { t: 1404, v: 88  },
+      { t: 1800, v: 100 }
     ];
 
     const pctEl: HTMLElement = this.pctNum.nativeElement;
@@ -143,8 +138,8 @@ export class CustomerLoadingComponent implements AfterViewInit {
       /* 更新顯示文字（取整數，最大 100） */
       pctEl.textContent = Math.round(Math.min(v, 100)) + '%';
 
-      /* 尚未到達 4700ms 則繼續請求下一幀 */
-      if (elapsed < 4700) {
+      /* 尚未到達 1800ms 則繼續請求下一幀 */
+      if (elapsed < 1800) {
         requestAnimationFrame(tick);
       }
     };

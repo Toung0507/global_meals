@@ -90,19 +90,30 @@
         />
       </div>
 
-      <!-- 密碼輸入欄位（固定 type=password，無眼睛切換） -->
+      <!-- 密碼輸入欄位 -->
       <div class="s-field">
         <label>
           <span class="dot"></span>
           安全密碼
         </label>
-        <input
-          type="password"
-          [(ngModel)]="password"
-          name="password"
-          placeholder="請輸入登入密碼"
-          autocomplete="current-password"
-        />
+        <div class="s-pw-wrap">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            [(ngModel)]="password"
+            name="password"
+            placeholder="請輸入登入密碼"
+            autocomplete="current-password"
+          />
+          <button type="button" class="s-eye-btn" (click)="togglePassword()" [attr.aria-label]="showPassword ? '隱藏密碼' : '顯示密碼'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              @if (!showPassword) {
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              } @else {
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+              }
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- 錯誤訊息（loginError 不為 null 時顯示） -->
@@ -123,3 +134,79 @@
   <!-- 面板結束 -->
 </div>
 <!-- 主框架結束 -->
+
+<!-- ══ 首次登入改密碼提醒 Modal ══════════════════════════ -->
+@if (showFirstLoginModal) {
+  <div class="sl-modal-backdrop">
+    <div class="sl-modal">
+
+      <!-- 頂部色帶 -->
+      <div class="sl-modal-header">
+        <div class="sl-modal-icon">🔐</div>
+        <h3 class="sl-modal-title">首次登入安全提醒</h3>
+      </div>
+
+      <!-- 內容區 -->
+      <div class="sl-modal-body">
+        <p class="sl-modal-desc">
+          您目前使用的是系統預設密碼，存在安全風險。<br />
+          建議立即修改；若選擇稍後，下次登入仍會再次提醒。
+        </p>
+
+        <div class="sl-modal-field">
+          <label>新密碼</label>
+          <div class="s-pw-wrap">
+            <input
+              [type]="showFirstLoginNewPwd ? 'text' : 'password'"
+              [(ngModel)]="firstLoginNewPwd"
+              placeholder="請輸入新密碼"
+            />
+            <button type="button" class="s-eye-btn" (click)="showFirstLoginNewPwd = !showFirstLoginNewPwd">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                @if (!showFirstLoginNewPwd) {
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                } @else {
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                }
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="sl-modal-field">
+          <label>確認新密碼</label>
+          <div class="s-pw-wrap">
+            <input
+              [type]="showFirstLoginConfirmPwd ? 'text' : 'password'"
+              [(ngModel)]="firstLoginConfirmPwd"
+              placeholder="請再次輸入新密碼"
+            />
+            <button type="button" class="s-eye-btn" (click)="showFirstLoginConfirmPwd = !showFirstLoginConfirmPwd">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                @if (!showFirstLoginConfirmPwd) {
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                } @else {
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                }
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        @if (firstLoginError) {
+          <p class="sl-modal-error">⚠ {{ firstLoginError }}</p>
+        }
+
+        <div class="sl-modal-actions">
+          <button class="sl-btn-skip" (click)="skipFirstLogin()" [disabled]="firstLoginLoading">
+            稍後修改
+          </button>
+          <button class="sl-btn-confirm" (click)="submitNewPassword()" [disabled]="firstLoginLoading">
+            {{ firstLoginLoading ? '修改中…' : '✓ 立即修改' }}
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+}

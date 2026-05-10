@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./qr-entry.component.scss'],
 })
 export class QrEntryComponent implements OnInit {
-  status: 'loading' | 'invalid' = 'loading';
+  status: 'loading' | 'select' | 'invalid' = 'loading';
   tableId = '';
 
   constructor(private route: ActivatedRoute, private router: Router) {}
@@ -22,17 +22,23 @@ export class QrEntryComponent implements OnInit {
 
     const branchId = Number(branch);
     if (!branch || isNaN(branchId) || branchId <= 0) {
-      /* 無效分店 → 導回通用訪客入口 */
       this.router.navigate(['/customer-guest']);
       return;
     }
 
-    /* 有效 → 存入 sessionStorage，品牌動畫後跳轉 */
     sessionStorage.setItem('qr_branch', String(branchId));
     sessionStorage.setItem('qr_table', table);
 
     setTimeout(() => {
-      this.router.navigate(['/customer-guest']);
-    }, 1400);
+      this.status = 'select';
+    }, 900);
+  }
+
+  goMember(): void {
+    this.router.navigate(['/customer-login']);
+  }
+
+  goGuest(): void {
+    this.router.navigate(['/customer-guest']);
   }
 }

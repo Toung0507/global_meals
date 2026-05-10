@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Router } from '@angular/router';
@@ -7,11 +7,12 @@ import { QRCodeComponent } from 'angularx-qrcode';
 import { AuthService } from '../../shared/auth.service';
 import { LoadingService } from '../../shared/loading.service';
 import { BranchService, CountryCode, CountryConfig } from '../../shared/branch.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-customer-login',
   standalone: true,
-  imports: [FormsModule, RouterLink, QRCodeComponent],
+  imports: [FormsModule, RouterLink, QRCodeComponent, CommonModule],
   templateUrl: './customer-login.component.html',
   styleUrls: ['./customer-login.component.scss']
 })
@@ -25,13 +26,36 @@ export class CustomerLoginComponent implements OnInit {
 
   get allCountries(): CountryConfig[] { return this.branchService.allCountries; }
   get activeCountry(): CountryCode    { return this.branchService.country; }
+  get branches()          { return this.branchService.localizedBranches(); }
+  get selectedBranchId(): number { return this.branchService.globalAreaId; }
+  get selectedBranchName(): string {
+    return this.branches.find(b => b.id === this.selectedBranchId)?.name
+        ?? this.branches[0]?.name ?? '';
+  }
+
+  branchDropdownOpen = false;
+
+  toggleBranchDropdown(): void { this.branchDropdownOpen = !this.branchDropdownOpen; }
+  closeBranchDropdown(): void  { this.branchDropdownOpen = false; }
+
+  selectBranch(id: number): void {
+    this.branchService.setGlobalAreaId(id);
+    this.branchDropdownOpen = false;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocClick(event: Event): void {
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest('.c-branch-selector')) this.branchDropdownOpen = false;
+  }
 
   /** 給 HTML template 直接讀取 branchService.lang() */
   get lang() { return this.branchService.lang(); }
 
-  /** QR Code URL：現場掃碼直接進訪客點餐 */
+  /** QR Code URL：現場掃碼先進選擇頁，ngrok-skip-browser-warning 跳過 ngrok 警告頁 */
   get qrUrl(): string {
-    return (typeof window !== 'undefined' ? window.location.origin : '') + '/customer-guest';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/qr-entry?branch=${this.branchService.globalAreaId}&ngrok-skip-browser-warning=1`;
   }
 
   constructor(
@@ -65,8 +89,9 @@ this.authService.loginMember(this.account.trim(), this.password).subscribe({
         if (res.code === 200) {
           this.loadingService.showCustomerLoading();
           setTimeout(() => {
-            this.router.navigate(['/customer-home']).then(() => this.loadingService.hide());
-          }, 6200);
+            this.loadingService.hide();
+            this.router.navigate(['/customer-home']);
+          }, 2300);
         } else {
           this.loginError = true;
         }

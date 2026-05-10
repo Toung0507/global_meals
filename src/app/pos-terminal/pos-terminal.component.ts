@@ -38,14 +38,34 @@ import { OrderService, LiveOrder } from '../shared/order.service';
 import {
   ApiService,
   CartSyncReq,
+  CartViewRes,
+  AvailableGiftVO,
+  PromotionDetailVo,
+  PromotionsManageReq,
   CreateOrdersReq,
+  OrderCartDetailItem,
   PayReq,
-  //PromotionDetailVo,
+  GetOrdersDetailVo,
+  InventoryDetailVo,
+  UpdateBranchInventoryReq,
+  SelfChangePasswordReq,
+  ProductAdminVo,
 } from '../shared/api.service';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 /* ── 頁籤型別 ──────────────────────────────────────── */
 export type PosTab = 'pos' | 'board' | 'stock' | 'promo' | 'staff' | 'report';
+
+interface PosPromoEnriched {
+  id: number;
+  name: string;
+  minThreshold: number;
+  qualified: boolean;
+  progressPct: number;
+  gapAmount: number;
+  gifts: AvailableGiftVO[];
+}
 
 /* ── 商品型別 ──────────────────────────────────────── */
 interface PosProduct {
@@ -55,10 +75,11 @@ interface PosProduct {
   price: number;
   emoji: string;
   bg: string;
-  imgSrc?: string; /* 實體食物照片路徑（有圖時優先顯示，無圖則 fallback 至 emoji+bg） */
+  imgSrc?: string;
   badge?: 'hot' | 'new' | 'low';
   stock: number;
   category: string;
+  style: string;
 }
 
 /* ── 購物車品項型別 ─────────────────────────────────── */
@@ -84,6 +105,7 @@ interface PosPromo {
   image?: string;
   badgeColor?: string;
   minAmount?: number;
+  giftCount?: number;
 }
 
 /* ── 待付款現金訂單型別 ─────────────────────────────── */
@@ -138,6 +160,9 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   /* ── 分類篩選 ─────────────────────────────────────── */
   activeCategory = signal<string>('all');
 
+  /* ── 風格篩選 ─────────────────────────────────────── */
+  activeStyle = signal<string>('all');
+
   /* ── 搜尋關鍵字 ───────────────────────────────────── */
   searchQuery = signal<string>('');
 
@@ -158,118 +183,48 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   promoRemain = computed(() => 300 - this.subtotal());
 
   /* ── 商品清單（Signal 化，支援庫存調整）──────────
-   * imgSrc 已移除（POS 改採 SVG 圖示設計）
+   * 初始為空；ngOnInit 透過 loadStockList() 從後端填入
    * ──────────────────────────────────────────────── */
-  products = signal<PosProduct[]>([
-    {
-      id: 1,
-      name: '招牌滷肉飯',
-      eng: 'Braised Pork Rice',
-      price: 120,
-      emoji: '',
-      bg: 'linear-gradient(135deg,#2d1205,#5c2a10)',
-      badge: 'hot',
-      stock: 48,
-      category: '台式',
-    },
-    {
-      id: 2,
-      name: '古早味排骨飯',
-      eng: 'Pork Chop Rice',
-      price: 145,
-      emoji: '',
-      bg: 'linear-gradient(135deg,#2d1a05,#5c3a10)',
-      badge: 'hot',
-      stock: 32,
-      category: '台式',
-    },
-    {
-      id: 3,
-      name: '蚵仔煎',
-      eng: 'Oyster Pancake',
-      price: 80,
-      emoji: '',
-      bg: 'linear-gradient(135deg,#2d2005,#5c4510)',
-      badge: 'low',
-      stock: 5,
-      category: '台式',
-    },
-    {
-      id: 4,
-      name: '三杯雞飯',
-      eng: 'Three-Cup Chicken Rice',
-      price: 150,
-      emoji: '',
-      bg: 'linear-gradient(135deg,#1e1208,#4a2e10)',
-      stock: 24,
-      category: '台式',
-    },
-    {
-      id: 5,
-      name: '牛排',
-      eng: 'Steak',
-      price: 280,
-      emoji: '',
-      bg: 'linear-gradient(135deg,#2d0e0a,#5c2018)',
-      badge: 'new',
-      stock: 18,
-      category: '西式',
-    },
-    {
-      id: 6,
-      name: '蚵仔麵線',
-      eng: 'Oyster Vermicelli',
-      price: 70,
-      emoji: '',
-      bg: 'linear-gradient(135deg,#2d1005,#6b2a10)',
-      stock: 15,
-      category: '台式',
-    },
-    {
-      id: 7,
-      name: '黑糖珍珠奶茶',
-      eng: 'Brown Sugar Boba',
-      price: 75,
-      emoji: '',
-      bg: 'linear-gradient(135deg,#0a0805,#2a1a0a)',
-      badge: 'hot',
-      stock: 120,
-      category: '飲品',
-    },
-    {
-      id: 8,
-      name: '招牌滷蛋',
-      eng: 'Marinated Egg',
-      price: 30,
-      emoji: '',
-      bg: 'linear-gradient(135deg,#1e1208,#4a2e10)',
-      stock: 80,
-      category: '輕食',
-    },
-    {
-      id: 9,
-      name: '仙草奶茶',
-      eng: 'Grass Jelly Milk Tea',
-      price: 65,
-      emoji: '',
-      bg: 'linear-gradient(135deg,#051a05,#103010)',
-      stock: 60,
-      category: '飲品',
-    },
-  ]);
+  products = signal<PosProduct[]>([]);
 
   /* 篩選後商品清單 */
   filteredProducts = computed(() => {
     const cat = this.activeCategory();
+    const sty = this.activeStyle();
     const q = this.searchQuery().trim().toLowerCase();
     return this.products().filter((p) => {
       const catMatch = cat === 'all' || p.category === cat;
+      const styMatch = sty === 'all' || p.style === sty;
       const nameMatch =
         q === '' ||
         p.name.toLowerCase().includes(q) ||
         p.eng.toLowerCase().includes(q);
-      return catMatch && nameMatch;
+      return catMatch && styMatch && nameMatch;
     });
+  });
+
+  /* 動態分類清單（從已載入商品推算；後端資料未就緒時顯示空列表） */
+  uniqueCategories = computed(() => {
+    const cats = [
+      ...new Set(
+        this.products()
+          .map((p) => p.category)
+          .filter(Boolean),
+      ),
+    ] as string[];
+    return cats;
+  });
+
+  /* 動態風格清單（從已載入商品推算；後端資料未就緒時顯示空列表） */
+  uniqueStyles = computed(() => {
+    const styles = [
+      ...new Set(
+        this.products()
+          .map((p) => p.style)
+          .filter(Boolean),
+      ),
+    ] as string[];
+    return styles;
   });
 
   /* ── 新增員工 Modal 狀態 ──────────────────────────── */
@@ -287,57 +242,8 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   };
 
   /* ── 活動管理 ─────────────────────────────────────── */
-  posPromos = signal<PosPromo[]>([
-    {
-      id: 1,
-      title: '滿 $300 贈招牌滷蛋×2',
-      isActive: true,
-      color: '#c49756',
-      ended: false,
-      rawStartTime: '2026-01-01',
-      rawEndTime: '2099-12-31',
-      type: 'promotion',
-      description: '消費滿 $300 即贈招牌滷蛋兩顆，無使用期限。',
-      badgeColor: '#c49756',
-      minAmount: 300,
-    },
-    {
-      id: 2,
-      title: '週一 9 折優惠',
-      isActive: true,
-      color: '#4f8ef7',
-      ended: false,
-      rawStartTime: '2026-01-01',
-      rawEndTime: '2026-06-30',
-      type: 'promotion',
-      description: '每週一全品項享 9 折優惠，適用於本分店。',
-      badgeColor: '#4f8ef7',
-    },
-    {
-      id: 3,
-      title: '夏季新菜單上線公告',
-      isActive: true,
-      color: '#c084fc',
-      ended: false,
-      rawStartTime: '2026-04-01',
-      rawEndTime: '2026-06-30',
-      type: 'announcement',
-      description: '2026 夏季菜單已正式上線，新增 6 款季節限定料理。',
-      badgeColor: '#c084fc',
-    },
-    {
-      id: 4,
-      title: '週年慶全館 8 折',
-      isActive: false,
-      color: '#6b7280',
-      ended: true,
-      rawStartTime: '2025-01-01',
-      rawEndTime: '2025-12-31',
-      type: 'promotion',
-      description: '週年慶期間全館商品享 8 折，活動已結束。',
-      badgeColor: '#6b7280',
-    },
-  ]);
+  /* 初始為空；ngOnInit 透過 getPromotionsList() 從後端填入 */
+  posPromos = signal<PosPromo[]>([]);
   showPosPromoPanel = signal(false);
   posPromoDraft = {
     name: '',
@@ -369,6 +275,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /* 查詢到的會員資訊（不含密碼） */
   foundMember = signal<{
+    id: number;
     name: string;
     phone: string;
     email: string;
@@ -378,88 +285,138 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   /* 訪客手機號碼 */
   guestPhone = signal('');
 
-  /* ── 贈品選擇（與客戶端相同選項，第一項為「不選贈品」）── */
-  giftOptions: string[] = [
-    '不需要滿額免費贈品',
-    '招牌滷蛋 × 2',
-    '特製泡菜 × 1',
-    '古早味豆干 × 2',
-  ];
-  selectedGift = signal<string>('');
-  giftDropdownOpen = signal(false);
+  /* ── 購物車後端 sync 狀態 ─────────────────────────── */
+  cartSyncRes = signal<CartViewRes | null>(null);
+  posSyncCartId = signal<number | null>(null);
+  private _posCartSyncQueue: Promise<void> = Promise.resolve();
 
-  toggleGiftDropdown(): void {
-    this.giftDropdownOpen.update((v) => !v);
-  }
+  /* ── 活動/贈品選擇（後端驅動）──────────────────────── */
+  posAllPromos = signal<PromotionDetailVo[]>([]);
+  posPromoDrawerOpen = signal(false);
+  selectedPosPromoId = signal<number | null>(null); // null=未選, -1=不參加
+  selectedPosGiftRuleId = signal<number | null>(null);
 
-  selectGift(gift: string): void {
-    this.selectedGift.set(gift);
-    this.giftDropdownOpen.set(false);
-  }
-
-  /* ── 活動優惠選擇（與客戶端相同門檻與贈品清單）──── */
-  readonly PROMO_ACTIVITIES = [
-    {
-      name: '新會員首單禮',
-      minSpend: 150,
-      gifts: ['招牌豆漿 × 1', '仙草奶茶 × 1'],
-    },
-    {
-      name: '週末滿額禮',
-      minSpend: 300,
-      gifts: ['古早味豆干 × 2', '特製泡菜 × 1', '招牌滷蛋 × 2'],
-    },
-    {
-      name: '消費達人大禮包',
-      minSpend: 500,
-      gifts: ['仙草奶茶 × 1 + 招牌滷蛋 × 2', '特製泡菜 × 1 + 古早味豆干 × 2'],
-    },
-  ];
-
-  selectedPromoName = signal<string>('');
-  promoDropdownOpen = signal(false);
-
-  unlockedPromos = computed(() =>
-    this.PROMO_ACTIVITIES.filter((p) => this.subtotal() >= p.minSpend),
+  posAvailablePromos = computed(
+    () => this.cartSyncRes()?.availablePromotions ?? [],
   );
 
-  get selectedPromoActivity() {
+  posSelectedPromo = computed(() => {
+    const id = this.selectedPosPromoId();
+    if (!id || id < 0) return null;
+    /* 若選中的活動已不符合門檻，視為未選 */
+    const enriched = this.posEnrichedPromos().find((p) => p.id === id);
+    if (!enriched?.qualified) return null;
+    return this.posAvailablePromos().find((p) => p.promotionId === id) ?? null;
+  });
+
+  posSelectedGiftName = computed(() => {
+    const ruleId = this.selectedPosGiftRuleId();
+    if (!ruleId || ruleId < 0) return '';
     return (
-      this.PROMO_ACTIVITIES.find((p) => p.name === this.selectedPromoName()) ??
-      null
+      this.posSelectedPromo()?.gifts.find((g) => g.giftRuleId === ruleId)
+        ?.giftProductName ?? ''
     );
+  });
+
+  posEnrichedPromos = computed((): PosPromoEnriched[] => {
+    const available = this.posAvailablePromos();
+    const sub = this.subtotal();
+    const now = new Date();
+
+    return (
+      this.posAllPromos()
+        .filter(
+          (p) =>
+            p.active &&
+            new Date(p.endTime) > now &&
+            p.gifts.some((g) => g.active),
+        )
+        .map((promo) => {
+          const activeGifts = promo.gifts.filter((g) => g.active);
+          const minThreshold = Math.min(
+            ...activeGifts.map((g) => g.fullAmount),
+          );
+          /* minThreshold=0 表示無門檻，直接符合；否則需達門檻 */
+          const qualified = minThreshold === 0 ? sub > 0 : sub >= minThreshold;
+          const progressPct =
+            minThreshold > 0
+              ? Math.min(100, Math.round((sub / minThreshold) * 100))
+              : 100;
+          const gapAmount = Math.max(0, minThreshold - sub);
+          const availPromo = available.find((a) => a.promotionId === promo.id);
+          /* 依 giftRuleId 去重，避免後端回傳重複贈品品項 */
+          const rawGifts = availPromo?.gifts ?? [];
+          const seen = new Set<number>();
+          const gifts = rawGifts.filter((g) => {
+            if (seen.has(g.giftRuleId)) return false;
+            seen.add(g.giftRuleId);
+            return true;
+          });
+          return {
+            id: promo.id,
+            name: promo.name,
+            minThreshold,
+            qualified,
+            progressPct,
+            gapAmount,
+            gifts,
+          };
+        })
+        /* 由低到高升冪排列 */
+        .sort((a, b) => a.minThreshold - b.minThreshold)
+    );
+  });
+
+  selectPosPromo(promoId: number): void {
+    if (promoId > 0 && this.selectedPosPromoId() === promoId) {
+      this.selectedPosPromoId.set(null);
+    } else {
+      this.selectedPosPromoId.set(promoId);
+    }
+    this.selectedPosGiftRuleId.set(null);
   }
 
-  /* 統一贈品面板：顯示條件 */
-  get showGiftPanel(): boolean {
-    if (this.selectedPromoName() === '不參加活動優惠') return false;
-    if (this.selectedPromoActivity) return true;
-    return this.subtotal() >= 300;
+  pickPosGift(ruleId: number | null): void {
+    this.selectedPosGiftRuleId.set(ruleId);
   }
 
-  /* 統一贈品面板：選項清單（依選中活動切換） */
-  get currentGiftOptions(): string[] {
-    const act = this.selectedPromoActivity;
-    if (act) return act.gifts;
-    return this.giftOptions;
+  private _syncCartToBackend(productId: number, quantity: number): void {
+    this._posCartSyncQueue = this._posCartSyncQueue.then(async () => {
+      const staff = this.authService.currentStaff;
+      const globalAreaId = staff?.globalAreaId ?? 19;
+      const memberId = this.foundMember()?.id ?? 1;
+      const req: CartSyncReq = {
+        cartId: this.posSyncCartId(),
+        globalAreaId,
+        productId,
+        quantity,
+        operationType: 'STAFF',
+        memberId,
+        staffId: staff?.id,
+      };
+      try {
+        const res = await firstValueFrom(this.apiService.syncCart(req));
+        if (res.cartId > 0) this.posSyncCartId.set(res.cartId);
+        this.cartSyncRes.set(res);
+        /* 若已選活動不再符合資格，自動重置選擇 */
+        const availIds = res.availablePromotions.map((p) => p.promotionId);
+        const cur = this.selectedPosPromoId();
+        if (cur && cur > 0 && !availIds.includes(cur)) {
+          this.selectedPosPromoId.set(null);
+          this.selectedPosGiftRuleId.set(null);
+        }
+      } catch {
+        /* 靜默失敗，不影響收銀作業 */
+      }
+    });
   }
 
-  /* 統一贈品面板：副標題文字 */
-  get giftPanelHint(): string {
-    const act = this.selectedPromoActivity;
-    if (act) return `選擇「${act.name}」贈品`;
-    return '消費滿 $300 可選一項';
-  }
-
-  togglePromoDropdown(): void {
-    this.promoDropdownOpen.update((v) => !v);
-  }
-
-  selectPromo(name: string): void {
-    this.selectedPromoName.set(name);
-    this.selectedGift.set(''); // 切換活動時重置贈品選擇
-    this.giftDropdownOpen.set(false);
-    this.promoDropdownOpen.set(false);
+  private resetPosPromoState(): void {
+    this.posSyncCartId.set(null);
+    this.cartSyncRes.set(null);
+    this.selectedPosPromoId.set(null);
+    this.selectedPosGiftRuleId.set(null);
+    this.posPromoDrawerOpen.set(false);
   }
 
   /* ── 折扣兌換券（與客戶端相同邏輯）────────────────── */
@@ -469,22 +426,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     this.useDiscountCoupon.update((v) => !v);
   }
 
-  /* 模擬折扣卡累積資料（未來串接 API）
-   * phone 存帶 dash 格式，用於顯示；比對時一律去除 dash
-   * orderCount：累積訂單次數，每 10 次可兌換一次 8 折折扣券 */
-  private readonly MOCK_MEMBER_DISCOUNT: Record<
-    string,
-    { name: string; phone: string; email: string; orderCount: number }
-  > = {
-    'test@lazybao.com': {
-      name: '懶飽飽測試會員',
-      phone: '0912-345-678',
-      email: 'test@lazybao.com',
-      orderCount: 9,
-    },
-  };
-
-  /* 本次 Session 的會員訂單次數（查詢後從 MOCK 載入，結帳後即時更新） */
+  /* 本次 Session 的會員訂單次數（getMemberByPhone 回傳後載入，結帳後即時更新） */
   posOrderCount = signal<number>(0);
 
   /* 切換成會員點餐模式 */
@@ -499,6 +441,8 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   enterGuestMode(): void {
     this.orderMode.set('guest');
     this.guestPhone.set('');
+    this.foundMember.set(null);
+    this.posOrderCount.set(0);
   }
 
   /* 取消，回到未選擇狀態 */
@@ -510,10 +454,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     this.memberQueryError.set('');
     this.guestPhone.set('');
     this.useDiscountCoupon.set(false);
-    this.selectedGift.set('');
-    this.giftDropdownOpen.set(false);
-    this.selectedPromoName.set('');
-    this.promoDropdownOpen.set(false);
+    this.resetPosPromoState();
   }
 
   /* 查詢會員（比對時去除所有 dash，讓使用者輸入 0912345678 也能找到） */
@@ -524,43 +465,30 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // ⚠ TODO [API串接點 - 查詢會員]
-    // 後端 MembersController 建立後，取消下方區塊，
-    // 並移除下方整個 MOCK_MEMBER_DISCOUNT 比對邏輯：
-    // this.apiService.getMemberByPhone(q).subscribe({
-    //   next: (member) => {
-    //     if (member) {
-    //       this.foundMember.set({
-    //         name: member.name,
-    //         phone: member.phone,
-    //         email: '',
-    //         orderCount: member.orderCount
-    //       });
-    //       this.posOrderCount.set(member.orderCount);
-    //       this.memberQueryError.set('');
-    //     } else {
-    //       this.foundMember.set(null);
-    //       this.posOrderCount.set(0);
-    //       this.memberQueryError.set('查無此會員，請確認手機號碼');
-    //     }
-    //   },
-    //   error: () => this.memberQueryError.set('查詢失敗，請確認後端連線')
-    // });
-    // return;  // 加上 return 後，下方 mock 邏輯就不會執行
+    /* 格式正規化交由後端處理，前端只去除連字號與空白 */
+    const phone = q.replace(/[\s\-]/g, '');
 
-    const normalize = (s: string) => s.replace(/-/g, '');
-    const match = Object.values(this.MOCK_MEMBER_DISCOUNT).find(
-      (m) => m.email === q || normalize(m.phone) === normalize(q),
-    );
-    if (match) {
-      this.foundMember.set(match);
-      this.posOrderCount.set(match.orderCount);
-      this.memberQueryError.set('');
-    } else {
-      this.foundMember.set(null);
-      this.posOrderCount.set(0);
-      this.memberQueryError.set('查無此會員，請確認 Email 或手機號碼');
-    }
+    this.apiService.getMemberByPhone(phone).subscribe({
+      next: (res) => {
+        const d = res?.data;
+        if (res?.code === 200 && d?.memberId) {
+          this.foundMember.set({
+            id: d.memberId,
+            name: d.phone ?? '會員',
+            phone: d.phone ?? '',
+            email: '',
+            orderCount: d.orderCount ?? 0,
+          });
+          this.posOrderCount.set(d.orderCount ?? 0);
+          this.memberQueryError.set('');
+        } else {
+          this.foundMember.set(null);
+          this.posOrderCount.set(0);
+          this.memberQueryError.set('查無此會員，請確認手機號碼');
+        }
+      },
+      error: () => this.memberQueryError.set('查詢失敗，請確認後端連線'),
+    });
   }
 
   /* 會員訂單次數累積進度（佔 10 次的百分比） */
@@ -597,38 +525,25 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.subtotal() - this.discountedTotal;
   }
 
+  /* ── 庫存管理頁專用清單（含未上架商品，來自 getBranchInventory）── */
+  posStockList = signal<InventoryDetailVo[]>([]);
+
   /* ── 庫存調整狀態 ─────────────────────────────────── */
   adjustingStockId = signal<number | null>(null);
   adjustStockAmount = signal<number>(0);
   adjustStockSavedId = signal<number | null>(null);
 
-  /* ── 員工帳號清單（Signal 化） ──────────────────────── */
-  staffAccounts = signal<StaffAccount[]>([
-    {
-      id: 1,
-      name: '王小明',
-      account: 'wang.xm',
-      backendRole: 'STAFF',
-      isActive: true,
-      joinedAt: '2024-09-01',
-    },
-    {
-      id: 2,
-      name: '李佳靜',
-      account: 'lee.jj',
-      backendRole: 'STAFF',
-      isActive: true,
-      joinedAt: '2025-03-15',
-    },
-    {
-      id: 3,
-      name: '張偉成',
-      account: 'chang.wc',
-      backendRole: 'MANAGER_AGENT',
-      isActive: false,
-      joinedAt: '2023-11-20',
-    },
-  ]);
+  /* ── 員工帳號清單（Signal 化）初始為空；BM 角色在 ngOnInit 透過 getAllStaff() 填入 ── */
+  staffAccounts = signal<StaffAccount[]>([]);
+
+  /* ── 報電話號碼取餐 ───────────────────────────────── */
+  phoneQuery = signal('');
+  phoneSearchLoading = signal(false);
+  phoneSearchResults = signal<import('../shared/api.service').GetOrdersVo[]>(
+    [],
+  );
+  phoneSearchDone = signal(false);
+  phoneSearchError = signal('');
 
   /* 計時器 ID */
   private clockInterval: ReturnType<typeof setInterval> | null = null;
@@ -636,7 +551,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   private boardPollInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(
-    private router: Router,
+    public router: Router,
     public authService: AuthService,
     public orderService: OrderService,
     private apiService: ApiService,
@@ -660,32 +575,11 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     this._fetchTodayOrders();
     this.boardPollInterval = setInterval(() => this._fetchTodayOrders(), 5000);
 
-    const globalAreaId = this.authService.currentStaff?.globalAreaId ?? 1;
-    this.apiService.getActiveProducts(globalAreaId).subscribe({
-      next: (res) => {
-        if (res?.products?.length) {
-          this.products.set(
-            res.products.map((p) => ({
-              id: p.id,
-              name: p.name,
-              eng: p.name,
-              price: p.basePrice,
-              emoji: '',
-              bg: 'linear-gradient(135deg,#1e1a14,#3a2e20)',
-              stock: p.stockQuantity,
-              category: p.category,
-              badge: p.stockQuantity <= 5 ? ('low' as const) : undefined,
-            })),
-          );
-        }
-      },
-      error: (err) =>
-        console.warn('[POS] 商品 API 失敗，使用本機 Demo 資料', err),
-    });
-    // ← 在這裡補上活動 API
-    this.apiService.getPromotionsList(globalAreaId).subscribe({
+    this.loadStockList();
+    this.apiService.getPromotionsList().subscribe({
       next: (res) => {
         if (res?.data?.length) {
+          this.posAllPromos.set(res.data);
           this.posPromos.set(
             res.data.map((p) => ({
               id: p.id,
@@ -698,20 +592,42 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
               type: 'promotion' as const,
               description: p.description ?? '',
               image: p.promotionImg
-                ? p.promotionImg.startsWith('data:')
-                  ? p.promotionImg
-                  : `data:image/jpeg;base64,${p.promotionImg}`
+                ? `${this.apiService.getPromotionImageUrl(p.id)}?v=${p.id}`
                 : '',
               badgeColor: p.active ? '#c49756' : '#6b7280',
               minAmount: p.gifts?.length
                 ? Math.min(...p.gifts.map((g) => +g.fullAmount))
                 : undefined,
+              giftCount: p.gifts?.length ?? 0,
             })),
           );
         }
       },
       error: () => console.warn('[POS] 活動 API 失敗，使用本機 Demo 資料'),
     });
+    if (this.isBM) {
+      this.apiService.getAllStaff().subscribe({
+        next: (staffRes) => {
+          if (staffRes?.staffList?.length) {
+            this.staffAccounts.set(
+              staffRes.staffList
+                .filter(
+                  (s) => s.role !== 'ADMIN' && s.role !== 'REGION_MANAGER',
+                )
+                .map((s) => ({
+                  id: s.id,
+                  name: s.name,
+                  account: s.account,
+                  backendRole: s.role,
+                  isActive: s.status ?? true,
+                  joinedAt: s.hireAt?.slice(0, 10) ?? '',
+                })),
+            );
+          }
+        },
+        error: () => console.warn('[POS] 員工清單載入失敗'),
+      });
+    }
   }
 
   ngAfterViewInit(): void {
@@ -729,83 +645,132 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   private _fetchTodayOrders(): void {
     this.apiService.getTodayOrders().subscribe({
       next: (res) => {
-        if (!res?.orders) return;
+        if (res?.code === 403) {
+          /* 員工 session 已過期，停止輪詢並導回登入 */
+          if (this.boardPollInterval !== null) {
+            clearInterval(this.boardPollInterval);
+            this.boardPollInterval = null;
+          }
+          this.authService.sessionExpired.set(true);
+          return;
+        }
+        if (!res?.getOrderVoList) return;
         const pad = (n: number) => String(n).padStart(2, '0');
         const now = new Date();
         const nowStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
-        /* 本次拉到的 PENDING_CASH posId 集合，用來清除已不在後端的舊項目 */
-        const freshPendingIds = new Set<string>();
+        /* 依 DB id 升序排序，index + 1 即為今日流水號（0001、0002…） */
+        const sortedList = [...res.getOrderVoList].sort(
+          (a, b) => parseInt(a.id) - parseInt(b.id),
+        );
 
-        res.orders.forEach((o) => {
+        sortedList.forEach((o, idx) => {
           const existingId = `DB-${o.orderDateId}-${o.id}`;
-          const itemTexts = (o.items ?? [])
+
+          const rawDetails: GetOrdersDetailVo[] =
+            o.GetOrdersDetailVoList ?? o.getOrdersDetailVoList ?? [];
+          const itemTexts: string[] = rawDetails
             .filter((i) => !i.gift)
-            .map((i) => `${i.productName} × ${i.quantity}`);
-
-          /* ── PENDING_CASH：分流至待付款看板 ── */
-          if (o.paymentStatus === 'PENDING_CASH') {
-            freshPendingIds.add(existingId);
-            const alreadyPending = this.pendingCashOrders().some(
-              (p) => p.posId === existingId,
+            .map(
+              (i) => `${i.name || i.productName || '未知品項'} × ${i.quantity}`,
             );
-            if (!alreadyPending) {
-              this.pendingCashOrders.update((list) => [
-                ...list,
-                {
-                  posId: existingId,
-                  dbId: o.id,
-                  orderDateId: o.orderDateId,
-                  number: `A-${o.id}`,
-                  total: Number(o.totalAmount),
-                  phone: o.phone,
-                  items: itemTexts,
-                  createdAt: nowStr,
-                },
-              ]);
-            }
-            return; /* 不加入廚房看板 */
-          }
 
-          /* ── COMPLETED：一般廚房看板流程 ── */
-          const existing = this.orderService
-            .orders()
-            .find((x) => x.id === existingId);
+          /* ── 付款方式：後端已回傳 paymentMethod 欄位 ── */
+          const rawPayment: string = o.paymentMethod ?? o.payMethod ?? '';
+          const payStatus: string = o.payStatus ?? o.paymentStatus ?? '';
+          const isCash =
+            rawPayment === 'CASH' ||
+            (payStatus === 'UNPAID' && rawPayment === '') ||
+            o.ordersStatus === 'PENDING_CASH' ||
+            o.kitchenStatus === 'PENDING_CASH';
+
+          /* ── 狀態映射：所有 READY 訂單進「餐點製作完成」，由員工手動完成 ── */
           const statusMap: Record<
             string,
-            'waiting' | 'cooking' | 'ready' | 'done'
+            'pending-cash' | 'waiting' | 'cooking' | 'ready' | 'done'
           > = {
+            PENDING_CASH: 'waiting',
+            UNPAID: 'waiting',
             WAITING: 'waiting',
             COOKING: 'cooking',
-            READY: 'done',
+            READY: 'ready',
+            AWAITING_PAYMENT: 'pending-cash',
+            COMPLETED: 'done',
           };
-          const status = statusMap[o.kitchenStatus] ?? 'waiting';
+          const rawStatus = (o.kitchenStatus ?? '') || o.ordersStatus;
+          const status =
+            o.ordersStatus === 'AWAITING_PAYMENT'
+              ? 'pending-cash'
+              : (statusMap[rawStatus] ??
+                statusMap[o.ordersStatus] ??
+                'waiting');
+
+          const payMethod =
+            o.ordersStatus === 'COMPLETED'
+              ? '已付款'
+              : isCash
+                ? '現金'
+                : rawPayment === 'CREDIT_CARD'
+                  ? '信用卡'
+                  : rawPayment === 'MOBILE_PAY'
+                    ? '行動支付'
+                    : '待付款';
+
+          const orderNumber = `${o.orderDateId}-${String(idx + 1).padStart(4, '0')}`;
+          /* 同時比對 DB id 和 number，避免 POS 下單後 polling 重複新增 */
+          const existing =
+            this.orderService.orders().find((x) => x.id === existingId) ??
+            this.orderService.orders().find((x) => x.number === orderNumber);
           if (!existing) {
             this.orderService.addOrder({
               id: existingId,
-              number: `A-${o.id}`,
+              number: orderNumber,
               status,
               estimatedMinutes: 10,
               items: itemTexts,
               total: Number(o.totalAmount),
               createdAt: nowStr,
-              payMethod: '線上付款',
+              payMethod,
+              isCash,
               source: 'customer',
-              customerName: o.phone,
+              customerName: '',
+              orderType: (o.phone ?? '').startsWith('GUEST') ? '訪客' : '會員',
             } as LiveOrder);
-          } else if (existing.status !== status) {
-            this.orderService.updateStatus(existingId, status);
+          } else {
+            const targetId = existing.id;
+            /* 輪詢只允許狀態往前推進，終態(done/paid/cancelled)完全鎖定 */
+            const isTerminal =
+              existing.status === 'done' ||
+              existing.status === 'paid' ||
+              existing.status === 'cancelled';
+            if (!isTerminal) {
+              const statusLevel: Record<string, number> = {
+                waiting: 0, cooking: 1, ready: 2, 'pending-cash': 3, done: 4,
+              };
+              const existingLevel = statusLevel[existing.status] ?? 0;
+              const newLevel = statusLevel[status] ?? 0;
+              if (newLevel > existingLevel) {
+                this.orderService.updateStatus(targetId, status);
+              }
+            }
+            if (
+              isCash &&
+              (!existing.isCash || existing.payMethod === '待付款')
+            ) {
+              this.orderService.updatePayMethodAndCash(targetId, '現金', true);
+            } else if (
+              existing.payMethod === '待付款' &&
+              payMethod !== '待付款'
+            ) {
+              this.orderService.updatePayMethod(targetId, payMethod);
+            }
+            if (itemTexts.length > 0 && existing.items.length === 0) {
+              this.orderService.updateItems(targetId, itemTexts);
+            }
           }
         });
-
-        /* 清除後端已不存在（已付款）的 PENDING_CASH 項目 */
-        this.pendingCashOrders.update((list) =>
-          list.filter((p) => freshPendingIds.has(p.posId)),
-        );
       },
-      error: () => {
-        /* 靜默失敗，下次再重試 */
-      },
+      error: () => {},
     });
   }
 
@@ -859,8 +824,12 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 0);
   }
 
-  /* 加入購物車 */
+  /* 加入購物車，並同步扣減本地庫存顯示 */
   addToCart(product: PosProduct, event?: MouseEvent): void {
+    if (product.stock <= 0) {
+      this.posShowToast('⚠️ 此商品庫存不足');
+      return;
+    }
     const current = this.cartItems();
     const existing = current.find((c) => c.id === product.id);
     if (existing) {
@@ -869,6 +838,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
           c.id === product.id ? { ...c, qty: c.qty + 1 } : c,
         ),
       );
+      this._syncCartToBackend(product.id, existing.qty + 1);
     } else {
       this.cartItems.set([
         ...current,
@@ -880,7 +850,12 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
           qty: 1,
         },
       ]);
+      this._syncCartToBackend(product.id, 1);
     }
+    /* 扣減本地庫存顯示 */
+    this.products.update((list) =>
+      list.map((p) => (p.id === product.id ? { ...p, stock: p.stock - 1 } : p)),
+    );
     if (navigator.vibrate) navigator.vibrate(25);
     if (event?.currentTarget) {
       gsap.fromTo(
@@ -892,30 +867,63 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     this.animateTotal();
   }
 
-  /* 增減數量 */
+  /* 增減數量，並同步調整本地庫存顯示 */
   updateQty(id: number, delta: number): void {
     const current = this.cartItems();
     const item = current.find((c) => c.id === id);
     if (!item) return;
     const newQty = item.qty + delta;
     if (newQty <= 0) {
+      /* 移除品項：將整個 qty 還回庫存 */
+      this.products.update((list) =>
+        list.map((p) =>
+          p.id === id ? { ...p, stock: p.stock + item.qty } : p,
+        ),
+      );
       this.cartItems.set(current.filter((c) => c.id !== id));
+      this._syncCartToBackend(id, 0);
     } else {
+      /* delta < 0 (減少) → 還回庫存；delta > 0 (增加) → 扣減庫存 */
+      const productInCart = this.products().find((p) => p.id === id);
+      if (delta > 0 && productInCart && productInCart.stock <= 0) {
+        this.posShowToast('⚠️ 此商品庫存不足');
+        return;
+      }
+      this.products.update((list) =>
+        list.map((p) => (p.id === id ? { ...p, stock: p.stock - delta } : p)),
+      );
       this.cartItems.set(
         current.map((c) => (c.id === id ? { ...c, qty: newQty } : c)),
       );
+      this._syncCartToBackend(id, newQty);
     }
     this.animateTotal();
   }
 
-  /* 清空購物車 */
+  /* 清空購物車，歸還所有庫存顯示 */
   clearCart(): void {
+    const items = this.cartItems();
+    items.forEach((item) => {
+      this.products.update((list) =>
+        list.map((p) =>
+          p.id === item.id ? { ...p, stock: p.stock + item.qty } : p,
+        ),
+      );
+    });
     this.cartItems.set([]);
     this.orderNote.set('');
   }
 
-  /* 直接移除單一品項 */
+  /* 直接移除單一品項，歸還庫存顯示 */
   removeItem(id: number): void {
+    const item = this.cartItems().find((c) => c.id === id);
+    if (item) {
+      this.products.update((list) =>
+        list.map((p) =>
+          p.id === id ? { ...p, stock: p.stock + item.qty } : p,
+        ),
+      );
+    }
     this.cartItems.update((list) => list.filter((c) => c.id !== id));
     this.animateTotal();
   }
@@ -932,6 +940,54 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   /* 找零金額 */
   get cashChange(): number {
     return this.cashReceived - this.discountedTotal;
+  }
+
+  /* ── 結帳 Modal（看板內現金結帳）─────────────────── */
+  checkoutModalOrder = signal<LiveOrder | null>(null);
+  checkoutCashInput = signal('');
+
+  get checkoutCashReceived(): number {
+    return parseInt(this.checkoutCashInput(), 10) || 0;
+  }
+
+  get checkoutCashChange(): number {
+    const order = this.checkoutModalOrder();
+    return order ? this.checkoutCashReceived - order.total : 0;
+  }
+
+  checkoutQuickAmounts(total: number): number[] {
+    const c100 = Math.ceil(total / 100) * 100;
+    const c500 = Math.ceil(total / 500) * 500;
+    const c1000 = Math.ceil(total / 1000) * 1000;
+    return [...new Set([c100, c500, c1000])].filter((v) => v >= total).slice(0, 3);
+  }
+
+  moveToUnpaid(id: string): void {
+    this.orderService.updateStatus(id, 'pending-cash');
+  }
+
+  openCheckoutModal(order: LiveOrder): void {
+    this.checkoutModalOrder.set(order);
+    this.checkoutCashInput.set('');
+  }
+
+  closeCheckoutModal(): void {
+    this.checkoutModalOrder.set(null);
+    this.checkoutCashInput.set('');
+  }
+
+  checkoutKeyPress(key: string): void {
+    if (key === 'C') { this.checkoutCashInput.set(''); return; }
+    if (key === 'BS') { this.checkoutCashInput.update(v => v.slice(0, -1)); return; }
+    if (this.checkoutCashInput().length >= 6) return;
+    this.checkoutCashInput.update(v => v + key);
+  }
+
+  async confirmCheckoutPayment(): Promise<void> {
+    const order = this.checkoutModalOrder();
+    if (!order) return;
+    await this.completeCashOrder(order);
+    this.closeCheckoutModal();
   }
 
   /* 常見快速金額按鈕 */
@@ -965,9 +1021,24 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cashInput.set(String(amount));
   }
 
+  /* 未填會員電話/訪客 → 結帳攔截 modal */
+  showNoMemberModal = signal(false);
+  /* 會員模式但未按查詢 → 結帳攔截 modal */
+  showMemberNotQueriedModal = signal(false);
+  /* 防止重複結帳 */
+  isCheckingOut = signal(false);
+
   /* 點擊結帳：若選現金 → 顯示計算器；其他方式直接結帳 */
   onCheckoutClick(): void {
     if (this.cartItems().length === 0) return;
+    if (this.orderMode() === 'none') {
+      this.showNoMemberModal.set(true);
+      return;
+    }
+    if (this.orderMode() === 'member' && !this.foundMember()) {
+      this.showMemberNotQueriedModal.set(true);
+      return;
+    }
     const btn = this.checkoutBtnEl?.nativeElement;
     if (btn)
       gsap.fromTo(
@@ -992,14 +1063,21 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   /* ── 確認結帳：推送至後端 + OrderService ────────────── */
   async confirmCheckout(): Promise<void> {
     if (this.cartItems().length === 0) return;
+    if (this.isCheckingOut()) return;
+    this.isCheckingOut.set(true);
 
     const staff = this.authService.currentStaff;
-    const globalAreaId = staff?.globalAreaId ?? 1;
-    const memberId = 1;
-    const phone =
-      this.orderMode() === 'guest'
-        ? this.guestPhone()
-        : (this.foundMember()?.phone ?? '');
+    const globalAreaId = staff?.globalAreaId ?? 19;
+    const isGuestMode = this.orderMode() === 'guest';
+    const memberId = isGuestMode ? 1 : (this.foundMember()?.id ?? 1);
+    const rawGuestPhone = this.guestPhone();
+    const phone = isGuestMode
+      ? rawGuestPhone
+        ? /^09\d{8}$/.test(rawGuestPhone)
+          ? '+886' + rawGuestPhone.slice(1)
+          : rawGuestPhone
+        : 'GUEST000'
+      : (this.foundMember()?.phone ?? '');
     const total = this.discountedTotal;
     const items = this.cartItems();
     const payMethodMap: Record<string, string> = {
@@ -1025,6 +1103,23 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
         cartId = syncRes.cartId;
       }
 
+      /* 若選了贈品，加入訂單明細 */
+      const giftRuleId = this.selectedPosGiftRuleId() ?? 0;
+      const selectedGift = giftRuleId > 0
+        ? this.posSelectedPromo()?.gifts.find((g) => g.giftRuleId === giftRuleId)
+        : null;
+      const giftDetailItem: OrderCartDetailItem[] =
+        giftRuleId > 0 && selectedGift?.giftProductId
+          ? [
+              {
+                productId: selectedGift.giftProductId,
+                quantity: 1,
+                gift: true,
+                promotionsGiftsId: giftRuleId,
+              },
+            ]
+          : [];
+
       const orderRes = await firstValueFrom(
         this.apiService.createOrder({
           orderCartId: String(cartId!),
@@ -1034,13 +1129,22 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
           subtotalBeforeTax: total,
           taxAmount: 0,
           totalAmount: total,
-          orderCartDetailsList: items.map((i) => ({
-            productId: i.id,
-            quantity: i.qty,
-            isGift: false,
-          })),
+          orderCartDetailsList: [
+            ...items.map((i) => ({
+              productId: i.id,
+              quantity: i.qty,
+              gift: false,
+            })),
+            ...giftDetailItem,
+          ],
+          promotionsId: giftRuleId > 0 ? (this.selectedPosPromoId() ?? 0) : 0,
         } as CreateOrdersReq),
       );
+
+      if (orderRes.code !== 200) {
+        this.posShowToast(`⚠️ ${orderRes.message}`);
+        return;
+      }
 
       await firstValueFrom(
         this.apiService.pay({
@@ -1049,78 +1153,111 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
           paymentMethod: payMethod,
           transactionId:
             payMethod === 'CASH' ? 'CASH_PAYMENT' : `POS_${Date.now()}`,
-          totalAmount: total,
+          totalAmount: orderRes.totalAmount,
         } as PayReq),
       );
+
+      /* 結帳成功後批次扣減後端庫存 */
+      const stockList = this.posStockList();
+      const inventoryUpdates: UpdateBranchInventoryReq[] = items
+        .map((cartItem) => {
+          const inv = stockList.find((s) => s.productId === cartItem.id);
+          if (!inv) return null;
+          return {
+            productId: cartItem.id,
+            globalAreaId,
+            stockQuantity: Math.max(0, inv.stockQuantity - cartItem.qty),
+            basePrice: inv.basePrice,
+            costPrice: inv.costPrice,
+            maxOrderQuantity: inv.maxOrderQuantity,
+            active: inv.active,
+          } as UpdateBranchInventoryReq;
+        })
+        .filter((r): r is UpdateBranchInventoryReq => r !== null);
+
+      if (inventoryUpdates.length > 0) {
+        await firstValueFrom(
+          this.apiService.deductInventoryBatch(inventoryUpdates),
+        );
+      }
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      const orderId = `DB-${orderRes.orderDateId}-${orderRes.id}`;
+      const orderNum = `${orderRes.orderDateId}-${orderRes.id}`;
+      const itemTexts = this.cartItems().map((i) => `${i.name} × ${i.qty}`);
+
+      /* 若有滿額贈品（且非「不需要」），一併加入品項列表 */
+      const gift = this.posSelectedGiftName();
+      if (gift && gift !== '不需要滿額免費贈品') {
+        itemTexts.push(`${gift}（滿額贈品）`);
+      }
+
+      const totalQty = this.cartItems().reduce((s, i) => s + i.qty, 0);
+      const estMin = Math.max(5, Math.ceil(totalQty * 2));
+      const payLabels: Record<string, string> = {
+        cash: '現金',
+        card: '信用卡',
+        mobile: '行動支付',
+      };
+
+      this.orderService.addOrder({
+        id: orderId,
+        number: orderNum,
+        status: 'waiting',
+        estimatedMinutes: estMin,
+        items: itemTexts,
+        total: this.discountedTotal,
+        createdAt: timeStr,
+        payMethod: payLabels[this.payMethod()],
+        source: 'pos',
+        customerName: this.authService.currentUser?.name,
+        orderType: this.orderMode() === 'member' ? '會員' : '訪客',
+        note: this.orderNote().trim() || undefined,
+        isCash: this.payMethod() === 'cash',
+      });
+
+      this.lastOrderNum.set(orderNum);
+      this.cartItems.set([]);
+      this.orderNote.set('');
+      this.resetPosPromoState();
+      /* 結帳後從後端重新拉庫存，覆蓋本地暫存的扣減值 */
+      this.loadStockList();
+      this._reloadProductStock(globalAreaId);
+      this.showCashCalc.set(false);
+      this.cashInput.set('');
+
+      /* 更新會員訂單次數：使用折扣券 → 重設為 1；未使用 → +1（上限 10，不超過） */
+      if (this.foundMember()) {
+        if (this.useDiscountCoupon()) {
+          this.posOrderCount.set(1);
+        } else {
+          this.posOrderCount.update((c) => Math.min(c + 1, 10));
+        }
+      }
+
+      /* 重置折扣券 & 贈品 & 活動選擇 */
+      this.useDiscountCoupon.set(false);
+      this.resetPosPromoState();
+
+      this.checkoutSuccess.set(true);
+      setTimeout(() => this.checkoutSuccess.set(false), 3000);
     } catch (err) {
       console.error('[POS] 結帳 API 失敗', err);
       this.posShowToast('⚠️ 訂單送出失敗，請確認後端連線');
+    } finally {
+      this.isCheckingOut.set(false);
     }
-
-    const now = new Date();
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    const orderNum = this.orderService.generateOrderNumber();
-    const orderId = this.orderService.generateOrderId();
-    const itemTexts = this.cartItems().map((i) => `${i.name} × ${i.qty}`);
-
-    /* 若有滿額贈品（且非「不需要」），一併加入品項列表 */
-    const gift = this.selectedGift();
-    if (gift && gift !== '不需要滿額免費贈品') {
-      itemTexts.push(`${gift}（滿額贈品）`);
-    }
-
-    const totalQty = this.cartItems().reduce((s, i) => s + i.qty, 0);
-    const estMin = Math.max(5, Math.ceil(totalQty * 2));
-    const payLabels: Record<string, string> = {
-      cash: '現金',
-      card: '信用卡',
-      mobile: '行動支付',
-    };
-
-    this.orderService.addOrder({
-      id: orderId,
-      number: orderNum,
-      status: 'waiting',
-      estimatedMinutes: estMin,
-      items: itemTexts,
-      total: this.discountedTotal,
-      createdAt: timeStr,
-      payMethod: payLabels[this.payMethod()],
-      source: 'pos',
-      customerName: this.authService.currentUser?.name,
-      orderType: this.orderType() === 'dine-in' ? '內用' : '外帶',
-      note: this.orderNote().trim() || undefined,
-    });
-
-    this.lastOrderNum.set(orderNum);
-    this.clearCart();
-    this.showCashCalc.set(false);
-    this.cashInput.set('');
-
-    /* 更新會員訂單次數：使用折扣券 → 重設為 1；未使用 → +1（上限 10，不超過） */
-    if (this.foundMember()) {
-      if (this.useDiscountCoupon()) {
-        this.posOrderCount.set(1);
-      } else {
-        this.posOrderCount.update((c) => Math.min(c + 1, 10));
-      }
-    }
-
-    /* 重置折扣券 & 贈品 & 活動選擇 */
-    this.useDiscountCoupon.set(false);
-    this.selectedGift.set('');
-    this.giftDropdownOpen.set(false);
-    this.selectedPromoName.set('');
-    this.promoDropdownOpen.set(false);
-
-    this.checkoutSuccess.set(true);
-    setTimeout(() => this.checkoutSuccess.set(false), 3000);
   }
 
   /* 設定分類篩選 */
   setCategory(cat: string): void {
     this.activeCategory.set(cat);
+  }
+
+  /* 設定風格篩選 */
+  setStyle(sty: string): void {
+    this.activeStyle.set(sty);
   }
 
   /* 搜尋關鍵字更新 */
@@ -1158,42 +1295,197 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /* ── 廚房完成後，將現金訂單移至待收款區 ──────────── */
+  moveToCashPayment(order: LiveOrder): void {
+    this.orderService.updateStatus(order.id, 'pending-cash');
+    /* 後端 OrdersStatus enum 無 AWAITING_PAYMENT，pending-cash 純為前端狀態 */
+  }
+
+  /* ── 現金收款完成（POS 看板內移動的訂單）────────── */
+  async completeCashOrder(order: LiveOrder): Promise<void> {
+    /* 線上現金訂單建立時未傳 paymentMethod，後端 DB 存空字串，
+     * 故 cash_confirm 永遠回傳 400（paymentMethod != CASH）。
+     * 改以 orders_status(PICKED_UP) 直接標記取餐完成。 */
+    this.orderService.updateStatus(order.id, 'paid');
+    this._pushOrdersStatus(order.id, 'PICKED_UP');
+    this.posShowToast(`收款完成：${order.number}`);
+  }
+
   /* ── 訂單看板：狀態流轉 ───────────────────────────── */
   startCooking(id: string): void {
     this.orderService.updateStatus(id, 'cooking');
-    this._pushKitchenStatus(id, 'COOKING');
   }
 
   finishOrder(id: string): void {
-    this.orderService.updateStatus(id, 'done');
-    this._pushKitchenStatus(id, 'READY');
+    this.orderService.updateStatus(id, 'ready');
+    this._pushOrdersStatus(id, 'READY');
   }
 
-  /** 將廚房狀態推送至後端（id 格式為 DB-YYYYMMDD-XXXX） */
-  private _pushKitchenStatus(
+  completePickup(id: string): void {
+    this.orderService.updateStatus(id, 'done');
+    this._pushOrdersStatus(id, 'PICKED_UP');
+  }
+
+  private _pushOrdersStatus(
     orderId: string,
-    kitchenStatus: 'COOKING' | 'READY',
+    ordersStatus: 'READY' | 'PICKED_UP',
   ): void {
-    /* DB 訂單 id 格式：DB-{orderDateId}-{id}，例如 DB-20260413-0001 */
     const match = orderId.match(/^DB-(\d{8})-(\d+)$/);
-    if (!match) return; /* mock 訂單不推送 */
+    if (!match) return;
     this.apiService
-      .updateKitchenStatus({
-        id: match[2],
-        orderDateId: match[1],
-        kitchenStatus,
-      })
+      .updateOrderStatus({ id: match[2], orderDateId: match[1], ordersStatus })
       .subscribe({
-        error: () => console.warn('[POS] kitchen_status 更新失敗'),
+        error: () =>
+          console.warn(`[POS] ordersStatus ${ordersStatus} 更新失敗`),
       });
+  }
+
+  /* ── 載入庫存管理頁清單，同步作為 POS 點餐商品來源 ── */
+  private loadStockList(): void {
+    const globalAreaId = this.authService.currentStaff?.globalAreaId ?? 19;
+    forkJoin({
+      inventory: this.apiService.getBranchInventory(globalAreaId).pipe(catchError(() => of(null))),
+      allProducts: this.apiService.getAllProducts().pipe(catchError(() => of(null))),
+      menu: this.apiService.getActiveProducts(globalAreaId).pipe(catchError(() => of(null))),
+      categories: this.apiService.getCategories().pipe(catchError(() => of([]))),
+      styles: this.apiService.getStyles().pipe(catchError(() => of([]))),
+    }).subscribe({
+      next: ({ inventory, allProducts, menu, categories, styles }) => {
+        const categoryMap = new Map<number, string>(categories.map((c) => [c.id, c.name]));
+        const styleMap = new Map<number, string>(styles.map((s) => [s.id, s.name]));
+        /* MenuVo（/inventory/menu）有 category/style 欄位，作為最終補充來源 */
+        const menuCatMap = new Map<number, string>(
+          (menu?.data ?? []).map((m) => [m.productId, m.category ?? '']),
+        );
+        const menuStyleMap = new Map<number, string>(
+          (menu?.data ?? []).map((m) => [m.productId, m.style ?? '']),
+        );
+
+        const invData = inventory?.data ?? [];
+        if (invData.length) {
+          this.posStockList.set(invData);
+        }
+        const prodMap = new Map<number, ProductAdminVo>(
+          (allProducts?.productList ?? []).map((p) => [p.id, p]),
+        );
+        const source = invData.length ? invData : [];
+        if (source.length === 0) {
+          /* 優先用管理端商品清單（僅 active） */
+          const activeProds = (allProducts?.productList ?? []).filter(
+            (p) => p.active,
+          );
+          if (activeProds.length > 0) {
+            this.products.set(
+              activeProds.map((p) => ({
+                id: p.id,
+                name: p.name,
+                eng: p.name,
+                price: 0,
+                emoji: '',
+                bg: 'linear-gradient(135deg,#1e1a14,#3a2e20)',
+                stock: 0,
+                category: p.category || categoryMap.get(p.categoryId ?? 0) || menuCatMap.get(p.id) || '',
+                style: p.style || styleMap.get(p.styleId ?? 0) || menuStyleMap.get(p.id) || '',
+              })),
+            );
+            return;
+          }
+          /* 管理端資料也取不到（Staff 無權限）→ 改用前台菜單 API */
+          if (menu?.data?.length) {
+            this.products.set(
+              menu.data.map((p) => ({
+                id: p.productId,
+                name: p.name,
+                eng: p.name,
+                price: p.basePrice,
+                emoji: '',
+                bg: 'linear-gradient(135deg,#1e1a14,#3a2e20)',
+                stock: p.stockQuantity,
+                category: p.category ?? '',
+                style: p.style ?? '',
+                badge: p.stockQuantity <= 5 ? ('low' as const) : undefined,
+              })),
+            );
+          }
+          return;
+        }
+        this.products.set(
+          source
+            .filter((inv) => {
+              const prod = prodMap.get(inv.productId);
+              return prod?.active ?? inv.active;
+            })
+            .map((inv) => {
+              const prod = prodMap.get(inv.productId);
+              const category =
+                inv.category ||
+                prod?.category ||
+                categoryMap.get(prod?.categoryId ?? 0) ||
+                menuCatMap.get(inv.productId) ||
+                '';
+              const style =
+                inv.style ||
+                prod?.style ||
+                styleMap.get(prod?.styleId ?? 0) ||
+                menuStyleMap.get(inv.productId) ||
+                '';
+              return {
+                id: inv.productId,
+                name: inv.productName,
+                eng: inv.productName,
+                price: inv.basePrice,
+                emoji: '',
+                bg: 'linear-gradient(135deg,#1e1a14,#3a2e20)',
+                stock: inv.stockQuantity,
+                category,
+                style,
+                badge: inv.stockQuantity <= 5 ? ('low' as const) : undefined,
+              };
+            }),
+        );
+      },
+      error: () => {
+        console.warn('[POS] 商品載入失敗，改用前台菜單 API');
+        this._loadProductsFromMenu(globalAreaId);
+      },
+    });
+  }
+
+  private _loadProductsFromMenu(globalAreaId: number): void {
+    this.apiService.getActiveProducts(globalAreaId).subscribe({
+      next: (menuRes) => {
+        if (menuRes?.data?.length) {
+          this.products.set(
+            menuRes.data.map((p) => ({
+              id: p.productId,
+              name: p.name,
+              eng: p.name,
+              price: p.basePrice,
+              emoji: '',
+              bg: 'linear-gradient(135deg,#1e1a14,#3a2e20)',
+              stock: p.stockQuantity,
+              category: p.category ?? '',
+              style: p.style ?? '',
+              badge: p.stockQuantity <= 5 ? ('low' as const) : undefined,
+            })),
+          );
+        }
+      },
+      error: () => console.warn('[POS] 菜單 API 也失敗'),
+    });
+  }
+
+  /* 結帳後重新拉 POS 選單商品庫存，覆蓋本地暫存的扣減值 */
+  private _reloadProductStock(_globalAreaId: number): void {
+    this.loadStockList();
   }
 
   /* ── 庫存調整 ─────────────────────────────────────── */
   startAdjustStock(productId: number): void {
-    const p = this.products().find((p) => p.id === productId);
+    const p = this.posStockList().find((x) => x.productId === productId);
     if (!p) return;
     this.adjustingStockId.set(productId);
-    this.adjustStockAmount.set(p.stock);
+    this.adjustStockAmount.set(p.stockQuantity);
   }
 
   cancelAdjustStock(): void {
@@ -1205,28 +1497,39 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!isNaN(val) && val >= 0) this.adjustStockAmount.set(val);
   }
 
+  stepStock(delta: number): void {
+    this.adjustStockAmount.update((v) => Math.max(0, v + delta));
+  }
+
   confirmAdjustStock(): void {
     const id = this.adjustingStockId();
     const amt = this.adjustStockAmount();
     if (id === null) return;
-    this.products.update((list) =>
-      list.map((p) => (p.id === id ? { ...p, stock: amt } : p)),
+    this.posStockList.update((list) =>
+      list.map((p) => (p.productId === id ? { ...p, stockQuantity: amt } : p)),
     );
     this.adjustingStockId.set(null);
-    /* 短暫顯示已儲存提示 */
     this.adjustStockSavedId.set(id);
     setTimeout(() => this.adjustStockSavedId.set(null), 1800);
-    // ⚠ TODO [API串接點 - 調整分店庫存]
-    // branch_inventory 資料表儲存「分店 × 商品」的庫存。
-    // 後端若有獨立庫存 API，取消下方區塊（需後端新增庫存更新端點）：
-    // this.apiService.updateBranchStock({
-    //   globalAreaId: /* 從登入資訊取得 */,
-    //   productId: id,
-    //   stockQuantity: amt
-    // }).subscribe({
-    //   next: () => console.log('[POS] 庫存已同步至後端'),
-    //   error: () => console.error('[POS] 庫存更新失敗')
-    // });
+    const globalAreaId = this.authService.currentStaff?.globalAreaId ?? 19;
+    const existing = this.posStockList().find((p) => p.productId === id);
+    if (existing) {
+      this.apiService
+        .deductInventoryBatch([
+          {
+            productId: id,
+            globalAreaId,
+            stockQuantity: amt,
+            basePrice: existing.basePrice,
+            costPrice: existing.costPrice,
+            maxOrderQuantity: existing.maxOrderQuantity,
+            active: existing.active,
+          },
+        ])
+        .subscribe({
+          error: () => console.warn('[POS] 庫存同步後端失敗，前端已更新'),
+        });
+    }
   }
 
   /* ── 員工帳號：新增 Modal ────────────────────────── */
@@ -1256,7 +1559,10 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   get editStaffIsMA(): boolean {
     const id = this.editStaffId();
     if (id === null) return false;
-    return this.staffAccounts().find(s => s.id === id)?.backendRole === 'MANAGER_AGENT';
+    return (
+      this.staffAccounts().find((s) => s.id === id)?.backendRole ===
+      'MANAGER_AGENT'
+    );
   }
 
   cancelEditStaff(): void {
@@ -1276,17 +1582,17 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     // 若有填新密碼，呼叫修改密碼 API
     if (password.trim()) {
       this.apiService
-        .changeStaffPassword(id, { newPassword: password })
+        .changeStaffPassword(id)
         .subscribe({
-          next: () => this.posShowToast('✅ 密碼已更新'),
+          next: () => this.posShowToast('✅ 密碼已重設為預設值'),
           error: () => this.posShowToast('⚠️ 密碼修改失敗'),
         });
     }
 
-    // 若角色改為副店長，呼叫升遷 API
+    // 若角色改為副店長，呼叫升遷 API（使用 /toggle 端點）
     const current = this.staffAccounts().find((s) => s.id === id);
     if (current?.backendRole === 'STAFF' && backendRole === 'MANAGER_AGENT') {
-      this.apiService.promoteStaff(id).subscribe({
+      this.apiService.toggleStaff(id).subscribe({
         next: () => {
           this.staffAccounts.update((list) =>
             list.map((s) =>
@@ -1318,20 +1624,17 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
 
   confirmAddStaff(): void {
     const name = this.newStaffName().trim();
-    const password = this.newStaffPassword().trim();
-    if (!name || !password) return;
+    if (!name) return;
 
-    const globalAreaId = this.authService.currentStaff?.globalAreaId ?? 1;
+    const globalAreaId = this.authService.currentStaff?.globalAreaId ?? 19;
     this.apiService
       .createStaff({
         name,
-        account: '', // 後端自動產生
-        password,
         role: 'STAFF',
         globalAreaId,
       })
       .subscribe({
-        next: (res) => {
+        next: () => {
           this.showAddStaffModal.set(false);
           this.posShowToast('✅ 員工帳號已新增，帳號由系統自動產生');
           // 重新從後端拉員工清單
@@ -1348,7 +1651,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
                       name: s.name,
                       account: s.account,
                       backendRole: s.role,
-                      isActive: s.isStatus,
+                      isActive: s.status ?? true,
                       joinedAt: s.hireAt?.slice(0, 10) ?? '',
                     })),
                 );
@@ -1369,7 +1672,7 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     this.staffAccounts.update((list) =>
       list.map((s) => (s.id === id ? { ...s, isActive: newStatus } : s)),
     );
-    this.apiService.updateStaffStatus(id, { isStatus: newStatus }).subscribe({
+    this.apiService.updateStaffStatus(id, { newStatus: newStatus }).subscribe({
       next: () =>
         this.posShowToast(newStatus ? `✅ 帳號已復權` : `🔒 帳號已停權`),
       error: () => {
@@ -1401,11 +1704,29 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   togglePromo(id: number): void {
-    const current = this.posPromos().find((p) => p.id === id);
-    if (!current || current.ended) return;
+    const promo = this.posPromos().find((p) => p.id === id);
+    if (!promo || promo.ended) return;
+    const newActive = !promo.isActive;
     this.posPromos.update((list) =>
-      list.map((p) => (p.id === id ? { ...p, isActive: !p.isActive } : p)),
+      list.map((p) => (p.id === id ? { ...p, isActive: newActive } : p)),
     );
+    const req: PromotionsManageReq = {
+      name: promo.title,
+      startTime: promo.rawStartTime,
+      endTime: promo.rawEndTime,
+      promotionsId: id,
+      active: newActive,
+    };
+    this.apiService.togglePromotion(req).subscribe({
+      next: () =>
+        this.posShowToast(newActive ? '✅ 活動已啟用' : '⏸️ 活動已暫停'),
+      error: () => {
+        this.posPromos.update((list) =>
+          list.map((p) => (p.id === id ? { ...p, isActive: !newActive } : p)),
+        );
+        this.posShowToast('⚠️ 操作失敗，請確認後端連線');
+      },
+    });
   }
 
   openAddPromo(): void {
@@ -1473,9 +1794,219 @@ export class PosTerminalComponent implements OnInit, AfterViewInit, OnDestroy {
     this.posShowToast(`活動「${saved.name.trim()}」已新增`);
   }
 
+  /* ── 售價調整 ────────────────────────────────────── */
+  adjustingPriceId = signal<number | null>(null);
+  adjustPriceDraft = signal<number>(0);
+  adjustPriceSavedId = signal<number | null>(null);
+
+  startAdjustPrice(productId: number): void {
+    const p = this.posStockList().find((x) => x.productId === productId);
+    if (!p) return;
+    this.adjustingPriceId.set(productId);
+    this.adjustPriceDraft.set(p.basePrice);
+  }
+
+  cancelAdjustPrice(): void {
+    this.adjustingPriceId.set(null);
+  }
+
+  onPriceInput(event: Event): void {
+    const val = parseFloat((event.target as HTMLInputElement).value);
+    if (!isNaN(val) && val >= 0) this.adjustPriceDraft.set(val);
+  }
+
+  confirmAdjustPrice(): void {
+    const id = this.adjustingPriceId();
+    const price = this.adjustPriceDraft();
+    if (id === null) return;
+    const p = this.posStockList().find((x) => x.productId === id);
+    if (!p) return;
+    if (price <= 0) {
+      this.posShowToast('⚠️ 售價必須大於 0');
+      return;
+    }
+    const globalAreaId = this.authService.currentStaff?.globalAreaId ?? 19;
+    this.posStockList.update((list) =>
+      list.map((x) => (x.productId === id ? { ...x, basePrice: price } : x)),
+    );
+    this.adjustingPriceId.set(null);
+    this.adjustPriceSavedId.set(id);
+    setTimeout(() => this.adjustPriceSavedId.set(null), 1800);
+    this.apiService
+      .updateBranchInventory({
+        productId: id,
+        globalAreaId,
+        stockQuantity: p.stockQuantity,
+        basePrice: price,
+        costPrice: p.costPrice,
+        maxOrderQuantity: p.maxOrderQuantity,
+        active: p.active,
+      })
+      .subscribe({
+        error: () => console.warn('[POS] 售價同步後端失敗，前端已更新'),
+      });
+  }
+
+  /* ── 最大購買量調整（調整 → +10/-10 → 確認）──────── */
+  adjustingMaxQtyId = signal<number | null>(null);
+  adjustMaxQtyDraft = signal<number>(1);
+  adjustMaxQtySavedId = signal<number | null>(null);
+
+  startAdjustMaxQty(productId: number): void {
+    const p = this.posStockList().find((x) => x.productId === productId);
+    if (!p) return;
+    this.adjustingMaxQtyId.set(productId);
+    this.adjustMaxQtyDraft.set(p.maxOrderQuantity);
+  }
+
+  cancelAdjustMaxQty(): void {
+    this.adjustingMaxQtyId.set(null);
+  }
+
+  onMaxQtyInput(event: Event): void {
+    const val = parseInt((event.target as HTMLInputElement).value, 10);
+    if (!isNaN(val) && val >= 1) this.adjustMaxQtyDraft.set(val);
+  }
+
+  stepMaxQty(delta: number): void {
+    this.adjustMaxQtyDraft.update((v) => Math.max(1, v + delta));
+  }
+
+  confirmAdjustMaxQty(): void {
+    const id = this.adjustingMaxQtyId();
+    const newQty = this.adjustMaxQtyDraft();
+    if (id === null) return;
+    const p = this.posStockList().find((x) => x.productId === id);
+    if (!p) return;
+    const globalAreaId = this.authService.currentStaff?.globalAreaId ?? 19;
+    this.posStockList.update((list) =>
+      list.map((x) =>
+        x.productId === id ? { ...x, maxOrderQuantity: newQty } : x,
+      ),
+    );
+    this.adjustingMaxQtyId.set(null);
+    this.adjustMaxQtySavedId.set(id);
+    setTimeout(() => this.adjustMaxQtySavedId.set(null), 1800);
+    this.apiService
+      .updateBranchInventory({
+        productId: id,
+        globalAreaId,
+        stockQuantity: p.stockQuantity,
+        basePrice: p.basePrice,
+        costPrice: p.costPrice,
+        maxOrderQuantity: newQty,
+        active: p.active,
+      })
+      .subscribe({
+        error: () => console.warn('[POS] 最大購買量同步後端失敗，前端已更新'),
+      });
+  }
+
+  /* ── 報電話號碼查詢取餐訂單 ─────────────────────── */
+  searchByPhone(): void {
+    const rawPhone = this.phoneQuery().trim().replace(/-/g, '');
+    if (!rawPhone) {
+      this.phoneSearchError.set('請輸入手機號碼');
+      return;
+    }
+    const phone = /^09\d{8}$/.test(rawPhone)
+      ? '+886' + rawPhone.slice(1)
+      : rawPhone;
+    this.phoneSearchLoading.set(true);
+    this.phoneSearchDone.set(false);
+    this.phoneSearchError.set('');
+    this.phoneSearchResults.set([]);
+    this.apiService.getOrderByPhone(phone).subscribe({
+      next: (res) => {
+        this.phoneSearchLoading.set(false);
+        this.phoneSearchDone.set(true);
+        if (res?.code === 200 && res.getOrderVoList?.length) {
+          this.phoneSearchResults.set(res.getOrderVoList);
+        } else if (res?.code === 403) {
+          this.phoneSearchError.set('連線已逾時，請重新整理頁面並重新登入');
+          this.phoneSearchResults.set([]);
+        } else {
+          this.phoneSearchResults.set([]);
+        }
+      },
+      error: () => {
+        this.phoneSearchLoading.set(false);
+        this.phoneSearchDone.set(true);
+        this.phoneSearchError.set('查詢失敗，請確認後端連線');
+      },
+    });
+  }
+
+  clearPhoneSearch(): void {
+    this.phoneQuery.set('');
+    this.phoneSearchResults.set([]);
+    this.phoneSearchDone.set(false);
+    this.phoneSearchError.set('');
+  }
+
+  /* 判斷訂單是否屬於本分店 */
+  isSameBranch(order: import('../shared/api.service').GetOrdersVo): boolean {
+    const staffAreaId = this.authService.currentStaff?.globalAreaId;
+    return staffAreaId == null || order.globalAreaId === staffAreaId;
+  }
+
+  /* 分店長切換至後台管理 */
+  goToRmDashboard(): void {
+    this.router.navigate(['/rm-dashboard']);
+  }
+
   /* 登出 */
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/staff-login']);
   }
+
+  /* ── 員工自改密碼 ────────────────────────────────── */
+  changePwOpen = signal(false);
+  changePwOld = signal('');
+  changePwNew = signal('');
+  changePwConfirm = signal('');
+  changePwError = signal('');
+
+
+  /* 密碼顯示切換 */
+  showAddStaffPwd = signal(false);
+  showEditStaffPwd = signal(false);
+  showChangePwOld = signal(false);
+  showChangePwNew = signal(false);
+  showChangePwConf = signal(false);
+
+  openChangePw(): void {
+    this.changePwOld.set('');
+    this.changePwNew.set('');
+    this.changePwConfirm.set('');
+    this.changePwError.set('');
+    this.changePwOpen.set(true);
+  }
+
+  submitChangePw(): void {
+    if (this.changePwNew() !== this.changePwConfirm()) {
+      this.changePwError.set('兩次新密碼不一致');
+      return;
+    }
+    if (this.changePwNew().length < 6) {
+      this.changePwError.set('新密碼至少 6 位');
+      return;
+    }
+    const staff = this.authService.currentStaff;
+    if (!staff) return;
+    const req: SelfChangePasswordReq = {
+      account: staff.account,
+      oldPassword: this.changePwOld(),
+      newPassword: this.changePwNew(),
+    };
+    this.apiService.selfChangePassword(req).subscribe({
+      next: () => {
+        this.changePwOpen.set(false);
+        this.posShowToast('✅ 密碼修改成功');
+      },
+      error: () => this.changePwError.set('舊密碼錯誤或伺服器異常'),
+    });
+  }
+
 }

@@ -1,7 +1,13 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { ApiService, GlobalAreaVO } from './api.service';
 
 export type CountryCode = 'TW' | 'JP' | 'KR';
+
+export interface BranchOption {
+  id: number;
+  name: string;
+}
 
 export interface CountryConfig {
   code: CountryCode;
@@ -65,6 +71,7 @@ export interface LangDict {
   navPromos: string;
   /* ── Menu categories ── */
   catAll: string;
+  catChef: string;
   catRice: string;
   catNoodles: string;
   catSnacks: string;
@@ -100,6 +107,7 @@ export interface LangDict {
   profileTitle: string;
   emailLbl: string;
   emailPlaceholder: string;
+  oldPwdPlaceholder: string;
   newPwdPlaceholder: string;
   confirmNewPwdPlaceholder: string;
   couponTitle: string;
@@ -301,6 +309,7 @@ const TW: LangDict = {
   navOrders: '我的訂單',
   navPromos: '活動專區',
   catAll: '全部',
+  catChef: '主廚推薦',
   catRice: '飯食',
   catNoodles: '麵食',
   catSnacks: '小吃',
@@ -331,6 +340,7 @@ const TW: LangDict = {
   profileTitle: '個人資料',
   emailLbl: '電子郵件',
   emailPlaceholder: '輸入Email',
+  oldPwdPlaceholder: '請輸入舊密碼',
   newPwdPlaceholder: '輸入新密碼',
   confirmNewPwdPlaceholder: '再次輸入新密碼',
   couponTitle: '兌換券紀錄',
@@ -345,7 +355,7 @@ const TW: LangDict = {
   editProfile: '修改資料',
   navDivider: '導覽功能',
   footerTagline: '✦ 懶懶吃，飽飽樂 ✦',
-  loginAsMember: '使用會員登入點餐',
+  loginAsMember: '返回登入頁面',
   logout: '登出帳號',
   heroSlide1Tag: '✦ 全球風味 • 一掌點餐 ✦',
   heroSlide1Desc: '懶懶吃，飽飽樂 — 探索各地絕妙風味',
@@ -367,10 +377,10 @@ const TW: LangDict = {
   orderDetail: '訂單明細',
   itemCountSuffix: '件',
   free: '免費',
-  couponDiscount: '折扣券折扣（8折）',
+  couponDiscount: '折扣券折抵最多200',
   clearCart: '清空購物車',
   couponBlockTitle: '折扣兌換券',
-  couponActive: '已選擇使用，本次享 8 折優惠',
+  couponActive: '已選擇使用，本次享 9 折優惠',
   couponAvailable: '您有 1 張折扣券，是否在本次訂單使用？',
   couponCancel: '取消使用',
   couponUse: '使用折扣券',
@@ -429,7 +439,7 @@ const TW: LangDict = {
   giftSelectedPre: '已選：',
   giftChangeLbl: '點此更換免費餐點',
   skipPromo: '不參加活動優惠',
-  selectThisPromo: '按此選擇此活動',
+  selectThisPromo: '按此選擇此活動，點選免費贈品。',
   promoMinSpendPre: '滿 ',
   promoZoneTitle: '活動專區',
   promoSpendPre: '消費滿 ',
@@ -517,6 +527,7 @@ const JP: LangDict = {
   navOrders: '注文履歴',
   navPromos: 'キャンペーン',
   catAll: 'すべて',
+  catChef: 'シェフのおすすめ',
   catRice: 'ご飯料理',
   catNoodles: '麺料理',
   catSnacks: '軽食',
@@ -547,6 +558,7 @@ const JP: LangDict = {
   profileTitle: '個人情報',
   emailLbl: 'メールアドレス',
   emailPlaceholder: 'メールアドレスを入力',
+  oldPwdPlaceholder: '現在のパスワードを入力',
   newPwdPlaceholder: '新しいパスワードを入力',
   confirmNewPwdPlaceholder: '新しいパスワードをもう一度入力',
   couponTitle: 'クーポン記録',
@@ -584,10 +596,10 @@ const JP: LangDict = {
   orderDetail: '注文内容',
   itemCountSuffix: '件',
   free: '無料',
-  couponDiscount: '割引クーポン（20%オフ）',
+  couponDiscount: 'クーポン割引（最大200円）',
   clearCart: 'カートをクリア',
   couponBlockTitle: '割引クーポン',
-  couponActive: '割引クーポン使用中（20%オフ）',
+  couponActive: '割引クーポン使用中（10%オフ）',
   couponAvailable: '割引クーポンが1枚あります。今回の注文で使用しますか？',
   couponCancel: '使用をキャンセル',
   couponUse: 'クーポンを使用',
@@ -649,7 +661,7 @@ const JP: LangDict = {
   giftSelectedPre: '選択済：',
   giftChangeLbl: '無料メニューを変更する',
   skipPromo: 'キャンペーン不参加',
-  selectThisPromo: 'このキャンペーンを選択',
+  selectThisPromo: 'このキャンペーンを選択して無料特典を選んでください。',
   promoMinSpendPre: '',
   promoZoneTitle: 'キャンペーン',
   promoSpendPre: '',
@@ -738,6 +750,7 @@ const KR: LangDict = {
   navOrders: '내 주문',
   navPromos: '이벤트',
   catAll: '전체',
+  catChef: '셰프 추천',
   catRice: '밥 요리',
   catNoodles: '면류',
   catSnacks: '간식',
@@ -768,6 +781,7 @@ const KR: LangDict = {
   profileTitle: '내 정보',
   emailLbl: '이메일',
   emailPlaceholder: '이메일 입력',
+  oldPwdPlaceholder: '현재 비밀번호 입력',
   newPwdPlaceholder: '새 비밀번호 입력',
   confirmNewPwdPlaceholder: '새 비밀번호 다시 입력',
   couponTitle: '쿠폰 기록',
@@ -804,10 +818,10 @@ const KR: LangDict = {
   orderDetail: '주문 내역',
   itemCountSuffix: '건',
   free: '무료',
-  couponDiscount: '할인 쿠폰 (20% 할인)',
+  couponDiscount: '쿠폰 할인 (최대 200원)',
   clearCart: '장바구니 비우기',
   couponBlockTitle: '할인 쿠폰',
-  couponActive: '할인 쿠폰 사용 중 (20% 할인)',
+  couponActive: '할인 쿠폰 사용 중 (10% 할인)',
   couponAvailable: '할인 쿠폰 1장이 있습니다. 이번 주문에 사용하시겠습니까？',
   couponCancel: '사용 취소',
   couponUse: '쿠폰 사용',
@@ -866,7 +880,7 @@ const KR: LangDict = {
   giftSelectedPre: '선택됨：',
   giftChangeLbl: '무료 메뉴 변경하기',
   skipPromo: '이벤트 미참여',
-  selectThisPromo: '이 이벤트 선택',
+  selectThisPromo: '이 이벤트를 선택하고 무료 사은품을 고르세요。',
   promoMinSpendPre: '',
   promoZoneTitle: '이벤트 존',
   promoSpendPre: '',
@@ -954,6 +968,9 @@ export const COUNTRY_CONFIGS: Record<CountryCode, CountryConfig> = {
 @Injectable({ providedIn: 'root' })
 export class BranchService {
   private doc = inject(DOCUMENT);
+  private apiService = inject(ApiService);
+  private _regionsMap = signal<Record<string, number>>({});
+  private _branches = signal<GlobalAreaVO[]>([]);
 
   private _c = signal<CountryCode>(
     (() => {
@@ -968,10 +985,34 @@ export class BranchService {
     })(),
   );
 
+  private _globalAreaId = signal<number>(
+    (() => {
+      try {
+        const saved = localStorage.getItem('selectedBranch');
+        return saved ? Number(saved) : 19;
+      } catch {
+        return 19;
+      }
+    })(),
+  );
+
   readonly lang = computed(() => TRANSLATIONS[this._c()]);
+
+  /** 依目前國家的 regionsId 篩選分店，並回傳 { id, name } 清單 */
+  readonly localizedBranches = computed(() => {
+    const regId = this._regionsMap()[this._c()];
+    if (!regId) return [];
+    return this._branches()
+      .filter(b => b.regionsId === regId)
+      .map(b => ({ id: b.id, name: b.branch }));
+  });
 
   get country(): CountryCode {
     return this._c();
+  }
+  /** 當前國家對應的 regions.id（後端 @Min(1) 驗證，0 表示尚未載入） */
+  get regionsId(): number {
+    return this._regionsMap()[this._c()] ?? 0;
   }
   get config(): CountryConfig {
     return COUNTRY_CONFIGS[this._c()];
@@ -979,11 +1020,33 @@ export class BranchService {
   get allCountries(): CountryConfig[] {
     return Object.values(COUNTRY_CONFIGS);
   }
+  get globalAreaId(): number {
+    return this._globalAreaId();
+  }
+  get currentBranches(): BranchOption[] {
+    return this.localizedBranches();
+  }
+
+  setGlobalAreaId(id: number): void {
+    this._globalAreaId.set(id);
+    try { localStorage.setItem('selectedBranch', String(id)); } catch {}
+  }
+
+  getLocalizedBranchName(branch: BranchOption): string {
+    return branch.name;
+  }
 
   setCountry(code: CountryCode): void {
     this._c.set(code);
+    const regId = this._regionsMap()[code];
+    const branches = regId
+      ? this._branches().filter(b => b.regionsId === regId)
+      : [];
+    const firstId = branches.length > 0 ? branches[0].id : 19;
+    this._globalAreaId.set(firstId);
     try {
       localStorage.setItem('selectedCountry', code);
+      localStorage.setItem('selectedBranch', String(firstId));
     } catch {}
     this.applyTheme(code);
   }
@@ -1001,5 +1064,27 @@ export class BranchService {
 
   init(): void {
     this.applyTheme(this._c());
+    if (Object.keys(this._regionsMap()).length === 0) {
+      this.apiService.getAllTax().subscribe({
+        next: res => {
+          if (res.code === 200 && res.regionsList) {
+            const map: Record<string, number> = {};
+            res.regionsList.forEach(r => { map[r.countryCode] = r.id; });
+            this._regionsMap.set(map);
+          }
+        },
+        error: () => {},
+      });
+    }
+    if (this._branches().length === 0) {
+      this.apiService.getAllBranches().subscribe({
+        next: res => {
+          if (res.code === 200 && res.globalAreaList?.length) {
+            this._branches.set(res.globalAreaList);
+          }
+        },
+        error: () => {},
+      });
+    }
   }
 }

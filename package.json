@@ -4,6 +4,8 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "start:chrome": "start cmd /k \"ng serve\" & timeout /t 10 /nobreak > nul & start chrome http://localhost:4200",
+    "open:chrome": "start chrome http://localhost:4200",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"

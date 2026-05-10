@@ -3,6 +3,20 @@
   <a class="nav-customer" [routerLink]="['/customer-login']">🍜 {{ lang.customerEntrance }}</a>
 </nav>
 
+<!-- 國家 / 語系切換列 -->
+<div class="c-country-switch">
+  @for (c of allCountries; track c.code) {
+    <button
+      class="c-country-btn"
+      [class.is-active]="activeCountry === c.code"
+      (click)="selectCountry(c.code)"
+    >
+      <span class="c-flag-dot" [class]="'c-flag-' + c.code.toLowerCase()"></span>
+      {{ c.nameLocal }}
+    </button>
+  }
+</div>
+
 <div class="shell">
   <div class="panel" id="register-panel">
 

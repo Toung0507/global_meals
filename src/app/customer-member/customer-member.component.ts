@@ -21,21 +21,20 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { NgClass } from '@angular/common';
 
 import { AuthService } from '../shared/auth.service';
 import { LoadingService } from '../shared/loading.service';
 
-import { ApiService } from '../shared/api.service';
-
-/* MockOrder 型別，供 TypeScript 標注 orders 陣列用 */
-import { MockOrder } from '../shared/auth.service';
+import { ApiService, GetOrdersVo } from '../shared/api.service';
 
 @Component({
   selector: 'app-customer-member',
   standalone: true,
   imports: [
     FormsModule,
-  ] /* FormsModule 提供 [(ngModel)] 雙向綁定（編輯表單用） */,
+    NgClass,
+  ],
   templateUrl: './customer-member.component.html',
   styleUrls: ['./customer-member.component.scss'],
 })
@@ -54,8 +53,8 @@ export class CustomerMemberComponent implements OnInit {
   /* 儲存成功提示訊息（顯示 2 秒後自動消失） */
   saveSuccess: boolean = false;
 
-  /* 訂單紀錄陣列 */
-  orders: MockOrder[] = [];
+  orders: GetOrdersVo[] = [];
+  ordersLoading = false;
 
   /*
    * constructor 建構函式
@@ -72,6 +71,10 @@ export class CustomerMemberComponent implements OnInit {
   ) {}
 
   editOldPassword: string = '';
+  showOldPwd = false;
+  showNewPwd = false;
+  toggleOldPwd(): void { this.showOldPwd = !this.showOldPwd; }
+  toggleNewPwd(): void { this.showNewPwd = !this.showNewPwd; }
   /*
    * ngOnInit：元件初始化時自動執行
    * ① 登入保護：沒有登入的人直接踢回登入頁
@@ -84,8 +87,20 @@ export class CustomerMemberComponent implements OnInit {
       return;
     }
 
-    /* ② 載入假訂單資料 */
-    this.orders = this.authService.getOrders();
+    /* ② 載入訂單資料 */
+    const memberId = this.authService.currentMember?.members?.id
+                  ?? this.authService.currentUser?.id
+                  ?? 0;
+    if (memberId > 0) {
+      this.ordersLoading = true;
+      this.apiService.getAllOrders({ memberId }).subscribe({
+        next: (res) => {
+          this.orders = res.getOrderVoList ?? [];
+          this.ordersLoading = false;
+        },
+        error: () => { this.ordersLoading = false; },
+      });
+    }
   }
 
   /* ── 進入編輯模式 ─────────────────────────────────
@@ -95,7 +110,7 @@ export class CustomerMemberComponent implements OnInit {
   startEdit(): void {
     if (this.authService.currentUser) {
       this.editName = this.authService.currentUser.name;
-      this.editPhone = this.authService.currentUser.phone;
+      this.editPhone = this.phoneToLocal(this.authService.currentUser.phone);
       this.editPassword = ''; /* 密碼欄預設留空（不修改） */
       this.editOldPassword = ''; // ← 新增
     }
@@ -120,17 +135,17 @@ export class CustomerMemberComponent implements OnInit {
   saveEdit(): void {
     if (this.editName.trim().length === 0) return;
 
-    const phone = this.authService.currentUser?.phone ?? '';
+    const memberId = this.authService.currentUser?.id ?? 0;
 
     // 有填新密碼時才呼叫後端修改密碼 API
     if (this.editPassword.trim().length > 0) {
       if (this.editOldPassword.trim().length === 0) {
-        alert('請輸入目前密碼');
+        alert('請輸入舊密碼');
         return;
       }
       this.apiService
         .updateMemberPassword({
-          phone,
+          id: memberId,
           oldPassword: this.editOldPassword.trim(),
           newPassword: this.editPassword.trim(),
         })
@@ -184,6 +199,13 @@ export class CustomerMemberComponent implements OnInit {
     }, 1500);
   }
 
+  /** +886XXXXXXXXX → 0XXXXXXXXX（台灣），其他國碼原樣返回 */
+  phoneToLocal(phone: string | undefined | null): string {
+    if (!phone) return '';
+    if (phone.startsWith('+886')) return '0' + phone.slice(4);
+    return phone;
+  }
+
   /* ── 取得頭像顯示文字 ─────────────────────────────
      取名稱第一個字當作頭像縮寫（例：「懶飽飽測試會員」→「懶」）
   ────────────────────────────────────────────────── */
@@ -195,5 +217,39 @@ export class CustomerMemberComponent implements OnInit {
       return this.authService.currentUser.name.charAt(0);
     }
     return '?';
+  }
+
+  getOrderStatusText(status: string): string {
+    const map: Record<string, string> = {
+      PICKED_UP: '已完成',
+      COOKING: '備餐中',
+      READY: '可取餐',
+      CANCELLED: '已取消',
+      REFUNDED: '已退款',
+    };
+    return map[status] ?? status;
+  }
+
+  getOrderStatusClass(status: string): string {
+    if (status === 'PICKED_UP') return 'status-done';
+    if (status === 'COOKING' || status === 'READY') return 'status-cooking';
+    if (status === 'CANCELLED' || status === 'REFUNDED') return 'status-cancelled';
+    return '';
+  }
+
+  getOrderDate(order: GetOrdersVo): string {
+    if (order.completedAt) return order.completedAt.slice(0, 10);
+    if (order.orderDateId) {
+      const d = order.orderDateId;
+      return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
+    }
+    return '—';
+  }
+
+  getOrderItems(order: GetOrdersVo): string {
+    const details = order.getOrdersDetailVoList ?? order.GetOrdersDetailVoList ?? [];
+    const mainItems = details.filter((d) => !d.gift);
+    if (!mainItems.length) return '—';
+    return mainItems.map((d) => `${d.productName ?? d.name ?? '?'} × ${d.quantity}`).join('、');
   }
 }
