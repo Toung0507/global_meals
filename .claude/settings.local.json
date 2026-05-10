@@ -133,7 +133,17 @@
       "Bash(curl -s \"http://localhost:8080/lazybaobao/product/list\" --max-time 5)",
       "Bash(grep -iE \"\\(api.?key|apikey|gemini|AIza|sk-|bearer [a-zA-Z0-9]{20,}\\)\")",
       "Bash(git commit -m ' *)",
-      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\a4377\\\\OneDrive\\\\Desktop\\\\global_meals\\\\src\" -Recurse -File)"
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\a4377\\\\OneDrive\\\\Desktop\\\\global_meals\\\\src\" -Recurse -File)",
+      "Bash(git stash *)",
+      "Bash(git merge *)",
+      "Bash(git pull *)",
+      "Bash(mysql -u root -p\"\" global_meals -e \"UPDATE members SET regions_id = 1 WHERE id BETWEEN 2 AND 11;\")",
+      "Bash(findstr /i \"proxy\" angular.json)",
+      "Bash(Select-String -Path angular.json -Pattern \"proxy\")",
+      "Bash(grep -iE \"\\(api.?key|apikey|AIza|sk-|bearer [a-zA-Z0-9]{20,}|token\\\\s*=\\\\s*['\\\\\"][a-zA-Z0-9]{20,}\\)\")",
+      "Bash(grep -iE \"\\(api.?key|AIza|sk-[a-zA-Z0-9]{20,}|bearer [a-zA-Z0-9]{30,}\\)\")",
+      "Bash(grep -iE \"\\(api.?key|AIza|sk-[a-zA-Z0-9]{20,}|secret|token\\\\s*[:=]\\\\s*['\\\\\"][a-zA-Z0-9]{20,}\\)\")",
+      "Bash(git check-ignore *)"
     ],
     "additionalDirectories": [
       "c:\\Users\\a4377\\OneDrive\\Desktop\\global_meals_gradle\\src\\main\\java\\com\\example\\global_meals_gradle\\config",
